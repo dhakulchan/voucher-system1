@@ -1,0 +1,713 @@
+{% extends "base.html" %}
+
+{% block title %}Create Booking{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #06b6d4;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Full width layout adjustments */
+    .container-fluid {
+        max-width: 100%;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Make cards stretch to full width */
+    .card {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Ensure all content sections use full width */
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .col-12 {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .modern-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        width: 100%;
+    }
+
+    .modern-card:hover {
+        box-shadow: var(--card-hover-shadow);
+        transform: translateY(-2px);
+    }
+
+    .modern-header {
+        background: var(--gradient-bg);
+        border-radius: 15px 15px 0 0;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .modern-header>* {
+        position: relative;
+        z-index: 1;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        background-color: #ffffff;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: var(--gradient-bg);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+    }
+
+    .animated-icon {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Products table styling */
+    #products-table {
+        font-size: 0.9rem;
+    }
+
+    #products-table th,
+    #products-table td {
+        padding: 8px 12px;
+        vertical-align: middle;
+    }
+
+    #products-table .form-control {
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+        padding: 6px 10px;
+        font-size: 0.9rem;
+    }
+
+    #products-table .product-name {
+        min-width: 200px;
+    }
+
+    #products-table .product-quantity {
+        width: 80px;
+    }
+
+    #products-table .product-price {
+        width: 120px;
+    }
+
+    #products-table .product-amount {
+        width: 120px;
+        background-color: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-plus me-2"></i>Create New Booking
+        </h1>
+        <div>
+            <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Bookings
+            </a>
+        </div>
+    </div>
+
+    <form method="POST">
+        <!-- Customer Selection -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Customer
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="customer_id" class="form-label">Customer *</label>
+                    <select class="form-select" id="customer_id" name="customer_id" required>
+                        <option value="">Select Customer</option>
+                        {% for customer in customers %}
+                        <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.email }})</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">
+                        Customer information cannot be changed after booking creation.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Type and Party Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="booking_type" class="form-label">
+                        <i class="fas fa-tag me-2"></i>Booking Type *
+                    </label>
+                    <select class="form-select" id="booking_type" name="booking_type" required>
+                        <option value="">Select Type</option>
+                        <option value="package">Package</option>
+                        <option value="tour">Tour</option>
+                        <option value="collective-groups">Collective Groups</option>
+                        <option value="incentive-groups">Incentive Groups</option>
+                        <option value="air-ticket">Air Ticket</option>
+                        <option value="hotel">Hotel</option>
+                        <option value="transport">Transport</option>
+                        <option value="park-ticket">Park Ticket</option>
+                        <option value="fit">F.I.T.</option>
+                        <option value="others">Others</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="party_name" class="form-label">
+                        <i class="fas fa-users me-2"></i>Party Name/ Code
+                    </label>
+                    <input type="text" class="form-control" id="party_name" name="party_name"
+                        placeholder="Optional: Name for the group or party">
+                    <div class="form-text">Optional: Name for the group or party</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Travel Dates -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="arrival_date" class="form-label">
+                        <i class="fas fa-calendar-plus me-2"></i>Traveling from
+                    </label>
+                    <input type="date" class="form-control" id="arrival_date" name="arrival_date">
+                    <div class="form-text">Deadline for payment or confirmation</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="departure_date" class="form-label">
+                        <i class="fas fa-calendar-minus me-2"></i>Traveling to
+                    </label>
+                    <input type="date" class="form-control" id="departure_date" name="departure_date">
+                </div>
+            </div>
+        </div>
+
+        <!-- Guest Information Section -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label for="adults" class="form-label">
+                        <i class="fas fa-user-friends me-2"></i>Adults *
+                    </label>
+                    <input type="number" class="form-control" id="adults" name="adults" min="1" max="50" value="1"
+                        required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label for="children" class="form-label">
+                        <i class="fas fa-child me-2"></i>Children
+                    </label>
+                    <input type="number" class="form-control" id="children" name="children" min="0" max="20" value="0">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label for="total_pax" class="form-label">
+                        <i class="fas fa-users me-2"></i>Total Pax
+                    </label>
+                    <input type="number" class="form-control bg-light" id="total_pax" name="total_pax" min="1" max="50"
+                        value="1" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label for="infants" class="form-label">
+                        <i class="fas fa-baby me-2"></i>Infants (-2Y)
+                    </label>
+                    <input type="number" class="form-control" id="infants" name="infants" min="0" max="10" value="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- Time Limit and Due Date -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="time_limit" class="form-label">Time Limit</label>
+                    <input type="datetime-local" class="form-control" id="time_limit" name="time_limit">
+                    <div class="form-text">Deadline for booking confirmation (Required) - Format: MM/DD/YYYY HH:MM</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="due_date" class="form-label">Due Date</label>
+                    <input type="date" class="form-control" id="due_date" name="due_date">
+                    <div class="form-text">Payment or action due date - Format: DD/MM/YYYY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pickup Information -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="pickup_point" class="form-label">Pickup Point</label>
+                    <input type="text" class="form-control" id="pickup_point" name="pickup_point"
+                        placeholder="Enter pickup location">
+                    <div class="form-text">Pickup location for guests</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="pickup_time" class="form-label">Pickup Time</label>
+                    <input type="time" class="form-control" id="pickup_time" name="pickup_time">
+                    <div class="form-text">Time to pickup guests</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Detail / Itinerary -->
+        <div class="card mb-4">
+            <div class="card-header" style="background-color: #17a2b8; color: white;">
+                <h6 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Service Detail / Itinerary
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="service_detail" class="form-label">Service</label>
+                    <textarea class="form-control" id="service_detail" name="service_detail" rows="6"
+                        placeholder="Brief description of the booking..."></textarea>
+                    <div class="form-text">Brief description or notes about this booking</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Name List / Rooming List -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-users me-2"></i>Name List / Rooming List
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="guest_list" class="form-label">Name List</label>
+                    <textarea class="form-control" id="guest_list" name="guest_list" rows="8"
+                        placeholder="Enter guest information, table, or notes..."></textarea>
+                    <div class="form-text">Enter each guest name on a separate line</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flight Information and Actions row -->
+        <div class="row mb-4">
+            <div class="col-lg-8">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0"><i class="fas fa-plane me-2"></i>Flight Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" id="flight_info" name="flight_info" rows="4"
+                            placeholder="Flight details..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card h-100" style="background-color: #17a2b8;">
+                    <div class="card-header text-white"
+                        style="background-color: #17a2b8; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Actions & Documents</h6>
+                    </div>
+                    <div class="card-body text-white">
+                        <div class="mb-3">
+                            <h6 class="text-white"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                            <p class="small mb-0">Actions will be available here</p>
+                        </div>
+                        <div>
+                            <h6 class="text-white"><i class="fas fa-file me-2"></i>Document Numbers</h6>
+                            <p class="small mb-0">Document management features</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Products Calculation -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="fas fa-box me-2"></i>Products & Calculation</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="products-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 5%;">No.</th>
+                                <th style="width: 30%;">Products</th>
+                                <th style="width: 10%;">Quantity</th>
+                                <th style="width: 25%;">Price</th>
+                                <th style="width: 25%;">Amount</th>
+                                <th style="width: 5%;">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-tbody">
+                            <tr class="product-row">
+                                <td class="row-number">1</td>
+                                <td>
+                                    <input type="text" class="form-control product-name" name="products[0][name]"
+                                        value="ADT" placeholder="Enter product name">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control product-quantity"
+                                        name="products[0][quantity]" min="1" value="1" placeholder="1">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control product-price" name="products[0][price]"
+                                        step="0.01" value="0" placeholder="0.00">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control product-amount bg-light"
+                                        name="products[0][amount]" step="0.01" value="0.00" readonly>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger delete-product">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-success" id="add-product">
+                            <i class="fas fa-plus me-2"></i>Add Row
+                        </button>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="mb-2">
+                                    <strong>Total: <span id="products-total">0.00</span> THB</strong>
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    This amount is automatically calculated from the products table above and cannot be
+                                    edited manually.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Information -->
+        <div class="card mb-4">
+            <div class="card-header" style="background-color: #28a745; color: white;">
+                <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Financial Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="total_amount" class="form-label">
+                                <i class="fas fa-calculator me-2"></i>Total Amount <small class="text-muted">(Auto-calculated from products above)</small>
+                            </label>
+                            <input type="number" class="form-control bg-light" id="total_amount" name="total_amount" 
+                                   step="0.01" value="0.00" readonly>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                This amount is automatically calculated from the products table above and cannot be edited manually.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="currency" class="form-label">
+                                <i class="fas fa-money-bill-wave me-2"></i>Currency
+                            </label>
+                            <select class="form-select" id="currency" name="currency">
+                                <option value="THB" selected>🇹🇭 Thai Baht (THB)</option>
+                                <option value="USD">🇺🇸 US Dollar (USD)</option>
+                                <option value="EUR">🇪🇺 Euro (EUR)</option>
+                                <option value="GBP">🇬🇧 British Pound (GBP)</option>
+                                <option value="JPY">🇯🇵 Japanese Yen (JPY)</option>
+                                <option value="CNY">🇨🇳 Chinese Yuan (CNY)</option>
+                                <option value="SGD">🇸🇬 Singapore Dollar (SGD)</option>
+                                <option value="MYR">🇲🇾 Malaysian Ringgit (MYR)</option>
+                                <option value="AUD">🇦🇺 Australian Dollar (AUD)</option>
+                                <option value="CAD">🇨🇦 Canadian Dollar (CAD)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Special Requests -->
+        <div class="card mb-4">
+            <div class="card-header" style="background-color: #f0ad4e; color: white;">
+                <h6 class="mb-0"><i class="fas fa-star me-2"></i>Special Requests</h6>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="special_request" name="special_request" rows="3"
+                    placeholder="Any special requirements..."></textarea>
+                <div class="form-text">These notes will be visible to all staff members</div>
+            </div>
+        </div>
+
+        <!-- Admin Notes -->
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="fas fa-user-shield me-2"></i>Admin Notes</h6>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="admin_notes" name="admin_notes" rows="3"
+                    placeholder="Critical administrative information"></textarea>
+                <div class="form-text">Critical administrative information</div>
+            </div>
+        </div>
+
+        <!-- Manager Memos -->
+        <div class="card mb-4">
+            <div class="card-header" style="background-color: #17a2b8; color: white;">
+                <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Manager Memos</h6>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="manager_memo" name="manager_memo" rows="4"
+                    placeholder="Management instructions and notes"></textarea>
+                <div class="form-text">Management instructions and notes</div>
+            </div>
+        </div>
+
+        <!-- Internal Notes -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Internal Notes</h6>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="internal_note" name="internal_note" rows="3"
+                    placeholder="Internal notes (not visible to customer)"></textarea>
+                <div class="form-text">Only staff can see this.</div>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="d-flex justify-content-end gap-2">
+            <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Booking
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Auto-calculate total guests
+        const adultsInput = document.getElementById('adults');
+        const childrenInput = document.getElementById('children');
+        const infantsInput = document.getElementById('infants');
+        const totalPaxInput = document.getElementById('total_pax');
+
+        function updateTotalPax() {
+            const adults = parseInt(adultsInput.value) || 0;
+            const children = parseInt(childrenInput.value) || 0;
+            const total = adults + children;
+            totalPaxInput.value = total;
+        }
+
+        adultsInput.addEventListener('input', updateTotalPax);
+        childrenInput.addEventListener('input', updateTotalPax);
+        infantsInput.addEventListener('input', updateTotalPax);
+
+        // Initialize calculation
+        updateTotalPax();
+
+        // Products table functionality
+        let rowCounter = 1;
+
+        function updateRowNumbers() {
+            const rows = document.querySelectorAll('#products-tbody tr');
+            rows.forEach((row, index) => {
+                const rowNumber = row.querySelector('.row-number');
+                if (rowNumber) {
+                    rowNumber.textContent = index + 1;
+                }
+
+                // Update name attributes
+                const inputs = row.querySelectorAll('input');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        input.setAttribute('name', name.replace(/\[\d+\]/, `[${index}]`));
+                    }
+                });
+            });
+        }
+
+        function calculateProductAmount(row) {
+            const quantity = parseFloat(row.querySelector('.product-quantity').value) || 0;
+            const price = parseFloat(row.querySelector('.product-price').value) || 0;
+            const amount = quantity * price;
+            row.querySelector('.product-amount').value = amount.toFixed(2);
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let total = 0;
+            document.querySelectorAll('.product-amount').forEach(amountInput => {
+                total += parseFloat(amountInput.value) || 0;
+            });
+            document.getElementById('products-total').textContent = total.toFixed(2);
+            
+            // Update Total Amount in Financial Information section
+            const totalAmountInput = document.getElementById('total_amount');
+            if (totalAmountInput) {
+                totalAmountInput.value = total.toFixed(2);
+            }
+        }
+
+        // Add product row
+        document.getElementById('add-product').addEventListener('click', function () {
+            rowCounter++;
+            const tbody = document.getElementById('products-tbody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'product-row';
+            newRow.innerHTML = `
+                <td class="row-number">${rowCounter}</td>
+                <td>
+                    <input type="text" class="form-control product-name"
+                        name="products[${rowCounter - 1}][name]" placeholder="Enter product name">
+                </td>
+                <td>
+                    <input type="number" class="form-control product-quantity"
+                        name="products[${rowCounter - 1}][quantity]" min="1" value="1" placeholder="1">
+                </td>
+                <td>
+                    <input type="number" class="form-control product-price"
+                        name="products[${rowCounter - 1}][price]" step="0.01" value="0" placeholder="0.00">
+                </td>
+                <td>
+                    <input type="number" class="form-control product-amount bg-light"
+                        name="products[${rowCounter - 1}][amount]" step="0.01" value="0.00" readonly>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger delete-product">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(newRow);
+            updateRowNumbers();
+        });
+
+        // Delete product row
+        document.addEventListener('click', function (e) {
+            if (e.target.closest('.delete-product')) {
+                const row = e.target.closest('tr');
+                if (document.querySelectorAll('#products-tbody tr').length > 1) {
+                    row.remove();
+                    updateRowNumbers();
+                    calculateTotal();
+                }
+            }
+        });
+
+        // Calculate amount when quantity or price changes
+        document.addEventListener('input', function (e) {
+            if (e.target.matches('.product-quantity, .product-price')) {
+                const row = e.target.closest('tr');
+                calculateProductAmount(row);
+            }
+        });
+
+        // Add form field animations
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function () {
+                this.closest('.form-group, .mb-3')?.style.setProperty('transform', 'scale(1.02)');
+                this.closest('.form-group, .mb-3')?.style.setProperty('transition', 'transform 0.2s ease');
+            });
+
+            input.addEventListener('blur', function () {
+                this.closest('.form-group, .mb-3')?.style.setProperty('transform', 'scale(1)');
+            });
+        });
+    });
+</script>
+{% endblock %}

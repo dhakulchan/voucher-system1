@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}แดชบอร์ด - ระบบจัดการใบบัตรทัวร์{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">แดชบอร์ด</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('booking.create') }}" class="btn btn-sm btn-primary">
+                <i class="fas fa-plus me-1"></i>สร้างการจองใหม่
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- สถิติการจอง -->
+<div class="row mb-4">
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            ลูกค้าทั้งหมด</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_customers }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            การจองทั้งหมด</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_bookings }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-secondary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                            แบบร่าง</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ draft_bookings }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-edit fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            รอดำเนินการ</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ pending_bookings }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            ยืนยันแล้ว</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ confirmed_bookings }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            ยกเลิก</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ cancelled_bookings }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            ออกวอชเชอร์</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ vouchered_bookings }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-ticket-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="col-auto">
+    <i class="fas fa-baht-sign fa-2x text-gray-300"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- การจองล่าสุด -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">การจองล่าสุด</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_bookings %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>เลขที่อ้างอิง</th>
+                                <th>ลูกค้า</th>
+                                <th>ประเภท</th>
+                                <th>สถานะ</th>
+                                <th>จำนวนเงิน</th>
+                                <th>วันที่</th>
+                                <th>การดำเนินการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_bookings %}
+                            <tr>
+                                <td><span class="badge bg-info">{{ booking.booking_reference }}</span></td>
+                                <td>{{ booking.customer.name }}</td>
+                                <td>
+                                    {% if booking.booking_type == 'tour' %}
+                                    <span class="badge bg-success">ทัวร์</span>
+                                    {% elif booking.booking_type == 'hotel' %}
+                                    <span class="badge bg-primary">โรงแรม</span>
+                                    {% elif booking.booking_type == 'transport' %}
+                                    <span class="badge bg-warning">รถรับส่ง</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ booking.booking_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if booking.status == 'pending' %}
+                                    <span class="badge bg-warning">รอดำเนินการ</span>
+                                    {% elif booking.status == 'confirmed' %}
+                                    <span class="badge bg-success">ยืนยันแล้ว</span>
+                                    {% elif booking.status == 'cancelled' %}
+                                    <span class="badge bg-danger">ยกเลิก</span>
+                                    {% elif booking.status == 'completed' %}
+                                    <span class="badge bg-info">เสร็จสิ้น</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ booking.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>฿{{ "{:,.2f}".format(booking.total_amount|float if booking.total_amount else 0) }}
+                                </td>
+                                <td>{{ booking.created_at.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <a href="{{ url_for('booking.view', id=booking.id) }}"
+                                        class="btn btn-sm btn-outline-primary" title="ดูรายละเอียด">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if booking.booking_type == 'tour' %}
+                                    <a href="{{ url_for('voucher.view', id=booking.id) }}"
+                                        class="btn btn-sm btn-outline-success" title="ใบรับรองทัวร์">
+                                        <i class="fas fa-ticket-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('dashboard.bookings') }}" class="btn btn-outline-primary">
+                        ดูการจองทั้งหมด <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">ยังไม่มีการจอง</p>
+                    <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>สร้างการจองแรก
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- ประเภทการจอง -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">ประเภทการจอง</h6>
+            </div>
+            <div class="card-body">
+                {% if booking_types %}
+                {% for booking_type, count in booking_types %}
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center">
+                        {% if booking_type == 'tour' %}
+                        <i class="fas fa-route text-success me-2"></i>
+                        <span>ทัวร์</span>
+                        {% elif booking_type == 'hotel' %}
+                        <i class="fas fa-bed text-primary me-2"></i>
+                        <span>โรงแรม</span>
+                        {% elif booking_type == 'transport' %}
+                        <i class="fas fa-car text-warning me-2"></i>
+                        <span>รถรับส่ง</span>
+                        {% else %}
+                        <i class="fas fa-question-circle text-secondary me-2"></i>
+                        <span>{{ booking_type }}</span>
+                        {% endif %}
+                    </div>
+                    <span class="badge bg-primary">{{ count }}</span>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted text-center">ไม่มีข้อมูลการจอง</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- การดำเนินการด่วน -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">การดำเนินการด่วน</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>สร้างการจองใหม่
+                    </a>
+                    <a href="{{ url_for('dashboard.customers') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-users me-2"></i>จัดการลูกค้า
+                    </a>
+                    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-info">
+                        <i class="fas fa-calendar-alt me-2"></i>การจอง
+                    </a>
+                    <a href="{{ url_for('quote.list_quotes') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-file-alt me-2"></i>ใบเสนอราคา
+                    </a>
+                    <a href="{{ url_for('voucher.list') }}" class="btn btn-outline-success">
+                        <i class="fas fa-ticket-alt me-2"></i>ใบบัตรทัวร์
+                    </a>
+                    <a href="{{ url_for('dashboard.reports') }}" class="btn btn-outline-info">
+                        <i class="fas fa-chart-bar me-2"></i>ดูรายงาน
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- สถิติแบบเรียลไทม์ -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">สถิติวันนี้</h6>
+                <small class="text-muted">อัปเดตแบบเรียลไทม์</small>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <i class="fas fa-calendar-plus fa-2x text-primary mb-2"></i>
+                            <h4 class="mb-0" id="todayBookings">-</h4>
+                            <small class="text-muted">การจองวันนี้</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <i class="fas fa-money-bill-wave fa-2x text-success mb-2"></i>
+                            <h4 class="mb-0" id="todayRevenue">-</h4>
+                            <small class="text-muted">รายได้วันนี้</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <i class="fas fa-calendar-week fa-2x text-info mb-2"></i>
+                            <h4 class="mb-0" id="weekBookings">-</h4>
+                            <small class="text-muted">การจองสัปดาห์นี้</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <i class="fas fa-chart-line fa-2x text-warning mb-2"></i>
+                            <h4 class="mb-0" id="weekRevenue">-</h4>
+                            <small class="text-muted">รายได้สัปดาห์นี้</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .border-left-primary {
+        border-left: 4px solid #007bff !important;
+    }
+
+    .border-left-success {
+        border-left: 4px solid #28a745 !important;
+    }
+
+    .border-left-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+
+    .border-left-info {
+        border-left: 4px solid #17a2b8 !important;
+    }
+
+    .stat-item {
+        padding: 1rem;
+    }
+
+    .fa-baht-sign:before {
+        content: "฿";
+        font-family: inherit;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // โหลดสถิติแบบเรียลไทม์
+    function loadRealtimeStats() {
+        fetch('{{ url_for("dashboard.dashboard_stats") }}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('todayBookings').textContent = data.today.bookings;
+                document.getElementById('todayRevenue').textContent = '฿' + data.today.revenue.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+                document.getElementById('weekBookings').textContent = data.this_week.bookings;
+                document.getElementById('weekRevenue').textContent = '฿' + data.this_week.revenue.toLocaleString('th-TH', { minimumFractionDigits: 2 });
+            })
+            .catch(error => {
+                console.error('Error loading stats:', error);
+            });
+    }
+
+    // โหลดสถิติเมื่อหน้าเว็บโหลดเสร็จ
+    document.addEventListener('DOMContentLoaded', function () {
+        loadRealtimeStats();
+
+        // อัปเดตทุก 30 วินาที
+        setInterval(loadRealtimeStats, 30000);
+    });
+</script>
+{% endblock %}

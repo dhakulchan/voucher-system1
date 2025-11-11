@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice Ninja Bookings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">
+        <i class="fas fa-receipt"></i>
+        {{ _('Bookings with Invoice Ninja Integration') }}
+    </h1>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-plug"></i>
+                        {{ _('Invoice Ninja Status') }}
+                    </h5>
+                    <div id="invoiceNinjaStatus">
+                        <span class="badge bg-secondary">{{ _('Checking...') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        {{ _('Integration Statistics') }}
+                    </h5>
+                    <p class="mb-1">
+                        <strong>{{ _('Total Bookings with Quotes') }}:</strong>
+                        {{ bookings|selectattr('quote_id')|list|length }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>{{ _('Total Bookings with Invoices') }}:</strong>
+                        {{ bookings|selectattr('invoice_id')|list|length }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if bookings %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i>
+                {{ _('Bookings with Invoice Ninja Integration') }}
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>{{ _('Booking ID') }}</th>
+                            <th>{{ _('Customer') }}</th>
+                            <th>{{ _('Tour Name') }}</th>
+                            <th>{{ _('Date') }}</th>
+                            <th>{{ _('Amount') }}</th>
+                            <th>{{ _('Quote ID') }}</th>
+                            <th>{{ _('Invoice ID') }}</th>
+                            <th>{{ _('Actions') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('booking.view', id=booking.id) }}" class="text-decoration-none">
+                                    {{ booking.booking_id }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if booking.customer %}
+                                {{ booking.customer.first_name }} {{ booking.customer.last_name }}
+                                {% else %}
+                                {{ _('No Customer') }}
+                                {% endif %}
+                            </td>
+                            <td>{{ booking.booking_type }} - {{ booking.booking_reference }}</td>
+                            <td>{{ booking.arrival_date.strftime('%d/%m/%Y') if booking.arrival_date else _('No Date')
+                                }}</td>
+                            <td>
+                                <span class="badge bg-success">
+                                    ฿{{ "{:,.2f}".format(booking.total_amount|float if booking.total_amount else 0) }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if booking.quote_id %}
+                                <span class="badge bg-info">{{ booking.quote_id }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('No Quote') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if booking.invoice_id %}
+                                <span class="badge bg-warning">{{ booking.invoice_id }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ _('No Invoice') }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    {% if not booking.quote_id %}
+                                    <form method="POST"
+                                        action="{{ url_for('invoice.create_quote', booking_id=booking.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-outline-info btn-sm"
+                                            title="{{ _('Create Quote') }}">
+                                            <i class="fas fa-file-alt"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+
+                                    {% if not booking.invoice_id %}
+                                    <form method="POST"
+                                        action="{{ url_for('invoice.create_invoice', booking_id=booking.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm"
+                                            title="{{ _('Create Invoice') }}">
+                                            <i class="fas fa-file-invoice"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+
+                                    {% if booking.invoice_id %}
+                                    <form method="POST"
+                                        action="{{ url_for('invoice.send_invoice', booking_id=booking.id) }}"
+                                        class="d-inline">
+                                        <button type="submit" class="btn btn-outline-primary btn-sm"
+                                            title="{{ _('Send Invoice') }}">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
+                                    </form>
+
+                                    <form method="POST"
+                                        action="{{ url_for('invoice.mark_paid', booking_id=booking.id) }}"
+                                        class="d-inline">
+                                        <input type="hidden" name="amount" value="{{ booking.total_amount }}">
+                                        <button type="submit" class="btn btn-outline-success btn-sm"
+                                            title="{{ _('Mark as Paid') }}">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center">
+        <i class="fas fa-info-circle fa-2x mb-3"></i>
+        <h4>{{ _('No Invoice Ninja Integration Found') }}</h4>
+        <p>{{ _('No bookings have been integrated with Invoice Ninja yet.') }}</p>
+        <a href="{{ url_for('booking.list') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> {{ _('Go to Bookings') }}
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Check Invoice Ninja status on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('{{ url_for("invoice.status") }}')
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('invoiceNinjaStatus');
+                if (data.connected) {
+                    statusDiv.innerHTML = `
+                    <span class="badge bg-success">{{ _('Connected') }}</span>
+                    <small class="text-muted d-block mt-1">
+                        Company: ${data.company_name || 'Unknown'}<br>
+                        User: ${data.user_name || 'Unknown'}
+                    </small>
+                `;
+                } else {
+                    statusDiv.innerHTML = `
+                    <span class="badge bg-danger">{{ _('Disconnected') }}</span>
+                    ${data.error ? `<small class="text-muted d-block mt-1">${data.error}</small>` : ''}
+                `;
+                }
+            })
+            .catch(error => {
+                const statusDiv = document.getElementById('invoiceNinjaStatus');
+                statusDiv.innerHTML = '<span class="badge bg-danger">{{ _("Connection Error") }}</span>';
+            });
+    });
+</script>
+{% endblock %}

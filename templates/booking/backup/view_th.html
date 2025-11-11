@@ -1,0 +1,1746 @@
+{% extends "base.html" %}
+
+{% block title %}รายละเอียดการจอง #{{ booking.booking_number }} - ระบบจัดการใบบัตรทัวร์{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div c <div class="card-body">
+        <p class="mb-0">
+            {% for guest in guests %}
+            {% if guest and guest.strip() %}
+            {{ guest|replace('\n', '<br>')|replace('</p>', '</p><br>')|replace('/n', '<br>')|replace(',', ',<br>')|safe
+        }}{% if not loop.last %}<br>{% endif %}
+        {% endif %}
+        {% endfor %}
+        </p>
+    </div>d-body">
+    <p class="mb-0">
+        {% for guest in guests %}
+        {% if guest and guest.strip() %}
+        {{ guest|replace('\n', '<br>')|replace('</p>', '</p><br>')|replace('/n', '<br>')|replace(',', ',<br>')|safe
+    }}{% if not loop.last %}, {% endif %}
+    {% endif %}
+    {% endfor %}
+    </p>
+</div>ass="h2">
+<i class="fas fa-eye me-2 text-primary"></i>รายละเอียดการจอง #{{ booking.booking_number }}
+</h1>
+<div class="btn-toolbar mb-2 mb-md-0">
+    <div class="btn-group me-2">
+        <a href="{{ url_for('booking.edit', id=booking.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit me-2"></i>ดู/แก้ไข
+        </a>
+
+        {% if booking.status == 'quoted' or booking.status == 'paid' or booking.status == 'vouchered' %}
+        <!-- Status-based PDF/PNG Buttons -->
+        {% if booking.status == 'quoted' %}
+        <!-- Quote Status: Quote PDF -->
+        <a href="{{ url_for('booking.generate_quote_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+            class="btn btn-info" target="_blank">
+            <i class="fas fa-file-pdf me-2"></i>Quote PDF (ใบเสนอราคา)
+        </a>
+        <a href="{{ url_for('booking.email_quote_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
+            <i class="fas fa-envelope me-2"></i>ส่งลิงก์-ข้อความ
+        </a>
+        {% elif booking.status == 'paid' %}
+        <!-- Paid Status: Quote / Provisional Receipt PDF -->
+        <a href="{{ url_for('booking.generate_quote_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+            class="btn btn-info" target="_blank">
+            <i class="fas fa-file-pdf me-2"></i>Quote / Provisional Receipt PDF (ใบเสนอราคา / ใบเสร็จชั่วคราว)
+        </a>
+        <a href="{{ url_for('booking.email_quote_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
+            <i class="fas fa-envelope me-2"></i>ส่งลิงก์-ข้อความ
+        </a>
+        {% elif booking.status == 'vouchered' %}
+        <!-- Vouchered Status: Tour Voucher PDF -->
+        <a href="{{ url_for('voucher.generate_pdf', id=booking.id) }}?v={{ timestamp() }}" class="btn btn-info"
+            target="_blank">
+            <i class="fas fa-file-pdf me-2"></i>Tour Voucher PDF (ใบบัตรทัวร์)
+        </a>
+        <a href="{{ url_for('voucher.email_voucher', id=booking.id) }}" class="btn btn-outline-info">
+            <i class="fas fa-envelope me-2"></i>ส่งลิงก์-ข้อความ
+        </a>
+        {% endif %}
+
+        <!-- Status-based PNG with Share Options -->
+        <div class="btn-group" role="group">
+            {% if booking.status == 'quoted' %}
+            <a href="{{ url_for('booking.generate_quote_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                class="btn btn-secondary" target="_blank">
+                <i class="fas fa-image me-2"></i>Quote PNG (ใบเสนอราคา)
+            </a>
+            {% elif booking.status == 'paid' %}
+            <a href="{{ url_for('booking.generate_quote_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                class="btn btn-secondary" target="_blank">
+                <i class="fas fa-image me-2"></i>Quote / Provisional Receipt PNG (ใบเสนอราคา / ใบเสร็จชั่วคราว)
+            </a>
+            {% elif booking.status == 'vouchered' %}
+            <a href="{{ url_for('voucher.generate_png', id=booking.id) }}?v={{ timestamp() }}" class="btn btn-secondary"
+                target="_blank">
+                <i class="fas fa-image me-2"></i>Tour Voucher PNG (ใบบัตรทัวร์)
+            </a>
+            {% endif %}
+            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { shareToLineOA('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('shareToLineOA error:', e); }">
+                        <i class="fab fa-line me-2" style="color: #00B900;"></i>ส่งไปยัง Line OA
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { copyLineMessage('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('copyLineMessage error:', e); }">
+                        <i class="fas fa-copy me-2"></i>คัดลอกข้อความ Line
+                    </a>
+                </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { shareToSocialMedia('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('shareToSocialMedia error:', e); }">
+                        <i class="fas fa-share-alt me-2"></i>โซเชียลมีเดีย
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { openSharePage('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('openSharePage error:', e); }">
+                        <i class="fas fa-external-link-alt me-2"></i>เปิดหน้าแชร์
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% elif booking.status not in ['draft', 'cancelled'] %}
+        <!-- Service Proposal PDF/PNG Buttons for pending/confirmed and other statuses -->
+        {% if booking.status in ['pending', 'confirmed'] %}
+        <!-- Pending/Confirmed Status: Service Proposal PDF -->
+        <a href="{{ url_for('booking.generate_booking_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+            class="btn btn-info" target="_blank">
+            <i class="fas fa-file-pdf me-2"></i>Service Proposal PDF (ข้อเสนอบริการ)
+        </a>
+        <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
+            <i class="fas fa-envelope me-2"></i>ส่งลิงก์-ข้อความ
+        </a>
+        {% else %}
+        <!-- Default Status: Service Proposal PDF -->
+        <a href="{{ url_for('booking.generate_booking_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+            class="btn btn-info" target="_blank">
+            <i class="fas fa-file-pdf me-2"></i>Service Proposal PDF (ข้อเสนอบริการ)
+        </a>
+        <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
+            <i class="fas fa-envelope me-2"></i>ส่งลิงก์-ข้อความ
+        </a>
+        {% endif %}
+
+        <!-- Service Proposal PNG with Share Options -->
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('booking.generate_booking_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                class="btn btn-secondary" target="_blank">
+                <i class="fas fa-image me-2"></i>Service Proposal PNG (ข้อเสนอบริการ)
+            </a>
+            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { shareToLineOA('{{ booking.id|default(0) }}'); } catch(e) { console.error('shareToLineOA error:', e); }">
+                        <i class="fab fa-line me-2" style="color: #00B900;"></i>ส่งไปยัง Line OA
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { copyLineMessage('{{ booking.id|default(0) }}'); } catch(e) { console.error('copyLineMessage error:', e); }">
+                        <i class="fas fa-copy me-2"></i>คัดลอกข้อความ Line
+                    </a>
+                </li>
+                <li>
+                    <hr class="dropdown-divider">
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { shareToSocialMedia('{{ booking.id|default(0) }}'); } catch(e) { console.error('shareToSocialMedia error:', e); }">
+                        <i class="fas fa-share-alt me-2"></i>โซเชียลมีเดีย
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="#"
+                        onclick="try { openSharePage('{{ booking.id|default(0) }}'); } catch(e) { console.error('openSharePage error:', e); }">
+                        <i class="fas fa-external-link-alt me-2"></i>เปิดหน้าแชร์
+                    </a>
+                </li>
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if booking.status == 'confirmed' %}
+        <!-- Show voucher button if invoice exists (for demo, would check paid status in production) -->
+        {% if booking.invoice_number %}
+        <a href="{{ url_for('voucher.view', id=booking.id) }}" class="btn btn-success">
+            <i class="fas fa-ticket-alt me-2"></i>เปิดใบบัตรทัวร์
+        </a>
+        {% else %}
+        <span class="text-muted small">ใบบัตรทัวร์พร้อมใช้หลังจากชำระเงินแล้ว</span>
+        {% endif %}
+        {% endif %}
+    </div>
+    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left me-2"></i>กลับ
+    </a>
+</div>
+</div>
+
+<!-- Status Alert -->
+<div class="row mb-4">
+    <div class="col-12">
+        {% if booking.status == 'pending' %}
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-clock me-2"></i>
+            <strong>สถานะ: รอดำเนินการ</strong> - การจองนี้รอการยืนยันจากเจ้าหน้าที่
+        </div>
+        {% elif booking.status == 'confirmed' %}
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>สถานะ: ยืนยันแล้ว</strong> - การจองนี้ได้รับการยืนยันแล้ว
+        </div>
+        {% elif booking.status == 'completed' %}
+        <div class="alert alert-info" role="alert">
+            <i class="fas fa-flag-checkered me-2"></i>
+            <strong>สถานะ: เสร็จสิ้น</strong> - ทัวร์ได้ดำเนินการเสร็จสิ้นแล้ว
+        </div>
+        {% elif booking.status == 'cancelled' %}
+        <div class="alert alert-danger" role="alert">
+            <i class="fas fa-times-circle me-2"></i>
+            <strong>สถานะ: ยกเลิก</strong> - การจองนี้ถูกยกเลิกแล้ว
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Customer Information -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>ข้อมูลลูกค้า
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>ชื่อ-นามสกุล:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ booking.customer.first_name }} {{ booking.customer.last_name }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>อีเมล:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <a href="mailto:{{ booking.customer.email }}" class="text-decoration-none">
+                            {{ booking.customer.email }}
+                        </a>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>เบอร์โทรศัพท์:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <a href="tel:{{ booking.customer.phone }}" class="text-decoration-none">
+                            {{ booking.customer.phone }}
+                        </a>
+                    </div>
+                </div>
+                {% if booking.customer.nationality %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>สัญชาติ:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ booking.customer.nationality }}
+                    </div>
+                </div>
+                {% endif %}
+                {% if booking.customer.address %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>ที่อยู่:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {{ booking.customer.address }}
+                    </div>
+                </div>
+                {% endif %}
+                {% if booking.customer.notes %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>หมายเหตุ:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <small class="text-muted">{{ booking.customer.notes|replace('\n', '<br>')|replace('</p>', '</p>
+                            <br>')|safe }}</small>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>วันที่สมัครสมาชิก:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="thai-number">{{ booking.customer.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Information -->
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>ข้อมูลการจอง
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>หมายเลขจอง:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-primary fs-6">#{{ booking.booking_number }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>ประเภททัวร์:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-secondary">{{ booking.booking_type }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>ระยะเวลาเดินทาง:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if booking.arrival_date %}
+                        <span class="thai-number">{{ booking.arrival_date.strftime('%d/%m/%Y') }}</span>
+                        {% if booking.departure_date %}
+                        ถึง <span class="thai-number">{{ booking.departure_date.strftime('%d/%m/%Y') }}</span>
+                        {% endif %}
+                        {% else %}
+                        <span class="text-muted">ไม่ได้ระบุ</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- รหัสกรุ๊ป -->
+                {% if booking.party_code %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>รหัสกรุ๊ป:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-info">{{ booking.party_code }}</span>
+                    </div>
+                </div>
+                {% endif %}
+                <!-- รายละเอียดผู้เดินทาง -->
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>จำนวนผู้เดินทาง:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-primary">ผู้ใหญ่: {{ booking.adults or 0 }}</span>
+                            <span class="badge bg-info">เด็ก: {{ booking.children or 0 }}</span>
+                            <span class="badge bg-warning text-dark">ทารก (อายุต่ำกว่า 2 ปี): {{ booking.infants or 0
+                                }}</span>
+                        </div>
+                        <div class="mt-2">
+                            <strong>รวม:</strong> <span class="badge bg-dark">{{ (booking.adults or 0) +
+                                (booking.children or 0) + (booking.infants or 0) }}</span> คน
+                        </div>
+                    </div>
+                </div>
+                <!-- หมายเลขใบเสนอราคาและใบแจ้งหนี้ -->
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>หมายเลขใบเสนอราคา:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if booking.quote_number %}
+                        <a href="{{ url_for('invoice.view_quote', booking_id=booking.id) }}"
+                            class="badge bg-secondary text-decoration-none" title="คลิกเพื่อดูรายละเอียด quote">
+                            {{ booking.quote_number }} <i class="fas fa-eye ms-1"></i>
+                        </a>
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>หมายเลขใบแจ้งหนี้:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        {% if booking.invoice_number %}
+                        <span class="badge bg-success">{{ booking.invoice_number }}</span>
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>วันที่จอง:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="thai-number">{{ booking.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                    </div>
+                </div>
+                <!-- รายชื่อผู้เดินทาง -->
+                {% set guests = booking.get_guest_list() %}
+                {% if guests %}
+                <div class="row">
+                    <div class="col-sm-4">
+                        <strong>รายชื่อผู้เดินทาง:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="small">{{ guests|join(', ') }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Service Detail / Itinerary (moved above Name List) -->
+{% if booking.description %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background-color: #17a2b8; color: white;">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>รายละเอียด / กำหนดการ
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ booking.description|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- รายชื่อผู้เดินทาง -->
+{% set guests = booking.get_guest_list() %}
+{% if guests %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>รายชื่อผู้เดินทาง
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="guest-item" id="guest-list-display-th" style="white-space: pre-line;">
+                    {% set guest_text = booking.get_guest_list_for_edit() %}
+                    {% if guest_text and guest_text.strip() %}
+                    {{ guest_text.strip() }}
+                    {% else %}
+                    <span class="text-muted">
+                        <i class="fas fa-info-circle me-2"></i>ไม่มีรายชื่อผู้เดินทาง
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- ข้อมูลเที่ยวบินและหมายเหตุภายใน -->
+<div class="row mb-4">
+    {% if booking.flight_info %}
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-plane me-2"></i>ข้อมูลเที่ยวบิน
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ booking.flight_info|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if booking.internal_note %}
+    <div class="col-lg-6 mb-3">
+        <div class="card h-100">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard me-2"></i>หมายเหตุภายใน
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0 small text-muted">{{ booking.internal_note|replace('\n', '<br>')|replace('</p>', '</p>
+                <br>')|safe }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Financial Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header" style="background-color: #28a745; color: white;">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-dollar-sign me-2"></i>ข้อมูลทางการเงิน
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-calculator me-2"></i>ยอดรวม
+                                <small class="text-muted">(คำนวณอัตโนมัติจากตารางสินค้าด้านบน)</small>
+                            </label>
+                            <div class="p-3 bg-light rounded">
+                                <h4 class="mb-0 text-primary">
+                                    {% if booking.total_amount %}
+                                    ฿{{ "%.2f"|format(booking.total_amount|float) }}
+                                    {% else %}
+                                    ฿0.00
+                                    {% endif %}
+                                </h4>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                ยอดเงินนี้คำนวณอัตโนมัติจากตารางสินค้าด้านบนและไม่สามารถแก้ไขได้
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">
+                                <i class="fas fa-money-bill-wave me-2"></i>สกุลเงิน
+                            </label>
+                            <div class="p-3 bg-light rounded">
+                                <h5 class="mb-0">
+                                    {% if booking.currency %}
+                                    {% if booking.currency == 'THB' %}🇹🇭 บาทไทย (THB)
+                                    {% elif booking.currency == 'USD' %}🇺🇸 ดอลลาร์สหรัฐ (USD)
+                                    {% elif booking.currency == 'EUR' %}🇪🇺 ยูโร (EUR)
+                                    {% elif booking.currency == 'GBP' %}🇬🇧 ปอนด์อังกฤษ (GBP)
+                                    {% elif booking.currency == 'JPY' %}🇯🇵 เยนญี่ปุ่น (JPY)
+                                    {% elif booking.currency == 'CNY' %}🇨🇳 หยวนจีน (CNY)
+                                    {% elif booking.currency == 'SGD' %}🇸🇬 ดอลลาร์สิงคโปร์ (SGD)
+                                    {% elif booking.currency == 'MYR' %}🇲🇾 ริงกิตมาเลเซีย (MYR)
+                                    {% elif booking.currency == 'AUD' %}🇦🇺 ดอลลาร์ออสเตรเลีย (AUD)
+                                    {% elif booking.currency == 'CAD' %}🇨🇦 ดอลลาร์แคนาดา (CAD)
+                                    {% else %}{{ booking.currency }}
+                                    {% endif %}
+                                    {% else %}
+                                    🇹🇭 บาทไทย (THB)
+                                    {% endif %}
+                                </h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tour Details and Special Requests -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        {% if booking.special_request %}
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-sticky-note me-2"></i>ความต้องการพิเศษ
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ booking.special_request|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Admin Notes -->
+        {% if booking.admin_notes %}
+        <div class="card mt-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0 d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-user-shield me-2"></i>หมายเหตุผู้ดูแลระบบ
+                        <span class="badge bg-light text-dark ms-2">
+                            <i class="fas fa-lock me-1"></i>เฉพาะแอดมิน
+                        </span>
+                    </span>
+                    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#adminNotesContent" aria-expanded="false" aria-controls="adminNotesContent">
+                        <i class="fas fa-eye me-1"></i>แสดง
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse" id="adminNotesContent">
+                <div class="card-body">
+                    <div class="alert alert-danger mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>ส่วนตัว:</strong> ข้อมูลนี้มองเห็นได้เฉพาะผู้ดูแลระบบเท่านั้น
+                    </div>
+                    <div class="mb-0" style="white-space: pre-line;">{{ booking.admin_notes|replace('\r\n',
+                        '<br>')|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Manager Memos -->
+        {% if booking.manager_memos %}
+        <div class="card mt-4 border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0 d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="fas fa-clipboard-list me-2"></i>บันทึกผู้จัดการ
+                        <span class="badge bg-light text-dark ms-2">
+                            <i class="fas fa-briefcase me-1"></i>ผู้จัดการ
+                        </span>
+                    </span>
+                    <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#managerMemosContent" aria-expanded="false" aria-controls="managerMemosContent">
+                        <i class="fas fa-eye me-1"></i>แสดง
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse" id="managerMemosContent">
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>ระดับผู้จัดการ:</strong> หมายเหตุและคำแนะนำสำคัญสำหรับผู้จัดการ
+                    </div>
+                    <div class="mb-0" style="white-space: pre-line;">{{ booking.manager_memos|replace('\r\n',
+                        '<br>')|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Payment Information -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-money-bill me-2"></i>ข้อมูลการชำระเงิน
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-6">
+                            <strong>ผู้ใหญ่:</strong>
+                        </div>
+                        <div class="col-6 text-end">
+                            <span class="thai-number">{{ booking.total_pax }}</span> ×
+                            <span class="thai-number">{{ "{:,.0f}".format((booking.total_amount or 0) /
+                                booking.total_pax if
+                                booking.total_pax > 0 else 0) }}</span>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>ราคารวม:</strong>
+                        </div>
+                        <div class="col-6 text-end">
+                            <strong class="text-success thai-number">{{ "{:,.2f}".format(booking.total_amount or 0)
+                                }}</strong>
+                            บาท
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>การดำเนินการ
+                    </h5>
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-center">
+                    {% if not booking.quote_id %}
+                    <form method="POST" action="{{ url_for('invoice.create_quote', booking_id=booking.id) }}"
+                        class="d-inline">
+                        <button type="submit" class="btn btn-outline-info">
+                            <i class="fas fa-file-alt me-2"></i>สร้าง Quote
+                        </button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted">Quote ถูกสร้างแล้ว</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Vouchers -->
+    {% if booking.vouchers %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-ticket-alt me-2"></i>ใบบัตรที่เกี่ยวข้อง
+                        <span class="badge bg-light text-dark ms-2 thai-number">{{ booking.vouchers|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>หมายเลขใบบัตร</th>
+                                    <th>ประเภท</th>
+                                    <th>สถานะ</th>
+                                    <th>วันที่สร้าง</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for voucher in booking.vouchers %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold text-primary">#{{ voucher.voucher_number }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ voucher.voucher_type }}</span>
+                                    </td>
+                                    <td>
+                                        {% if voucher.status == 'active' %}
+                                        <span class="badge bg-success">ใช้งานได้</span>
+                                        {% elif voucher.status == 'used' %}
+                                        <span class="badge bg-secondary">ใช้แล้ว</span>
+                                        {% elif voucher.status == 'expired' %}
+                                        <span class="badge bg-danger">หมดอายุ</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="thai-number">{{ voucher.created_at.strftime('%d/%m/%Y %H:%M')
+                                            }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('voucher.view', id=voucher.id) }}"
+                                                class="btn btn-outline-primary btn-sm" title="ดูใบบัตร">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('voucher.download', id=voucher.id) }}"
+                                                class="btn btn-outline-success btn-sm" title="ดาวน์โหลด PDF">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {#
+    Invoice Ninja Integration - ซ่อนชั่วคราว
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-receipt me-2"></i>การเชื่อมต่อ Invoice Ninja
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-3"><strong>สถานะ Quote:</strong></span>
+                                {% if booking.quote_id %}
+                                <span class="badge bg-info">{{ booking.quote_id }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">ยังไม่มี Quote</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-3"><strong>สถานะ Invoice:</strong></span>
+                                {% if booking.invoice_id %}
+                                <span class="badge bg-warning">{{ booking.invoice_id }}</span>
+                                {% else %}
+                                <span class="badge bg-secondary">ยังไม่มี Invoice</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="btn-group" role="group">
+                        {% if not booking.quote_id %}
+                        <form method="POST" action="{{ url_for('invoice.create_quote', booking_id=booking.id) }}"
+                            class="d-inline">
+                            <button type="submit" class="btn btn-outline-info me-2">
+                                <i class="fas fa-file-alt me-2"></i>สร้าง Quote
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if not booking.invoice_id %}
+                        <form method="POST" action="{{ url_for('invoice.create_invoice', booking_id=booking.id) }}"
+                            class="d-inline">
+                            <button type="submit" class="btn btn-outline-warning me-2">
+                                <i class="fas fa-file-invoice me-2"></i>สร้าง Invoice
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if booking.invoice_id %}
+                        <form method="POST" action="{{ url_for('invoice.send_invoice', booking_id=booking.id) }}"
+                            class="d-inline">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-envelope me-2"></i>ส่ง Invoice ทางอีเมล
+                            </button>
+                        </form>
+
+                        <!-- Mark as Paid with Password Protection -->
+                        {% if not booking.is_paid %}
+                        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal"
+                            data-bs-target="#markPaidModal" data-booking-id="{{ booking.id }}"
+                            data-invoice-number="{{ booking.invoice_number }}"
+                            data-quote-number="{{ booking.quote_number }}"
+                            data-invoice-status="{{ booking.invoice_status }}">
+                            <i class="fas fa-check-circle me-2"></i>ทำเครื่องหมายชำระแล้ว
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-outline-success me-2" data-bs-toggle="modal"
+                            data-bs-target="#confirmPaidModal" data-booking-id="{{ booking.id }}"
+                            data-invoice-number="{{ booking.invoice_number }}"
+                            data-quote-number="{{ booking.quote_number }}"
+                            data-invoice-status="{{ booking.invoice_status }}"
+                            title="คลิกเพื่อยืนยันการชำระเงินและเปิดใช้งานการสร้างคูปอง">
+                            <i class="fas fa-check-circle me-1"></i>ชำระเงินแล้ว
+                        </button>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    #} <!-- Status Change Actions -->
+    {% if booking.status != 'cancelled' %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>การจัดการสถานะ
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        {% if booking.status == 'pending' %}
+                        <form method="POST" action="{{ url_for('booking.update_status', id=booking.id) }}"
+                            class="d-inline">
+                            <input type="hidden" name="status" value="confirmed">
+                            <button type="submit" class="btn btn-success me-2">
+                                <i class="fas fa-check me-2"></i>ยืนยันการจอง
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if booking.status in ['pending', 'confirmed'] %}
+                        <form method="POST" action="{{ url_for('booking.update_status', id=booking.id) }}"
+                            class="d-inline">
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="btn btn-danger me-2"
+                                onclick="return confirm('คุณต้องการยกเลิกการจองนี้หรือไม่?')">
+                                <i class="fas fa-times me-2"></i>ยกเลิกการจอง
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+        // Auto-refresh page every 30 seconds for status updates
+        setTimeout(function () {
+            location.reload();
+        }, 30000);
+
+        // Handle collapse toggle for Admin Notes and Manager Memos
+        document.addEventListener('DOMContentLoaded', function () {
+            const adminNotesCollapse = document.getElementById('adminNotesContent');
+            const managerMemosCollapse = document.getElementById('managerMemosContent');
+
+            if (adminNotesCollapse) {
+                const adminButton = document.querySelector('[data-bs-target="#adminNotesContent"]');
+                adminNotesCollapse.addEventListener('show.bs.collapse', function () {
+                    if (adminButton) {
+                        adminButton.innerHTML = '<i class="fas fa-eye-slash me-1"></i>ซ่อน';
+                    }
+                });
+                adminNotesCollapse.addEventListener('hide.bs.collapse', function () {
+                    if (adminButton) {
+                        adminButton.innerHTML = '<i class="fas fa-eye me-1"></i>แสดง';
+                    }
+                });
+            }
+
+            if (managerMemosCollapse) {
+                const managerButton = document.querySelector('[data-bs-target="#managerMemosContent"]');
+                managerMemosCollapse.addEventListener('show.bs.collapse', function () {
+                    if (managerButton) {
+                        managerButton.innerHTML = '<i class="fas fa-eye-slash me-1"></i>ซ่อน';
+                    }
+                });
+                managerMemosCollapse.addEventListener('hide.bs.collapse', function () {
+                    if (managerButton) {
+                        managerButton.innerHTML = '<i class="fas fa-eye me-1"></i>แสดง';
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Mark as Paid Modal (Thai) -->
+    <div class="modal fade" id="markPaidModal" tabindex="-1" aria-labelledby="markPaidModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="markPaidModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>ทำเครื่องหมายชำระเงินแล้ว
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="ปิด"></button>
+                </div>
+                <form id="markPaidForm" method="POST">
+                    <div class="modal-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>สำหรับผู้ดูแลระบบ:</strong>
+                            การดำเนินการนี้จะทำเครื่องหมายใบแจ้งหนี้ว่าชำระแล้วและเปิดใช้งานการสร้างคูปอง
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="quoteNumberEdit" class="form-label">หมายเลข Quote:</label>
+                                <input type="text" class="form-control" id="quoteNumberEdit" name="quote_number"
+                                    placeholder="QT0344997">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="invoiceNumberEdit" class="form-label">หมายเลข Invoice:</label>
+                                <input type="text" class="form-control" id="invoiceNumberEdit" name="invoice_number"
+                                    placeholder="AR0388592">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="statusEdit" class="form-label">สถานะ Invoice:</label>
+                            <select class="form-select" id="statusEdit" name="invoice_status">
+                                <option value="">-- เลือกสถานะ --</option>
+                                <option value="unknown">Unknown</option>
+                                <option value="draft">รอดำเนินการ</option>
+                                <option value="sent">Sent</option>
+                                <option value="viewed">Viewed</option>
+                                <option value="approved">Approved</option>
+                                <option value="partial">Partial</option>
+                                <option value="paid">Paid</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="reversed">Reversed</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="payment_password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>รหัสผ่านผู้ดูแล: <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control" id="payment_password" name="payment_password"
+                                placeholder="ใส่รหัสผ่านผู้ดูแล" required>
+                            <small class="form-text text-muted">ติดต่อผู้ดูแลระบบเพื่อขอรหัสผ่าน</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>ยกเลิก
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle me-1"></i>ทำเครื่องหมายชำระแล้ว
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Paid Status Modal (Thai) -->
+    <div class="modal fade" id="confirmPaidModal" tabindex="-1" aria-labelledby="confirmPaidModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title" id="confirmPaidModalLabel">
+                        <i class="fas fa-check-circle me-2"></i>ยืนยันการชำระเงินและเปิดใช้งานการสร้างคูปอง
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="ปิด"></button>
+                </div>
+                <form id="confirmPaidForm" method="POST">
+                    <div class="modal-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>ยืนยันการชำระเงิน:</strong>
+                            ระบบจะยืนยันสถานะการชำระเงินเป็น "PAID" และเปิดใช้งานการสร้างคูปองทัวร์
+                            คุณสามารถอัปเดตข้อมูลใบแจ้งหนี้ได้หากต้องการ
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="confirmQuoteNumberEdit" class="form-label">หมายเลข Quote:</label>
+                                <input type="text" class="form-control" id="confirmQuoteNumberEdit" name="quote_number"
+                                    placeholder="QT0344997">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirmInvoiceNumberEdit" class="form-label">หมายเลข Invoice:</label>
+                                <input type="text" class="form-control" id="confirmInvoiceNumberEdit"
+                                    name="invoice_number" placeholder="AR0388592">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmStatusEdit" class="form-label">สถานะ Invoice:</label>
+                            <select class="form-select" id="confirmStatusEdit" name="invoice_status">
+                                <option value="paid" selected>Paid</option>
+                                <option value="partial">Partial</option>
+                                <option value="approved">Approved</option>
+                                <option value="sent">Sent</option>
+                                <option value="viewed">Viewed</option>
+                                <option value="pending">Pending</option>
+                                <option value="draft">รอดำเนินการ</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                            <small class="form-text text-muted">ยืนยันเป็น "Paid" เพื่อเปิดใช้งานการสร้างคูปอง</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirm_payment_password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>รหัสผ่านผู้ดูแล: <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control" id="confirm_payment_password"
+                                name="payment_password" placeholder="ใส่รหัสผ่านผู้ดูแล" required>
+                            <small class="form-text text-muted">ติดต่อผู้ดูแลระบบเพื่อขอรหัสผ่าน</small>
+                        </div>
+
+                        <!-- Hidden field to maintain paid status -->
+                        <input type="hidden" name="maintain_paid_status" value="true">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>ยกเลิก
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle me-1"></i>ยืนยันการชำระเงินและเปิดใช้งานคูปอง
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Payment Status Modal (Thai) -->
+    <div class="modal fade" id="editPaymentModal" tabindex="-1" aria-labelledby="editPaymentModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title" id="editPaymentModalLabel">
+                        <i class="fas fa-edit me-2"></i>แก้ไขสถานะการชำระเงิน
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="ปิด"></button>
+                </div>
+                <form id="editPaymentForm" method="POST">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>สำหรับผู้ดูแลระบบ:</strong>
+                            รีเซ็ตสถานะการชำระเงินและอัปเดตข้อมูลใบแจ้งหนี้ สถานะจะเปลี่ยนกลับเป็น
+                            "ทำเครื่องหมายชำระแล้ว"
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="editQuoteNumberEdit" class="form-label">หมายเลข Quote:</label>
+                                <input type="text" class="form-control" id="editQuoteNumberEdit" name="quote_number"
+                                    placeholder="QT0344997">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="editInvoiceNumberEdit" class="form-label">หมายเลข Invoice:</label>
+                                <input type="text" class="form-control" id="editInvoiceNumberEdit" name="invoice_number"
+                                    placeholder="AR0388592">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editStatusEdit" class="form-label">สถานะ Invoice ใหม่:</label>
+                            <select class="form-select" id="editStatusEdit" name="invoice_status">
+                                <option value="unknown">Unknown</option>
+                                <option value="draft">รอดำเนินการ</option>
+                                <option value="sent">Sent</option>
+                                <option value="viewed">Viewed</option>
+                                <option value="approved">Approved</option>
+                                <option value="partial">Partial</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="reversed">Reversed</option>
+                                <option value="overdue">Overdue</option>
+                                <option value="pending">Pending</option>
+                            </select>
+                            <small class="form-text text-muted">เลือกสถานะที่จะรีเซ็ต (ค่าเริ่มต้นคือ "Unknown")</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_payment_password" class="form-label">
+                                <i class="fas fa-lock me-1"></i>รหัสผ่านผู้ดูแล: <span class="text-danger">*</span>
+                            </label>
+                            <input type="password" class="form-control" id="edit_payment_password"
+                                name="payment_password" placeholder="ใส่รหัสผ่านผู้ดูแล" required>
+                            <small class="form-text text-muted">ติดต่อผู้ดูแลระบบเพื่อขอรหัสผ่าน</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-1"></i>ยกเลิก
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-undo me-1"></i>รีเซ็ตสถานะการชำระเงิน
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Handle Mark as Paid Modal (Thai)
+        const markPaidModal = document.getElementById('markPaidModal');
+        if (markPaidModal) {
+            markPaidModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const bookingId = button.getAttribute('data-booking-id');
+                const invoiceNumber = button.getAttribute('data-invoice-number');
+                const quoteNumber = button.getAttribute('data-quote-number');
+                const invoiceStatus = button.getAttribute('data-invoice-status');
+
+                const form = document.getElementById('markPaidForm');
+                const invoiceEdit = document.getElementById('invoiceNumberEdit');
+                const quoteEdit = document.getElementById('quoteNumberEdit');
+                const statusEdit = document.getElementById('statusEdit');
+
+                form.action = `/booking/${bookingId}/mark-paid`;
+                invoiceEdit.value = invoiceNumber || '';
+                quoteEdit.value = quoteNumber || '';
+                statusEdit.value = invoiceStatus || '';
+            });
+
+            // Clear fields when modal is hidden
+            markPaidModal.addEventListener('hidden.bs.modal', function () {
+                document.getElementById('payment_password').value = '';
+                document.getElementById('invoiceNumberEdit').value = '';
+                document.getElementById('quoteNumberEdit').value = '';
+                document.getElementById('statusEdit').value = '';
+            });
+        }
+
+        // Handle Confirm Paid Status Modal (Thai)
+        const confirmPaidModal = document.getElementById('confirmPaidModal');
+        if (confirmPaidModal) {
+            confirmPaidModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const bookingId = button.getAttribute('data-booking-id');
+                const invoiceNumber = button.getAttribute('data-invoice-number');
+                const quoteNumber = button.getAttribute('data-quote-number');
+                const invoiceStatus = button.getAttribute('data-invoice-status');
+
+                const form = document.getElementById('confirmPaidForm');
+                const invoiceEdit = document.getElementById('confirmInvoiceNumberEdit');
+                const quoteEdit = document.getElementById('confirmQuoteNumberEdit');
+                const statusEdit = document.getElementById('confirmStatusEdit');
+
+                form.action = `/booking/${bookingId}/mark-paid`;
+                invoiceEdit.value = invoiceNumber || '';
+                quoteEdit.value = quoteNumber || '';
+                // Default to 'paid' for confirmation, but show current status if it's already paid-related
+                statusEdit.value = (invoiceStatus === 'paid' || invoiceStatus === 'partial') ? invoiceStatus : 'paid';
+            });
+
+            // Clear fields when modal is hidden
+            confirmPaidModal.addEventListener('hidden.bs.modal', function () {
+                document.getElementById('confirm_payment_password').value = '';
+                document.getElementById('confirmInvoiceNumberEdit').value = '';
+                document.getElementById('confirmQuoteNumberEdit').value = '';
+                document.getElementById('confirmStatusEdit').value = 'paid';
+            });
+        }
+
+        // Handle Edit Payment Status Modal (Thai)
+        const editPaymentModal = document.getElementById('editPaymentModal');
+        if (editPaymentModal) {
+            editPaymentModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const bookingId = button.getAttribute('data-booking-id');
+                const invoiceNumber = button.getAttribute('data-invoice-number');
+                const quoteNumber = button.getAttribute('data-quote-number');
+                const invoiceStatus = button.getAttribute('data-invoice-status');
+
+                const form = document.getElementById('editPaymentForm');
+                const invoiceEdit = document.getElementById('editInvoiceNumberEdit');
+                const quoteEdit = document.getElementById('editQuoteNumberEdit');
+                const statusEdit = document.getElementById('editStatusEdit');
+
+                form.action = `/booking/${bookingId}/unmark-paid`;
+                invoiceEdit.value = invoiceNumber || '';
+                quoteEdit.value = quoteNumber || '';
+                statusEdit.value = invoiceStatus || 'unknown';
+            });
+
+            // Clear fields when modal is hidden
+            editPaymentModal.addEventListener('hidden.bs.modal', function () {
+                document.getElementById('edit_payment_password').value = '';
+                document.getElementById('editInvoiceNumberEdit').value = '';
+                document.getElementById('editQuoteNumberEdit').value = '';
+                document.getElementById('editStatusEdit').value = 'unknown';
+            });
+        }
+
+        // Quote Share Functions (ฟังก์ชันแชร์ Quote)
+        async function shareToLineOA(bookingId, type = 'quote') {
+            console.log(`Sharing ${type} to Line OA for booking ${bookingId}`);
+
+            try {
+                // Get booking status from page - use the booking object from template
+                const bookingStatus = '{{ booking.status }}';
+
+                let message;
+                if (type === 'quote') {
+                    // Status-based document names for quote type
+                    let documentName;
+                    if (bookingStatus === 'quoted') {
+                        documentName = 'Quote (ใบเสนอราคา)';
+                    } else if (bookingStatus === 'paid') {
+                        documentName = 'Quote / Provisional Receipt (ใบเสนอราคา / ใบเสร็จชั่วคราว)';
+                    } else if (bookingStatus === 'vouchered') {
+                        documentName = 'Tour Voucher (ใบบัตรทัวร์)';
+                    } else {
+                        documentName = 'ใบเสนอราคา';
+                    }
+
+                    message = `📋 ${documentName} - การจอง #${bookingId}\n\nคลิกเพื่อดู: ${window.location.origin}/booking/view/${bookingId}`;
+                } else {
+                    // For booking type, determine document type based on status
+                    let documentName, statusText;
+                    if (bookingStatus === 'pending') {
+                        documentName = 'Service Proposal (ข้อเสนอบริการ)';
+                        statusText = 'รอดำเนินการ';
+                    } else if (bookingStatus === 'confirmed') {
+                        documentName = 'Service Proposal (ข้อเสนอบริการ)';
+                        statusText = 'ยืนยันแล้ว';
+                    } else if (bookingStatus === 'quoted') {
+                        documentName = 'Quote (ใบเสนอราคา)';
+                        statusText = 'เสนอราคาแล้ว';
+                    } else if (bookingStatus === 'paid') {
+                        documentName = 'Quote / Provisional Receipt (ใบเสนอราคา / ใบเสร็จชั่วคราว)';
+                        statusText = 'ชำระเงินแล้ว';
+                    } else if (bookingStatus === 'vouchered') {
+                        documentName = 'Tour Voucher (ใบบัตรทัวร์)';
+                        statusText = 'ออกใบบัตรแล้ว';
+                    } else {
+                        documentName = 'Service Proposal (ข้อเสนอบริการ)';
+                        statusText = bookingStatus;
+                    }
+
+                    // Generate public URLs with 120-day token
+                    const response = await fetch(`/api/share/booking/${bookingId}/url`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const publicUrl = data.secure_url;
+                        const timestamp = new Date().toLocaleString('th-TH');
+
+                        message = `📋 ${documentName} - การจอง #${bookingId} (${statusText})\n\n` +
+                            `🔗 ลิงก์สาธารณะ (หมดอายุ 120 วัน): ${publicUrl}\n` +
+                            `📄 ดาวน์โหลด PDF: ${publicUrl}/pdf\n` +
+                            `🖼️ ดาวน์โหลด PNG: ${publicUrl}/png\n\n` +
+                            `⏰ สร้างเมื่อ: ${timestamp}\n` +
+                            `📝 รายละเอียดทั้งหมด: ${window.location.origin}/booking/view/${bookingId}`;
+                    } else {
+                        // Fallback to regular URLs
+                        message = `📋 ${documentName} - การจอง #${bookingId} (${statusText})\n\n` +
+                            `📄 ดู PDF: ${window.location.origin}/booking/${bookingId}/pdf\n` +
+                            `🖼️ ดู PNG: ${window.location.origin}/booking/${bookingId}/png\n\n` +
+                            `📝 รายละเอียดทั้งหมด: ${window.location.origin}/booking/view/${bookingId}`;
+                    }
+                }
+
+                const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
+                window.open(lineUrl, '_blank');
+            } catch (error) {
+                console.error('Error generating share URL:', error);
+                // Fallback to simple message
+                const message = `📋 ข้อมูลการจอง #${bookingId}\n\nคลิกเพื่อดู: ${window.location.origin}/booking/view/${bookingId}`;
+                const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
+                window.open(lineUrl, '_blank');
+            }
+        }
+
+        async function copyLineMessage(bookingId, type = 'quote') {
+            try {
+                // Get booking status from template
+                const bookingStatus = '{{ booking.status }}';
+
+                let message;
+                if (type === 'quote') {
+                    // Status-based document names for quote type
+                    let documentName;
+                    if (bookingStatus === 'quoted') {
+                        documentName = 'Quote (ใบเสนอราคา)';
+                    } else if (bookingStatus === 'paid') {
+                        documentName = 'Quote / Provisional Receipt (ใบเสนอราคา / ใบเสร็จชั่วคราว)';
+                    } else if (bookingStatus === 'vouchered') {
+                        documentName = 'Tour Voucher (ใบบัตรทัวร์)';
+                    } else {
+                        documentName = 'ใบเสนอราคา';
+                    }
+
+                    message = `📋 ${documentName} - การจอง #${bookingId}\n\nคลิกเพื่อดู: ${window.location.origin}/booking/view/${bookingId}`;
+                } else {
+                    // For booking type, determine document type based on status
+                    let documentName, statusText;
+                    if (bookingStatus === 'pending') {
+                        documentName = 'Service Proposal (ข้อเสนอบริการ)';
+                        statusText = 'รอดำเนินการ';
+                    } else if (bookingStatus === 'confirmed') {
+                        documentName = 'Service Proposal (ข้อเสนอบริการ)';
+                        statusText = 'ยืนยันแล้ว';
+                    } else if (bookingStatus === 'quoted') {
+                        documentName = 'Quote (ใบเสนอราคา)';
+                        statusText = 'เสนอราคาแล้ว';
+                    } else if (bookingStatus === 'paid') {
+                        documentName = 'Quote / Provisional Receipt (ใบเสนอราคา / ใบเสร็จชั่วคราว)';
+                        statusText = 'ชำระเงินแล้ว';
+                    } else if (bookingStatus === 'vouchered') {
+                        documentName = 'Tour Voucher (ใบบัตรทัวร์)';
+                        statusText = 'ออกใบบัตรแล้ว';
+                    } else {
+                        documentName = 'Service Proposal (ข้อเสนอบริการ)';
+                        statusText = bookingStatus;
+                    }
+
+                    // Show loading indicator
+                    const loadingMessage = 'กำลังสร้างลิงก์สาธารณะ...';
+                    if (navigator.clipboard) {
+                        await navigator.clipboard.writeText(loadingMessage);
+                    }
+
+                    // Fetch public URL with 120-day token
+                    const response = await fetch(`/api/share/booking/${bookingId}/url`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const publicUrl = data.secure_url;
+                        const timestamp = new Date().toLocaleString('th-TH');
+
+                        message = `📋 ${documentName} - การจอง #${bookingId} (${statusText})\n\n` +
+                            `🔗 ลิงก์สาธารณะ (หมดอายุ 120 วัน): ${publicUrl}\n` +
+                            `📄 ดาวน์โหลด PDF: ${publicUrl}/pdf\n` +
+                            `🖼️ ดาวน์โหลด PNG: ${publicUrl}/png\n\n` +
+                            `⏰ สร้างเมื่อ: ${timestamp}\n` +
+                            `📝 รายละเอียดทั้งหมด: ${window.location.origin}/booking/view/${bookingId}`;
+                    } else {
+                        // Fallback to regular URLs
+                        message = `📋 ${documentName} - การจอง #${bookingId} (${statusText})\n\n` +
+                            `📄 ดู PDF: ${window.location.origin}/booking/${bookingId}/pdf\n` +
+                            `🖼️ ดู PNG: ${window.location.origin}/booking/${bookingId}/png\n\n` +
+                            `📝 รายละเอียดทั้งหมด: ${window.location.origin}/booking/view/${bookingId}`;
+                    }
+                }
+
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(message);
+                    alert('✅ คัดลอกข้อความ Line พร้อมลิงก์สาธารณะแล้ว!');
+                } else {
+                    fallbackCopyTextToClipboard(message);
+                }
+            } catch (error) {
+                console.error('Error generating share URL:', error);
+                // Fallback to simple message
+                const message = `📋 ข้อมูลการจอง #${bookingId}\n\nคลิกเพื่อดู: ${window.location.origin}/booking/view/${bookingId}`;
+                if (navigator.clipboard) {
+                    await navigator.clipboard.writeText(message);
+                    alert('✅ คัดลอกข้อความ Line แล้ว (ใช้ลิงก์ทั่วไป)!');
+                } else {
+                    fallbackCopyTextToClipboard(message);
+                }
+            }
+        }
+
+        function shareToSocialMedia(bookingId, type = 'quote') {
+            const url = `${window.location.origin}/booking/view/${bookingId}`;
+            const message = type === 'quote' ?
+                `📋 ใบเสนอราคาสำหรับการจอง #${bookingId}\n\nคลิกเพื่อดู: ${url}` :
+                `📋 ข้อมูลการจอง #${bookingId}\n\nคลิกเพื่อดู: ${url}`;
+
+            // Show enhanced share modal
+            showEnhancedShareModalThai(bookingId, type, url, message);
+        }
+
+        /**
+         * Enhanced Share Modal with Multiple Platforms (Thai Version)
+         */
+        function showEnhancedShareModalThai(bookingId, type, url, message) {
+            // Create enhanced modal HTML matching the design in the image (Thai version)
+            const modalHtml = `
+                <div class="modal fade" id="enhancedShareModalThai" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <!-- Header with close button -->
+                            <div class="modal-header border-0 position-relative" style="background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">
+                                <div class="d-flex align-items-center w-100">
+                                    <i class="fas fa-arrow-left me-3" style="font-size: 1.2rem; cursor: pointer;" 
+                                       onclick="document.getElementById('enhancedShareModalThai').querySelector('.btn-close').click()"></i>
+                                    <h5 class="modal-title mb-0 flex-grow-1">เลือกแพลตฟอร์มที่ต้องการแชร์</h5>
+                                    <button type="button" class="btn-close btn-close-white border-0 bg-transparent" 
+                                            data-bs-dismiss="modal" aria-label="Close">
+                                        <i class="fas fa-times" style="font-size: 1.2rem;"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Success message -->
+                            <div class="px-4 py-2 bg-light">
+                                <div class="text-success small">
+                                    <i class="fas fa-check-circle me-2"></i>ข้อความได้ถูกเตรียมคลิปบอร์ด แล้ว
+                                </div>
+                            </div>
+
+                            <!-- Platform options -->
+                            <div class="modal-body p-4">
+                                <!-- Row 1: WhatsApp & Line -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                                style="background-color: #25D366; color: white; min-height: 80px;"
+                                                onclick="shareToWhatsAppThai('${message}')">
+                                            <i class="fab fa-whatsapp" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                            <span style="font-size: 1rem; font-weight: 500;">WhatsApp</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                                style="background-color: #00B900; color: white; min-height: 80px;"
+                                                onclick="shareToLineThai('${message}')">
+                                            <i class="fab fa-line" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                            <span style="font-size: 1rem; font-weight: 500;">Line</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Row 2: Facebook & Email -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-6">
+                                        <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                                style="background-color: #1877F2; color: white; min-height: 80px;"
+                                                onclick="shareToFacebookThai('${url}')">
+                                            <i class="fab fa-facebook-f" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                            <span style="font-size: 1rem; font-weight: 500;">Facebook</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                                style="background-color: #00BCD4; color: white; min-height: 80px;"
+                                                onclick="shareToEmailThai('${message}', '${url}')">
+                                            <i class="fas fa-envelope" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                            <span style="font-size: 1rem; font-weight: 500;">Email</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Row 3: Telegram & Twitter -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-6">
+                                        <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                                style="background-color: #0088CC; color: white; min-height: 80px;"
+                                                onclick="shareToTelegramThai('${message}')">
+                                            <i class="fab fa-telegram-plane" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                            <span style="font-size: 1rem; font-weight: 500;">Telegram</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                                style="background-color: #1DA1F2; color: white; min-height: 80px;"
+                                                onclick="shareToTwitterThai('${message}', '${url}')">
+                                            <i class="fab fa-twitter" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                            <span style="font-size: 1rem; font-weight: 500;">Twitter</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Action buttons -->
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-primary w-100 py-3 rounded-3" 
+                                                onclick="copyMessageToClipboardThai('${message}')">
+                                            <i class="fas fa-copy me-2"></i>Copy Message
+                                        </button>
+                                    </div>
+                                    <div class="col-6">
+                                        <button class="btn btn-outline-secondary w-100 py-3 rounded-3" 
+                                                onclick="openSharePageThai('${url}')">
+                                            <i class="fas fa-external-link-alt me-2"></i>Open Page
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Footer -->
+                            <div class="modal-footer border-0 justify-content-center bg-light">
+                                <small class="text-muted d-flex align-items-center">
+                                    <i class="fas fa-shield-alt me-2"></i>
+                                    ลิงค์ปลอดภัย หมดอายุใน 30 วัน
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('enhancedShareModalThai');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to page
+            const modalContainer = document.createElement('div');
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('enhancedShareModalThai'));
+            modal.show();
+
+            // Auto-copy message to clipboard when modal opens
+            copyMessageToClipboardThai(message, false);
+
+            // Clean up when modal is hidden
+            document.getElementById('enhancedShareModalThai').addEventListener('hidden.bs.modal', () => {
+                modalContainer.remove();
+            });
+        }
+
+        // Platform-specific share functions (Thai version)
+        function shareToWhatsAppThai(message) {
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        function shareToLineThai(message) {
+            const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
+            window.open(lineUrl, '_blank');
+        }
+
+        function shareToFacebookThai(url) {
+            const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+            window.open(facebookUrl, '_blank');
+        }
+
+        function shareToEmailThai(message, url) {
+            const subject = "ข้อมูลการจองที่แชร์";
+            const body = `${message}\n\nลิงค์โดยตรง: ${url}`;
+            const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = emailUrl;
+        }
+
+        function shareToTelegramThai(message) {
+            const telegramUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+            window.open(telegramUrl, '_blank');
+        }
+
+        function shareToTwitterThai(message, url) {
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+            window.open(twitterUrl, '_blank');
+        }
+
+        function copyMessageToClipboardThai(message, showAlert = true) {
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(message).then(() => {
+                    if (showAlert) {
+                        // Show success feedback
+                        const toast = document.createElement('div');
+                        toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+                        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+                        toast.innerHTML = `
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    <i class="fas fa-check-circle me-2"></i>คัดลอกข้อความแล้ว!
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                            </div>
+                        `;
+                        document.body.appendChild(toast);
+                        setTimeout(() => toast.remove(), 3000);
+                    }
+                }).catch(err => {
+                    fallbackCopyTextToClipboard(message);
+                });
+            } else {
+                fallbackCopyTextToClipboard(message);
+            }
+        }
+
+        function openSharePageThai(url) {
+            window.open(url + '?share=1', '_blank');
+        }
+
+        /**
+         * เปิดหน้าแชร์ (Public Share Page) พร้อม secure token หมดอายุ 30 วัน
+         */
+        async function openSharePage(bookingId, type = 'quote') {
+            const button = event ? event.target : document.querySelector(`[onclick*="openSharePage('${bookingId}')"]`);
+            const originalText = button ? button.textContent : 'เปิดหน้าแชร์';
+
+            try {
+                // แสดงสถานะ loading
+                if (button) {
+                    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังสร้างลิงก์ปลอดภัย...';
+                    button.disabled = true;
+                }
+
+                // ดึง secure token-based URL (หมดอายุ 30 วัน)
+                const response = await fetch(`/api/share/booking/${bookingId}/url`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // เปิดหน้าแชร์สาธารณะที่ปลอดภัยในแท็บใหม่
+                    window.open(data.secure_url, '_blank');
+
+                    // แสดงการแจ้งเตือนสำเร็จ
+                    showToast('🔗 หน้าแชร์ปลอดภัยเปิดแล้ว! ลิงก์หมดอายุใน 30 วัน', 'success');
+                } else {
+                    throw new Error(data.error || 'ไม่สามารถสร้างลิงก์แชร์ปลอดภัยได้');
+                }
+
+            } catch (error) {
+                console.error('Error creating secure share link:', error);
+                showToast(`❌ ข้อผิดพลาด: ${error.message}`, 'error');
+            } finally {
+                // คืนสถานะปุ่ม
+                if (button) {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }
+            }
+        }
+
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert('✅ คัดลอกข้อความแล้ว!');
+                } else {
+                    alert('❌ ไม่สามารถคัดลอกข้อความได้');
+                }
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                alert('❌ ไม่สามารถคัดลอกข้อความได้');
+            }
+
+            document.body.removeChild(textArea);
+        }
+
+        // Unicode decoder for Thai text in view page
+        function decodeUnicodeInElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element && element.textContent) {
+                try {
+                    // Decode Unicode escape sequences
+                    let decoded = element.textContent.replace(/\\u[\dA-F]{4}/gi, function (match) {
+                        return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                    });
+                    element.textContent = decoded;
+                } catch (e) {
+                    console.log('Unicode decode error for ' + elementId + ':', e);
+                }
+            }
+        }
+
+        // Apply Unicode decoding to guest list
+        decodeUnicodeInElement('guest-list-display-th');
+
+        // Also check for other elements that might need decoding
+        const textElements = document.querySelectorAll('.guest-item, .special-request-text, .admin-notes-text, .manager-memos-text');
+        textElements.forEach(function (element) {
+            if (element.textContent && element.textContent.includes('\\u')) {
+                try {
+                    let decoded = element.textContent.replace(/\\u[\dA-F]{4}/gi, function (match) {
+                        return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                    });
+                    element.textContent = decoded;
+                } catch (e) {
+                    console.log('Unicode decode error:', e);
+                }
+            }
+        });
+    </script>
+    {% endblock %}

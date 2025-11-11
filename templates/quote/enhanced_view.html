@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quote.title or 'Travel Quote' }} - Travel Quote{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>
+                        {{ quote.title or 'Travel Quote' }}
+                    </h2>
+                    <h5 class="text-muted">Quote #{{ quote.quote_number }}</h5>
+                </div>
+                <div class="text-end">
+                    {% if quote.is_valid %}
+                    <span class="badge bg-success fs-6">
+                        <i class="fas fa-check-circle me-1"></i>Valid
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger fs-6">
+                        <i class="fas fa-times-circle me-1"></i>Expired
+                    </span>
+                    {% endif %}
+
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-outline-primary ms-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Booking
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Quote Information Column -->
+        <div class="col-lg-8">
+            <!-- Quote Details Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Quote Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Quote Date:</strong><br>
+                            <span class="text-muted">{{ quote.quote_date.strftime('%B %d, %Y') if quote.quote_date else
+                                'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Valid Until:</strong><br>
+                            <span class="text-muted {% if quote.is_expired %}text-danger{% endif %}">
+                                {{ quote.valid_until.strftime('%B %d, %Y') if quote.valid_until else 'N/A' }}
+                                {% if quote.days_until_expiry is not none %}
+                                <small>({{ quote.days_until_expiry }} days remaining)</small>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if quote.description %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Description:</strong><br>
+                            <p class="text-muted">{{ quote.description }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Booking Details Card -->
+            {% if booking %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-map-marker-alt me-2"></i>Travel Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <strong>Customer:</strong><br>
+                            <span class="text-muted">{{ booking.customer_name or booking.party_name or 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Destination:</strong><br>
+                            <span class="text-muted">{{ booking.destination or 'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Travel Period:</strong><br>
+                            <span class="text-muted">
+                                {% if booking.traveling_period_start and booking.traveling_period_end %}
+                                {{ booking.traveling_period_start.strftime('%b %d') }} - {{
+                                booking.traveling_period_end.strftime('%b %d, %Y') }}
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <strong>Guests:</strong><br>
+                            <span class="text-muted">
+                                {{ booking.adults or 0 }} Adults
+                                {% if booking.children %}, {{ booking.children }} Children{% endif %}
+                                {% if booking.infants %}, {{ booking.infants }} Infants{% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if booking.special_requests %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Special Requests:</strong><br>
+                            <p class="text-muted">{{ booking.special_requests }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Package Details Card -->
+            {% if booking and (booking.packages or booking.tour_program) %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list-alt me-2"></i>Package Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if booking.packages %}
+                    <div class="mb-3">
+                        <strong>Packages:</strong><br>
+                        <p class="text-muted">{{ booking.packages }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if booking.tour_program %}
+                    <div class="mb-3">
+                        <strong>Tour Program:</strong><br>
+                        <p class="text-muted">{{ booking.tour_program }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Terms & Conditions Card -->
+            {% if quote.terms_conditions %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-gavel me-2"></i>Terms & Conditions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-muted">
+                        {{ quote.terms_conditions|safe }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Action Panel Column -->
+        <div class="col-lg-4">
+            <!-- Pricing Summary Card -->
+            <div class="card shadow-sm mb-4 border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calculator me-2"></i>Pricing Summary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span>{{ "%.2f"|format(quote.subtotal|float) }} {{ quote.currency or 'THB' }}</span>
+                    </div>
+
+                    {% if quote.discount_amount and quote.discount_amount > 0 %}
+                    <div class="d-flex justify-content-between mb-2 text-success">
+                        <span>Discount:</span>
+                        <span>-{{ "%.2f"|format(quote.discount_amount|float) }} {{ quote.currency or 'THB' }}</span>
+                    </div>
+                    {% endif %}
+
+                    {% if quote.tax_amount and quote.tax_amount > 0 %}
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tax ({{ quote.tax_rate or 7 }}%):</span>
+                        <span>{{ "%.2f"|format(quote.tax_amount|float) }} {{ quote.currency or 'THB' }}</span>
+                    </div>
+                    {% endif %}
+
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total Amount:</strong>
+                        <strong class="text-primary fs-4">{{ "%.2f"|format(quote.total_amount|float) }} {{
+                            quote.currency or 'THB' }}</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- PDF Download -->
+                    <a href="{{ url_for('quote.download_quote_pdf', quote_id=quote.id) }}"
+                        class="btn btn-danger btn-block mb-2" target="_blank">
+                        <i class="fas fa-file-pdf me-2"></i>Download PDF
+                    </a>
+
+                    <!-- PNG Download -->
+                    <a href="{{ url_for('quote.download_quote_png', quote_id=quote.id) }}"
+                        class="btn btn-info btn-block mb-2" target="_blank">
+                        <i class="fas fa-image me-2"></i>Download PNG
+                    </a>
+
+                    <!-- Print -->
+                    <button onclick="window.print()" class="btn btn-secondary btn-block mb-2">
+                        <i class="fas fa-print me-2"></i>Print Quote
+                    </button>
+
+                    <hr>
+
+                    <!-- Share Options -->
+                    <div class="text-center mb-3">
+                        <h6 class="text-muted">Share this Quote</h6>
+                    </div>
+
+                    <!-- Facebook Share -->
+                    <button onclick="shareOnFacebook()" class="btn btn-primary btn-block mb-2">
+                        <i class="fab fa-facebook-f me-2"></i>Share on Facebook
+                    </button>
+
+                    <!-- LINE Share -->
+                    <button onclick="shareOnLine()" class="btn btn-success btn-block mb-2">
+                        <i class="fab fa-line me-2"></i>Share on LINE
+                    </button>
+
+                    <!-- Copy Link -->
+                    <button onclick="copyQuoteLink()" class="btn btn-outline-secondary btn-block mb-2">
+                        <i class="fas fa-link me-2"></i>Copy Link
+                    </button>
+
+                    {% if current_user.is_authenticated and current_user.can_manage_quotes() %}
+                    <hr>
+
+                    <!-- Admin Actions -->
+                    {% if quote.status == 'draft' %}
+                    <button onclick="sendQuote()" class="btn btn-warning btn-block mb-2">
+                        <i class="fas fa-paper-plane me-2"></i>Send Quote
+                    </button>
+                    {% endif %}
+
+                    {% if quote.can_convert_to_invoice() %}
+                    <button onclick="convertToInvoice()" class="btn btn-success btn-block mb-2">
+                        <i class="fas fa-receipt me-2"></i>Convert to Invoice
+                    </button>
+                    {% endif %}
+
+                    <a href="{{ url_for('booking.edit', booking_id=booking.id) }}"
+                        class="btn btn-outline-primary btn-block">
+                        <i class="fas fa-edit me-2"></i>Edit Booking
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quote Statistics Card -->
+            {% if current_user.is_authenticated and current_user.can_view_financial_data() %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h4 class="text-primary">{{ quote.view_count or 0 }}</h4>
+                                <small class="text-muted">Views</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h4 class="text-success">{{ quote.shared_count or 0 }}</h4>
+                            <small class="text-muted">Shares</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Share URL Modal -->
+<div class="modal fade" id="shareLinkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Quote Link</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Copy this link to share the quote:</p>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="shareUrl" readonly
+                        value="{{ url_for('quote.public_view', share_token=quote.share_token, _external=True) if quote.share_token else '#' }}">
+                    <button class="btn btn-outline-secondary" onclick="copyToClipboard()">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Track quote view
+    $(document).ready(function () {
+        // Track view on page load for authenticated users
+        {% if current_user.is_authenticated %}
+        $.post('/quote/{{ quote.id }}/track-view');
+        {% endif %}
+    });
+
+    // Copy quote link function
+    function copyQuoteLink() {
+        const url = "{{ url_for('quote.public_view', share_token=quote.share_token, _external=True) if quote.share_token else '#' }}";
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(url).then(function () {
+                showAlert('Link copied to clipboard!', 'success');
+            });
+        } else {
+            // Fallback for older browsers
+            $('#shareLinkModal').modal('show');
+        }
+    }
+
+    // Copy to clipboard function
+    function copyToClipboard() {
+        const shareUrl = document.getElementById('shareUrl');
+        shareUrl.select();
+        shareUrl.setSelectionRange(0, 99999);
+        document.execCommand('copy');
+        showAlert('Link copied to clipboard!', 'success');
+        $('#shareLinkModal').modal('hide');
+    }
+
+    // Facebook share function
+    function shareOnFacebook() {
+        const url = "{{ url_for('quote.public_view', share_token=quote.share_token, _external=True) if quote.share_token else '#' }}";
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+
+        window.open(facebookUrl, '_blank', 'width=600,height=400');
+        trackShare('facebook');
+    }
+
+    // LINE share function
+    function shareOnLine() {
+        const url = "{{ url_for('quote.public_view', share_token=quote.share_token, _external=True) if quote.share_token else '#' }}";
+        const text = "Check out this travel quote: {{ quote.title or 'Travel Quote' }}";
+        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text)}%0A${encodeURIComponent(url)}`;
+
+        window.open(lineUrl, '_blank', 'width=600,height=400');
+        trackShare('line');
+    }
+
+    // Track share function
+    function trackShare(platform) {
+        $.post('/quote/{{ quote.id }}/track-share', {
+            platform: platform
+        });
+    }
+
+    // Send quote function
+    function sendQuote() {
+        if (confirm('Send this quote to the customer?')) {
+            $.post('/quote/{{ quote.id }}/send', function (response) {
+                if (response.success) {
+                    showAlert('Quote sent successfully!', 'success');
+                    location.reload();
+                } else {
+                    showAlert('Failed to send quote: ' + response.error, 'error');
+                }
+            }).fail(function () {
+                showAlert('Error sending quote', 'error');
+            });
+        }
+    }
+
+    // Convert to invoice function
+    function convertToInvoice() {
+        if (confirm('Convert this quote to an invoice?')) {
+            $.post('/quote/{{ quote.id }}/convert-to-invoice', function (response) {
+                if (response.success) {
+                    showAlert('Quote converted to invoice successfully!', 'success');
+                    if (response.redirect_url) {
+                        window.location.href = response.redirect_url;
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    showAlert('Failed to convert quote: ' + response.error, 'error');
+                }
+            }).fail(function () {
+                showAlert('Error converting quote', 'error');
+            });
+        }
+    }
+
+    // Show alert function
+    function showAlert(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alertHtml = `
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+
+        // Prepend to container
+        $('.container-fluid').prepend(alertHtml);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(function () {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Print styles */
+    @media print {
+
+        .btn,
+        .card-header,
+        .modal,
+        .navbar,
+        .footer {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .container-fluid {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+    }
+
+    /* Enhanced visual styling */
+    .card {
+        transition: transform 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-block {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    .border-end {
+        border-right: 1px solid #dee2e6 !important;
+    }
+
+    /* Social media button colors */
+    .btn.btn-primary i.fab.fa-facebook-f {
+        color: #1877F2;
+    }
+
+    .btn.btn-success i.fab.fa-line {
+        color: #00C300;
+    }
+
+    /* Status badges */
+    .badge.fs-6 {
+        font-size: 0.875rem !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .card-title {
+            font-size: 1rem;
+        }
+
+        .btn-block {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+        }
+    }
+</style>
+{% endblock %}

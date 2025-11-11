@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pre-Receipt - {{ receipt_number }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: 'TH SarabunPSK', 'Sarabun', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #1E3A8A;
+            padding-bottom: 20px;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1E3A8A;
+            margin-bottom: 5px;
+        }
+
+        .receipt-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #DC2626;
+            margin: 15px 0;
+        }
+
+        .receipt-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .info-section {
+            width: 48%;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            margin-bottom: 10px;
+            padding: 5px;
+            background-color: #F9FAFB;
+            border-radius: 4px;
+        }
+
+        .booking-details {
+            background-color: #F0F9FF;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border-left: 4px solid #0EA5E9;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px dotted #CBD5E1;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #475569;
+        }
+
+        .detail-value {
+            color: #1E293B;
+        }
+
+        .total-section {
+            text-align: right;
+            margin: 30px 0;
+            padding: 20px;
+            background-color: #FEF3C7;
+            border-radius: 8px;
+            border: 2px solid #F59E0B;
+        }
+
+        .total-amount {
+            font-size: 24px;
+            font-weight: bold;
+            color: #D97706;
+        }
+
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #6B7280;
+            border-top: 1px solid #E5E7EB;
+            padding-top: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-paid {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+
+        .status-vouchered {
+            background-color: #E0E7FF;
+            color: #3730A3;
+        }
+
+        .status-completed {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="company-name">{{ company_name or 'Unique Phuket Tours & Travels' }}</div>
+        <div>{{ company_address or '123 Tourist Street, Phuket, Thailand' }}</div>
+        <div>Tel: {{ company_phone or '+66 76 123 456' }} | Email: {{ company_email or 'info@uniquephukettours.com' }}
+        </div>
+        <div class="receipt-title">📧 PRE-RECEIPT</div>
+    </div>
+
+    <div class="receipt-info">
+        <div class="info-section">
+            <div class="info-label">Receipt Number:</div>
+            <div class="info-value"><strong>{{ receipt_number }}</strong></div>
+
+            <div class="info-label">Receipt Date:</div>
+            <div class="info-value">{{ receipt_date }}</div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-label">Booking Reference:</div>
+            <div class="info-value"><strong>{{ booking.booking_reference or booking.id }}</strong></div>
+
+            <div class="info-label">Status:</div>
+            <div class="info-value">
+                <span class="status-badge status-{{ booking.status }}">{{ booking.status|title }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="booking-details">
+        <h3 style="margin-top: 0; color: #0EA5E9;">📋 Booking Details</h3>
+
+        <div class="detail-row">
+            <span class="detail-label">Customer Name:</span>
+            <span class="detail-value">{{ booking.customer_name or 'N/A' }}</span>
+        </div>
+
+        {% if booking.customer_email %}
+        <div class="detail-row">
+            <span class="detail-label">Email:</span>
+            <span class="detail-value">{{ booking.customer_email }}</span>
+        </div>
+        {% endif %}
+
+        {% if booking.customer_phone %}
+        <div class="detail-row">
+            <span class="detail-label">Phone:</span>
+            <span class="detail-value">{{ booking.customer_phone }}</span>
+        </div>
+        {% endif %}
+
+        <div class="detail-row">
+            <span class="detail-label">Booking Type:</span>
+            <span class="detail-value">{{ booking.booking_type|title or 'Package' }}</span>
+        </div>
+
+        {% if booking.total_pax %}
+        <div class="detail-row">
+            <span class="detail-label">Total Passengers:</span>
+            <span class="detail-value">{{ booking.total_pax }} pax</span>
+        </div>
+        {% endif %}
+
+        {% if booking.tour_date %}
+        <div class="detail-row">
+            <span class="detail-label">Tour Date:</span>
+            <span class="detail-value">{{ booking.tour_date.strftime('%d/%m/%Y') }}</span>
+        </div>
+        {% endif %}
+
+        {% if booking.arrival_date %}
+        <div class="detail-row">
+            <span class="detail-label">Arrival Date:</span>
+            <span class="detail-value">{{ booking.arrival_date.strftime('%d/%m/%Y') }}</span>
+        </div>
+        {% endif %}
+
+        {% if booking.departure_date %}
+        <div class="detail-row">
+            <span class="detail-label">Departure Date:</span>
+            <span class="detail-value">{{ booking.departure_date.strftime('%d/%m/%Y') }}</span>
+        </div>
+        {% endif %}
+
+        <div class="detail-row">
+            <span class="detail-label">Created Date:</span>
+            <span class="detail-value">{{ booking.created_at.strftime('%d/%m/%Y %H:%M') if booking.created_at else 'N/A'
+                }}</span>
+        </div>
+
+        {% if booking.quote_number %}
+        <div class="detail-row">
+            <span class="detail-label">Quote Number:</span>
+            <span class="detail-value">{{ booking.quote_number }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="total-section">
+        <div style="font-size: 16px; margin-bottom: 10px;">💰 Total Amount</div>
+        <div class="total-amount">
+            ฿{{ "%.2f"|format(total_amount|float) if total_amount else '0.00' }}
+        </div>
+    </div>
+
+    {% if booking.description %}
+    <div style="margin: 30px 0; padding: 15px; background-color: #F8FAFC; border-radius: 8px;">
+        <h4 style="color: #475569; margin-top: 0;">📝 Description / Notes:</h4>
+        <div style="white-space: pre-wrap;">{{ booking.description }}</div>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p><strong>This is a pre-receipt document generated on {{ receipt_date }}</strong></p>
+        <p>This document serves as a preliminary receipt for your booking. An official receipt will be provided upon
+            service completion.</p>
+        <p>For any inquiries, please contact us at {{ company_phone or '+66 76 123 456' }} or {{ company_email or
+            'info@uniquephukettours.com' }}</p>
+
+        <div style="margin-top: 20px; font-size: 10px;">
+            Generated by Tour Voucher System • {{ receipt_number }} • {{ receipt_date }}
+        </div>
+    </div>
+</body>
+
+</html>

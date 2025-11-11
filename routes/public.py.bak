@@ -1,0 +1,68 @@
+"""Public routes for sharing booking information without authentication."""
+
+from flask import Blueprint, render_template, abort, url_for, redirect
+from models.booking import Booking
+from config import Config
+
+public_bp = Blueprint('public', __name__, url_prefix='/public')
+
+@public_bp.route('/booking/<int:booking_id>')
+def view_booking_public(booking_id):
+    """Public view for booking - no login required (backward compatibility)"""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # สร้าง PNG URL สำหรับ public view
+    png_url = url_for('booking.test_generate_booking_png', booking_id=booking.id, _external=True)
+    
+    return render_template('public/booking_view.html', 
+                         booking=booking, 
+                         png_url=png_url,
+                         config=Config)
+
+@public_bp.route('/booking/<token>')
+def view_booking_secure(token):
+    """Secure public view for booking with token verification (30-day expiry)"""
+    
+    # ตรวจสอบ token และ get booking
+    booking = Booking.verify_share_token(token)
+    if not booking:
+        abort(404)  # Token invalid, expired, or booking not found
+    
+    return render_template('public/booking_view.html', 
+                         booking=booking, 
+                         token=token,
+                         config=Config)
+
+@public_bp.route('/booking/<token>/png')
+def download_booking_png(token):
+    """Download PNG for booking with token verification"""
+    
+    # ตรวจสอบ token และ get booking
+    booking = Booking.verify_share_token(token)
+    if not booking:
+        abort(404)
+    
+    # Redirect to PNG generation route with booking ID
+    return redirect(url_for('booking.test_generate_booking_png', booking_id=booking.id))
+
+@public_bp.route('/booking/<token>/pdf')
+def download_booking_pdf(token):
+    """Download PDF for booking with token verification"""
+    
+    # ตรวจสอบ token และ get booking
+    booking = Booking.verify_share_token(token)
+    if not booking:
+        abort(404)
+    
+    # Redirect to PDF generation route with booking ID
+    return redirect(url_for('booking.test_generate_booking_pdf', booking_id=booking.id))
+
+# Backward compatibility routes
+@public_bp.route('/booking/<int:booking_id>/<old_token>')
+def view_booking_secure_old(booking_id, old_token):
+    """Legacy route for old token format - redirect to new format if valid"""
+    
+    # Try old verification method for backward compatibility
+    booking = Booking.query.get_or_404(booking_id)
+    new_token = booking.generate_secure_token(expires_days=30)
+    return redirect(url_for('public.view_booking_secure', token=new_token))

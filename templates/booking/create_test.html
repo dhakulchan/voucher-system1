@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Create Booking</title>
+    <style>
+        .test-header {
+            background: red;
+            color: white;
+            padding: 20px;
+            font-size: 24px;
+        }
+
+        .sidebar {
+            border: 5px solid blue;
+            background: yellow;
+            padding: 20px;
+        }
+
+        .admin-notes {
+            border: 3px solid red;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .manager-memos {
+            border: 3px solid blue;
+            padding: 10px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-header">🚨 TEST TEMPLATE WORKING 🚨</div>
+
+    <form method="POST">
+        <h2>Main Content</h2>
+        <p>Description field should be here</p>
+        <textarea name="description" placeholder="Description"></textarea>
+
+        <p>Flight Info should be here (after Description)</p>
+        <textarea name="flight_info" placeholder="Flight Info"></textarea>
+
+        <div class="sidebar">
+            <h1>🚨 SIDEBAR TEST 🚨</h1>
+
+            <div class="admin-notes">
+                <h3>🔴 Admin Notes 🔴</h3>
+                <textarea name="admin_notes" rows="4" placeholder="Admin notes..."></textarea>
+            </div>
+
+            <div class="manager-memos">
+                <h3>🔵 Manager Memos 🔵</h3>
+                <textarea name="manager_memos" rows="4" placeholder="Manager memos..."></textarea>
+            </div>
+        </div>
+
+        <button type="submit">Create Booking</button>
+    </form>
+</body>
+
+</html>

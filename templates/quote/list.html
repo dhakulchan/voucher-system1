@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Quote List{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-primary">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>
+                    Quotes
+                </h2>
+                <a href="{{ url_for('booking.list') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Create New Quote
+                </a>
+            </div>
+
+            {% if quotes %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Quote Number</th>
+                                    <th>Booking ID</th>
+                                    <th>Status</th>
+                                    <th>Total Amount</th>
+                                    <th>Created Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quote in quotes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ quote.quote_number }}</strong>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('booking.view', id=quote.booking_id) }}"
+                                            class="text-decoration-none">
+                                            BK{{ quote.booking_id }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {% if quote.status == 'draft' %}
+                                        <span class="badge bg-secondary">Pending</span>
+                                        {% elif quote.status == 'quoted' %}
+                                        <span class="badge bg-info">Quoted</span>
+                                        {% elif quote.status == 'sent' %}
+                                        <span class="badge bg-primary">Sent</span>
+                                        {% elif quote.status == 'accepted' %}
+                                        <span class="badge bg-success">Accepted</span>
+                                        {% elif quote.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                        {% elif quote.status == 'expired' %}
+                                        <span class="badge bg-warning">Expired</span>
+                                        {% else %}
+                                        <span class="badge bg-light text-dark">{{ quote.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ quote.currency }} {{ "%.2f"|format(quote.total_amount) }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if quote.created_at %}
+                                        {% if quote.created_at.strftime %}
+                                        {{ quote.created_at.strftime('%d/%m/%Y') }}
+                                        {% else %}
+                                        {{ quote.created_at[:10] if quote.created_at|length > 10 else quote.created_at
+                                        }}
+                                        {% endif %}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('booking.generate_quote_pdf', booking_id=quote.booking_id) }}?v={{ timestamp() }}"
+                                                class="btn btn-sm btn-outline-primary" target="_blank">
+                                                <i class="fas fa-file-pdf me-1"></i>View PDF
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-file-invoice-dollar text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No quotes found</h4>
+                <p class="text-muted">Create your first quote from a booking.</p>
+                <a href="{{ url_for('booking.list') }}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Go to Bookings
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

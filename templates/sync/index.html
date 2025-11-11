@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Sync Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h3"><i class="fas fa-sync me-2"></i>Sync Dashboard</h1>
+    <button id="btn-sync" class="btn btn-primary"><i class="fas fa-cloud-upload-alt me-2"></i>Sync Customers</button>
+</div>
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-center mb-3">
+            <div class="card-body">
+                <div class="text-muted">Total Customers</div>
+                <div class="display-6" id="stat-total">{{ total }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-3">
+            <div class="card-body">
+                <div class="text-muted">Synced</div>
+                <div class="display-6" id="stat-synced">{{ synced }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center mb-3">
+            <div class="card-body">
+                <div class="text-muted">Pending</div>
+                <div class="display-6" id="stat-pending">{{ pending }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="result" class="alert d-none"></div>
+<script>
+    (function () {
+        const btn = document.getElementById('btn-sync');
+        const res = document.getElementById('result');
+        function setResult(type, html) { res.className = 'alert alert-' + type; res.innerHTML = html; res.classList.remove('d-none'); }
+        function refreshStats() {
+            fetch("{{ url_for('sync.api_stats') }}").then(r => r.json()).then(d => {
+                document.getElementById('stat-total').innerText = d.total;
+                document.getElementById('stat-synced').innerText = d.synced;
+                document.getElementById('stat-pending').innerText = d.pending;
+            });
+        }
+        btn.addEventListener('click', () => {
+            btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Syncing...';
+            fetch("{{ url_for('sync.api_sync_customers') }}")
+                .then(r => r.json())
+                .then(d => {
+                    if (d.ok) { setResult('success', `Synced ${d.synced_count} customers.`); refreshStats(); }
+                    else { setResult('danger', 'Sync failed'); }
+                })
+                .catch(() => setResult('danger', 'Sync failed'))
+                .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-cloud-upload-alt me-2"></i>Sync Customers'; });
+        });
+    })();
+</script>
+{% endblock %}

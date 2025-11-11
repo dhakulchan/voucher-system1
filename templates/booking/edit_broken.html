@@ -1,0 +1,1713 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('edit') }} {{ t('booking') }} - {{ booking.booking_reference }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Date input styling for DD/MM/YYYY format */
+    input[type="date"] {
+        position: relative;
+        font-family: monospace;
+    }
+
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(0.5);
+        cursor: pointer;
+        z-index: 2;
+        position: relative;
+    }
+
+    input[type="date"]::-webkit-inner-spin-button,
+    input[type="date"]::-webkit-clear-button {
+        display: none;
+    }
+
+    /* Products table row ordering buttons */
+    .btn-group-vertical .btn {
+        padding: 2px 6px;
+        font-size: 0.75rem;
+        line-height: 1;
+        border-radius: 3px;
+        margin-bottom: 2px;
+    }
+
+    .btn-group-vertical .btn:last-child {
+        margin-bottom: 0;
+    }
+
+    .move-up,
+    .move-down {
+        width: 30px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .move-up:hover,
+    .move-down:hover {
+        background-color: #0d6efd;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    .move-up:disabled,
+    .move-down:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+    }
+
+    /* Delete button styling */
+    .delete-row {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        font-size: 0.8rem;
+    }
+
+    .delete-row:hover {
+        background-color: #dc3545;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    /* Products table responsiveness */
+    #products-table td:nth-last-child(2),
+    #products-table td:last-child {
+        min-width: 60px;
+    }
+
+    /* Price and Amount input fields styling */
+    #products-table .product-price,
+    #products-table .product-amount {
+        min-width: 120px;
+        text-align: right;
+        padding-right: 12px;
+        font-family: 'Courier New', monospace;
+        font-weight: 500;
+    }
+
+    #products-table .product-quantity {
+        min-width: 80px;
+        text-align: center;
+    }
+
+    #products-table .product-name {
+        min-width: 150px;
+    }
+
+    /* Ensure number inputs display fully */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    /* Table column specific widths for better readability */
+    #products-table th:nth-child(4),
+    #products-table td:nth-child(4) {
+        min-width: 140px;
+        /* Price column */
+    }
+
+    #products-table th:nth-child(5),
+    #products-table td:nth-child(5) {
+        min-width: 140px;
+        /* Amount column */
+    }
+
+    /* Amount field readonly styling */
+    #products-table .product-amount[readonly] {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #495057;
+        font-weight: 600;
+    }
+
+    /* Price input with currency symbol effect */
+    #products-table .product-price {
+        position: relative;
+    }
+
+    /* Responsive table improvements */
+    @media (max-width: 768px) {
+
+        #products-table .product-price,
+        #products-table .product-amount {
+            min-width: 100px;
+        }
+
+        #products-table th:nth-child(4),
+        #products-table td:nth-child(4),
+        #products-table th:nth-child(5),
+        #products-table td:nth-child(5) {
+            min-width: 120px;
+        }
+    }
+
+    setup: function(editor) {
+
+        // Save content on change to ensure it's captured
+        editor.on('change input NodeChange', function() {
+                editor.save();
+                // Update the textarea directly as backup
+                const textarea=document.getElementById(editor.id);
+
+                if (textarea) {
+                    textarea.value=editor.getContent();
+                }
+            });
+
+        // Force save on blur
+        editor.on('blur', function() {
+                editor.save();
+                const textarea=document.getElementById(editor.id);
+
+                if (textarea) {
+                    textarea.value=editor.getContent();
+                }
+            });
+    }
+
+    /* Force DD/MM/YYYY display format */
+    input[type="date"]::-webkit-datetime-edit {
+        padding: 0;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+        background: transparent;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-text {
+        color: #6c757d;
+        padding: 0 1px;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-month-field {
+        color: #333;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-day-field {
+        color: #333;
+    }
+
+    input[type="date"]::-webkit-datetime-edit-year-field {
+        color: #333;
+    }
+
+    .date-wrapper {
+        position: relative;
+    }
+
+    .date-wrapper::after {
+        content: "DD/MM/YYYY";
+        position: absolute;
+        top: 50%;
+        right: 45px;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 0.875rem;
+        pointer-events: none;
+        opacity: 0.7;
+        z-index: 1;
+    }
+
+    .date-wrapper input[type="date"]:valid::after,
+    .date-wrapper input[type="date"]:focus::after {
+        display: none;
+    }
+
+    /* Custom date display overlay */
+    .date-wrapper input[type="date"] {
+        color: transparent;
+    }
+
+    .date-wrapper input[type="date"]:focus,
+    .date-wrapper input[type="date"]:active,
+    .date-wrapper input[type="date"]:hover,
+    .date-wrapper input[type="date"]:valid {
+        color: #333 !important;
+    }
+
+    /* Hide overlay when date picker is active */
+    .date-wrapper.picker-active .date-display-overlay {
+        display: none !important;
+    }
+
+    /* Calendar button styling */
+    .calendar-btn {
+        z-index: 10;
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .calendar-btn:hover {
+        background-color: #e9ecef;
+        border-color: #adb5bd;
+        color: #495057;
+    }
+
+    .calendar-btn:focus {
+        box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
+    }
+
+    /* Adjust input padding when calendar button is present */
+    .date-wrapper.position-relative input[type="text"] {
+        padding-right: 50px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-edit me-2"></i>{{ t('edit') }} {{ t('booking') }}: {{ booking.booking_reference }}
+        </h1>
+        <div>
+            <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>{{ t('back') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-form me-2"></i>{{ t('booking') }} {{ t('edit') }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Customer Information (Read-only for editing) -->
+                        <div class="mb-3">
+                            <label for="customer_name" class="form-label">
+                                <i class="fas fa-user me-2"></i>{{ t('customer') }}
+                            </label>
+                            <input type="text" class="form-control" id="customer_name"
+                                value="{{ booking.customer.name }} ({{ booking.customer.email }})" readonly>
+                            <div class="form-text">
+                                {{ t('customer') }} information cannot be changed after booking creation.
+                            </div>
+                        </div>
+
+                        <!-- Booking Type -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="booking_type" class="form-label">
+                                        <i class="fas fa-tag me-2"></i>{{ t('booking') }} {{ t('tour_type') }} *
+                                    </label>
+                                    <select class="form-select" id="booking_type" name="booking_type" required>
+                                        <option value="">{{ t('search') }} {{ t('tour_type') }}</option>
+                                        <option value="package" {{ 'selected' if booking.booking_type=='package' }}>{{
+                                            'Package' if current_language == 'en' else 'แพ็คเกจ' }}</option>
+                                        <option value="tour" {{ 'selected' if booking.booking_type=='tour' }}>{{
+                                            'Tour' if current_language == 'en' else 'ทัวร์' }}</option>
+                                        <option value="collective-groups" {{ 'selected' if
+                                            booking.booking_type=='collective-groups' }}>{{
+                                            'Collective Groups' if current_language == 'en' else 'กลุ่มรวม' }}</option>
+                                        <option value="incentive-groups" {{ 'selected' if
+                                            booking.booking_type=='incentive-groups' }}>{{
+                                            'Incentive Groups' if current_language == 'en' else 'กลุ่มจูงใจ' }}</option>
+                                        <option value="air-ticket" {{ 'selected' if booking.booking_type=='air-ticket'
+                                            }}>{{
+                                            'Air Ticket' if current_language == 'en' else 'ตั๋วเครื่องบิน' }}</option>
+                                        <option value="hotel" {{ 'selected' if booking.booking_type=='hotel' }}>{{
+                                            'Hotel' if current_language == 'en' else 'โรงแรม' }}</option>
+                                        <option value="transport" {{ 'selected' if booking.booking_type=='transport' }}>
+                                            {{
+                                            'Transport' if current_language == 'en' else 'การขนส่ง' }}</option>
+                                        <option value="park-ticket" {{ 'selected' if booking.booking_type=='park-ticket'
+                                            }}>{{
+                                            'Park Ticket' if current_language == 'en' else 'ตั๋วสวนสนุก' }}</option>
+                                        <option value="fit" {{ 'selected' if booking.booking_type=='fit' }}>{{
+                                            'F.I.T.' if current_language == 'en' else 'F.I.T.' }}</option>
+                                        <option value="others" {{ 'selected' if booking.booking_type=='others' }}>{{
+                                            'Others' if current_language == 'en' else 'อื่นๆ' }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="party_name" class="form-label">
+                                        <i class="fas fa-users-cog me-2"></i>{{ t('party_name') if current_language ==
+                                        'en' else 'ชื่อกลุ่ม' }}
+                                    </label>
+                                    <input type="text" class="form-control" id="party_name" name="party_name"
+                                        value="{{ booking.party_name or '' }}"
+                                        placeholder="{{ 'Enter group or party name' if current_language == 'en' else 'กรอกชื่อกลุ่มหรือคณะ' }}">
+                                    <div class="form-text">{{ 'Optional: Name for the group or party' if
+                                        current_language == 'en' else 'ไม่บังคับ: ชื่อสำหรับกลุ่มหรือคณะ' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dates -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="arrival_date" class="form-label">
+                                        <i class="fas fa-calendar-plus me-2"></i>{{ 'Traveling from' if
+                                        current_language == 'en' else 'เดินทางตั้งแต่' }}
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="arrival_date_display"
+                                            placeholder="{{ 'DD/MM/YYYY' if current_language == 'en' else 'วว/ดด/ปปปป' }}"
+                                            style="padding-right: 45px;">
+                                        <input type="date" class="form-control d-none" id="arrival_date"
+                                            name="arrival_date"
+                                            value="{{ booking.arrival_date.strftime('%Y-%m-%d') if booking.arrival_date }}">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDatePicker('arrival_date')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="departure_date" class="form-label">
+                                        <i class="fas fa-calendar-minus me-2"></i>{{ 'Traveling to' if
+                                        current_language == 'en' else 'เดินทางถึง' }}
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="departure_date_display"
+                                            placeholder="{{ 'DD/MM/YYYY' if current_language == 'en' else 'วว/ดด/ปปปป' }}"
+                                            style="padding-right: 45px;">
+                                        <input type="date" class="form-control d-none" id="departure_date"
+                                            name="departure_date"
+                                            value="{{ booking.departure_date.strftime('%Y-%m-%d') if booking.departure_date }}">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDatePicker('departure_date')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pickup Information -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pickup_point" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-2 text-success"></i>{{ 'Pickup Point' if
+                                        current_language == 'en' else 'จุดรับ' }}
+                                    </label>
+                                    <input type="text" class="form-control" id="pickup_point" name="pickup_point"
+                                        value="{{ booking.pickup_point or '' }}"
+                                        placeholder="{{ 'Enter pickup location' if current_language == 'en' else 'ใส่สถานที่รับ' }}">
+                                    <small class="text-muted">{{ 'Pickup location for guests' if current_language ==
+                                        'en' else 'สถานที่รับผู้เดินทาง' }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pickup_time" class="form-label">
+                                        <i class="fas fa-clock me-2 text-primary"></i>{{ 'Pickup Time' if
+                                        current_language == 'en' else 'เวลารับ' }}
+                                    </label>
+                                    <input type="time" class="form-control" id="pickup_time" name="pickup_time"
+                                        value="{{ booking.pickup_time.strftime('%H:%M') if booking.pickup_time }}">
+                                    <small class="text-muted">{{ 'Time to pickup guests' if current_language == 'en'
+                                        else 'เวลาที่จะรับผู้เดินทาง' }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Time Management -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="time_limit" class="form-label">
+                                        <i class="fas fa-clock me-2 text-warning"></i>{{ 'Time Limit' if
+                                        current_language == 'en' else 'เวลาจำกัด' }} *
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="time_limit_display"
+                                            placeholder="{{ 'DD/MM/YYYY HH:MM' if current_language == 'en' else 'วว/ดด/ปปปป ชช:นน' }}"
+                                            required>
+                                        <input type="datetime-local" class="form-control d-none" id="time_limit"
+                                            name="time_limit" required
+                                            value="{{ booking.time_limit.strftime('%Y-%m-%dT%H:%M') if booking.time_limit }}">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDateTimePicker('time_limit')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">{{ 'Deadline for booking confirmation (Required) - Format:
+                                        DD/MM/YYYY HH:MM' if
+                                        current_language == 'en' else 'กำหนดเวลายืนยันการจอง (จำเป็น) - รูปแบบ:
+                                        วว/ดด/ปปปป ชช:นน' }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="due_date" class="form-label">
+                                        <i class="fas fa-calendar-check me-2 text-info"></i>{{ 'Due Date' if
+                                        current_language == 'en' else 'วันที่ครบกำหนด' }}
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="due_date_display"
+                                            placeholder="{{ 'DD/MM/YYYY' if current_language == 'en' else 'วว/ดด/ปปปป' }}">
+                                        <input type="date" class="form-control d-none" id="due_date" name="due_date"
+                                            value="{{ booking.due_date.strftime('%Y-%m-%d') if booking.due_date }}">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDatePicker('due_date')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">{{ 'Payment or action due date - Format: DD/MM/YYYY' if
+                                        current_language ==
+                                        'en' else 'วันครบกำหนดชำระเงินหรือดำเนินการ - รูปแบบ: วว/ดด/ปปปป' }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pax Information -->
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="adults" class="form-label">
+                                        <i class="fas fa-user-friends me-2"></i>{{ t('adults') if current_language ==
+                                        'en' else 'ผู้ใหญ่' }} *
+                                    </label>
+                                    <input type="number" class="form-control" id="adults" name="adults"
+                                        value="{{ booking.adults or 1 }}" min="1" max="50" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="children" class="form-label">
+                                        <i class="fas fa-child me-2"></i>{{ t('children') if current_language == 'en'
+                                        else 'เด็ก' }}
+                                    </label>
+                                    <input type="number" class="form-control" id="children" name="children"
+                                        value="{{ booking.children or 0 }}" min="0" max="20">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="total_pax" class="form-label">
+                                        <i class="fas fa-users me-2"></i>{% if current_language == 'en' %}Total Guests{%
+                                        else %}จำนวนผู้เดินทาง (ไม่รวมทารก){% endif %} *
+                                    </label>
+                                    <input type="number" class="form-control" id="total_pax" name="total_pax"
+                                        value="{{ booking.total_pax }}" min="1" required readonly>
+                                    <div class="form-text">{% if current_language == 'en' %}Adults+Children{% else
+                                        %}คำนวณอัตโนมัติ: ผู้ใหญ่ + เด็ก{% endif %}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="infants" class="form-label">
+                                        <i class="fas fa-baby me-2"></i>{% if current_language == 'en' %}Infants (Under
+                                        2Y.){% else %}ทารก (อายุต่ำกว่า 2 ปี){% endif %}
+                                    </label>
+                                    <input type="number" class="form-control" id="infants" name="infants"
+                                        value="{{ booking.infants or 0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flight Information -->
+                        <div class="mb-3">
+                            <label for="flight_info" class="form-label">
+                                <i class="fas fa-plane me-2 text-info"></i>{{ t('flight_info') if current_language ==
+                                'en' else
+                                'ข้อมูลเที่ยวบิน' }}
+                            </label>
+                            <textarea class="form-control" id="flight_info" name="flight_info" rows="4"
+                                placeholder="{{ 'Flight details (optional)' if current_language == 'en' else 'รายละเอียดเที่ยวบิน (ถ้ามี)' }}">{{ booking.flight_info }}</textarea>
+                            <div class="form-text">{{ 'Flight arrival/departure information for transfers' if
+                                current_language == 'en' else 'ข้อมูลเที่ยวบินถึง/ออก สำหรับบริการรับส่ง' }}</div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-file-alt me-2"></i>{{ t('description') if current_language == 'en' else
+                                'รายละเอียด' }}
+                            </label>
+                            <textarea class="form-control" id="description" name="description" rows="4"
+                                placeholder="{{ 'Brief description of the booking...' if current_language == 'en' else 'รายละเอียดสั้นๆ เกี่ยวกับการจอง...' }}">{{ booking.description or '' }}</textarea>
+                            <div class="form-text">{{ 'Brief description or notes about this booking' if
+                                current_language == 'en' else 'รายละเอียดสั้นๆ หรือหมายเหตุเกี่ยวกับการจองนี้' }}</div>
+                        </div>
+
+                        <!-- Products Calculation -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-calculator me-2 text-primary"></i>Products &
+                                    Calculation</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="products-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 6%;">No.</th>
+                                                <th style="width: 28%;">Products</th>
+                                                <th style="width: 12%;">Quantity</th>
+                                                <th style="width: 20%;">Price</th>
+                                                <th style="width: 20%;">Amount</th>
+                                                <th style="width: 8%;">Order</th>
+                                                <th style="width: 6%;">Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-tbody">
+                                            <tr class="product-row">
+                                                <td class="row-number">1</td>
+                                                <td>
+                                                    <input type="text" class="form-control product-name"
+                                                        name="products[0][name]" placeholder="Enter product name">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-quantity"
+                                                        name="products[0][quantity]" min="1" value="1" placeholder="1">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-price"
+                                                        name="products[0][price]" step="0.01" placeholder="0.00">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-amount"
+                                                        name="products[0][amount]" step="0.01" readonly>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group-vertical" role="group">
+                                                        <button type="button"
+                                                            class="btn btn-outline-primary btn-sm move-up"
+                                                            title="Move Up">
+                                                            <i class="fas fa-chevron-up"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                            class="btn btn-outline-primary btn-sm move-down"
+                                                            title="Move Down">
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm delete-row"
+                                                        title="Delete Row">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-product-row">
+                                        <i class="fas fa-plus me-2"></i>Add Row
+                                    </button>
+                                    <div class="text-end">
+                                        <strong>Total: <span id="grand-total">0.00</span> THB</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="mb-3">
+                            <label for="total_amount" class="form-label">
+                                <i class="fas fa-money-bill me-2"></i>{{ t('total') }} {{ t('amount') }} ({{
+                                config.CURRENCY_SYMBOL }})
+                                <small class="text-muted">(Auto-calculated from products above)</small>
+                            </label>
+                            <input type="number" class="form-control" id="total_amount" name="total_amount"
+                                value="{{ booking.total_amount }}" step="0.01" min="0" readonly>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                {{ 'This amount is automatically calculated from the products table above and cannot be
+                                edited manually.' if current_language == 'en' else
+                                'จำนวนเงินนี้คำนวณอัตโนมัติจากตารางผลิตภัณฑ์ด้านบนและไม่สามารถแก้ไขได้' }}
+                            </div>
+                        </div>
+
+                        <!-- Name List / Rooming List -->
+                        <div class="mb-3">
+                            <label for="guest_list" class="form-label">
+                                <i class="fas fa-list me-2"></i>{{ 'Name List / Rooming List:' if current_language ==
+                                'en' else
+                                'รายชื่อผู้เดินทาง / การจัดห้อง:' }}
+                            </label>
+                            {% set guests = booking.get_guest_list() %}
+                            <textarea class="form-control" id="guest_list" name="guest_list" rows="4"
+                                placeholder="{{ 'Enter guest names, one per line' if current_language == 'en' else 'ใส่ชื่อผู้เดินทาง คนละบรรทัด' }}">{{ guests|join('\n') }}</textarea>
+                            <div class="form-text">
+                                {{ 'Enter each guest name on a separate line' if current_language == 'en' else
+                                'ใส่ชื่อผู้เดินทางคนละบรรทัด' }}
+                            </div>
+                        </div>
+
+                        <!-- Special Requests -->
+                        <div class="mb-3">
+                            <label for="special_request" class="form-label">
+                                <i class="fas fa-star me-2"></i>{{ t('special_requests') }}
+                            </label>
+                            <textarea class="form-control" id="special_request" name="special_request"
+                                rows="3">{{ booking.special_request }}</textarea>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>{{ t('save') }} {{ t('edit') }}
+                            </button>
+                            <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>{{ t('cancel') }}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Booking Summary -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>{{ t('booking') }} {{ t('info') if current_language ==
+                        'en' else 'ข้อมูล' }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm table-borderless">
+                        <tr>
+                            <td><strong>{{ t('booking_number') }}:</strong></td>
+                            <td><span class="badge bg-primary">{{ booking.booking_reference }}</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>{{ t('created') if current_language == 'en' else 'สร้างเมื่อ' }}:</strong></td>
+                            <td>{{ booking.created_at.strftime('%d/%m/%Y %H:%M') if booking.created_at }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>{{ t('current_status') if current_language == 'en' else 'สถานะปัจจุบัน'
+                                    }}:</strong></td>
+                            <td>
+                                {% if booking.status == 'pending' %}
+                                <span class="badge bg-warning">{{ t('pending') }}</span>
+                                {% elif booking.status == 'confirmed' %}
+                                <span class="badge bg-success">{{ t('confirmed') }}</span>
+                                {% elif booking.status == 'completed' %}
+                                <span class="badge bg-info">{{ t('completed') }}</span>
+                                {% elif booking.status == 'cancelled' %}
+                                <span class="badge bg-danger">{{ t('cancelled') }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>{{ t('actions') }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('voucher.view', id=booking.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye me-2"></i>{{ t('view') }} {{ t('voucher') }}
+                        </a>
+                        <a href="{{ url_for('voucher.generate', booking_id=booking.id) }}"
+                            class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-download me-2"></i>{{ t('download') }} PDF
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin & Management Notes -->
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user-shield me-2"></i>{{ 'Admin & Management Notes' if current_language ==
+                            'en'
+                            else 'หมายเหตุผู้ดูแลและผู้จัดการ' }}
+                            <span class="badge bg-light text-dark ms-2">
+                                <i class="fas fa-lock me-1"></i>{{ 'Internal Use Only' if current_language == 'en' else
+                                'ใช้งานภายในเท่านั้น' }}
+                            </span>
+                        </h6>
+                        <!-- Toggle Button -->
+                        <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#adminNotesEditCollapse" aria-expanded="false"
+                            aria-controls="adminNotesEditCollapse" id="toggleAdminNotesEdit">
+                            <i class="fas fa-eye me-1"></i>{{ 'Show Notes' if current_language == 'en' else 'แสดงบันทึก'
+                            }}
+                        </button>
+                    </div>
+                </div>
+                <!-- Collapsible Content (Hidden by default) -->
+                <div class="collapse" id="adminNotesEditCollapse">
+                    <div class="card-body">
+                        <!-- Admin Notes -->
+                        <div class="mb-4">
+                            <label for="admin_notes" class="form-label">
+                                <i class="fas fa-user-shield me-2 text-danger"></i>{{ '🔴 Admin Notes 🔴' if
+                                current_language ==
+                                'en' else '🔴 บันทึกแอดมิน 🔴' }}
+                            </label>
+                            <textarea class="form-control tinymce-editor" id="admin_notes" name="admin_notes" rows="6"
+                                style="border: 2px solid #ff0000; background-color: #ffeeee;">{{ booking.admin_notes or '' }}</textarea>
+                            <div class="form-text text-danger">
+                                <i class="fas fa-lock me-1"></i>{{ 'Private: Only visible to admin users' if
+                                current_language == 'en' else 'ส่วนตัว: เฉพาะผู้ดูแลระบบเท่านั้น' }}
+                            </div>
+                        </div>
+
+                        <!-- Manager Memos -->
+                        <div class="mb-4">
+                            <label for="manager_memos" class="form-label">
+                                <i class="fas fa-clipboard-list me-2 text-info"></i>{{ '🔵 Manager Memos 🔵' if
+                                current_language
+                                == 'en' else '🔵 บันทึกผู้จัดการ 🔵' }}
+                            </label>
+                            <textarea class="form-control tinymce-editor" id="manager_memos" name="manager_memos"
+                                rows="6"
+                                style="border: 2px solid #0066cc; background-color: #eef4ff;">{{ booking.manager_memos or '' }}</textarea>
+                            <div class="form-text text-info">
+                                <i class="fas fa-info-circle me-1"></i>{{ 'Management level notes and instructions' if
+                                current_language == 'en' else 'หมายเหตุและคำแนะนำระดับผู้จัดการ' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operation Notes -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>{{ 'Operation Notes' if current_language == 'en' else
+                        'หมายเหตุการดำเนินการ' }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="internal_note" name="internal_note" rows="4"
+                        placeholder="{{ 'Operation notes (not visible to customer)' if current_language == 'en' else 'หมายเหตุการดำเนินการ (ลูกค้าไม่เห็น)' }}">{{ booking.internal_note or '' }}</textarea>
+                    <div class="form-text">{{ 'Staff only' if current_language == 'en' else 'เฉพาะพนักงาน' }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-calculate total pax
+    document.addEventListener('DOMContentLoaded', function () {
+        const adultsInput = document.getElementById('adults');
+        const childrenInput = document.getElementById('children');
+        const totalPaxInput = document.getElementById('total_pax');
+
+        function calculateTotalPax() {
+            const adults = parseInt(adultsInput.value) || 0;
+            const children = parseInt(childrenInput.value) || 0;
+            const total = adults + children;
+
+            if (total > 0) {
+                totalPaxInput.value = total;
+            }
+        }
+
+        adultsInput.addEventListener('change', calculateTotalPax);
+        childrenInput.addEventListener('change', calculateTotalPax);
+    });
+
+    <!-- Products data from server -->
+    <script type="text/javascript">
+        window.bookingProductsData = {{ booking.get_products() | tojson | safe if booking.get_products() else '[]' }};
+</script>
+
+<script type="text/javascript">
+    // Initialize TinyMCE for description field
+    // Initialize TinyMCE WYSIWYG Editor after DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize TinyMCE for description field
+        tinymce.init({
+            selector: '#description',
+            height: 200,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+            plugins: 'lists link code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            setup: function (editor) {
+                editor.on('init', function () {
+                    console.log('TinyMCE initialized for description (Edit)');
+                });
+            }
+        });
+
+    // Handle Admin Notes collapse toggle
+    const adminNotesEditCollapse = document.getElementById('adminNotesEditCollapse');
+    const toggleButtonEdit = document.getElementById('toggleAdminNotesEdit');
+
+    adminNotesEditCollapse.addEventListener('show.bs.collapse', function () {
+        toggleButtonEdit.innerHTML = '<i class="fas fa-eye-slash me-1"></i>{{ "Hide Notes" if current_language == "en" else "ซ่อนบันทึก" }}';
+
+    // Initialize TinyMCE when shown
+    if (!tinymce.get('admin_notes')) {
+        tinymce.init({
+            selector: '#admin_notes',
+            height: 200,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code | help',
+            plugins: 'lists link table code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            setup: function (editor) {
+                // Save content on change to ensure it's captured for admin_notes
+                editor.on('change input NodeChange', function () {
+                    editor.save();
+                    // Update the textarea directly as backup
+                    const textarea = document.getElementById(editor.id);
+                    if (textarea) {
+                        textarea.value = editor.getContent();
+                        console.log(`Updated ${editor.id} textarea:`, textarea.value);
+                    }
+                });
+
+                // Force save on blur
+                editor.on('blur', function () {
+                    editor.save();
+                    const textarea = document.getElementById(editor.id);
+                    if (textarea) {
+                        textarea.value = editor.getContent();
+                        console.log(`Blur save ${editor.id} textarea:`, textarea.value);
+                    }
+                });
+            }
+        });
+            }
+
+    if (!tinymce.get('manager_memos')) {
+        tinymce.init({
+            selector: '#manager_memos',
+            height: 200,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code | help',
+            plugins: 'lists link table code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            setup: function (editor) {
+                // Save content on change to ensure it's captured for manager_memos
+                editor.on('change input NodeChange', function () {
+                    editor.save();
+                    // Update the textarea directly as backup
+                    const textarea = document.getElementById(editor.id);
+                    if (textarea) {
+                        textarea.value = editor.getContent();
+                        console.log(`Updated ${editor.id} textarea:`, textarea.value);
+                    }
+                });
+
+                // Force save on blur
+                editor.on('blur', function () {
+                    editor.save();
+                    const textarea = document.getElementById(editor.id);
+                    if (textarea) {
+                        textarea.value = editor.getContent();
+                        console.log(`Blur save ${editor.id} textarea:`, textarea.value);
+                    }
+                });
+            }
+        });
+            }
+        });
+
+    adminNotesEditCollapse.addEventListener('hide.bs.collapse', function () {
+        toggleButtonEdit.innerHTML = '<i class="fas fa-eye me-1"></i>{{ "Show Notes" if current_language == "en" else "แสดงบันทึก" }}';
+        });
+    });
+
+    // Form submission handler to save TinyMCE content
+    document.addEventListener('DOMContentLoaded', function () {
+        const editForm = document.querySelector('form[method="POST"]');
+    if (editForm) {
+        editForm.addEventListener('submit', function (e) {
+            // ★ LET FORM SUBMIT NORMALLY (REMOVE PREVENT DEFAULT)
+            // e.preventDefault(); // COMMENTED OUT TO ALLOW NORMAL FORM SUBMISSION
+
+            // Force sync all TinyMCE content to textareas before submission
+            console.log('=== FORM SUBMISSION DEBUG ===');
+
+            // ★ SYNC TINYMCE TO TEXTAREAS FIRST
+            const adminTextarea = document.getElementById('admin_notes');
+            const managerTextarea = document.getElementById('manager_memos');
+            const internalTextarea = document.getElementById('internal_note');
+
+            const adminNotes = tinymce.get('admin_notes');
+            const managerMemos = tinymce.get('manager_memos');
+
+            if (adminNotes) {
+                const content = adminNotes.getContent();
+                console.log('Admin Notes TinyMCE content:', content);
+                if (adminTextarea) {
+                    adminTextarea.value = content;
+                    console.log('Copied admin content to textarea:', adminTextarea.value);
+                }
+            }
+
+            if (managerMemos) {
+                const content = managerMemos.getContent();
+                console.log('Manager Memos TinyMCE content:', content);
+                if (managerTextarea) {
+                    managerTextarea.value = content;
+                    console.log('Copied manager content to textarea:', managerTextarea.value);
+                }
+            }
+
+            // ★ WAIT FOR DOM UPDATE THEN SUBMIT
+            setTimeout(() => {
+                console.log('=== SUBMITTING FORM WITH FETCH ===');
+
+                // ★ CREATE FORMDATA MANUALLY TO ENSURE TEXTAREA VALUES
+                const formData = new FormData();
+
+                // Get all form elements manually
+                const formInputs = this.querySelectorAll('input, select, textarea');
+                console.log('Found', formInputs.length, 'form inputs');
+
+                formInputs.forEach(input => {
+                    console.log('Processing input:', input.name, input.type, input.value);
+                    if (input.name) {
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            if (input.checked) {
+                                formData.append(input.name, input.value);
+                            }
+                        } else {
+                            formData.append(input.name, input.value);
+                        }
+                    }
+                });
+
+                // ★ FORCE OVERWRITE TEXTAREA VALUES
+                const adminTextarea = document.getElementById('admin_notes');
+                const managerTextarea = document.getElementById('manager_memos');
+                const internalTextarea = document.getElementById('internal_note');
+
+                if (adminTextarea) {
+                    console.log('Admin textarea found, value:', adminTextarea.value);
+                    formData.set('admin_notes', adminTextarea.value);
+                }
+                if (managerTextarea) {
+                    console.log('Manager textarea found, value:', managerTextarea.value);
+                    formData.set('manager_memos', managerTextarea.value);
+                }
+                if (internalTextarea) {
+                    console.log('Internal textarea found, value:', internalTextarea.value);
+                    formData.set('internal_note', internalTextarea.value);
+                }
+
+                // ★ ENSURE GUEST LIST IS PROPERLY INCLUDED
+                const guestListTextarea = document.getElementById('guest_list');
+                const specialRequestTextarea = document.getElementById('special_request');
+
+                if (guestListTextarea) {
+                    console.log('Guest List Content:', guestListTextarea.value);
+                    formData.set('guest_list', guestListTextarea.value);
+                }
+
+                if (specialRequestTextarea) {
+                    console.log('Special Request Content:', specialRequestTextarea.value);
+                    formData.set('special_request', specialRequestTextarea.value);
+                }
+
+                // Log the actual form data being sent
+                console.log('FormData admin_notes:', formData.get('admin_notes'));
+                console.log('FormData manager_memos:', formData.get('manager_memos'));
+                console.log('FormData internal_note:', formData.get('internal_note'));
+                console.log('FormData guest_list:', formData.get('guest_list'));
+                console.log('FormData special_request:', formData.get('special_request'));
+
+                // ★ NORMAL FORM SUBMISSION (no FETCH)
+                console.log('=== SUBMITTING FORM NORMALLY ===');
+                // Form will submit normally since we didn't prevent default
+            }, 100); // Wait 100ms for TinyMCE sync
+        });
+        }
+
+    // Products Calculation System (same as create.html)
+    let productRowCount = 1;
+
+    function calculateRowAmount(row) {
+            const quantityInput = row.querySelector('.product-quantity');
+    const priceInput = row.querySelector('.product-price');
+    const amountInput = row.querySelector('.product-amount');
+
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const amount = quantity * price;
+
+    // Format amount with 2 decimal places
+    amountInput.value = amount.toFixed(2);
+
+    // Add visual feedback for calculations
+    if (amount !== 0) {
+        amountInput.style.backgroundColor = amount > 0 ? '#d4edda' : '#f8d7da';
+                setTimeout(() => {
+        amountInput.style.backgroundColor = '#f8f9fa';
+                }, 1000);
+            }
+
+    updateGrandTotal();
+        }
+
+    function addProductRow() {
+            const tbody = document.getElementById('products-tbody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'product-row';
+    newRow.innerHTML = `
+    <td class="row-number">${productRowCount + 1}</td>
+    <td>
+        <input type="text" class="form-control product-name"
+            name="products[${productRowCount}][name]" placeholder="Enter product name">
+    </td>
+    <td>
+        <input type="number" class="form-control product-quantity"
+            name="products[${productRowCount}][quantity]" min="1" value="1" placeholder="1">
+    </td>
+    <td>
+        <input type="number" class="form-control product-price"
+            name="products[${productRowCount}][price]" step="0.01" placeholder="0.00">
+    </td>
+    <td>
+        <input type="number" class="form-control product-amount"
+            name="products[${productRowCount}][amount]" step="0.01" readonly>
+    </td>
+    <td class="text-center">
+        <div class="btn-group-vertical" role="group">
+            <button type="button" class="btn btn-outline-primary btn-sm move-up" title="Move Up">
+                <i class="fas fa-chevron-up"></i>
+            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm move-down" title="Move Down">
+                <i class="fas fa-chevron-down"></i>
+            </button>
+        </div>
+    </td>
+    <td class="text-center">
+        <button type="button" class="btn btn-outline-danger btn-sm delete-row" title="Delete Row">
+            <i class="fas fa-trash"></i>
+        </button>
+    </td>
+    `;
+
+    tbody.appendChild(newRow);
+    productRowCount++;
+    updateRowNumbers();
+    bindRowEvents(newRow);
+        }
+
+    function updateRowNumbers() {
+            const rows = document.querySelectorAll('.product-row');
+            rows.forEach((row, index) => {
+                // Update row numbers
+                const rowNumberCell = row.querySelector('.row-number');
+    if (rowNumberCell) {
+        rowNumberCell.textContent = index + 1;
+                }
+
+    // Update move buttons state
+    const moveUpBtn = row.querySelector('.move-up');
+    const moveDownBtn = row.querySelector('.move-down');
+
+    if (moveUpBtn) {
+        moveUpBtn.disabled = (index === 0); // Disable for first row
+                }
+    if (moveDownBtn) {
+        moveDownBtn.disabled = (index === rows.length - 1); // Disable for last row
+                }
+            });
+        }
+
+    function bindRowEvents(row) {
+            const quantityInput = row.querySelector('.product-quantity');
+    const priceInput = row.querySelector('.product-price');
+    const moveUpBtn = row.querySelector('.move-up');
+    const moveDownBtn = row.querySelector('.move-down');
+    const deleteBtn = row.querySelector('.delete-row');
+
+            quantityInput.addEventListener('input', () => calculateRowAmount(row));
+            priceInput.addEventListener('input', () => calculateRowAmount(row));
+
+    // Bind move up/down events
+    if (moveUpBtn) {
+        moveUpBtn.addEventListener('click', () => moveRowUp(row));
+            }
+    if (moveDownBtn) {
+        moveDownBtn.addEventListener('click', () => moveRowDown(row));
+            }
+
+    // Bind delete event
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => deleteRow(row));
+            }
+        } function moveRowUp(row) {
+            const prevRow = row.previousElementSibling;
+    if (prevRow) {
+        row.parentNode.insertBefore(row, prevRow);
+    updateRowNumbers();
+    updateFieldNames();
+            }
+        }
+
+    function moveRowDown(row) {
+            const nextRow = row.nextElementSibling;
+    if (nextRow) {
+        row.parentNode.insertBefore(nextRow, row);
+    updateRowNumbers();
+    updateFieldNames();
+            }
+        }
+
+    function updateFieldNames() {
+            const rows = document.querySelectorAll('.product-row');
+            rows.forEach((row, index) => {
+                const nameInput = row.querySelector('.product-name');
+    const quantityInput = row.querySelector('.product-quantity');
+    const priceInput = row.querySelector('.product-price');
+    const amountInput = row.querySelector('.product-amount');
+
+    if (nameInput) nameInput.name = `products[${index}][name]`;
+    if (quantityInput) quantityInput.name = `products[${index}][quantity]`;
+    if (priceInput) priceInput.name = `products[${index}][price]`;
+    if (amountInput) amountInput.name = `products[${index}][amount]`;
+            });
+        }
+
+    // Initialize products calculation for edit form
+    document.querySelectorAll('.product-row').forEach(bindRowEvents);
+    document.getElementById('add-product-row')?.addEventListener('click', addProductRow);
+    updateGrandTotal();
+    });
+</script>
+
+<!-- Products Calculation Script for Edit Form -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🚀 Initializing Products & Calculation for Edit Form...');
+
+    let productRowCount = 1;
+
+    // Global functions
+    function updateGrandTotal() {
+        let total = 0;
+            document.querySelectorAll('.product-amount').forEach(input => {
+        total += parseFloat(input.value) || 0;
+            });
+
+    const formattedTotal = total.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+            });
+
+    const grandTotalSpan = document.getElementById('grand-total');
+    if (grandTotalSpan) {
+        grandTotalSpan.textContent = formattedTotal;
+            }
+
+    const totalAmountInput = document.getElementById('total_amount');
+    if (totalAmountInput) {
+        totalAmountInput.value = total.toFixed(2);
+            }
+    console.log('Grand total updated:', total);
+        }
+
+    function updateRowNumbers() {
+        document.querySelectorAll('.product-row').forEach((row, index) => {
+            const numberCell = row.querySelector('.row-number');
+            if (numberCell) {
+                numberCell.textContent = index + 1;
+            }
+        });
+        }
+
+    function updateFieldNames() {
+        document.querySelectorAll('.product-row').forEach((row, index) => {
+            const inputs = row.querySelectorAll('input');
+            const nameInput = row.querySelector('.product-name');
+            const quantityInput = row.querySelector('.product-quantity');
+            const priceInput = row.querySelector('.product-price');
+            const amountInput = row.querySelector('.product-amount');
+
+            if (nameInput) nameInput.name = `products[${index}][name]`;
+            if (quantityInput) quantityInput.name = `products[${index}][quantity]`;
+            if (priceInput) priceInput.name = `products[${index}][price]`;
+            if (amountInput) amountInput.name = `products[${index}][amount]`;
+        });
+        }
+
+    function calculateAmount(row) {
+            const quantityInput = row.querySelector('.product-quantity');
+    const priceInput = row.querySelector('.product-price');
+    const amountInput = row.querySelector('.product-amount');
+
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const amount = quantity * price;
+
+    amountInput.value = amount.toFixed(2);
+    updateGrandTotal();
+        }
+
+    function bindRowEvents(row) {
+            const quantityInput = row.querySelector('.product-quantity');
+    const priceInput = row.querySelector('.product-price');
+    const deleteBtn = row.querySelector('.delete-row');
+    const moveUpBtn = row.querySelector('.move-up');
+    const moveDownBtn = row.querySelector('.move-down');
+
+    if (quantityInput) {
+        quantityInput.addEventListener('input', () => calculateAmount(row));
+            }
+    if (priceInput) {
+        priceInput.addEventListener('input', () => calculateAmount(row));
+            }
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => deleteRow(row));
+            }
+    if (moveUpBtn) {
+        moveUpBtn.addEventListener('click', () => moveRowUp(row));
+            }
+    if (moveDownBtn) {
+        moveDownBtn.addEventListener('click', () => moveRowDown(row));
+            }
+        }
+
+    function deleteRow(row) {
+            const nameInput = row.querySelector('.product-name');
+    const hasData = nameInput && nameInput.value.trim() !== '';
+
+    if (hasData && !confirm('Are you sure you want to delete this product?')) {
+                return;
+            }
+
+    row.remove();
+    updateRowNumbers();
+    updateFieldNames();
+    updateGrandTotal();
+    productRowCount = document.querySelectorAll('.product-row').length;
+        }
+
+    function moveRowUp(row) {
+            const prevRow = row.previousElementSibling;
+    if (prevRow && prevRow.classList.contains('product-row')) {
+        row.parentNode.insertBefore(row, prevRow);
+    updateRowNumbers();
+    updateFieldNames();
+            }
+        }
+
+    function moveRowDown(row) {
+            const nextRow = row.nextElementSibling;
+    if (nextRow && nextRow.classList.contains('product-row')) {
+        row.parentNode.insertBefore(nextRow, row);
+    updateRowNumbers();
+    updateFieldNames();
+            }
+        }
+
+    function addProductRow() {
+            const tbody = document.getElementById('products-tbody');
+    if (!tbody) return;
+
+    const newRow = document.createElement('tr');
+    newRow.className = 'product-row';
+    newRow.innerHTML = `
+    <td class="row-number">${productRowCount + 1}</td>
+    <td><input type="text" class="form-control product-name" name="products[${productRowCount}][name]" placeholder="Enter product name"></td>
+    <td><input type="number" class="form-control product-quantity" name="products[${productRowCount}][quantity]" min="1" value="1" placeholder="1"></td>
+    <td><input type="number" class="form-control product-price" name="products[${productRowCount}][price]" step="0.01" placeholder="0.00"></td>
+    <td><input type="number" class="form-control product-amount" name="products[${productRowCount}][amount]" step="0.01" readonly></td>
+    <td class="text-center">
+        <div class="btn-group-vertical" role="group">
+            <button type="button" class="btn btn-outline-primary btn-sm move-up" title="Move Up"><i class="fas fa-chevron-up"></i></button>
+            <button type="button" class="btn btn-outline-primary btn-sm move-down" title="Move Down"><i class="fas fa-chevron-down"></i></button>
+        </div>
+    </td>
+    <td class="text-center">
+        <button type="button" class="btn btn-outline-danger btn-sm delete-row" title="Delete Row"><i class="fas fa-trash"></i></button>
+    </td>
+    `;
+
+    tbody.appendChild(newRow);
+    bindRowEvents(newRow);
+    productRowCount++;
+    updateRowNumbers();
+    updateFieldNames();
+        }
+
+    // Initialize existing rows
+    const existingRows = document.querySelectorAll('.product-row');
+    existingRows.forEach(bindRowEvents);
+    productRowCount = existingRows.length;
+
+    // Add row button
+    const addRowBtn = document.getElementById('add-product-row');
+    if (addRowBtn) {
+        addRowBtn.addEventListener('click', addProductRow);
+        }
+
+    // Make functions globally accessible to prevent ReferenceError
+    window.updateGrandTotal = updateGrandTotal;
+    window.updateRowNumbers = updateRowNumbers;
+    window.updateFieldNames = updateFieldNames;
+    window.bindRowEvents = bindRowEvents;
+    window.deleteRow = deleteRow;
+
+    // Initial calculation
+    updateGrandTotal();
+
+    // Load existing products data
+    console.log('🔄 Loading existing products data...');
+
+    // Get products data from Jinja template
+    let productsData = null;
+    try {
+        {% if booking.get_products() %}
+    productsData = {{ booking.get_products() | tojson | safe }};
+    {% endif %}
+        } catch (e) {
+        console.error('Error parsing products data:', e);
+    productsData = [];
+        }
+    console.log('📦 Products data received:', productsData);
+
+    if (productsData && productsData.length > 0) {
+        const tbody = document.getElementById('products-tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+
+            productsData.forEach((product, index) => {
+                const row = tbody.insertRow();
+    row.className = 'product-row';
+    row.innerHTML = `
+    <td class="row-number">${index + 1}</td>
+    <td><input type="text" class="form-control product-name" name="products[${index}][name]" value="${product.name || ''}" placeholder="Enter product name"></td>
+    <td><input type="number" class="form-control product-quantity" name="products[${index}][quantity]" value="${product.quantity || 1}" min="1" placeholder="1"></td>
+    <td><input type="number" class="form-control product-price" name="products[${index}][price]" value="${product.price || ''}" step="0.01" placeholder="0.00"></td>
+    <td><input type="number" class="form-control product-amount" name="products[${index}][amount]" value="${product.amount || ''}" step="0.01" readonly></td>
+    <td class="text-center">
+        <div class="btn-group-vertical" role="group">
+            <button type="button" class="btn btn-outline-primary btn-sm move-up" title="Move Up"><i class="fas fa-chevron-up"></i></button>
+            <button type="button" class="btn btn-outline-primary btn-sm move-down" title="Move Down"><i class="fas fa-chevron-down"></i></button>
+        </div>
+    </td>
+    <td class="text-center">
+        <button type="button" class="btn btn-outline-danger btn-sm delete-row" title="Delete Row"><i class="fas fa-trash"></i></button>
+    </td>
+    `;
+    bindRowEvents(row);
+    console.log(`✅ Loaded: ${product.name} - ${product.quantity} x ${product.price} = ${product.amount}`);
+            });
+
+    productRowCount = productsData.length;
+    updateRowNumbers();
+    setTimeout(updateGrandTotal, 100);
+    console.log(`🎯 Successfully loaded ${productsData.length} products!`);
+        }
+    }
+    } catch (error) {
+        console.error('❌ Error loading products:', error);
+    }
+    {% else %}
+    console.log('ℹ️ No products data available');
+    {% endif %}
+
+    console.log('✅ Products system initialized successfully!');
+});
+</script>
+
+<script>
+    // Date format conversion functions for DD/MM/YYYY format
+    function formatDateForDisplay(dateStr, includeTime = false) {
+        if (!dateStr) return '';
+
+    try {
+            const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+
+    if (includeTime) {
+                const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+            }
+
+    return `${day}/${month}/${year}`;
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function parseDateFromDisplay(displayStr, includeTime = false) {
+        if (!displayStr) return '';
+
+        try {
+            if (includeTime) {
+                // Parse DD/MM/YYYY HH:MM format
+                const match = displayStr.match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})$/);
+                if (!match) return '';
+
+                const [, day, month, year, hours, minutes] = match;
+                const date = new Date(year, month - 1, day, hours, minutes);
+
+                if (isNaN(date.getTime())) return '';
+
+                // Return in format expected by datetime-local input (YYYY-MM-DDTHH:MM)
+                return date.toISOString().slice(0, 16);
+            } else {
+                // Parse DD/MM/YYYY format
+                const match = displayStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                if (!match) return '';
+
+                const [, day, month, year] = match;
+                const date = new Date(year, month - 1, day);
+
+                if (isNaN(date.getTime())) return '';
+
+                // Return in format expected by date input (YYYY-MM-DD)
+                return date.toISOString().slice(0, 10);
+            }
+        } catch (e) {
+            return '';
+        }
+    }
+
+    // Calendar picker functions
+    function showDateTimePicker(fieldId) {
+        const hiddenInput = document.getElementById(fieldId);
+        const displayInput = document.getElementById(fieldId + '_display');
+
+        if (!hiddenInput || !displayInput) {
+            console.error('Fields not found:', fieldId);
+            return;
+        }
+
+        // Create temporary input for triggering picker
+        const tempInput = document.createElement('input');
+        tempInput.type = 'datetime-local';
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-9999px';
+        tempInput.style.top = '-9999px';
+        tempInput.style.opacity = '0';
+        tempInput.value = hiddenInput.value;
+
+        document.body.appendChild(tempInput);
+
+        // Focus and click to open picker
+        tempInput.focus();
+        tempInput.click();
+
+        // Handle value change
+        tempInput.addEventListener('change', function () {
+            if (this.value) {
+                hiddenInput.value = this.value;
+                const displayValue = formatDateForDisplay(this.value, true);
+                displayInput.value = displayValue;
+            }
+            // Remove temp input
+            document.body.removeChild(this);
+        });
+
+        // Cleanup if no selection made
+        setTimeout(() => {
+            if (document.body.contains(tempInput)) {
+                document.body.removeChild(tempInput);
+            }
+        }, 5000);
+    }
+    }
+
+    function showDatePicker(fieldId) {
+        const hiddenInput = document.getElementById(fieldId);
+        const displayInput = document.getElementById(fieldId + '_display');
+
+        if (!hiddenInput || !displayInput) {
+            console.error('Fields not found:', fieldId);
+            return;
+        }
+
+        // Create temporary input for triggering picker
+        const tempInput = document.createElement('input');
+        tempInput.type = hiddenInput.type; // 'date' or 'datetime-local'
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-9999px';
+        tempInput.style.top = '-9999px';
+        tempInput.style.opacity = '0';
+        tempInput.value = hiddenInput.value;
+
+        document.body.appendChild(tempInput);
+
+        // Focus and click to open picker
+        tempInput.focus();
+        tempInput.click();
+
+        // Handle value change
+        tempInput.addEventListener('change', function () {
+            if (this.value) {
+                hiddenInput.value = this.value;
+                const isDateTime = hiddenInput.type === 'datetime-local';
+                const displayValue = formatDateForDisplay(this.value, isDateTime);
+                displayInput.value = displayValue;
+            }
+            // Remove temp input
+            document.body.removeChild(this);
+        });
+
+        // Cleanup if no selection made
+        setTimeout(() => {
+            if (document.body.contains(tempInput)) {
+                document.body.removeChild(tempInput);
+            }
+        }, 5000);
+    }
+
+    // Setup date format handlers for edit form
+    document.addEventListener('DOMContentLoaded', function () {
+        // Time Limit field
+        const timeLimitDisplay = document.getElementById('time_limit_display');
+        const timeLimitHidden = document.getElementById('time_limit');
+
+        if (timeLimitDisplay && timeLimitHidden) {
+            // Set initial display value from hidden field
+            if (timeLimitHidden.value) {
+                const displayValue = formatDateForDisplay(timeLimitHidden.value, true);
+                timeLimitDisplay.value = displayValue;
+            }
+
+            timeLimitDisplay.addEventListener('input', function () {
+                const convertedValue = parseDateFromDisplay(this.value, true);
+                timeLimitHidden.value = convertedValue;
+            });
+
+            timeLimitDisplay.addEventListener('blur', function () {
+                // Validate and reformat
+                const convertedValue = parseDateFromDisplay(this.value, true);
+                if (convertedValue && this.value) {
+                    const reformatted = formatDateForDisplay(convertedValue, true);
+                    this.value = reformatted;
+                    timeLimitHidden.value = convertedValue;
+                }
+            });
+        }
+
+        // Arrival Date field
+        const arrivalDateDisplay = document.getElementById('arrival_date_display');
+        const arrivalDateHidden = document.getElementById('arrival_date');
+
+        if (arrivalDateDisplay && arrivalDateHidden) {
+            // Set initial display value from hidden field
+            if (arrivalDateHidden.value) {
+                const displayValue = formatDateForDisplay(arrivalDateHidden.value, false);
+                arrivalDateDisplay.value = displayValue;
+            }
+
+            arrivalDateDisplay.addEventListener('input', function () {
+                const convertedValue = parseDateFromDisplay(this.value, false);
+                arrivalDateHidden.value = convertedValue;
+            });
+
+            arrivalDateDisplay.addEventListener('blur', function () {
+                const convertedValue = parseDateFromDisplay(this.value, false);
+                if (convertedValue && this.value) {
+                    const reformatted = formatDateForDisplay(convertedValue, false);
+                    this.value = reformatted;
+                    arrivalDateHidden.value = convertedValue;
+                }
+            });
+        }
+
+        // Departure Date field
+        const departureDateDisplay = document.getElementById('departure_date_display');
+        const departureDateHidden = document.getElementById('departure_date');
+
+        if (departureDateDisplay && departureDateHidden) {
+            // Set initial display value from hidden field
+            if (departureDateHidden.value) {
+                const displayValue = formatDateForDisplay(departureDateHidden.value, false);
+                departureDateDisplay.value = displayValue;
+            }
+
+            departureDateDisplay.addEventListener('input', function () {
+                const convertedValue = parseDateFromDisplay(this.value, false);
+                departureDateHidden.value = convertedValue;
+            });
+
+            departureDateDisplay.addEventListener('blur', function () {
+                const convertedValue = parseDateFromDisplay(this.value, false);
+                if (convertedValue && this.value) {
+                    const reformatted = formatDateForDisplay(convertedValue, false);
+                    this.value = reformatted;
+                    departureDateHidden.value = convertedValue;
+                }
+            });
+        }
+
+        // Due Date field
+        const dueDateDisplay = document.getElementById('due_date_display');
+        const dueDateHidden = document.getElementById('due_date');
+
+        if (dueDateDisplay && dueDateHidden) {
+            // Set initial display value from hidden field
+            if (dueDateHidden.value) {
+                const displayValue = formatDateForDisplay(dueDateHidden.value, false);
+                dueDateDisplay.value = displayValue;
+            }
+
+            dueDateDisplay.addEventListener('input', function () {
+                const convertedValue = parseDateFromDisplay(this.value, false);
+                dueDateHidden.value = convertedValue;
+            });
+
+            dueDateDisplay.addEventListener('blur', function () {
+                // Validate and reformat
+                const convertedValue = parseDateFromDisplay(this.value, false);
+                if (convertedValue && this.value) {
+                    const reformatted = formatDateForDisplay(convertedValue, false);
+                    this.value = reformatted;
+                    dueDateHidden.value = convertedValue;
+                }
+            });
+        }
+    });
+</script>
+
+<!-- Calendar Picker Functions -->
+<script src="{{ url_for('static', filename='js/calendar-picker.js') }}"></script>
+<script src="{{ url_for('static', filename='js/date-handlers-edit.js') }}"></script>
+
+{% endblock %}

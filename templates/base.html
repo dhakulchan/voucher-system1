@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="{{ current_language }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}DHAKULCHAN: Voucher{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome - Using stable version 5.15.4 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"
+        crossorigin="anonymous">
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Thai Fonts - multiple options for better compatibility -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
+    </noscript>
+
+    <!-- TinyMCE WYSIWYG Editor (Always use jsDelivr to avoid read-only warnings) -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <!-- Global TinyMCE Configuration -->
+    <script>
+        // Override TinyMCE init to prevent read-only warnings
+        window.addEventListener('load', function () {
+            if (typeof tinymce !== 'undefined') {
+                // Set global defaults
+                tinymce.defaultSettings = {
+                    readonly: false,
+                    deprecation_warnings: false
+                };
+
+                // Override init function to ensure readonly is always false
+                const originalInit = tinymce.init;
+                tinymce.init = function (settings) {
+                    settings = settings || {};
+                    settings.readonly = false;
+                    settings.deprecation_warnings = false;
+                    return originalInit.call(this, settings);
+                };
+
+                // Suppress console warnings
+                const originalConsoleWarn = console.warn;
+                console.warn = function (message) {
+                    if (typeof message === 'string' && message.includes('read-only')) {
+                        return; // Suppress TinyMCE read-only warnings
+                    }
+                    originalConsoleWarn.apply(console, arguments);
+                };
+            }
+        });
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+            font-display: optional;
+        }
+
+        /* Thai text specific styling with better fallbacks */
+        [lang="th"],
+        .thai-text {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'Sukhumvit Set', 'Thonburi', 'Arial Unicode MS', 'Tahoma', 'Leelawadee UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-display: swap;
+        }
+
+        /* Font optimization - Updated for Font Awesome 5 */
+        .fas,
+        .far,
+        .fab {
+            font-display: swap;
+            font-family: "Font Awesome 5 Free", "Font Awesome 5 Brands", sans-serif !important;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: #87ceeb !important;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            color: #ffffff !important;
+            transform: scale(1.05);
+        }
+
+        .navbar-brand .fas {
+            font-size: 1.2em;
+            color: #87ceeb !important;
+        }
+
+        .navbar-brand:hover .fas {
+            color: #ffffff !important;
+        }
+
+        .sidebar {
+            background-color: #003366;
+            min-height: calc(100vh - 56px);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, .8);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin: 0.125rem 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, .1);
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, .2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+        }
+
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: #003366;
+            border-color: #003366;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #002244;
+            border-color: #002244;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
+        }
+
+        .table th {
+            background-color: #003366;
+            color: white;
+            border: none;
+            font-weight: 500;
+        }
+
+        .badge-pending {
+            background-color: #ffc107 !important;
+            color: #000;
+        }
+
+        .badge-confirmed {
+            background-color: #28a745 !important;
+        }
+
+        .badge-cancelled {
+            background-color: #dc3545 !important;
+        }
+
+        .badge-completed {
+            background-color: #17a2b8 !important;
+        }
+
+        /* Thai Number Format */
+        .thai-number {
+            font-feature-settings: "tnum";
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Fallback for Font Awesome loading issues */
+        .fa-fallback .fas:before,
+        .fa-fallback .far:before,
+        .fa-fallback .fab:before {
+            content: "•";
+            color: #666;
+        }
+
+        .fa-fallback .fa-home:before {
+            content: "🏠";
+        }
+
+        .fa-fallback .fa-user:before {
+            content: "👤";
+        }
+
+        .fa-fallback .fa-building:before {
+            content: "🏢";
+        }
+
+        .fa-fallback .fa-calendar-alt:before {
+            content: "📅";
+        }
+
+        .fa-fallback .fa-ticket-alt:before {
+            content: "🎫";
+        }
+
+        .fa-fallback .fa-users:before {
+            content: "👥";
+        }
+
+        .fa-fallback .fa-receipt:before {
+            content: "🧾";
+        }
+
+        .fa-fallback .fa-code:before {
+            content: "💻";
+        }
+
+        .fa-fallback .fa-tachometer-alt:before {
+            content: "📊";
+        }
+    </style>
+
+    <!-- Font Loading Optimization -->
+    <script>
+        // Optimize font loading and prevent FOUT
+        if ('fonts' in document) {
+            document.fonts.ready.then(function () {
+                document.body.classList.add('fonts-loaded');
+            });
+        }
+
+        // Handle Font Awesome loading errors
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if Font Awesome loaded properly
+            const testElement = document.createElement('i');
+            testElement.className = 'fas fa-home';
+            testElement.style.visibility = 'hidden';
+            document.body.appendChild(testElement);
+
+            const computedStyle = window.getComputedStyle(testElement, ':before');
+            if (computedStyle.content === 'none' || computedStyle.content === '') {
+                console.warn('Font Awesome failed to load, using fallback icons');
+                document.body.classList.add('fa-fallback');
+            }
+
+            document.body.removeChild(testElement);
+        });
+    </script>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard.index') }}">
+                <i class="fas fa-building me-2 text-light"></i>
+                <span class="fw-bold
+                <span class=" navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        {% if current_user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                                data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                        <i class="fas fa-user-cog me-2"></i>{{ t('profile') }}
+                                    </a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                        <i class="fas fa-sign-out-alt me-2"></i>{{ t('logout') }}
+                                    </a></li>
+                            </ul>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">{{ t('login') }}</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            {% if current_user.is_authenticated %}
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-block sidebar show">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
+                                href="{{ url_for('dashboard.index') }}">
+                                <i class="fas fa-tachometer-alt me-2"></i>{{ t('dashboard') }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('booking') %}active{% endif %}"
+                                href="{{ url_for('booking.list') }}">
+                                <i class="fas fa-calendar-alt me-2"></i>{{ t('booking') }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('quote') %}active{% endif %}"
+                                href="{{ url_for('quote.list_quotes') }}">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Quotes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('paid') %}active{% endif %}"
+                                href="{{ url_for('paid.list_paid_bookings') }}">
+                                <i class="fas fa-receipt me-2"></i>Paid
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('voucher') %}active{% endif %}"
+                                href="{{ url_for('voucher.list') }}">
+                                <i class="fas fa-ticket-alt me-2"></i>{{ t('voucher') }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('pre_receipt') %}active{% endif %}"
+                                href="{{ url_for('pre_receipt.list') }}">
+                                <i class="fas fa-file-invoice me-2"></i>Pre-Receipt
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('completed') %}active{% endif %}"
+                                href="{{ url_for('completed.list_completed_bookings') }}">
+                                <i class="fas fa-flag-checkered me-2"></i>Completed
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('customer') %}active{% endif %}"
+                                href="{{ url_for('booking.customers') }}">
+                                <i class="fas fa-users me-2"></i>{{ t('customer') }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('supplier') %}active{% endif %}"
+                                href="{{ url_for('supplier.list_') }}">
+                                <i class="fas fa-truck-loading me-2"></i>Supplier
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('auto_completion') %}active{% endif %}"
+                                href="{{ url_for('auto_completion.index') }}">
+                                <i class="fas fa-sync me-2"></i>Sync Status
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('user_mgmt') %}active{% endif %}"
+                                href="{{ url_for('user_mgmt.list_users') }}">
+                                <i class="fas fa-users-cog me-2"></i>User Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('api.docs') }}">
+                                <i class="fas fa-code me-2"></i>{{ t('api_docs') }}
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Language Switcher -->
+                    <div class="mt-4 px-3">
+                        <div class="d-flex flex-column gap-2">
+                            <small class="text-white-50">{{ t('language_label') if current_language == 'en' else 'ภาษา /
+                                Language' }}</small>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <a href="{{ url_for('language.set_language', language='th') }}"
+                                    class="btn btn-outline-light btn-sm {% if session.get('language') == 'th' %}active{% endif %}">
+                                    🇹🇭 ไทย
+                                </a>
+                                <a href="{{ url_for('language.set_language', language='en') }}"
+                                    class="btn btn-outline-light btn-sm {% if session.get('language') == 'en' or not session.get('language') %}active{% endif %}">
+                                    🇺🇸 English
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                {% else %}
+                <main class="main-content">
+                    {% endif %}
+
+                    <div class="pt-3">
+                        <!-- Flash Messages -->
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                            role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+
+                        <!-- Page Content -->
+                        {% block content %}{% endblock %}
+                    </div>
+                </main>
+        </div>
+    </div> <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Font loading optimization -->
+    <script>
+        // Preload system fonts as fallback
+        if ('fonts' in document) {
+            // Try to load Google Fonts with timeout
+            const fontTimeout = setTimeout(() => {
+                console.log('Google Fonts timeout - using system fonts');
+            }, 3000);
+
+            document.fonts.ready.then(() => {
+                clearTimeout(fontTimeout);
+            });
+        }
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

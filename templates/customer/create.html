@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}เพิ่มลูกค้าใหม่{% endblock %}
+{% block content %}
+<h1 class="h3 pt-3 mb-3 border-bottom"><i class="fas fa-user-plus me-2"></i>เพิ่มลูกค้าใหม่</h1>
+<form method="POST">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">ชื่อ *</label>
+            <input type="text" name="first_name" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">นามสกุล *</label>
+            <input type="text" name="last_name" class="form-control" required>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-1">
+            <label class="form-label">อีเมล *</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">โทรศัพท์ *</label>
+            <input type="text" name="phone" class="form-control" required>
+        </div>
+    </div>
+    <div id="dup-alert" class="alert alert-warning d-none" role="alert"></div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">สัญชาติ</label>
+            <input type="text" name="nationality" class="form-control">
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">ที่อยู่</label>
+            <input type="text" name="address" class="form-control">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">หมายเหตุ</label>
+        <textarea name="notes" class="form-control" rows="4"></textarea>
+    </div>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit"><i class="fas fa-save me-1"></i>บันทึก</button>
+        <a href="{{ url_for('customer.list') }}" class="btn btn-secondary">ยกเลิก</a>
+    </div>
+</form>
+
+<script>
+    (function () {
+        const emailInput = document.getElementById('email');
+        const alertBox = document.getElementById('dup-alert');
+        let t;
+        function showAlert(html) {
+            alertBox.innerHTML = html;
+            alertBox.classList.remove('d-none');
+        }
+        function hideAlert() {
+            alertBox.classList.add('d-none');
+            alertBox.innerHTML = '';
+        }
+        emailInput.addEventListener('input', () => { clearTimeout(t); t = setTimeout(check, 400); });
+        emailInput.addEventListener('blur', check);
+        function check() {
+            const email = (emailInput.value || '').trim();
+            if (!email) { hideAlert(); return; }
+            fetch(`{{ url_for('customer.api_check_duplicate') }}?email=${encodeURIComponent(email)}`)
+                .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                .then(data => {
+                    if (!data || !data.ok) { hideAlert(); return; }
+                    const local = data.local; const remote = data.invoice_ninja;
+                    if (local) {
+                        const viewUrl = `{{ url_for('customer.view', id=0) }}`.replace('0', local.id);
+                        showAlert(`<i class="fas fa-exclamation-triangle me-2"></i>พบลูกค้าในระบบด้วยอีเมลนี้: <strong>${escapeHtml(local.name)}</strong> <a class="ms-2" href="${viewUrl}">ไปที่ระเบียนเดิม</a>`);
+                    } else if (remote) {
+                        showAlert(`<i class="fas fa-link me-2"></i>พบ Client ใน Invoice Ninja ด้วยอีเมลนี้: <strong>${escapeHtml(remote.name)}</strong> ระบบจะเชื่อมโยงอัตโนมัติเมื่อบันทึก`);
+                    } else {
+                        hideAlert();
+                    }
+                })
+                .catch(() => { /* silent */ });
+        }
+        function escapeHtml(text) { const d = document.createElement('div'); d.textContent = text || ''; return d.innerHTML; }
+    })();
+</script>
+{% endblock %}

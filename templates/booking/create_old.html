@@ -1,0 +1,541 @@
+{% extends "base.html" %}
+
+{% block title %}Create Booking{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #06b6d4;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Full width layout adjustments */
+    .container-fluid {
+        max-width: 100%;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Make cards stretch to full width */
+    .card {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Ensure all content sections use full width */
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .col-12,
+    .col-lg-8,
+    .col-lg-4 {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .modern-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        width: 100%;
+    }
+
+    .modern-card:hover {
+        box-shadow: var(--card-hover-shadow);
+        transform: translateY(-2px);
+    }
+
+    .modern-header {
+        background: var(--gradient-bg);
+        border-radius: 15px 15px 0 0;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .modern-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+
+    .modern-header > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+        background-color: #ffffff;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: var(--gradient-bg);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+    }
+
+    .animated-icon {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-plus me-2"></i>Create New Booking
+        </h1>
+        <div>
+            <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Bookings
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="modern-card">
+                <div class="modern-header text-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-plus me-2"></i>New Booking Details
+                    </h5>
+                    <p class="mb-0 opacity-75 mt-1 small">Fill in the booking information below</p>
+                </div>
+                <div class="card-body p-3">
+                    <form method="POST">
+                        <!-- Customer Selection -->
+                        <div class="mb-3">
+                            <label for="customer_id" class="form-label">
+                                <i class="fas fa-user me-2"></i>Customer *
+                            </label>
+                            <select class="form-select" id="customer_id" name="customer_id" required>
+                                <option value="">Select Customer</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.email }})</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Can't find the customer?
+                                <a href="{{ url_for('booking.customers') }}" target="_blank">Add a new customer</a>
+                            </div>
+                        </div>
+
+                        <!-- Booking Type and Party Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="booking_type" class="form-label">
+                                        <i class="fas fa-tag me-2"></i>Booking Type *
+                                    </label>
+                                    <select class="form-select" id="booking_type" name="booking_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="package">Package</option>
+                                        <option value="tour">Tour</option>
+                                        <option value="collective-groups">Collective Groups</option>
+                                        <option value="incentive-groups">Incentive Groups</option>
+                                        <option value="air-ticket">Air Ticket</option>
+                                        <option value="hotel">Hotel</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="park-ticket">Park Ticket</option>
+                                        <option value="fit">F.I.T.</option>
+                                        <option value="others">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="party_name" class="form-label">
+                                        <i class="fas fa-users-cog me-2"></i>Party Name
+                                    </label>
+                                    <input type="text" class="form-control" id="party_name" name="party_name"
+                                        placeholder="Enter group or party name">
+                                    <div class="form-text">Optional: Name for the group or party</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-file-alt me-2"></i>Description
+                            </label>
+                            <textarea class="form-control" id="description" name="description" rows="4"
+                                placeholder="Brief description of the booking..."></textarea>
+                            <div class="form-text">Brief description or notes about this booking</div>
+                        </div>
+
+                        <!-- Flight Info -->
+                        <div class="mb-4">
+                            <label for="flight_info" class="form-label">
+                                <i class="fas fa-plane me-2 text-info"></i>Flight Info
+                            </label>
+                            <textarea class="form-control" id="flight_info" name="flight_info" rows="4"
+                                placeholder="Flight details (optional)"></textarea>
+                            <div class="form-text">Flight arrival/departure information for transfers</div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <!-- Guest Information Section -->
+                        <div class="mb-4">
+                            <div class="card">
+                                <div class="card-header" style="background-color: #17a2b8; color: white;">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-users me-2"></i>Guest Information
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="adults" class="form-label">
+                                                    <i class="fas fa-user-friends me-2 text-primary"></i>Adults *
+                                                </label>
+                                                <input type="number" class="form-control" id="adults" name="adults" min="1"
+                                                    max="50" value="1" required>
+                                                <div class="form-text">Age 12+</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="children" class="form-label">
+                                                    <i class="fas fa-child me-2 text-info"></i>Children
+                                                </label>
+                                                <input type="number" class="form-control" id="children" name="children"
+                                                    min="0" max="20" value="0">
+                                                <div class="form-text">Age 2-11</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="total_pax" class="form-label">
+                                                    <i class="fas fa-users me-2 text-success"></i>Total Guests *
+                                                </label>
+                                                <input type="number" class="form-control bg-light" id="total_pax"
+                                                    name="total_pax" min="1" max="50" value="1" required readonly>
+                                                <div class="form-text">Auto calculated: Adults + Children</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="mb-3">
+                                                <label for="infants" class="form-label">
+                                                    <i class="fas fa-baby me-2 text-warning"></i>Infants
+                                                </label>
+                                                <input type="number" class="form-control" id="infants" name="infants"
+                                                    min="0" max="10" value="0">
+                                                <div class="form-text">Under 2 years</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Travel Dates -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="arrival_date" class="form-label">
+                                        <i class="fas fa-calendar-plus me-2 text-success"></i>Traveling from
+                                    </label>
+                                    <input type="date" class="form-control" id="arrival_date" name="arrival_date">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="departure_date" class="form-label">
+                                        <i class="fas fa-calendar-minus me-2 text-danger"></i>Traveling to
+                                    </label>
+                                    <input type="date" class="form-control" id="departure_date" name="departure_date">
+                                </div>
+                            </div>
+                        </div>                            <!-- Financial Information -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-light">
+                                    <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2 text-success"></i>Financial
+                                        Information</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-8">
+                                            <div class="mb-3">
+                                                <label for="total_amount" class="form-label">
+                                                    <i class="fas fa-dollar-sign me-2"></i>Total Amount
+                                                </label>
+                                                <input type="number" class="form-control" id="total_amount"
+                                                    name="total_amount" step="0.01" min="0" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="currency" class="form-label">
+                                                <i class="fas fa-coins me-2"></i>Currency
+                                            </label>
+                                            <select class="form-select" id="currency" name="currency">
+                                                <option value="THB" selected>🇹🇭 THB - Thai Baht</option>
+                                                <option value="HKD">🇭🇰 HKD - Hong Kong Dollar</option>
+                                                <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
+                                                <option value="USD">🇺🇸 USD - US Dollar</option>
+                                                <option value="EUR">🇪🇺 EUR - Euro</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-sticky-note me-2 text-warning"></i>Additional
+                                    Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="special_request" class="form-label">
+                                        <i class="fas fa-comment-alt me-2"></i>Special Requests
+                                    </label>
+                                    <textarea class="form-control" id="special_request" name="special_request" rows="4"
+                                        placeholder="Any special requirements, dietary restrictions, accessibility needs, or other important notes..."></textarea>
+                                    <div class="form-text">These notes will be visible to all staff members</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="internal_note" class="form-label">
+                                        <i class="fas fa-sticky-note me-2 text-secondary"></i>Internal Note
+                                    </label>
+                                    <textarea class="form-control" id="internal_note" name="internal_note" rows="4"
+                                        placeholder="Internal notes (not visible to customer)"></textarea>
+                                    <div class="form-text">Only staff can see this.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin & Management Notes Sidebar -->
+            <div class="col-12" style="border: 5px solid #ff00ff; background-color: #f0f0f0; margin-top: 20px;">
+                <h1 style="color: red; font-size: 24px;">🚨 SIDEBAR TEST 🚨</h1>
+
+                <!-- Admin & Management Notes -->
+                <div class="card mb-4" style="border: 3px solid #ff0000; background-color: #fff3cd;">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-user-shield me-2"></i>🔴 Admin & Management Notes 🔴
+                            <span class="badge bg-light text-dark ms-2">
+                                <i class="fas fa-lock me-1"></i>Internal Use Only
+                            </span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Admin Notes -->
+                        <div class="mb-4">
+                            <label for="admin_notes" class="form-label">
+                                <i class="fas fa-user-shield me-2 text-danger"></i>🔴 Admin Notes 🔴
+                            </label>
+                            <textarea class="form-control" id="admin_notes" name="admin_notes" rows="6"
+                                style="border: 2px solid #ff0000; background-color: #ffeeee;"
+                                placeholder="🔴 Internal admin notes - only visible to admin users..."></textarea>
+                            <div class="form-text text-danger">
+                                <i class="fas fa-lock me-1"></i>Private: Only visible to admin users
+                            </div>
+                        </div>
+
+                        <!-- Manager Memos -->
+                        <div class="mb-3">
+                            <label for="manager_memos" class="form-label">
+                                <i class="fas fa-clipboard-list me-2 text-info"></i>🔵 Manager Memos 🔵
+                            </label>
+                            <textarea class="form-control" id="manager_memos" name="manager_memos" rows="6"
+                                style="border: 2px solid #0066cc; background-color: #eef4ff;"
+                                placeholder="🔵 Important management notes and memos..."></textarea>
+                            <div class="form-text text-info">
+                                <i class="fas fa-info-circle me-1"></i>Management level notes and instructions
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i class="fas fa-plus-circle me-2"></i>Create Booking
+                        </button>
+                        <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary btn-lg px-4">
+                            <i class="fas fa-arrow-left me-2"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+    </form>
+</div>
+
+<script>
+    // Auto-populate departure date when arrival date changes (next day)
+    document.getElementById('arrival_date').addEventListener('change', function () {
+        const arrivalDate = new Date(this.value);
+        if (arrivalDate) {
+            const departureDate = new Date(arrivalDate);
+            departureDate.setDate(departureDate.getDate() + 1);
+            document.getElementById('departure_date').value = departureDate.toISOString().split('T')[0];
+        }
+    });
+
+    // Auto-calculate total guests (adults + children)
+    function calculateTotalGuests() {
+        const adults = parseInt(document.getElementById('adults').value) || 0;
+        const children = parseInt(document.getElementById('children').value) || 0;
+        const total = adults + children;
+
+        // Ensure minimum of 1 guest
+        document.getElementById('total_pax').value = Math.max(1, total);
+
+        // Update estimate when total changes
+        updateEstimate();
+    }
+
+    // Add event listeners for auto-calculation
+    document.getElementById('adults').addEventListener('input', calculateTotalGuests);
+    document.getElementById('children').addEventListener('input', calculateTotalGuests);
+
+    // Calculate estimated amount based on type and guests
+    document.getElementById('booking_type').addEventListener('change', updateEstimate);
+    document.getElementById('total_pax').addEventListener('change', updateEstimate);
+
+    function updateEstimate() {
+        const type = document.getElementById('booking_type').value;
+        const pax = parseInt(document.getElementById('total_pax').value) || 1;
+
+        const rates = {
+            'tour': 1500,
+            'hotel': 2000,
+            'transport': 800
+        };
+
+        if (type && rates[type]) {
+            const estimate = rates[type] * pax;
+            document.getElementById('total_amount').value = estimate;
+        }
+    }
+
+    // Initialize total guests calculation on page load
+    calculateTotalGuests();
+
+    // Initialize TinyMCE WYSIWYG Editor after DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize TinyMCE for description field
+        tinymce.init({
+            selector: '#description',
+            height: 200,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+            plugins: 'lists link code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            readonly: false,
+            setup: function (editor) {
+                editor.on('init', function () {
+                    console.log('TinyMCE initialized for description');
+                });
+            }
+        });
+
+        // Initialize TinyMCE for admin_notes field
+        tinymce.init({
+            selector: '#admin_notes',
+            height: 250,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code | help',
+            plugins: 'lists link table code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            readonly: false,
+            placeholder: 'Internal admin notes - only visible to admin users...',
+            setup: function (editor) {
+                editor.on('init', function () {
+                    console.log('TinyMCE initialized for admin_notes');
+                });
+            }
+        });
+
+        // Initialize TinyMCE for manager_memos field
+        tinymce.init({
+            selector: '#manager_memos',
+            height: 250,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link table | removeformat | code | help',
+            plugins: 'lists link table code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            readonly: false,
+            placeholder: 'Important management notes and memos...',
+            setup: function (editor) {
+                editor.on('init', function () {
+                    console.log('TinyMCE initialized for manager_memos');
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Paid Bookings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-success">
+                    <i class="fas fa-receipt me-2"></i>
+                    Paid Bookings
+                </h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-1"></i>All Bookings
+                    </a>
+                    <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>New Booking
+                    </a>
+                </div>
+            </div>
+
+            {% if bookings %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-money-check-alt me-2"></i>
+                        Paid Bookings ({{ bookings|length }} found)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Booking Reference</th>
+                                    <th>Customer</th>
+                                    <th>Service Type</th>
+                                    <th>Travel Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Payment Status</th>
+                                    <th>Created Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in bookings %}
+                                <tr>
+                                    <td>
+                                        <strong class="text-primary">{{ booking.booking_reference }}</strong>
+                                        {% if booking.party_name %}
+                                        <br><small class="text-muted">{{ booking.party_name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ booking.customer.name }}</strong>
+                                            <br><small class="text-muted">{{ booking.customer.email }}</small>
+                                            {% if booking.customer.phone %}
+                                            <br><small class="text-muted">{{ booking.customer.phone }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ booking.booking_type.title() }}</span>
+                                        {% if booking.description %}
+                                        <br><small class="text-muted">{{ booking.description[:50] }}{% if
+                                            booking.description|length > 50 %}...{% endif %}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if booking.arrival_date %}
+                                        <strong>{{ booking.arrival_date.strftime('%d/%m/%Y') }}</strong>
+                                        {% if booking.departure_date and booking.departure_date != booking.arrival_date
+                                        %}
+                                        <br><small class="text-muted">to {{ booking.departure_date.strftime('%d/%m/%Y')
+                                            }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if booking.total_amount %}
+                                        {% set amount_value = booking.total_amount|float %}
+                                        <strong class="text-success">{{ booking.currency or 'THB' }} {{
+                                            "{:,.2f}".format(amount_value) }}</strong>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle me-1"></i>Paid
+                                        </span>
+                                        {% if booking.paid_at %}
+                                        <br><small class="text-muted">{{ booking.paid_at.strftime('%d/%m/%Y %H:%M')
+                                            }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ booking.created_at.strftime('%d/%m/%Y') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical btn-group-sm" role="group">
+                                            <!-- View Booking -->
+                                            <a href="{{ url_for('booking.view', id=booking.id) }}"
+                                                class="btn btn-outline-primary btn-sm" title="View Booking Details">
+                                                <i class="fas fa-eye me-1"></i>View Booking
+                                            </a>
+
+                                            <!-- Download Receipt -->
+                                            <a href="{{ url_for('booking.generate_quote_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+                                                class="btn btn-outline-success btn-sm" target="_blank"
+                                                title="Download Receipt PDF">
+                                                <i class="fas fa-download me-1"></i>Receipt PDF
+                                            </a>
+
+                                            <!-- Generate Voucher (if applicable) -->
+                                            {% if booking.status == 'paid' %}
+                                            <a href="{{ url_for('voucher.generate', booking_id=booking.id) }}"
+                                                class="btn btn-outline-warning btn-sm" title="Generate Voucher">
+                                                <i class="fas fa-ticket-alt me-1"></i>Create Voucher
+                                            </a>
+                                            {% endif %}
+
+                                            <!-- Edit Booking -->
+                                            <a href="{{ url_for('booking.edit', id=booking.id) }}"
+                                                class="btn btn-outline-secondary btn-sm" title="Edit Booking">
+                                                <i class="fas fa-edit me-1"></i>Edit
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Summary -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>Payment Summary
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-6">
+                                    <h4 class="text-success">{{ bookings|length }}</h4>
+                                    <small>Total Paid</small>
+                                </div>
+                                <div class="col-6">
+                                    <h4 class="text-info">
+                                        {{ "{:,.0f}".format(total_paid_amount) }}
+                                    </h4>
+                                    <small>Total Revenue (THB)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-tasks me-2"></i>Next Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="fas fa-ticket-alt text-warning me-2"></i>
+                                    Generate vouchers for upcoming trips
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-receipt text-info me-2"></i>
+                                    Download payment receipts
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-archive text-success me-2"></i>
+                                    Archive completed bookings
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-receipt text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No paid bookings found</h4>
+                <p class="text-muted">Paid bookings and receipts will appear here once payments are received.</p>
+                <div class="mt-4">
+                    <a href="{{ url_for('booking.list') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-calendar-alt me-1"></i>View All Bookings
+                    </a>
+                    <a href="{{ url_for('booking.create') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-plus me-1"></i>Create New Booking
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-group-vertical .btn {
+        margin-bottom: 2px;
+    }
+
+    .btn-group-vertical .btn:last-child {
+        margin-bottom: 0;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .badge {
+        font-size: 0.75em;
+    }
+</style>
+{% endblock %}

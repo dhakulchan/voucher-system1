@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Booking #45 - Simple Test</title>
+</head>
+
+<body>
+    <h1>🎯 Booking #45 Edit - Simple Template</h1>
+
+    <div>
+        <h2>Basic Information</h2>
+        <p><strong>ID:</strong> {{ booking.id }}</p>
+        <p><strong>Reference:</strong> {{ booking.booking_reference }}</p>
+        <p><strong>Customer ID:</strong> {{ booking.customer_id }}</p>
+
+        {% if booking.customer %}
+        <h3>Customer Details</h3>
+        <p><strong>Name:</strong> {{ booking.customer.name or 'Not available' }}</p>
+        <p><strong>Email:</strong> {{ booking.customer.email or 'Not available' }}</p>
+        <p><strong>Phone:</strong> {{ booking.customer.phone or 'Not available' }}</p>
+        {% else %}
+        <p><em>No customer object found</em></p>
+        {% endif %}
+
+        <h3>Booking Details</h3>
+        <p><strong>Adults:</strong> {{ booking.adults }}</p>
+        <p><strong>Children:</strong> {{ booking.children }}</p>
+        <p><strong>Total Pax:</strong> {{ booking.total_pax }}</p>
+        <p><strong>Total Amount:</strong> {{ booking.total_amount }}</p>
+        <p><strong>Currency:</strong> {{ booking.currency or 'Not set' }}</p>
+
+        <h3>Dates</h3>
+        <p><strong>Created:</strong> {{ booking.created_at }}</p>
+        <p><strong>Updated:</strong> {{ booking.updated_at }}</p>
+
+        {% if final_mode %}
+        <div style="background: lightgreen; padding: 10px; margin: 10px 0;">
+            ✅ <strong>Final Handler Mode Active</strong> - Using pure MySQL connector
+        </div>
+        {% endif %}
+
+        <div>
+            <a href="/booking/list">← Back to Booking List</a>
+        </div>
+    </div>
+</body>
+
+</html>

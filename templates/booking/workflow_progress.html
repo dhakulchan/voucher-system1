@@ -1,0 +1,935 @@
+<!-- Booking Workflow Progress Indicator -->
+<div class="workflow-progress-container mb-4">
+    <div class="workflow-progress-header">
+        <h5 class="mb-3">Booking Workflow Progress</h5>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-steps mb-4">
+        <div
+            class="step {{ 'active' if booking.status == 'draft' else '' }} {{ 'completed' if booking.status in ['pending', 'confirmed', 'quoted', 'paid', 'vouchered', 'completed'] else '' }}">
+            <div class="step-circle">0</div>
+            <div class="step-label">Draft</div>
+        </div>
+
+        <div
+            class="step-connector {{ 'completed' if booking.status in ['pending', 'confirmed', 'quoted', 'paid', 'vouchered', 'completed'] else '' }}">
+        </div>
+
+        <div
+            class="step {{ 'active' if booking.status == 'pending' else '' }} {{ 'completed' if booking.status in ['confirmed', 'quoted', 'paid', 'vouchered', 'completed'] else '' }}">
+            <div class="step-circle">1</div>
+            <div class="step-label">Pending</div>
+        </div>
+
+        <div
+            class="step-connector {{ 'completed' if booking.status in ['confirmed', 'quoted', 'paid', 'vouchered', 'completed'] else '' }}">
+        </div>
+
+        <div
+            class="step {{ 'active' if booking.status == 'confirmed' else '' }} {{ 'completed' if booking.status in ['quoted', 'paid', 'vouchered', 'completed'] else '' }}">
+            <div class="step-circle">2</div>
+            <div class="step-label">Confirmed</div>
+        </div>
+
+        <div
+            class="step-connector {{ 'completed' if booking.status in ['quoted', 'paid', 'vouchered', 'completed'] else '' }}">
+        </div>
+
+        <div
+            class="step {{ 'active' if booking.status == 'quoted' else '' }} {{ 'completed' if booking.status in ['paid', 'vouchered', 'completed'] else '' }}">
+            <div class="step-circle">3</div>
+            <div class="step-label">Quoted</div>
+        </div>
+
+        <div class="step-connector {{ 'completed' if booking.status in ['paid', 'vouchered', 'completed'] else '' }}">
+        </div>
+
+        <div
+            class="step {{ 'active' if booking.status == 'paid' else '' }} {{ 'completed' if booking.status in ['vouchered', 'completed'] else '' }}">
+            <div class="step-circle">4</div>
+            <div class="step-label">Paid</div>
+        </div>
+
+        <div class="step-connector {{ 'completed' if booking.status in ['vouchered', 'completed'] else '' }}"></div>
+
+        <div
+            class="step {{ 'active' if booking.status == 'vouchered' else '' }} {{ 'completed' if booking.status == 'completed' else '' }}">
+            <div class="step-circle">5</div>
+            <div class="step-label">Vouchered</div>
+        </div>
+
+        <div class="step-connector {{ 'completed' if booking.status == 'completed' else '' }}"></div>
+
+        <div class="step {{ 'active' if booking.status == 'completed' else '' }}">
+            <div class="step-circle">6</div>
+            <div class="step-label">Completed</div>
+        </div>
+    </div>
+
+    <!-- Status Information within the container -->
+    <div class="workflow-status-info mt-3">
+        <div class="row">
+            <div class="col-md-6">
+                <strong>Current Status:</strong>
+                <span class="badge badge-{{ 
+                    'secondary' if booking.status == 'draft' 
+                    else 'warning' if booking.status == 'pending'
+                    else 'primary' if booking.status == 'confirmed'
+                    else 'info' if booking.status == 'quoted'
+                    else 'success' if booking.status == 'paid'
+                    else 'dark' if booking.status == 'vouchered'
+                    else 'light' if booking.status == 'completed'
+                    else 'danger' if booking.status == 'cancelled'
+                    else 'light' 
+                }}">{{ booking.status.title() }}</span>
+            </div>
+
+            {% if booking.confirmed_at %}
+            <div class="col-md-6">
+                <strong>Confirmed:</strong> {{ booking.confirmed_at.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="row mt-2">
+            {% if booking.quoted_at %}
+            <div class="col-md-6">
+                <strong>Quoted:</strong> {{ booking.quoted_at.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            {% endif %}
+            {% if booking.paid_at %}
+            <div class="col-md-6">
+                <strong>Paid:</strong> {{ booking.paid_at.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            {% endif %}
+        </div>
+
+        {% if booking.vouchered_at or booking.completed_at %}
+        <div class="row mt-2">
+            {% if booking.vouchered_at %}
+            <div class="col-md-6">
+                <strong>Vouchered:</strong> {{ booking.vouchered_at.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            {% endif %}
+            {% if booking.completed_at %}
+            <div class="col-md-6">
+                <strong>Completed:</strong> {{ booking.completed_at.strftime('%d/%m/%Y %H:%M') }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Close workflow-progress-container -->
+</div>
+
+<!-- Workflow Action Buttons -->
+<div class="workflow-actions-container mb-4">
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0">Available Actions</h6>
+        </div>
+        <div class="card-body">
+            <div class="btn-group-workflow">
+
+                <!-- Move to Pending (Step 1) -->
+                {% if booking.status == 'draft' %}
+                <button type="button" class="btn btn-warning me-2" onclick="pendingBooking({{ booking.id }})"
+                    data-toggle="tooltip" title="Move booking from draft to pending status">
+                    <i class="fas fa-clock"></i> Pending Booking
+                </button>
+                {% endif %}
+
+                <!-- Confirm Booking (Step 2) -->
+                {% if booking.status == 'pending' %}
+                <button type="button" class="btn btn-primary me-2" onclick="confirmBooking({{ booking.id }})"
+                    data-toggle="tooltip" title="Confirm pending booking to proceed to quote creation">
+                    <i class="fas fa-check-circle"></i> Confirm Booking
+                </button>
+                {% endif %}
+
+                <!-- Create Quote (Step 2) -->
+                {% if booking.status == 'confirmed' %}
+                <button type="button" class="btn btn-info me-2" onclick="createQuoteWorkflow({{ booking.id }})"
+                    data-toggle="tooltip" title="Create a professional quote (QT) document">
+                    <i class="fas fa-file-invoice"></i> Create Quote
+                </button>
+                {% endif %}
+
+                <!-- View Quote & Mark as Paid -->
+                {% if booking.status == 'quoted' %}
+                <div class="btn-group" role="group">
+                    <!-- Always use JavaScript function for quoted status to show Quote PDF -->
+                    <button type="button" class="btn btn-info" onclick="viewQuote({{ booking.id }})"
+                        data-toggle="tooltip" title="View Quote PDF with timestamp">
+                        <i class="fas fa-eye"></i> View Quote
+                    </button>
+
+                    <!-- Debug: Direct link to PDF download -->
+                    <a href="/voucher/download/{{ booking.id }}" target="_blank" class="btn btn-outline-info btn-sm"
+                        data-toggle="tooltip" title="Direct Quote PDF download (for testing)">
+                        <i class="fas fa-download"></i> Direct PDF
+                    </a>
+
+                    <button type="button" class="btn btn-success" onclick="markAsPaidWorkflow({{ booking.id }})"
+                        data-toggle="tooltip" title="Mark as paid and proceed to voucher">
+                        <i class="fas fa-credit-card"></i> Mark as Paid
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Generate Final Voucher -->
+                {% if booking.status == 'paid' %}
+                <button type="button" class="btn btn-dark" onclick="generateVoucherWorkflow({{ booking.id }})"
+                    data-toggle="tooltip" title="Generate final tour voucher with PDF/PNG">
+                    <i class="fas fa-ticket-alt"></i> Generate Voucher
+                </button>
+                {% endif %}
+
+                <!-- Voucher Actions -->
+                {% if booking.status == 'vouchered' %}
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-success" onclick="downloadVoucherPDF({{ booking.id }})"
+                        data-toggle="tooltip" title="Download voucher as PDF">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="downloadVoucherPNG({{ booking.id }})"
+                        data-toggle="tooltip" title="Download voucher as PNG image">
+                        <i class="fas fa-image"></i> Download PNG
+                    </button>
+                    <button type="button" class="btn btn-primary" onclick="shareVoucher({{ booking.id }})"
+                        data-toggle="tooltip" title="Share voucher on social platforms">
+                        <i class="fas fa-share-alt"></i> Share
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Always Available Actions -->
+                <div class="btn-group ml-3" role="group">
+                    <button type="button" class="btn btn-outline-secondary" onclick="editBooking({{ booking.id }})"
+                        data-toggle="tooltip" title="Edit booking details">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+
+                    {% if booking.status in ['quoted', 'invoiced', 'paid', 'vouchered'] %}
+                    <button type="button" class="btn btn-outline-info" onclick="viewDocuments({{ booking.id }})"
+                        data-toggle="tooltip" title="View all generated documents">
+                        <i class="fas fa-folder-open"></i> Documents
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .workflow-progress-container {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+    }
+
+    .progress-steps {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+    }
+
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+    }
+
+    .step-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #e9ecef;
+        border: 2px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #6c757d;
+        margin-bottom: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .step.active .step-circle {
+        background: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+
+    .step.completed .step-circle {
+        background: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
+    .step-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #6c757d;
+        text-align: center;
+    }
+
+    .step.active .step-label {
+        color: #007bff;
+        font-weight: 600;
+    }
+
+    .step.completed .step-label {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+    .step-connector {
+        flex: 1;
+        height: 2px;
+        background: #dee2e6;
+        margin: 0 5px;
+        align-self: center;
+        z-index: 1;
+    }
+
+    .step-connector.completed {
+        background: #28a745;
+    }
+
+    .workflow-status-info {
+        background: white;
+        border-radius: 6px;
+        padding: 15px;
+        border: 1px solid #e9ecef;
+    }
+
+    .btn-group-workflow .btn {
+        margin: 2px;
+    }
+
+    .btn-group-workflow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    @media (max-width: 768px) {
+        .progress-steps {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .step {
+            flex-direction: row;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .step-circle {
+            margin-bottom: 0;
+            margin-right: 10px;
+        }
+
+        .step-connector {
+            display: none;
+        }
+
+        .btn-group-workflow {
+            flex-direction: column;
+        }
+
+        .btn-group-workflow .btn {
+            width: 100%;
+            margin: 2px 0;
+        }
+    }
+</style>
+
+<script>
+    // Workflow action functions
+    function pendingBooking(bookingId) {
+        if (confirm('Move this booking from draft to pending status? This will allow the booking to be processed further.')) {
+            fetch(`/booking/${bookingId}/pending`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Booking moved to pending status successfully!');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('error', data.message || 'Failed to move booking to pending');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'An error occurred while updating booking status');
+                });
+        }
+    }
+
+    function confirmBooking(bookingId) {
+        if (confirm('Confirm this pending booking? This will mark it as confirmed and allow quote creation.')) {
+            fetch(`/booking/${bookingId}/confirm`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Booking confirmed successfully!');
+                        setTimeout(() => location.reload(), 1500);
+                    } else {
+                        showAlert('error', data.message || 'Failed to confirm booking');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'An error occurred while confirming booking');
+                });
+        }
+    }
+
+    function createQuoteWorkflow(bookingId) {
+        if (confirm('Create a professional quote for this booking?')) {
+            showAlert('info', 'Creating quote... Please wait');
+
+            fetch(`/booking/${bookingId}/create-quote`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        return response.json();
+                    } else {
+                        // If not JSON, read as text for debugging
+                        return response.text().then(text => {
+                            console.error('Non-JSON response:', text);
+                            throw new Error(`Server returned ${response.status}: ${response.statusText} (Expected JSON but got ${contentType})`);
+                        });
+                    }
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+                    if (data.success) {
+                        showAlert('success', `Quote ${data.quote_number} created successfully!`);
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showAlert('error', data.message || 'Failed to create quote');
+                    }
+                })
+                .catch(error => {
+                    console.error('Detailed error:', error);
+                    console.error('Error name:', error.name);
+                    console.error('Error message:', error.message);
+
+                    let errorMessage = 'An error occurred while creating quote';
+                    if (error.name === 'TypeError' && error.message.includes('NetworkError')) {
+                        errorMessage = 'Network connection error. Please check if the server is running and try again.';
+                    } else if (error.message) {
+                        errorMessage += ': ' + error.message;
+                    }
+
+                    showAlert('error', errorMessage);
+                });
+        }
+    }
+
+    function viewQuote(bookingId) {
+        console.log('viewQuote called with bookingId:', bookingId);
+
+        // Use the dedicated quote PDF route
+        try {
+            const quotePdfUrl = `/booking/${bookingId}/quote-pdf`;
+            console.log('Opening quote PDF URL:', quotePdfUrl);
+
+            showAlert('info', 'Generating Quote PDF...');
+            window.open(quotePdfUrl, '_blank');
+
+            setTimeout(() => {
+                showAlert('success', 'Quote PDF opened successfully');
+            }, 1000);
+
+        } catch (error) {
+            console.error('Error opening Quote PDF:', error);
+            showAlert('error', 'Unable to open Quote PDF');
+        }
+    }
+
+    function applyToInvoiceWorkflow(bookingId) {
+        if (confirm('Convert the quote to an invoice?')) {
+            showAlert('info', 'Creating invoice... Please wait');
+
+            fetch(`/booking/${bookingId}/apply-to-invoice`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', `Invoice created successfully! Invoice ID: ${data.invoice_id}`);
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showAlert('error', data.message || 'Failed to create invoice');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'An error occurred while creating invoice');
+                });
+        }
+    }
+
+    function markAsPaidWorkflow(bookingId) {
+        // Show enhanced payment form modal
+        showPaymentModal(bookingId);
+    }
+
+    function showPaymentModal(bookingId) {
+        // Create modal HTML with payment form
+        const today = new Date();
+        const todayFormatted = String(today.getDate()).padStart(2, '0') + '/' +
+            String(today.getMonth() + 1).padStart(2, '0') + '/' +
+            today.getFullYear();
+        const todayISO = today.toISOString().split('T')[0];
+
+        const modalHTML = `
+        <div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="paymentModalLabel">
+                            <i class="fas fa-credit-card me-2"></i>บันทึกการชำระเงิน
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="paymentForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="received_date" class="form-label">วันที่รับเงิน <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="received_date" name="received_date" value="${todayFormatted}" required 
+                                           placeholder="วว/ดด/ปปปป" title="รูปแบบ: วัน/เดือน/ปี" maxlength="10"
+                                           pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}$">
+                                    <small class="form-text text-muted">รูปแบบ: วัน/เดือน/ปี (เช่น ${todayFormatted})</small>
+                                    <div class="invalid-feedback" id="received_date_error"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="product_type" class="form-label">ประเภทสินค้า <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="product_type" name="product_type" required>
+                                        <option value="">เลือกประเภทสินค้า</option>
+                                        <option value="air_ticket">ตั๋วเครื่องบิน</option>
+                                        <option value="package">แพ็คเกจทัวร์</option>
+                                        <option value="tour">ทัวร์</option>
+                                        <option value="live_ticket">ตั๋วคอนเสิร์ต/กิจกรรม</option>
+                                        <option value="other">อื่นๆ</option>
+                                    </select>
+                                    <div class="invalid-feedback" id="product_type_error"></div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="bank_name" class="form-label">ธนาคาร <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="bank_name" name="bank_name" required>
+                                        <option value="">เลือกธนาคาร</option>
+                                        <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
+                                        <option value="KBank">ธนาคารกสิกรไทย (KBank)</option>
+                                        <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
+                                        <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>
+                                        <option value="Krungsri">ธนาคารกรุงศรีอยุธยา (Krungsri)</option>
+                                        <option value="TTB">ธนาคารทีทีบี (TTB)</option>
+                                        <option value="KKP">ธนาคารเกียรตินาคินภัทร (KKP)</option>
+                                        <option value="CIMB">ธนาคารซีไอเอ็มบี ไทย (CIMB)</option>
+                                        <option value="UOB">ธนาคารยูโอบี (UOB)</option>
+                                        <option value="GHB">ธนาคารอาคารสงเคราะห์ (GHB)</option>
+                                        <option value="GSB">ธนาคารออมสิน (GSB)</option>
+                                        <option value="LH">ธนาคารแลนด์ แอนด์ เฮ้าส์ (LH)</option>
+                                    </select>
+                                    <div class="invalid-feedback" id="bank_name_error"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="amount" class="form-label">จำนวนเงิน (บาท) <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">THB</span>
+                                        <input type="text" class="form-control" id="amount" name="amount" placeholder="0.00" required>
+                                    </div>
+                                    <div class="invalid-feedback" id="amount_error"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="details" class="form-label">รายละเอียดเพิ่มเติม</label>
+                                <textarea class="form-control" id="details" name="details" rows="3" maxlength="1000" placeholder="รายละเอียดการชำระเงิน (ไม่บังคับ)"></textarea>
+                                <div class="form-text">สูงสุด 1,000 ตัวอักษร</div>
+                                <div class="invalid-feedback" id="details_error"></div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="button" class="btn btn-success" id="confirmPaymentBtn">
+                            <i class="fas fa-check me-2"></i>บันทึกการชำระเงิน
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('paymentModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Initialize modal
+        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+
+        // Setup amount formatting
+        const amountInput = document.getElementById('amount');
+        amountInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/[^0-9.]/g, '');
+
+            // Allow only one decimal point
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+
+            // Limit decimal places to 2
+            if (parts[1] && parts[1].length > 2) {
+                value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+
+            // Add thousands separators
+            if (value) {
+                const numericValue = parseFloat(value);
+                if (!isNaN(numericValue)) {
+                    e.target.value = numericValue.toLocaleString('en-US', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2
+                    });
+                }
+            }
+        });
+
+        // Setup date validation for DD/MM/YYYY format
+        const dateInput = document.getElementById('received_date');
+
+        // Add auto-formatting for date input
+        function formatDateInput(input) {
+            let value = input.value.replace(/[^0-9]/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            if (value.length >= 5) {
+                value = value.substring(0, 5) + '/' + value.substring(5, 9);
+            }
+            input.value = value;
+        }
+
+        // Parse DD/MM/YYYY to Date object
+        function parseThaiDate(dateStr) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+                const year = parseInt(parts[2], 10);
+                return new Date(year, month, day);
+            }
+            return null;
+        }
+
+        // Validate Thai date format
+        function validateThaiDate(dateStr) {
+            const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/[0-9]{4}$/;
+            if (!dateRegex.test(dateStr)) {
+                return 'รูปแบบวันที่ไม่ถูกต้อง (ใช้รูปแบบ วว/ดด/ปปปป)';
+            }
+
+            const date = parseThaiDate(dateStr);
+            if (!date || isNaN(date.getTime())) {
+                return 'วันที่ไม่ถูกต้อง';
+            }
+
+            const today = new Date();
+            today.setHours(23, 59, 59, 999); // Allow same day
+
+            if (date > today) {
+                return 'วันที่รับเงินต้องไม่อยู่ในอนาคต';
+            }
+
+            return null; // Valid date
+        }
+
+        dateInput.addEventListener('input', function (e) {
+            formatDateInput(e.target);
+        });
+
+        dateInput.addEventListener('blur', function (e) {
+            const error = validateThaiDate(e.target.value);
+            if (error) {
+                e.target.setCustomValidity(error);
+                e.target.classList.add('is-invalid');
+                document.getElementById('received_date_error').textContent = error;
+            } else {
+                e.target.setCustomValidity('');
+                e.target.classList.remove('is-invalid');
+                document.getElementById('received_date_error').textContent = '';
+            }
+        });
+
+        // Setup form submission
+        document.getElementById('confirmPaymentBtn').addEventListener('click', function () {
+            submitPaymentForm(bookingId, modal);
+        });
+
+        modal.show();
+    }
+
+    function submitPaymentForm(bookingId, modal) {
+        const form = document.getElementById('paymentForm');
+        const submitBtn = document.getElementById('confirmPaymentBtn');
+
+        // Clear previous errors
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
+
+        // Get form data
+        const formData = new FormData(form);
+        const data = {
+            received_date: formData.get('received_date'),
+            product_type: formData.get('product_type'),
+            bank_name: formData.get('bank_name'),
+            amount: formData.get('amount').replace(/,/g, ''), // Remove commas
+            details: formData.get('details')
+        };
+
+        // Client-side validation
+        let hasErrors = false;
+
+        if (!data.received_date) {
+            showFieldError('received_date', 'วันที่รับเงินจำเป็นต้องระบุ');
+            hasErrors = true;
+        } else {
+            // Parse Thai date format DD/MM/YYYY
+            const parts = data.received_date.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+                const year = parseInt(parts[2], 10);
+                const selectedDate = new Date(year, month, day);
+                const today = new Date();
+                today.setHours(23, 59, 59, 999); // Allow same day
+
+                console.log('Validation - Selected date:', selectedDate);
+                console.log('Validation - Today:', today);
+
+                if (selectedDate > today) {
+                    showFieldError('received_date', 'วันที่รับเงินต้องไม่อยู่ในอนาคต');
+                    hasErrors = true;
+                }
+            } else {
+                showFieldError('received_date', 'รูปแบบวันที่ไม่ถูกต้อง');
+                hasErrors = true;
+            }
+        }
+
+        if (!data.product_type) {
+            showFieldError('product_type', 'ประเภทสินค้าต้องเลือกหนึ่งรายการ');
+            hasErrors = true;
+        }
+
+        if (!data.bank_name) {
+            showFieldError('bank_name', 'ธนาคารต้องเลือกหนึ่งรายการ');
+            hasErrors = true;
+        }
+
+        if (!data.amount || parseFloat(data.amount) <= 0) {
+            showFieldError('amount', 'จำนวนเงินต้องมากกว่า 0');
+            hasErrors = true;
+        } else {
+            const decimalPlaces = (data.amount.split('.')[1] || '').length;
+            if (decimalPlaces > 2) {
+                showFieldError('amount', 'จำนวนเงินมีทศนิยมได้ไม่เกิน 2 ตำแหน่ง');
+                hasErrors = true;
+            }
+        }
+
+        if (data.details && data.details.length > 1000) {
+            showFieldError('details', 'รายละเอียดต้องไม่เกิน 1,000 ตัวอักษร');
+            hasErrors = true;
+        }
+
+        if (hasErrors) {
+            return;
+        }
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึก...';
+
+        // Submit to API
+        fetch(`/booking/api/${bookingId}/mark-paid-v2`, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    modal.hide();
+                    showAlert('success', data.message);
+                    setTimeout(() => window.location.reload(), 2000);
+                } else {
+                    if (data.errors && Array.isArray(data.errors)) {
+                        data.errors.forEach(error => {
+                            showAlert('error', error);
+                        });
+                    } else {
+                        showAlert('error', data.error || 'เกิดข้อผิดพลาดในการบันทึก');
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+            })
+            .finally(() => {
+                // Reset button state
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>บันทึกการชำระเงิน';
+            });
+    }
+
+    function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        const errorElement = document.getElementById(fieldId + '_error');
+
+        field.classList.add('is-invalid');
+        if (errorElement) {
+            errorElement.textContent = message;
+        }
+    }
+
+    function generateVoucherWorkflow(bookingId) {
+        if (confirm('Generate the final tour voucher with PDF and PNG formats?')) {
+            showAlert('info', 'Generating voucher... Please wait');
+
+            fetch(`/booking/${bookingId}/generate-voucher`, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Voucher generated successfully!');
+                        setTimeout(() => location.reload(), 2000);
+                    } else {
+                        showAlert('error', data.message || 'Failed to generate voucher');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('error', 'An error occurred while generating voucher');
+                });
+        }
+    }
+
+    function downloadVoucherPDF(bookingId) {
+        window.open(`/voucher/${bookingId}/pdf`, '_blank');
+    }
+
+    function downloadVoucherPNG(bookingId) {
+        // Generate PNG from PDF on the fly (using existing voucher view functionality)
+        window.open(`/voucher/${bookingId}`, '_blank');
+    }
+
+    function shareVoucher(bookingId) {
+        window.open(`/voucher/${bookingId}`, '_blank');
+    }
+
+    function editBooking(bookingId) {
+        window.location.href = `/booking/edit/${bookingId}`;
+    }
+
+    function viewDocuments(bookingId) {
+        // Redirect to booking view where documents are accessible
+        window.location.href = `/booking/view/${bookingId}`;
+    }
+
+    // Alert utility function
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.style.position = 'fixed';
+        alertDiv.style.top = '20px';
+        alertDiv.style.right = '20px';
+        alertDiv.style.zIndex = '9999';
+        alertDiv.style.minWidth = '300px';
+
+        alertDiv.innerHTML = `
+        ${message}
+    <button type="button" class="close" data-dismiss="alert">
+        <span>&times;</span>
+    </button>
+    `;
+
+        document.body.appendChild(alertDiv);
+
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.parentNode.removeChild(alertDiv);
+            }
+        }, 5000);
+    }
+
+    // Initialize tooltips
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Bootstrap tooltips without jQuery
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-toggle="tooltip"]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+</script>

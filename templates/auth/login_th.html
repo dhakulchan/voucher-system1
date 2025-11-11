@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}เข้าสู่ระบบ - ระบบจัดการใบบัตรทัวร์{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <img src="/static/images/logo.png" alt="Logo" class="img-fluid mb-3" style="max-height: 80px;"
+                        onerror="this.style.display='none'">
+                    <h3 class="text-primary mb-2">
+                        <i class="fas fa-ticket-alt me-2"></i>ระบบจัดการใบบัตรทัวร์
+                    </h3>
+                    <p class="text-muted">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+                </div>
+
+                <form method="POST" id="loginForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">ชื่อผู้ใช้</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-user text-primary"></i>
+                            </span>
+                            <input type="text" class="form-control form-control-lg" id="username" name="username"
+                                placeholder="กรอกชื่อผู้ใช้" required autofocus>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">รหัสผ่าน</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-lock text-primary"></i>
+                            </span>
+                            <input type="password" class="form-control form-control-lg" id="password" name="password"
+                                placeholder="กรอกรหัสผ่าน" required>
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">
+                                จดจำการเข้าสู่ระบบ
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100 mb-3" id="loginBtn">
+                        <i class="fas fa-sign-in-alt me-2"></i>เข้าสู่ระบบ
+                    </button>
+                </form>
+
+                <div class="text-center">
+                    <p class="text-muted small mb-2">ยังไม่มีบัญชี?
+                        <a href="{{ url_for('auth.register') }}"
+                            class="text-primary text-decoration-none">สมัครสมาชิก</a>
+                    </p>
+                    <p class="text-muted small">
+                        <a href="#" class="text-secondary text-decoration-none" data-bs-toggle="modal"
+                            data-bs-target="#helpModal">
+                            <i class="fas fa-question-circle me-1"></i>ต้องการความช่วยเหลือ?
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Company Information Footer -->
+            <div class="card-footer bg-light text-center">
+                <small class="text-muted">
+                    <strong>{{ config.COMPANY_NAME }}</strong><br>
+                    โทรศัพท์: {{ config.COMPANY_PHONE }} | อีเมล: {{ config.COMPANY_EMAIL }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle text-info me-2"></i>ความช่วยเหลือ
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6 class="fw-bold">ข้อมูลการเข้าสู่ระบบเริ่มต้น:</h6>
+                <div class="alert alert-info">
+                    <strong>ชื่อผู้ใช้:</strong> admin<br>
+                    <strong>รหัสผ่าน:</strong> admin123
+                </div>
+
+                <h6 class="fw-bold mt-3">ปัญหาที่พบบ่อย:</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                        ลืมรหัสผ่าน: ติดต่อผู้ดูแลระบบ
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-browser text-info me-2"></i>
+                        แนะนำให้ใช้ Chrome, Firefox หรือ Safari
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-mobile-alt text-success me-2"></i>
+                        รองรับการใช้งานบนมือถือ
+                    </li>
+                </ul>
+
+                <div class="alert alert-light">
+                    <strong>ติดต่อสอบถาม:</strong><br>
+                    โทรศัพท์: {{ config.COMPANY_PHONE }}<br>
+                    อีเมล: {{ config.COMPANY_EMAIL }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        border: none;
+        border-radius: 15px;
+    }
+
+    .card-body {
+        border-radius: 15px 15px 0 0;
+    }
+
+    .card-footer {
+        border-radius: 0 0 15px 15px;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-color: #ced4da;
+    }
+
+    .btn-primary {
+        background: linear-gradient(45deg, #007bff, #0056b3);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    }
+
+    .login-animation {
+        animation: slideInUp 0.5s ease-out;
+    }
+
+    @keyframes slideInUp {
+        from {
+            transform: translateY(30px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Loading state */
+    .btn-loading {
+        position: relative;
+        color: transparent !important;
+    }
+
+    .btn-loading:after {
+        content: "";
+        position: absolute;
+        width: 16px;
+        height: 16px;
+        top: 50%;
+        left: 50%;
+        margin-left: -8px;
+        margin-top: -8px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        border-top-color: #ffffff;
+        animation: spin 1s ease infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Add animation class
+        document.querySelector('.card').classList.add('login-animation');
+
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordField = document.getElementById('password');
+
+        togglePassword.addEventListener('click', function () {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+
+            const icon = this.querySelector('i');
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+
+        // Form submission with loading state
+        const loginForm = document.getElementById('loginForm');
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginForm.addEventListener('submit', function (e) {
+            // Add loading state
+            loginBtn.classList.add('btn-loading');
+            loginBtn.disabled = true;
+
+            // Remove loading state after 3 seconds (fallback)
+            setTimeout(() => {
+                loginBtn.classList.remove('btn-loading');
+                loginBtn.disabled = false;
+            }, 3000);
+        });
+
+        // Auto-focus on username field
+        document.getElementById('username').focus();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function (e) {
+            // Alt + H to open help modal
+            if (e.altKey && e.key === 'h') {
+                e.preventDefault();
+                const helpModal = new bootstrap.Modal(document.getElementById('helpModal'));
+                helpModal.show();
+            }
+        });
+
+        // Remember last username
+        const savedUsername = localStorage.getItem('lastUsername');
+        if (savedUsername) {
+            document.getElementById('username').value = savedUsername;
+            document.getElementById('password').focus();
+        }
+
+        // Save username on form submit
+        loginForm.addEventListener('submit', function () {
+            const username = document.getElementById('username').value;
+            if (username) {
+                localStorage.setItem('lastUsername', username);
+            }
+        });
+    });
+
+    // เช็คสถานะการเชื่อมต่อ
+    function checkConnection() {
+        fetch('/api/stats/dashboard')
+            .then(response => {
+                if (!response.ok) {
+                    showConnectionError();
+                }
+            })
+            .catch(error => {
+                showConnectionError();
+            });
+    }
+
+    function showConnectionError() {
+        const alertHtml = `
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <strong>ปัญหาการเชื่อมต่อ:</strong> ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ กรุณาลองใหม่อีกครั้ง
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+
+        const container = document.querySelector('.container');
+        container.insertAdjacentHTML('afterbegin', alertHtml);
+    }
+
+    // เช็คการเชื่อมต่อเมื่อโหลดหน้า
+    setTimeout(checkConnection, 1000);
+</script>
+{% endblock %}

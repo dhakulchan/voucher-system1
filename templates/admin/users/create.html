@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Create User - Dhakul Chan Group Smart System V.202501{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-user-plus"></i> Create New User</h4>
+                        <a href="{{ url_for('user_mgmt.list_users') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Users
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="username" name="username"
+                                        value="{{ request.form.get('username', '') }}" required minlength="3">
+                                    <div class="form-text">Minimum 3 characters, must be unique</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email Address <span
+                                            class="text-danger">*</span></label>
+                                    <input type="email" class="form-control" id="email" name="email"
+                                        value="{{ request.form.get('email', '') }}" required>
+                                    <div class="form-text">Must be a valid email address</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password <span
+                                            class="text-danger">*</span></label>
+                                    <input type="password" class="form-control" id="password" name="password" required
+                                        minlength="6">
+                                    <div class="form-text">Minimum 6 characters</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="role" class="form-label">User Role <span
+                                            class="text-danger">*</span></label>
+                                    <select class="form-select" id="role" name="role" required>
+                                        <option value="staff" {% if request.form.get('role')=='staff' %}selected{% endif
+                                            %}>Staff</option>
+                                        <option value="operation" {% if request.form.get('role')=='operation'
+                                            %}selected{% endif %}>Operation User</option>
+                                        <option value="manager" {% if request.form.get('role')=='manager' %}selected{%
+                                            endif %}>Manager</option>
+                                        {% if current_user.role == 'Administrator' %}
+                                        <option value="admin" {% if request.form.get('role')=='admin' %}selected{% endif
+                                            %}>Administrator</option>
+                                        {% endif %}
+                                    </select>
+                                    <div class="form-text">
+                                        {% if current_user.role == 'admin' %}
+                                        Choose the appropriate role for this user
+                                        {% else %}
+                                        You can create Staff and Manager accounts
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Role Descriptions -->
+                        <div class="mb-4">
+                            <h6>Role Permissions:</h6>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="text-primary mb-1">
+                                                <span class="badge bg-primary">Staff</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • View and create vouchers<br>
+                                                • Basic booking management<br>
+                                                • Read-only access to reports
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="text-info mb-1">
+                                                <span class="badge bg-info">Operation User</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • All Staff permissions<br>
+                                                • Quote management<br>
+                                                • Admin notes access<br>
+                                                • Financial data access
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="text-warning mb-1">
+                                                <span class="badge bg-warning text-dark">Manager</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • All Operation permissions<br>
+                                                • User management<br>
+                                                • Advanced booking features<br>
+                                                • Full reporting access
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% if current_user.role == 'Administrator' %}
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="text-danger mb-1">
+                                                <span class="badge bg-danger">Administrator</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • All Manager permissions<br>
+                                                • System configuration<br>
+                                                • User role modifications<br>
+                                                • Full system access
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('user_mgmt.list_users') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Create User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Tips</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li><strong>Username:</strong> Must be unique, will be used for login</li>
+                        <li><strong>Email:</strong> Should be unique and valid for notifications</li>
+                        <li><strong>Password:</strong> User can change this later from their profile</li>
+                        <li><strong>Role:</strong> Can be modified later from the user list</li>
+                        {% if current_user.role != 'admin' %}
+                        <li><strong>Note:</strong> Only Administrators can create other Administrator accounts</li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Form validation feedback
+        const form = document.querySelector('form');
+        const inputs = form.querySelectorAll('input[required], select[required]');
+
+        inputs.forEach(input => {
+            input.addEventListener('blur', function () {
+                if (this.checkValidity()) {
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                } else {
+                    this.classList.remove('is-valid');
+                    this.classList.add('is-invalid');
+                }
+            });
+        });
+
+        // Real-time password strength indicator
+        const passwordInput = document.getElementById('password');
+        passwordInput.addEventListener('input', function () {
+            const password = this.value;
+            const strength = getPasswordStrength(password);
+            updatePasswordStrength(strength);
+        });
+
+        function getPasswordStrength(password) {
+            let score = 0;
+            if (password.length >= 6) score++;
+            if (password.length >= 8) score++;
+            if (/[A-Z]/.test(password)) score++;
+            if (/[a-z]/.test(password)) score++;
+            if (/[0-9]/.test(password)) score++;
+            if (/[^A-Za-z0-9]/.test(password)) score++;
+            return score;
+        }
+
+        function updatePasswordStrength(score) {
+            const formText = passwordInput.nextElementSibling;
+            let strengthText = 'Minimum 6 characters';
+            let className = '';
+
+            if (score >= 4) {
+                strengthText += ' - Strong password ✓';
+                className = 'text-success';
+            } else if (score >= 2) {
+                strengthText += ' - Moderate password';
+                className = 'text-warning';
+            } else if (score >= 1) {
+                strengthText += ' - Weak password';
+                className = 'text-danger';
+            }
+
+            formText.textContent = strengthText;
+            formText.className = 'form-text ' + className;
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote - {{ booking.booking_reference }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin-top: 3.5cm;
+            margin-bottom: 2.5cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+
+            @top-center {
+                content: element(header-content);
+                margin-top: 0.30cm;
+            }
+
+            @bottom-left {
+                content: "Dhakul Chan Travel Service (Thailand) Co.,Ltd. - System DCTS V 1.0";
+                font-family: 'Arial', sans-serif;
+                font-size: 8px;
+                color: #666;
+                margin-bottom: 0.30cm;
+            }
+
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-family: 'Arial', sans-serif;
+                font-size: 8px;
+                color: #666;
+                margin-bottom: 0.30cm;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', 'THSarabunNew', 'Noto Sans Thai', 'Arial', sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #333;
+            background: #ffffff;
+        }
+
+        /* Enhanced Header Content */
+        .header-content {
+            position: running(header-content);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 10px 0;
+            border-bottom: 2px solid #0066cc;
+            margin-bottom: 10px;
+        }
+
+        .company-logo {
+            flex: 0 0 120px;
+            width: 120px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .company-info {
+            flex: 1;
+            text-align: center;
+            margin: 0 20px;
+        }
+
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #0066cc;
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        .company-details {
+            font-size: 10px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .quote-title {
+            flex: 0 0 auto;
+            font-size: 48px;
+            font-weight: bold;
+            color: #00cccc;
+            margin-left: 20px;
+        }
+
+        /* Quote Reference Section */
+        .quote-reference {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .quote-reference .ref-item {
+            text-align: center;
+        }
+
+        .quote-reference .ref-label {
+            font-weight: bold;
+            color: #0066cc;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .quote-reference .ref-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        /* Enhanced Info Table */
+        .booking-info {
+            margin: 20px 0;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin: 15px 0;
+        }
+
+        .info-table td {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            vertical-align: top;
+        }
+
+        .info-table .label {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-weight: bold;
+            width: 140px;
+            color: #2c3e50;
+            border-right: 3px solid #0066cc;
+        }
+
+        .info-table .value {
+            background: #fff;
+        }
+
+        /* Enhanced Products Table */
+        .section-title {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #0066cc;
+            border-left: 4px solid #0066cc;
+            margin: 20px 0 10px 0;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin: 15px 0;
+        }
+
+        .products-table th {
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .products-table td {
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .product-name {
+            text-align: left !important;
+            padding-left: 12px;
+        }
+
+        .price-amount {
+            text-align: right !important;
+            padding-right: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .discount-row {
+            color: #dc2626;
+            background: #fef2f2;
+        }
+
+        .total-row {
+            background: #f0f8ff;
+            font-weight: bold;
+        }
+
+        /* Enhanced Grand Total */
+        .grand-total {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .grand-total .amount-words {
+            font-size: 14px;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        /* Enhanced Service Sections */
+        .service-section {
+            margin: 20px 0;
+        }
+
+        .service-content {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            padding: 15px;
+            border-radius: 5px;
+            min-height: 50px;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        /* Enhanced Terms & Conditions */
+        .terms-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 25px;
+        }
+
+        .terms-title {
+            color: #856404;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 13px;
+        }
+
+        .terms-content {
+            color: #856404;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-draft {
+            background: #ffeaa7;
+            color: #d63031;
+        }
+
+        .status-confirmed {
+            background: #55efc4;
+            color: #00b894;
+        }
+
+        .status-cancelled {
+            background: #fab1a0;
+            color: #e17055;
+        }
+
+        /* Highlight boxes */
+        .highlight-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .important-date {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 0 3px 3px 0;
+            font-weight: bold;
+            color: #c62828;
+        }
+
+        /* Thai text support */
+        .thai-text {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Page break control */
+        .page-break-before {
+            page-break-before: always;
+            margin-top: 80px;
+        }
+
+        .no-page-break {
+            page-break-inside: avoid;
+        }
+
+        /* Icons using Unicode */
+        .icon-money::before {
+            content: "💰 ";
+        }
+
+        .icon-phone::before {
+            content: "📞 ";
+        }
+
+        .icon-calendar::before {
+            content: "📅 ";
+        }
+
+        .icon-user::before {
+            content: "👥 ";
+        }
+
+        .icon-plane::before {
+            content: "✈️ ";
+        }
+
+        .icon-warning::before {
+            content: "⚠️ ";
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Content for Running Element -->
+    <div class="header-content">
+        <img class="company-logo" src="static/images/dcts-logo-vou.png" alt="DCTS Logo" />
+        <div class="company-info">
+            <div class="company-name">DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.</div>
+            <div class="company-details">
+                710, 716, 704, 706 Prachautid Road, Samsennok, Huai Kwang, Bangkok 10310<br>
+                Phone: +662 2744216 | Mobile: +66-81-234-5678<br>
+                Email: booking@dhakulchan.com | Website: www.dhakulchan.net
+            </div>
+        </div>
+        <div class="quote-title">QUOTE</div>
+    </div>
+
+    <!-- Enhanced Quote Reference Section -->
+    <div class="quote-reference">
+        <div class="ref-item">
+            <div class="ref-label">Reference Number</div>
+            <div class="ref-value">{{ booking.booking_reference or 'BK20250916W6IG' }}</div>
+        </div>
+        <div class="ref-item">
+            <div class="ref-label">Quote Number</div>
+            <div class="ref-value">{{ quote_number or 'QT2509001' }}</div>
+        </div>
+        <div class="ref-item">
+            <div class="ref-label">Generated Date</div>
+            <div class="ref-value">{{ booking.created_at.strftime('%d/%m/%Y') if booking.created_at else generation_date
+                }}</div>
+        </div>
+    </div>
+
+    <!-- Enhanced Booking Information -->
+    <div class="booking-info">
+        <table class="info-table">
+            <tr>
+                <td class="label">Party Name</td>
+                <td class="value"><strong>{{ booking.party_name or customer.name if customer else 'PKG250922'
+                        }}</strong></td>
+                <td class="label">Created By</td>
+                <td class="value">{{ created_by or 'admin' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Status</td>
+                <td class="value">
+                    <span class="status-badge status-{{ (booking.status or 'draft')|lower }}">
+                        {{ (booking.status or 'draft')|upper }}
+                    </span>
+                </td>
+                <td class="label">Travel Period</td>
+                <td class="value">
+                    <span class="icon-calendar"></span><strong style="color: #0066cc;">
+                        {% if booking.traveling_period_start and booking.traveling_period_end %}
+                        {{ booking.traveling_period_start.strftime('%d/%m/%Y') }} - {{
+                        booking.traveling_period_end.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        22/09/2025 - 22/09/2025
+                        {% endif %}
+                    </strong>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Due Date</td>
+                <td class="value">
+                    <div class="important-date">
+                        <span class="icon-warning"></span>{{ due_date or booking.due_date.strftime('%d/%m/%Y') if
+                        booking.due_date else '20/09/2025' }}
+                    </div>
+                </td>
+                <td class="label">Time Limit</td>
+                <td class="value">
+                    <div class="important-date">
+                        <span class="icon-warning"></span>{{ time_limit or booking.time_limit.strftime('%d/%m/%Y') if
+                        booking.time_limit else '20/09/2025' }}
+                    </div>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Customer</td>
+                <td class="value">
+                    <strong>{{ customer.name if customer else customer_name or 'Test Customer' }}</strong><br>
+                    <span class="icon-phone"></span>{{ customer.phone if customer else customer_phone or '+66123456789'
+                    }}
+                </td>
+                <td class="label">Passengers</td>
+                <td class="value">
+                    <span class="icon-user"></span><strong style="font-size: 16px; color: #0066cc;">
+                        {{ (booking.adults or 1) + (booking.children or 1) }} PAX
+                    </strong><br>
+                    <small>Adult: {{ booking.adults or 1 }} | Child: {{ booking.children or 1 }}{% if booking.infants
+                        and booking.infants > 0 %} | Infant: {{ booking.infants }}{% endif %}</small>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Enhanced Products Section -->
+    <div class="section-title">Package Description</div>
+
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th style="width: 8%">No.</th>
+                <th style="width: 35%">Products & Services</th>
+                <th style="width: 12%">Quantity</th>
+                <th style="width: 20%">Price (THB)</th>
+                <th style="width: 25%">Amount (THB)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in products %}
+            <tr {% if item.is_negative %}class="discount-row" {% endif %}>
+                <td>{{ item.no }}</td>
+                <td class="product-name thai-text">{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td class="price-amount">{{ item.price }}</td>
+                <td class="price-amount">{{ item.amount }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Enhanced Grand Total Section -->
+    <div class="grand-total">
+        <span class="icon-money"></span>GRAND TOTAL: {{ total_amount }} THB
+        <div class="amount-words">
+            ({{ total_amount_words or 'Fifty Thousand Baht Only' }})
+        </div>
+    </div>
+
+    <!-- Enhanced Service Details -->
+    <div class="service-section">
+        <div class="section-title">Service Detail / Itinerary</div>
+        <div class="service-content thai-text">
+            {% if booking.description %}
+            {{ booking.description|replace('\n', '<br>')|safe }}
+            {% elif service_detail %}
+            {{ service_detail|replace('\n', '<br>')|safe }}
+            {% else %}
+            <em style="color: #666;">Service details will be provided upon confirmation</em>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Enhanced Name List -->
+    <div class="service-section">
+        <div class="section-title">Name List / Rooming List</div>
+        <div class="service-content thai-text">
+            {% if name_list %}
+            {{ name_list|replace('\n', '<br>')|safe }}
+            {% elif booking.guest_list and booking.guest_list.strip() and booking.guest_list != 'None' and
+            booking.guest_list != 'Name List' and booking.guest_list|length > 4 %}
+            {% set guest_list_data = booking.guest_list %}
+            {# Check if guest_list is JSON array format #}
+            {% if guest_list_data.startswith('["') and guest_list_data.endswith('"]') %}
+            {# Parse JSON array manually for better reliability #}
+            {% set clean_data = guest_list_data[2:-2] %} {# Remove [" and "] #}
+            {% set guest_array = clean_data.split('", "') %}
+            {% for guest in guest_array %}
+            {% if guest and guest.strip() and guest.strip() != 'Name List' %}
+            {{ guest.strip() }}<br>
+            {% endif %}
+            {% endfor %}
+            {% elif '\\n' in guest_list_data %}
+            {# Handle escaped newlines #}
+            {{ guest_list_data|replace('\\n', '<br>')|replace('\\r\\n', '<br>')|replace('\\r', '<br>')|safe }}
+            {% else %}
+            {# Handle normal newlines #}
+            {{ guest_list_data|replace('\n', '<br>')|replace('\r\n', '<br>')|replace('\r', '<br>')|safe }}
+            {% endif %}
+            {% else %}
+            <em style="color: #666;">Passenger list will be updated upon booking confirmation</em>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Enhanced Flight Information -->
+    <div class="service-section">
+        <div class="section-title"><span class="icon-plane"></span>Flight Information</div>
+        <div class="service-content thai-text">
+            {% if flight_info %}
+            {{ flight_info|replace('\n', '<br>')|safe }}
+            {% elif booking.flight_info %}
+            {{ booking.flight_info|replace('\n', '<br>')|safe }}
+            {% else %}
+            <em style="color: #666;">Flight details will be confirmed upon booking</em>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Enhanced Terms & Conditions -->
+    <div class="terms-section">
+        <div class="terms-title">Terms & Conditions Apply</div>
+        <div class="terms-content thai-text">
+            <strong>การชำระเงิน:</strong><br>
+            • เมื่อได้รับการยืนยันการจองแล้ว กรุณาชำระเงินตามกำหนดเวลาที่ระบุ<br>
+            • ราคาและเงื่อนไขอาจเปลี่ยนแปลงได้โดยไม่ต้องแจ้งให้ทราบล่วงหน้า<br><br>
+
+            <strong>การเปลี่ยนแปลงและยกเลิก:</strong><br>
+            • การเปลี่ยนแปลงรายชื่อผู้เดินทาง จำนวนผู้เดินทาง หรือสถานที่เดินทาง อาจมีค่าธรรมเนียมเพิ่มเติม<br>
+            • การยกเลิกจะเป็นไปตามเงื่อนไขของผู้ให้บริการแต่ละรายการ<br><br>
+
+            <strong>ข้อมูลสำคัญ:</strong><br>
+            • กรุณาตรวจสอบรายการและข้อมูลต่างๆ ให้ครบถ้วนถูกต้องก่อนการจอง<br>
+            • ในกรณีที่ราคาค่าบริการมีการเปลี่ยนแปลง บริษัทจะแจ้งให้ผู้จองทราบ<br>
+            • การจองนี้จะมีผลเมื่อได้รับการยืนยันจากบริษัทเท่านั้น
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #666;">
+        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+        Thank you for choosing Dhakul Chan Travel Service (Thailand) Co.,Ltd.<br>
+        For any inquiries, please contact us at +662 2744218 or Line: @dhakulchan
+    </div>
+</body>
+
+</html>

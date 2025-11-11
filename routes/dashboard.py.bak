@@ -1,0 +1,192 @@
+from flask import Blueprint, render_template, request, jsonify
+from flask_login import login_required, current_user
+from models.customer import Customer
+from models.booking import Booking
+from models.user import User
+from extensions import db
+from datetime import datetime, timedelta
+from sqlalchemy import func
+
+dashboard_bp = Blueprint('dashboard', __name__)
+
+@dashboard_bp.route('/')
+@login_required
+def index():
+    """Main dashboard with statistics and recent bookings"""
+    
+    # Get statistics
+    total_customers = Customer.query.count()
+    total_bookings = Booking.query.count()
+    pending_bookings = Booking.query.filter_by(status='pending').count()
+    confirmed_bookings = Booking.query.filter_by(status='confirmed').count()
+    
+    # Recent bookings (last 10)
+    recent_bookings = Booking.query.order_by(Booking.created_at.desc()).limit(10).all()
+    
+    # Revenue this month
+    current_month = datetime.now().replace(day=1)
+    monthly_revenue = db.session.query(func.sum(Booking.total_amount)).filter(
+        Booking.created_at >= current_month,
+        Booking.status == 'confirmed'
+    ).scalar() or 0
+    
+    # Booking types distribution
+    booking_types = db.session.query(
+        Booking.booking_type, 
+        func.count(Booking.id)
+    ).group_by(Booking.booking_type).all()
+    
+    # Use language-specific template
+    from flask import session
+    current_language = session.get('language', 'en')
+    template_name = f'dashboard/index_{current_language}.html'
+    
+    # Fallback to Thai template if language-specific template doesn't exist
+    try:
+        return render_template(template_name, 
+                             total_customers=total_customers,
+                             total_bookings=total_bookings,
+                             pending_bookings=pending_bookings,
+                             confirmed_bookings=confirmed_bookings,
+                             recent_bookings=recent_bookings,
+                             monthly_revenue=monthly_revenue,
+                             booking_types=booking_types)
+    except:
+        return render_template('dashboard/index_th.html', 
+                             total_customers=total_customers,
+                             total_bookings=total_bookings,
+                             pending_bookings=pending_bookings,
+                             confirmed_bookings=confirmed_bookings,
+                             recent_bookings=recent_bookings,
+                             monthly_revenue=monthly_revenue,
+                             booking_types=booking_types)
+
+@dashboard_bp.route('/customers')
+@login_required
+def customers():
+    """Customer management page"""
+    page = request.args.get('page', 1, type=int)
+    search = request.args.get('search', '', type=str)
+    
+    query = Customer.query
+    
+    if search:
+        query = query.filter(
+            Customer.name.contains(search) | 
+            Customer.email.contains(search) | 
+            Customer.phone.contains(search)
+        )
+    
+    customers = query.order_by(Customer.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    return render_template('dashboard/customers.html', 
+                         customers=customers, 
+                         search=search)
+
+@dashboard_bp.route('/bookings')
+@login_required
+def bookings():
+    """Booking management page"""
+    page = request.args.get('page', 1, type=int)
+    status_filter = request.args.get('status', '', type=str)
+    booking_type = request.args.get('type', '', type=str)
+    search = request.args.get('search', '', type=str)
+    
+    query = Booking.query
+    
+    if status_filter:
+        query = query.filter(Booking.status == status_filter)
+    
+    if booking_type:
+        query = query.filter(Booking.booking_type == booking_type)
+    
+    if search:
+        query = query.filter(
+            Booking.booking_reference.contains(search)
+        )
+    
+    bookings = query.order_by(Booking.created_at.desc()).paginate(
+        page=page, per_page=20, error_out=False
+    )
+    
+    return render_template('dashboard/bookings.html', 
+                         bookings=bookings, 
+                         status_filter=status_filter,
+                         booking_type=booking_type,
+                         search=search)
+
+@dashboard_bp.route('/reports')
+@login_required
+def reports():
+    """Reports and analytics page"""
+    
+    # Date range from request or default to last 30 days
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    
+    if request.args.get('start_date'):
+        start_date = datetime.strptime(request.args.get('start_date'), '%Y-%m-%d')
+    if request.args.get('end_date'):
+        end_date = datetime.strptime(request.args.get('end_date'), '%Y-%m-%d')
+    
+    # Bookings by date
+    daily_bookings = db.session.query(
+        func.date(Booking.created_at).label('date'),
+        func.count(Booking.id).label('count'),
+        func.sum(Booking.total_amount).label('revenue')
+    ).filter(
+        Booking.created_at >= start_date,
+        Booking.created_at <= end_date
+    ).group_by(func.date(Booking.created_at)).all()
+    
+    # Top customers
+    top_customers = db.session.query(
+        Customer.name,
+        func.count(Booking.id).label('booking_count'),
+        func.sum(Booking.total_amount).label('total_spent')
+    ).join(Booking).filter(
+        Booking.created_at >= start_date,
+        Booking.created_at <= end_date
+    ).group_by(Customer.id).order_by(
+        func.sum(Booking.total_amount).desc()
+    ).limit(10).all()
+    
+    return render_template('dashboard/reports.html',
+                         daily_bookings=daily_bookings,
+                         top_customers=top_customers,
+                         start_date=start_date,
+                         end_date=end_date)
+
+@dashboard_bp.route('/api/dashboard-stats')
+@login_required
+def dashboard_stats():
+    """API endpoint for dashboard statistics"""
+    
+    # Today's stats
+    today = datetime.now().date()
+    today_bookings = Booking.query.filter(func.date(Booking.created_at) == today).count()
+    today_revenue = db.session.query(func.sum(Booking.total_amount)).filter(
+        func.date(Booking.created_at) == today,
+        Booking.status == 'confirmed'
+    ).scalar() or 0
+    
+    # This week's stats
+    week_start = today - timedelta(days=today.weekday())
+    week_bookings = Booking.query.filter(Booking.created_at >= week_start).count()
+    week_revenue = db.session.query(func.sum(Booking.total_amount)).filter(
+        Booking.created_at >= week_start,
+        Booking.status == 'confirmed'
+    ).scalar() or 0
+    
+    return jsonify({
+        'today': {
+            'bookings': today_bookings,
+            'revenue': float(today_revenue)
+        },
+        'this_week': {
+            'bookings': week_bookings,
+            'revenue': float(week_revenue)
+        }
+    })

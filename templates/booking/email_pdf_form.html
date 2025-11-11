@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Send {{ pdf_type|title }} PDF via Email{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope"></i>
+                        Send {{ pdf_type|title }} PDF via Email
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Booking Information -->
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h6 class="mb-2">{{ pdf_type|title }} Information:</h6>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <strong>Reference:</strong><br>
+                                <span class="text-primary">{{ booking.booking_reference }}</span>
+                            </div>
+                            <div class="col-sm-6">
+                                <strong>Customer:</strong><br>
+                                {{ booking.customer.full_name if booking.customer else 'N/A' }}
+                            </div>
+                        </div>
+                        {% if booking.customer and booking.customer.email %}
+                        <div class="mt-2">
+                            <strong>Customer Email:</strong>
+                            <span class="text-info">{{ booking.customer.email }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Email Form -->
+                    <form method="POST" action="{{ action_url }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">
+                                <i class="fas fa-envelope"></i>
+                                Recipient Email Address
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" {% if booking.customer and
+                                booking.customer.email %} value="{{ booking.customer.email }}" {% endif %}
+                                placeholder="Enter email address" required>
+                            <div class="form-text">
+                                The {{ pdf_type }} PDF will be sent to this email address
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            {% if pdf_type == 'booking' %}
+                            <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            {% elif pdf_type == 'voucher' %}
+                            <a href="{{ url_for('voucher.view', id=booking.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancel
+                            </a>
+                            {% endif %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Send {{ pdf_type|title }} PDF
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            {% if booking.customer and booking.customer.email %}
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-zap"></i>
+                        Quick Actions
+                    </h6>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                            onclick="document.getElementById('email').value='{{ booking.customer.email }}'">
+                            <i class="fas fa-user"></i>
+                            Use Customer Email: {{ booking.customer.email }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-focus email input
+    document.addEventListener('DOMContentLoaded', function () {
+        const emailInput = document.getElementById('email');
+        if (emailInput && !emailInput.value) {
+            emailInput.focus();
+        }
+    });
+</script>
+{% endblock %}

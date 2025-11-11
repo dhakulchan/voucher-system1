@@ -1,0 +1,94 @@
+# Large files
+*.tar.gz
+*.zip
+*.tar
+*.rar
+voucher-system-production1.pem
+voucher-ro-deployment.tar.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Generated files
+static/generated/
+static/uploads/
+output/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+
+# Cache and temp
+.DS_Store
+.vscode/
+.idea/
+*.cache
+*.log
+logs/
+cookies.txt
+new_cookies.txt
+
+# Database
+*.db
+*.sqlite3
+instance/
+
+# Test files
+test_*
+debug_*
+fix_*
+check_*
+create_test_*
+*_test_*
+
+# Deployment and temp scripts
+deploy_*
+emergency_*
+quick_*
+final_*
+install_*
+setup_*
+*.sh
+
+# Documentation files
+*.md
+!README.md
+
+# Specific exclusions
+migrations/
+archive/
+template_backup*/
+decorators/
+scripts/
+*.lock
+*.wsgi
+*.conf

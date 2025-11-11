@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - Dhakul Chan Group Smart System V.202501{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="fas fa-user-circle"></i> User Profile</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <!-- User Information -->
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Account Information</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white me-3"
+                                            style="width: 60px; height: 60px;">
+                                            <i class="fas fa-user fa-2x"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="mb-1">{{ current_user.username }}</h5>
+                                            <span class="badge {{ current_user.role_badge_class() }}">
+                                                {{ current_user.role_display() }}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Username:</strong></div>
+                                        <div class="col-sm-8">{{ current_user.username }}</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Email:</strong></div>
+                                        <div class="col-sm-8">{{ current_user.email }}</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Role:</strong></div>
+                                        <div class="col-sm-8">{{ current_user.role_display() }}</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Member Since:</strong></div>
+                                        <div class="col-sm-8">
+                                            {% if current_user.created_at %}
+                                            {{ current_user.created_at.strftime('%B %d, %Y') }}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Role Permissions -->
+                            <div class="card mt-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Your Permissions</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-unstyled mb-0">
+                                        <li><i class="fas fa-check text-success me-2"></i>View and create vouchers</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Manage bookings</li>
+                                        {% if current_user.can_manage_users() %}
+                                        <li><i class="fas fa-check text-success me-2"></i>User management</li>
+                                        {% endif %}
+                                        {% if current_user.role == 'admin' %}
+                                        <li><i class="fas fa-check text-success me-2"></i>System administration</li>
+                                        <li><i class="fas fa-check text-success me-2"></i>Delete users</li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-6">
+                        <!-- Update Email -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-envelope"></i> Update Email</h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('auth.update_email') }}">
+                                    <div class="mb-3">
+                                        <label for="current_email" class="form-label">Current Email</label>
+                                        <input type="email" class="form-control" id="current_email"
+                                            value="{{ current_user.email }}" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new_email" class="form-label">New Email</label>
+                                        <input type="email" class="form-control" id="new_email" name="new_email"
+                                            required>
+                                        <div class="form-text">Must be a valid email address</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="password_confirm" class="form-label">Confirm Password</label>
+                                        <input type="password" class="form-control" id="password_confirm"
+                                            name="password_confirm" required>
+                                        <div class="form-text">Enter your current password to confirm</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Update Email
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Change Password -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-key"></i> Change Password</h6>
+                            </div>
+                            <div class="card-body">
+                                <form method="POST" action="{{ url_for('auth.change_password') }}">
+                                    <div class="mb-3">
+                                        <label for="current_password" class="form-label">Current Password</label>
+                                        <input type="password" class="form-control" id="current_password"
+                                            name="current_password" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="new_password" class="form-label">New Password</label>
+                                        <input type="password" class="form-control" id="new_password"
+                                            name="new_password" required minlength="6">
+                                        <div class="form-text">Minimum 6 characters</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="confirm_password" class="form-label">Confirm New
+                                            Password</label>
+                                        <input type="password" class="form-control" id="confirm_password"
+                                            name="confirm_password" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Password
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">
+                                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                    </a>
+                                    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-calendar-alt me-2"></i>Bookings
+                                    </a>
+                                    <a href="{{ url_for('voucher.list') }}" class="btn btn-outline-info">
+                                        <i class="fas fa-ticket-alt me-2"></i>Vouchers
+                                    </a>
+                                    {% if current_user.can_manage_users() %}
+                                    <a href="{{ url_for('user_mgmt.list_users') }}" class="btn btn-outline-warning">
+                                        <i class="fas fa-users-cog me-2"></i>User Management
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Password confirmation validation for password form
+        const passwordForm = document.querySelector('form[action*="change-password"]');
+        if (passwordForm) {
+            const newPassword = document.getElementById('new_password');
+            const confirmPassword = document.getElementById('confirm_password');
+
+            function validatePasswords() {
+                if (newPassword.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Passwords do not match');
+                } else {
+                    confirmPassword.setCustomValidity('');
+                }
+            }
+
+            newPassword.addEventListener('input', validatePasswords);
+            confirmPassword.addEventListener('input', validatePasswords);
+
+            // Form submission validation
+            passwordForm.addEventListener('submit', function (e) {
+                if (newPassword.value !== confirmPassword.value) {
+                    e.preventDefault();
+                    alert('Passwords do not match!');
+                }
+            });
+        }
+
+        // Email validation for email form
+        const emailForm = document.querySelector('form[action*="update-email"]');
+        if (emailForm) {
+            const newEmail = document.getElementById('new_email');
+            const currentEmail = document.getElementById('current_email');
+
+            newEmail.addEventListener('blur', function () {
+                if (this.value === currentEmail.value) {
+                    this.setCustomValidity('New email must be different from current email');
+                    this.classList.add('is-invalid');
+                } else {
+                    this.setCustomValidity('');
+                    this.classList.remove('is-invalid');
+                    this.classList.add('is-valid');
+                }
+            });
+
+            emailForm.addEventListener('submit', function (e) {
+                if (newEmail.value === currentEmail.value) {
+                    e.preventDefault();
+                    alert('New email must be different from current email!');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

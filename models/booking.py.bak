@@ -1,0 +1,369 @@
+from app import db
+from utils.datetime_utils import naive_utc_now
+import json
+
+class Booking(db.Model):
+    __tablename__ = 'bookings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    booking_reference = db.Column(db.String(100), unique=True, nullable=False)
+    
+    # Invoice Ninja Integration
+    quote_id = db.Column(db.Integer)  # Invoice Ninja quote ID
+    invoice_id = db.Column(db.Integer)  # Invoice Ninja invoice ID
+    # Persisted numbers/status fetched from Invoice Ninja
+    quote_number = db.Column(db.String(100))
+    quote_status = db.Column(db.String(50))
+    invoice_number = db.Column(db.String(100))
+    invoice_status = db.Column(db.String(20))  # paid, sent, draft, cancelled
+    invoice_amount = db.Column(db.Numeric(10, 2))  # invoice amount
+    is_paid = db.Column(db.Boolean, default=False)  # payment status
+    invoice_paid_date = db.Column(db.DateTime)  # payment date
+    last_sync_date = db.Column(db.DateTime)  # last sync timestamp
+    
+    # Booking Details
+    booking_type = db.Column(db.String(50), nullable=False)  # 'tour', 'hotel', 'transport'
+    status = db.Column(db.String(50), default='pending')  # pending, confirmed, cancelled
+    
+    # Travel Information
+    arrival_date = db.Column(db.Date)
+    departure_date = db.Column(db.Date)
+    traveling_period_start = db.Column(db.Date)
+    traveling_period_end = db.Column(db.Date)
+    
+    # Guest Information
+    adults = db.Column(db.Integer, default=1)  # Number of adults
+    children = db.Column(db.Integer, default=0)  # Number of children
+    total_pax = db.Column(db.Integer, default=1)
+    infants = db.Column(db.Integer, default=0)  # Number of infants (under 2 years)
+    guest_list = db.Column(db.Text)  # JSON string of guest names
+    
+    # Additional Booking Information
+    party_name = db.Column(db.String(255))  # Party or group name
+    party_code = db.Column(db.String(100))  # Party or group code
+    description = db.Column(db.Text)  # Booking description
+    
+    # Hotel RO Specific Fields
+    agency_reference = db.Column(db.String(100))
+    hotel_name = db.Column(db.String(255))
+    room_type = db.Column(db.String(100))
+    special_request = db.Column(db.Text)
+    
+    # MPV Booking Specific Fields
+    pickup_point = db.Column(db.String(255))
+    destination = db.Column(db.String(255))
+    pickup_time = db.Column(db.Time)
+    vehicle_type = db.Column(db.String(100))
+    
+    # Tour Voucher Specific Fields
+    internal_note = db.Column(db.Text)
+    flight_info = db.Column(db.Text)
+    daily_services = db.Column(db.Text)  # JSON string of daily services (reused for voucher rows)
+    voucher_image_path = db.Column(db.String(255))  # relative path to uploaded voucher image
+    voucher_images = db.Column(db.Text)  # JSON string of multiple voucher images
+    
+    # Admin and Management Fields
+    admin_notes = db.Column(db.Text)  # Admin notes - visible to admin users only
+    manager_memos = db.Column(db.Text)  # Manager memos - important management notes
+    
+    # Products & Calculation
+    products = db.Column(db.Text)  # JSON string of products & calculation data
+    
+    # Financial
+    total_amount = db.Column(db.Numeric(10, 2))
+    currency = db.Column(db.String(10), default='THB')
+    
+    # Time and Deadline Management
+    time_limit = db.Column(db.DateTime, nullable=False)  # Time limit for booking confirmation (Required)
+    due_date = db.Column(db.Date)  # Due date for payment or action
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=naive_utc_now)
+    updated_at = db.Column(db.DateTime, default=naive_utc_now, onupdate=naive_utc_now)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    vendor_id = db.Column(db.Integer, db.ForeignKey('vendors.id'))  # legacy usage
+    supplier_id = db.Column(db.Integer, db.ForeignKey('vendors.id'))  # new Supplier FK (soft rename)
+    supplier = db.relationship('Supplier', foreign_keys=[supplier_id], backref='bookings', lazy='joined')
+    
+    # Relationships - customer relationship comes from Customer model's backref='customer'
+    
+    # Security - ใช้แบบง่ายๆ ก่อน โดยไม่เพิ่ม column ใหม่
+    # share_token = db.Column(db.String(64), unique=True, nullable=True)  # Secure sharing token
+    
+    def __repr__(self):
+        return f'<Booking {self.booking_reference}>'
+    
+    def get_guest_list(self):
+        """Return guest list as Python list"""
+        if self.guest_list:
+            try:
+                # Try JSON format first
+                return json.loads(self.guest_list)
+            except json.JSONDecodeError:
+                # Handle legacy HTML format
+                import re
+                # First convert <br> tags to newlines
+                text_with_breaks = self.guest_list.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+                # Remove all HTML tags
+                clean_text = re.sub(r'<[^>]+>', '', text_with_breaks)
+                # Split by newlines and filter empty lines
+                lines = [line.strip() for line in clean_text.split('\n') if line.strip()]
+                return lines
+        return []
+    
+    def set_guest_list(self, guests):
+        """Set guest list from Python list"""
+        if isinstance(guests, list):
+            self.guest_list = json.dumps(guests)
+        else:
+            self.guest_list = guests
+    
+    def get_guest_list_for_edit(self):
+        """Return guest list formatted for textarea editing"""
+        guests = self.get_guest_list()
+        if guests:
+            return '\n'.join(guests)
+        return ''
+    
+    def generate_secure_token(self, expires_days=30):
+        """Generate secure share token with expiration (30 days default)"""
+        import hashlib
+        import hmac
+        import base64
+        from datetime import datetime, timedelta
+        from config import Config
+        
+        # สร้าง expiration timestamp (30 วันจากตอนนี้)
+        exp = int((datetime.utcnow() + timedelta(days=expires_days)).timestamp())
+        ts_base = int((self.updated_at or self.created_at or datetime.utcnow()).timestamp())
+        
+        # สร้าง base data
+        base_data = f"{self.id}:{ts_base}:{exp}".encode()
+        
+        # สร้าง signature ด้วย HMAC
+        secret_key = getattr(Config, 'SECRET_KEY', 'default-secret').encode()
+        signature = hmac.new(secret_key, base_data, hashlib.sha256).digest()
+        
+        # รวม base + signature แล้ว encode เป็น URL-safe base64
+        token = base64.urlsafe_b64encode(base_data + b"." + signature).decode().rstrip('=')
+        return token
+    
+    def get_secure_share_url(self, base_url=""):
+        """Get secure public share URL with 30-day expiration"""
+        token = self.generate_secure_token(expires_days=30)
+        return f"{base_url}/public/booking/{token}"
+    
+    @staticmethod
+    def verify_share_token(token):
+        """Verify share token and return booking if valid"""
+        import hmac
+        import hashlib
+        import base64
+        from datetime import datetime
+        from config import Config
+        
+        try:
+            # Decode token
+            pad = '=' * (-len(token) % 4)
+            raw = base64.urlsafe_b64decode(token + pad)
+            base_data, signature = raw.rsplit(b'.', 1)
+            
+            # Parse base data
+            parts = base_data.decode().split(':')
+            if len(parts) != 3:
+                return None
+                
+            booking_id, ts_base, exp = parts
+            booking_id = int(booking_id)
+            exp = int(exp)
+            
+            # Check expiration
+            if datetime.utcnow().timestamp() > exp:
+                return None  # Token expired
+            
+            # Get booking and verify signature
+            booking = Booking.query.get(booking_id)
+            if not booking:
+                return None
+                
+            # Verify signature
+            secret_key = getattr(Config, 'SECRET_KEY', 'default-secret').encode()
+            expected_sig = hmac.new(secret_key, base_data, hashlib.sha256).digest()
+            
+            if hmac.compare_digest(signature, expected_sig):
+                return booking
+            else:
+                return None
+                
+        except Exception:
+            return None
+    
+    def get_daily_services(self):
+        """Return daily services as Python list"""
+        if self.daily_services:
+            try:
+                return json.loads(self.daily_services)
+            except json.JSONDecodeError:
+                return []
+        return []
+    
+    def set_daily_services(self, services):
+        """Set daily services from Python list"""
+        if isinstance(services, list):
+            self.daily_services = json.dumps(services)
+        else:
+            self.daily_services = services
+    
+    def get_products(self):
+        """Return products list as Python list"""
+        if self.products:
+            try:
+                return json.loads(self.products)
+            except json.JSONDecodeError:
+                return []
+        return []
+    
+    def set_products(self, products):
+        """Set products list from Python list"""
+        if isinstance(products, list):
+            self.products = json.dumps(products)
+        else:
+            self.products = products
+    
+    def get_voucher_rows(self):
+        """Return voucher rows (map from daily_services). Each row dict keys:
+        arrival, departure, service_by, description, type
+        Backward compatibility: if legacy keys (date, description) exist.
+        """
+        rows = self.get_daily_services()
+        normalized = []
+        for r in rows:
+            if isinstance(r, dict):
+                normalized.append({
+                    'arrival': r.get('arrival') or r.get('date') or '',
+                    'departure': r.get('departure') or r.get('departure_date') or '',
+                    'service_by': r.get('service_by') or r.get('description') or '',
+                    'description': r.get('description') or r.get('service_by') or '',
+                    'type': r.get('type') or r.get('type_class') or r.get('type_class_pax') or ''
+                })
+        return normalized
+
+    def set_voucher_rows(self, rows):
+        """Persist voucher rows into daily_services JSON. Accept only list of dicts."""
+        if isinstance(rows, list):
+            safe = []
+            for r in rows:
+                if isinstance(r, dict):
+                    safe.append({
+                        'arrival': r.get('arrival',''),
+                        'departure': r.get('departure',''),
+                        'service_by': r.get('service_by',''),
+                        'type': r.get('type','')
+                    })
+            self.daily_services = json.dumps(safe)
+
+    def get_voucher_images(self):
+        """Return voucher images as Python list"""
+        if self.voucher_images:
+            try:
+                return json.loads(self.voucher_images)
+            except json.JSONDecodeError:
+                return []
+        return []
+
+    def set_voucher_images(self, images):
+        """Set voucher images from Python list"""
+        if isinstance(images, list):
+            self.voucher_images = json.dumps(images)
+        else:
+            self.voucher_images = images
+
+    def add_voucher_image(self, image_data):
+        """Add a single voucher image to the list"""
+        images = self.get_voucher_images()
+        images.append(image_data)
+        self.set_voucher_images(images)
+
+    def remove_voucher_image(self, image_id):
+        """Remove voucher image by ID"""
+        images = self.get_voucher_images()
+        images = [img for img in images if img.get('id') != image_id]
+        self.set_voucher_images(images)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'customer_id': self.customer_id,
+            'booking_reference': self.booking_reference,
+            'quote_id': self.quote_id,
+            'quote_number': self.quote_number,
+            'quote_status': self.quote_status,
+            'invoice_id': self.invoice_id,
+            'invoice_number': self.invoice_number,
+            'booking_type': self.booking_type,
+            'status': self.status,
+            'arrival_date': self.arrival_date.isoformat() if self.arrival_date else None,
+            'departure_date': self.departure_date.isoformat() if self.departure_date else None,
+            'traveling_period_start': self.traveling_period_start.isoformat() if self.traveling_period_start else None,
+            'traveling_period_end': self.traveling_period_end.isoformat() if self.traveling_period_end else None,
+            'adults': self.adults,
+            'children': self.children,
+            'total_pax': self.total_pax,
+            'infants': self.infants,
+            'party_name': self.party_name,
+            'party_code': self.party_code,
+            'description': self.description,
+            'guest_list': self.get_guest_list(),
+            'agency_reference': self.agency_reference,
+            'hotel_name': self.hotel_name,
+            'room_type': self.room_type,
+            'special_request': self.special_request,
+            'pickup_point': self.pickup_point,
+            'destination': self.destination,
+            'pickup_time': self.pickup_time.strftime('%H:%M') if self.pickup_time else None,
+            'vehicle_type': self.vehicle_type,
+            'internal_note': self.internal_note,
+            'flight_info': self.flight_info,
+            'admin_notes': self.admin_notes,
+            'manager_memos': self.manager_memos,
+            'daily_services': self.get_daily_services(),
+            'products': self.get_products(),
+            'voucher_image_path': self.voucher_image_path,
+            'voucher_images': self.get_voucher_images(),
+            'voucher_rows': self.get_voucher_rows(),
+            'total_amount': float(self.total_amount) if self.total_amount else None,
+            'currency': self.currency,
+            'time_limit': self.time_limit.isoformat() if self.time_limit else None,
+                        'due_date': self.due_date.isoformat() if self.due_date else None,
+        }
+    
+    def is_invoice_paid(self):
+        """Check if invoice is paid"""
+        return self.invoice_status and self.invoice_status.lower() in ['paid', 'payment_complete']
+    
+    def can_create_voucher(self):
+        """Check if voucher can be created (invoice paid + booking confirmed)"""
+        return (self.status == 'confirmed' and 
+                self.is_invoice_paid() and 
+                self.invoice_number)
+    
+    def get_payment_status_display(self):
+        """Get user-friendly payment status"""
+        if self.is_invoice_paid():
+            return 'PAID'
+        elif self.invoice_status:
+            return self.invoice_status.upper()
+        elif self.invoice_number:
+            return 'PENDING'
+        else:
+            return 'NO INVOICE'
+    
+    def needs_invoice_sync(self):
+        """Check if invoice sync is needed"""
+        # Sync needed if:
+        # 1. Has quote but no invoice data
+        # 2. Has invoice but not paid
+        # 3. Haven't synced recently
+        return (self.quote_id and 
+                (not self.invoice_number or not self.is_invoice_paid()))

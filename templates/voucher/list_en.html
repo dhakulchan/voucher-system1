@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Voucher List - Dhakul Chan Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-ticket-alt me-2 text-primary"></i>Voucher List
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary">
+            <i class="fas fa-calendar-alt me-2"></i>View Bookings
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-filter me-2"></i>Filter Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">All</option>
+                            <option value="active" {% if request.args.get('status')=='active' %}selected{% endif %}>
+                                Active</option>
+                            <option value="used" {% if request.args.get('status')=='used' %}selected{% endif %}>Used
+                            </option>
+                            <option value="expired" {% if request.args.get('status')=='expired' %}selected{% endif %}>
+                                Expired</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="voucher_type" class="form-label">Voucher Type</label>
+                        <select class="form-select" id="voucher_type" name="voucher_type">
+                            <option value="">All</option>
+                            <option value="tour" {% if request.args.get('voucher_type')=='tour' %}selected{% endif %}>
+                                Tour Voucher</option>
+                            <option value="meal" {% if request.args.get('voucher_type')=='meal' %}selected{% endif %}>
+                                Meal Voucher</option>
+                            <option value="transport" {% if request.args.get('voucher_type')=='transport' %}selected{%
+                                endif %}>Transport Voucher</option>
+                            <option value="accommodation" {% if request.args.get('voucher_type')=='accommodation'
+                                %}selected{% endif %}>Accommodation Voucher</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search"
+                            value="{{ request.args.get('search', '') }}"
+                            placeholder="Search by customer name, booking reference...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-1"></i>Search
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-light border-primary">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-ticket-alt fa-2x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="card-title mb-1">Total Vouchers</div>
+                        <div class="h4 mb-0">{{ vouchers|length }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-light border-success">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="card-title mb-1">Active</div>
+                        <div class="h4 mb-0">{{ stats.active }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-light border-warning">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="card-title mb-1">Used</div>
+                        <div class="h4 mb-0">{{ stats.used }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-light border-danger">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-times-circle fa-2x text-danger"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="card-title mb-1">Expired</div>
+                        <div class="h4 mb-0">{{ stats.expired }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vouchers Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list me-2"></i>Vouchers ({{ vouchers|length }} items)
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if vouchers %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Voucher ID</th>
+                        <th>Booking</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Travel Date</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voucher in vouchers %}
+                    <tr>
+                        <td>
+                            <strong class="text-primary">#{{ loop.index }}</strong>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('booking.view', id=voucher.id) }}" class="text-decoration-none">
+                                <span class="fw-bold">#{{ voucher.booking_reference }}</span>
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ voucher.booking_type }}</small>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>
+                                    {% if voucher.customer %}
+                                    {% if voucher.customer.first_name and voucher.customer.last_name %}
+                                    {{ voucher.customer.first_name }} {{ voucher.customer.last_name }}
+                                    {% elif voucher.customer.name %}
+                                    {{ voucher.customer.name }}
+                                    {% else %}
+                                    Customer #{{ voucher.customer.id }}
+                                    {% endif %}
+                                    {% else %}
+                                    No customer
+                                    {% endif %}
+                                </strong>
+                            </div>
+                            <small class="text-muted">
+                                {% if voucher.customer and voucher.customer.email %}
+                                {{ voucher.customer.email }}
+                                {% else %}
+                                No email
+                                {% endif %}
+                            </small>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ voucher.booking_type|title }}</span>
+                        </td>
+                        <td>
+                            {% if voucher.arrival_date %}
+                            <span>{{ voucher.arrival_date.strftime('%d/%m/%Y') }}</span>
+                            {% endif %}
+                            {% if voucher.departure_date and voucher.departure_date !=
+                            voucher.arrival_date %}
+                            <br>
+                            <small class="text-muted">to {{ voucher.departure_date.strftime('%d/%m/%Y')
+                                }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-success">
+                                ฿{{ "{:,.2f}".format((voucher.total_amount|float) if voucher.total_amount else 0) }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if voucher.status == 'confirmed' %}
+                            <span class="badge bg-success">Active</span>
+                            {% elif voucher.status == 'completed' %}
+                            <span class="badge bg-warning">Used</span>
+                            {% elif voucher.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ voucher.status|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('voucher.view', id=voucher.id) }}" class="btn btn-outline-primary"
+                                    title="View Voucher"><i class="fas fa-eye"></i></a>
+                                <a href="{{ url_for('voucher.generate_pdf', id=voucher.id) }}"
+                                    class="btn btn-outline-success" title="Download PDF">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% if voucher.status == 'confirmed' %}
+                                <button type="button" class="btn btn-outline-warning" title="Mark as Used"
+                                    onclick="markAsUsed('{{ voucher.id }}')"><i class="fas fa-check"></i></button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No vouchers found</h5>
+            <p class="text-muted">No vouchers match your search criteria.</p>
+            <a href="{{ url_for('booking.list') }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>View Bookings
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function markAsUsed(bookingId) {
+        if (confirm('Mark this voucher as used?')) {
+            // Add AJAX call to mark voucher as used
+            fetch('/voucher/mark-used/' + bookingId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
+        }
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Booking {{ booking.booking_reference }} - {% if booking.status in ['pending', 'draft', 'confirmed']
+        %}Service Proposal{% elif booking.status == 'quoted' %}QUOTE{% elif booking.status == 'paid' %}Quote /
+        Provisional Receipt{% elif booking.status in ['vouchered', 'completed'] %}Travel Service Voucher{% else
+        %}Service Proposal{%
+        endif %}</title>
+
+    <!-- Meta tags for SEO and social sharing -->
+    <meta name="description"
+        content="View booking {{ booking.booking_reference }} details. Professional travel service from Dhakul Chan Travel Service with 35+ years experience.">
+    <meta name="keywords" content="travel service, booking, tour package, dhakul chan, travel voucher">
+    <meta name="author" content="Dhakul Chan Travel Service">
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Booking {{ booking.booking_reference }} - Travel Service">
+    <meta property="og:description" content="Professional travel service booking details">
+    <meta property="og:image" content="{{ url_for('static', filename='dcts-logo-vou.png', _external=True) }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:site_name" content="Dhakul Chan Travel Service">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Booking {{ booking.booking_reference }} - Travel Service">
+    <meta property="twitter:description" content="Professional travel service booking details">
+    <meta property="twitter:image" content="{{ url_for('static', filename='dcts-logo-vou.png', _external=True) }}">
+
+    <!-- Security headers for sharing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style"
+        onload="this.onload=null;this.rel='stylesheet'">
+
+    <!-- Fallback for CSS if JS disabled -->
+    <noscript>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    </noscript>
+
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            --transition-standard: all 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-display: swap;
+        }
+
+        .booking-header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 3rem 0;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .booking-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20"><defs><linearGradient id="a" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="%23ffffff" stop-opacity="0.1"/><stop offset="1" stop-color="%23ffffff" stop-opacity="0"/></linearGradient></defs><polygon fill="url(%23a)" points="0,20 100,0 100,20"/></svg>');
+            opacity: 0.3;
+        }
+
+        .booking-header .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .booking-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s ease;
+            background: white;
+            overflow: hidden;
+        }
+
+        .booking-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+        }
+
+        .card-header {
+            background: var(--success-gradient);
+            color: white;
+            border: none;
+            padding: 1.5rem;
+            font-weight: 600;
+        }
+
+        .download-btn {
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-btn:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: all 0.5s;
+        }
+
+        .download-btn:hover:before {
+            left: 100%;
+        }
+
+        .btn-download-png {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-download-pdf {
+            background: linear-gradient(135deg, #4834d4, #686de0);
+            color: white;
+        }
+
+        .security-notice {
+            background: linear-gradient(135deg, #dff9fb, #c7ecee);
+            border-left: 4px solid #00b894;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #007bff;
+        }
+
+        .badge-status {
+            font-size: 0.9em;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+
+        .guest-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .guest-list-content {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            min-height: auto;
+        }
+
+        .guest-item {
+            margin-bottom: 0.75rem;
+            padding: 0.75rem;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border-radius: 8px;
+            border-left: 3px solid #007bff;
+            transition: all 0.2s ease;
+        }
+
+        .guest-item:hover {
+            background: linear-gradient(135deg, #e9ecef, #dee2e6);
+            transform: translateX(2px);
+        }
+
+        .guest-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .guest-name {
+            font-weight: 400;
+            color: #2c3e50;
+            font-size: 0.9em;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+
+        .guest-details {
+            font-size: 0.85em;
+            color: #6c757d;
+            line-height: 1.3;
+        }
+
+        .share-btn {
+            background: var(--success-gradient);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .booking-header {
+                padding: 2rem 0;
+            }
+
+            .booking-card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .text-purple {
+            color: #6f42c1 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="booking-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="fas fa-ticket-alt me-3"></i>
+                        {% if booking.status in ['pending', 'draft', 'confirmed'] %}Service Proposal
+                        {% elif booking.status == 'quoted' %}QUOTE
+                        {% elif booking.status == 'paid' %}Quote / Provisional Receipt
+                        {% elif booking.status in ['vouchered', 'completed'] %}Travel Service Voucher
+                        {% else %}Service Proposal{% endif %}
+                    </h1>
+                    <div class="d-flex align-items-center gap-3">
+                        <h2 class="h3 mb-0">📋 {{ booking.booking_reference }}</h2>
+                        {% if booking.status == 'quoted' and booking.quotes %}
+                        {% for quote in booking.quotes %}
+                        {% if loop.first %}
+                        <h2 class="h3 mb-0 text-warning">📄 {{ quote.quote_number }}</h2>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    {% if booking.party_name or booking.party_code %}
+                    <p class="mt-2 mb-0 opacity-75">
+                        <i class="fas fa-users me-2"></i>
+                        Party Name/Code: {{ booking.party_name or 'N/A' }}{% if booking.party_code %} ({{
+                        booking.party_code }}){% endif %}
+                    </p>
+                    {% endif %}
+                    {% if booking.created_at %}
+                    <p class="mt-2 mb-0 opacity-75">
+                        <i class="fas fa-calendar me-2"></i>
+                        Created: {{ booking.created_at|safe_date }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <!-- Logo positioned above status badge -->
+                    <div class="mb-2">
+                        <img src="{{ url_for('static', filename='dcts-logo-vou.png') }}" alt="DCTS Logo"
+                            class="img-fluid" style="max-height: 60px; width: auto;">
+                    </div>
+                    <span class="badge badge-status bg-success fs-6">
+                        <i class="fas fa-check-circle me-1"></i>
+                        {{ booking.status.title() }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container pb-5">
+        <div class="row">
+            <!-- Left Column: Booking Information -->
+            <div class="col-lg-8">
+                <!-- Customer Information -->
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            Customer Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong><i class="fas fa-user me-2 text-primary"></i>Name:</strong><br>
+                                    {{ booking.customer.name if booking.customer else 'N/A' }}
+                                </div>
+                                <div class="info-item">
+                                    <strong><i class="fas fa-envelope me-2 text-primary"></i>Email:</strong><br>
+                                    {{ booking.customer.email if booking.customer else 'N/A' }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong><i class="fas fa-phone me-2 text-primary"></i>Phone:</strong><br>
+                                    {{ booking.customer.phone if booking.customer else 'N/A' }}
+                                </div>
+                                <div class="info-item">
+                                    <strong><i class="fas fa-file-invoice me-2 text-primary"></i>Quote
+                                        Number:</strong><br>
+                                    <span class="fw-bold text-primary fs-5">
+                                        {% if booking.quotes %}
+                                        {% for quote in booking.quotes %}
+                                        {% if loop.last %}{{ quote.quote_number }}{% endif %}
+                                        {% endfor %}
+                                        {% else %}
+                                        N/A
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Travel Information -->
+                {% if booking.arrival_date or booking.departure_date %}
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-plane me-2"></i>
+                            Travel Information
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong><i class="fas fa-plane-arrival me-2 text-success"></i>Arrival:</strong><br>
+                                    {{ booking.arrival_date|safe_date }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <strong><i
+                                            class="fas fa-plane-departure me-2 text-danger"></i>Departure:</strong><br>
+                                    {{ booking.departure_date|safe_date }}
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if booking.total_pax %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="info-item">
+                                    <strong><i class="fas fa-users me-2 text-primary"></i>Passengers:</strong><br>
+                                    <span class="fs-5">
+                                        {% if booking.adults %}<i class="fas fa-user me-1"></i>{{ booking.adults }}
+                                        Adults{% endif %}
+                                        {% if booking.children %}<i class="fas fa-child ms-3 me-1"></i>{{
+                                        booking.children }} Children{% endif %}
+                                        {% if booking.infants %}<i class="fas fa-baby ms-3 me-1"></i>{{ booking.infants
+                                        }} Infants{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+
+
+                <!-- Guest List -->
+                {% if booking.guest_list %}
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-list me-2"></i>
+                            Guest Name / Name List
+                        </h3>
+                    </div>
+                    <div class="card-body p-2">
+                        <div class="guest-list-content">
+                            {% set guest_data = booking.get_guest_list() %}
+                            {% if guest_data and guest_data is iterable and guest_data is not string %}
+                            {% for guest in guest_data %}
+                            {% if guest is mapping %}
+                            <!-- Complex guest object with details -->
+                            <div class="guest-item mb-2">
+                                <div class="guest-name">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    <span style="white-space: pre-line;">{{ (guest.name or guest.get('name', 'N/A')) |
+                                        replace('<br>', '\n') | replace('<br />', '\n') | replace('</p>', '\n') |
+                                        replace('<p>', '') | safe }}</span>
+                                </div>
+                                {% if guest.age or guest.get('age') or guest.nationality or guest.get('nationality') %}
+                                <div class="guest-details ms-4 text-muted small">
+                                    {% if guest.age or guest.get('age') %}
+                                    <i class="fas fa-birthday-cake me-1 text-info"></i>
+                                    <span>อายุ: {{ guest.age or guest.get('age') }} ปี</span>
+                                    {% endif %}
+                                    {% if guest.nationality or guest.get('nationality') %}
+                                    {% if guest.age or guest.get('age') %} | {% endif %}
+                                    <i class="fas fa-flag me-1 text-success"></i>
+                                    <span>สัญชาติ: {{ guest.nationality or guest.get('nationality') }}</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <!-- Simple guest name as string -->
+                            <div class="guest-item mb-1">
+                                <div class="guest-name">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    <span style="white-space: pre-line;">{{ guest | replace('<br>', '\n') |
+                                        replace('<br />', '\n') | replace('</p>', '\n') | replace('<p>', '') | safe
+                                            }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            {% elif booking.get_guest_list_for_edit() %}
+                            <!-- Use the formatted text version -->
+                            <div class="guest-item">
+                                <div class="guest-name">
+                                    <i class="fas fa-users me-2 text-primary"></i>
+                                    รายชื่อผู้เดินทาง
+                                </div>
+                                <div
+                                    style="white-space: pre-line; line-height: 1.5; margin-top: 0.5rem; font-size: 0.9em;">
+                                    {{ booking.get_guest_list_for_edit() }}</div>
+                            </div>
+                            {% elif booking.guest_list %}
+                            <!-- Fallback to raw guest_list with HTML cleanup -->
+                            <div class="guest-item">
+                                <div class="guest-name">
+                                    <i class="fas fa-users me-2 text-primary"></i>
+                                    รายชื่อผู้เดินทาง
+                                </div>
+                                <div
+                                    style="white-space: pre-line; line-height: 1.5; margin-top: 0.5rem; font-size: 0.9em;">
+                                    {{ booking.guest_list | html_to_linebreaks }}</div>
+                            </div>
+                            {% else %}
+                            <!-- No guest data available -->
+                            <div class="guest-item text-center">
+                                <div class="guest-name text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    ไม่มีข้อมูลผู้เดินทาง
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Service Details / Description -->
+                {% if booking.description %}
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Service Details / Description
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="service-details-content"
+                            style="white-space: pre-line; line-height: 1.7; font-size: 1rem; padding: 0.75rem; background: #f8f9fa; border-radius: 8px; border-left: 3px solid #28a745;">
+                            {{ booking.description | html_to_linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Contact Information -->
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-phone me-2"></i>
+                            Contact Us
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-12">
+                                <!-- Company Name -->
+                                <div class="text-center mb-4">
+                                    <h4 class="text-primary mb-2">
+                                        <i class="fas fa-building me-2"></i>
+                                        Dhakul Chan Nice Holidays Group
+                                    </h4>
+                                    <hr class="mb-4">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="fas fa-phone me-2 text-primary"></i>
+                                    <strong>Tel:</strong><br>
+                                    +852 2392 1155 | +662 2744216
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="fas fa-envelope me-2 text-primary"></i>
+                                    <strong>Email:</strong><br>
+                                    booking@dhakulchan.com
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="fab fa-line me-2 text-success"></i>
+                                    <strong>Line OA:</strong><br>
+                                    @dhakulchan
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <i class="fas fa-globe me-2 text-info"></i>
+                                    <strong>Visit us:</strong><br>
+                                    <a href="http://www.dhakulchan.net" target="_blank" class="text-decoration-none">
+                                        WWW.DHAKULCHAN.NET
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Actions -->
+            <div class="col-lg-4">
+                <!-- Download Options -->
+                <!-- Sharing Files Section (for vouchered status) -->
+                {% if booking.status in ['vouchered', 'completed'] and (booking.voucher_images_rel or
+                booking.voucher_files) %}
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-file-alt me-2"></i>
+                            Sharing Files
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            <!-- Voucher Images -->
+                            {% for image in booking.voucher_images_rel %}
+                            <div class="list-group-item d-flex align-items-center py-3">
+                                <div class="flex-grow-1">
+                                    <a href="{{ url_for('public.download_voucher_image', image_id=image.id, token=token) }}"
+                                        class="text-decoration-none d-flex align-items-center" target="_blank">
+                                        <i class="fas fa-file-image fs-4 text-primary me-3"
+                                            style="cursor: pointer; transition: color 0.2s;"
+                                            onmouseover="this.style.color='#0056b3'" onmouseout="this.style.color=''"
+                                            title="Click to download voucher image"></i>
+                                        <div>
+                                            <h6 class="mb-1 text-dark fw-semibold">Voucher Image {{ image.display_order
+                                                }}</h6>
+                                            <p class="mb-0 text-muted small">Image file</p>
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+
+                            <!-- Voucher Files -->
+                            {% for file in booking.voucher_files %}
+                            <div class="list-group-item d-flex align-items-center py-3">
+                                <div class="flex-grow-1">
+                                    <a href="{{ url_for('public.download_voucher_file', file_id=file.id, token=token) }}"
+                                        class="text-decoration-none d-flex align-items-center" target="_blank">
+                                        <i class="fas fa-file-download fs-4 text-primary me-3"
+                                            style="cursor: pointer; transition: color 0.2s;"
+                                            onmouseover="this.style.color='#0056b3'" onmouseout="this.style.color=''"
+                                            title="Click to download {{ file.title if file.title and file.title.strip() else 'Document' }}"></i>
+                                        <div>
+                                            <h6 class="mb-1 text-dark fw-semibold">{{ file.title if file.title and
+                                                file.title.strip() else 'Document' }}
+                                            </h6>
+                                            {% if file.description %}
+                                            <p class="mb-0 text-muted small">{{ file.description }}</p>
+                                            {% endif %}
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- External Links Section (for vouchered status) -->
+                {% if booking.status in ['vouchered', 'completed'] and booking.voucher_links %}
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-external-link-alt me-2"></i>
+                            External Links
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for link in booking.voucher_links %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-link me-2 text-success"></i>
+                                    <strong>{{ link.title or 'External Link' }}</strong>
+                                    {% if link.description %}
+                                    <div class="text-muted small">{{ link.description }}</div>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ link.url }}" class="btn btn-outline-success btn-sm" target="_blank"
+                                    rel="noopener noreferrer">
+                                    <i class="fas fa-external-link-alt me-1"></i>
+                                    Open Link
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Download Options -->
+                <div class="booking-card mb-4">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-download me-2"></i>
+                            Download Options
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            {% if booking.status == 'quoted' %}
+                            <a href="{{ url_for('public.download_booking_png', token=token) }}"
+                                class="download-btn btn-download-png" target="_blank">
+                                <i class="fas fa-image me-2"></i>
+                                Download Quote PNG
+                            </a>
+                            <a href="{{ url_for('public.download_booking_pdf', token=token) }}"
+                                class="download-btn btn-download-pdf" target="_blank">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Download Quote PDF
+                            </a>
+                            {% else %}
+                            {% if booking.status in ['paid', 'vouchered', 'completed'] %}
+                            <!-- Use different URLs based on status -->
+                            {% if booking.status in ['vouchered', 'completed'] %}
+                            <!-- For vouchered bookings, use regular booking routes -->
+                            <a href="{{ url_for('public.download_booking_png', token=token) }}"
+                                class="download-btn btn-download-png" target="_blank">
+                                <i class="fas fa-image me-2"></i>
+                                Download Travel Service Voucher PNG Multi-Page
+                            </a>
+                            <a href="{{ url_for('public.download_booking_pdf', token=token) }}"
+                                class="download-btn btn-download-pdf" target="_blank">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Download Travel Service Voucher PDF
+                            </a>
+                            {% else %}
+                            <!-- For paid bookings, use quote URL format -->
+                            {% set quote_token = booking.generate_secure_token() %}
+                            <a href="/booking/{{ booking.id }}/quote-png?v={{ quote_token }}"
+                                class="download-btn btn-download-png" target="_blank">
+                                <i class="fas fa-image me-2"></i>
+                                Download Quote / Provisional Receipt PNG Multi-Page
+                            </a>
+                            <a href="/booking/{{ booking.id }}/quote-pdf?v={{ quote_token }}"
+                                class="download-btn btn-download-pdf" target="_blank">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Download Quote / Provisional Receipt PDF
+                            </a>
+                            {% endif %}
+                            {% else %}
+                            <!-- Use old format for non-paid bookings -->
+                            <a href="{{ url_for('public.download_booking_png', token=token) }}"
+                                class="download-btn btn-download-png" target="_blank">
+                                <i class="fas fa-image me-2"></i>
+                                Download Service Proposal PNG Multi-Page
+                            </a>
+                            <a href="{{ url_for('public.download_booking_pdf', token=token) }}"
+                                class="download-btn btn-download-pdf" target="_blank">
+                                <i class="fas fa-file-pdf me-2"></i>
+                                Download Service Proposal PDF
+                            </a>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div> <!-- Security Notice -->
+
+                <div class="security-notice">
+                    <h5 class="text-success">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Security Notice
+                    </h5>
+                    <p class="mb-2 small">
+                        <i class="fas fa-clock me-2"></i>
+                        {% if booking.departure_date %}
+                        This secure link expires <strong>120 days</strong> after departure date ({{
+                        booking.departure_date|safe_date }})
+                        {% else %}
+                        This secure link expires after <strong>30 days</strong>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0 small">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Please do not share this link with unauthorized persons
+                    </p>
+                </div>
+
+                <!-- Share Options -->
+                <div class="booking-card">
+                    <div class="card-header">
+                        <h3 class="mb-0">
+                            <i class="fas fa-share-alt me-2"></i>
+                            Share Options
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button onclick="shareBooking()" class="btn share-btn">
+                                <i class="fas fa-share me-2"></i>
+                                Share Booking
+                            </button>
+                            <button onclick="copyBookingLink()" class="btn btn-outline-primary">
+                                <i class="fas fa-copy me-2"></i>
+                                Copy Link
+                            </button>
+                            <button onclick="shareToLine()" class="btn btn-outline-success">
+                                <i class="fab fa-line me-2"></i>
+                                Share to Line
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Why Choose Us Section -->
+                <div class="booking-card mb-4">
+                    <div class="card-header" style="padding: 1rem;">
+                        <h4 class="mb-0" style="font-size: 1.1rem;">
+                            <i class="fas fa-star me-2" style="font-size: 1rem;"></i>
+                            ทำไมต้องเลือก ตระกูลเฉินฯ
+                        </h4>
+                    </div>
+                    <div class="card-body" style="padding: 1rem;">
+                        <div class="why-choose-us">
+                            <div class="row g-2">
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                1</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span style="font-size: 0.9rem; font-weight: 600;">เราคือบริษัทท่องเที่ยว
+                                                License 11/03589</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                2</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span
+                                                style="font-size: 0.9rem; font-weight: 600;">ทีมงานมีประสบการณ์ยาวนานกว่า
+                                                35 ปี</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                3</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span
+                                                style="font-size: 0.9rem; font-weight: 600;">ทีมงานดูแลท่านตลอดการเดินทาง</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                4</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span
+                                                style="font-size: 0.9rem; font-weight: 600;">ความน่าเชื่อถือและการรับรองจากหน่วยงานต่างฯ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                5</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span
+                                                style="font-size: 0.9rem; font-weight: 600;">แพ็กเกจและบริการที่คุ้มค่า</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                6</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span style="font-size: 0.9rem; font-weight: 600;">ทีมงานมืออาชีพ
+                                                บริการทันใจ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex align-items-start mb-2">
+                                        <div class="flex-shrink-0 me-3" style="margin-top: 2px;">
+                                            <div class="badge bg-primary rounded-pill"
+                                                style="width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px;">
+                                                7</div>
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <span
+                                                style="font-size: 0.85rem; font-weight: 600; line-height: 1.3;">การบริการของเรามีความรับผิดชอบมากกว่าการใช้
+                                                'Self Service' หรือแพลตฟอร์มออนไลน์ทั่วไป
+                                                ซึ่งไม่อยู่ภายใต้ข้อบังคับตามพระราชบัญญัติธุรกิจนำเที่ยว
+                                                และมักไม่มีการคุ้มครองประกันการเดินทางหากเป็นแพ็กเกจทัวร์ตามเงื่อนไขบริการ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script>
+        // Enhanced sharing functions with loading states and better UX
+
+        async function shareBooking() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+
+            try {
+                button.innerHTML = '<span class="loading-spinner me-2"></span>Sharing...';
+                button.disabled = true;
+
+                const shareData = {
+                    title: '📋 Booking {{ booking.booking_reference }}',
+                    text: `📋 Service Proposal: {{ booking.booking_reference }}\n🔗 View: ${window.location.href}\n🖼️ PNG: ${window.location.href}/png\n📄 PDF: ${window.location.href}/pdf\n\n📞 Tel: +662 2744216\n📧 Email: booking@dhakulchan.com\n📱 Line: @dhakulchan`,
+                    url: window.location.href
+                };
+
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                    showToast('✅ Shared successfully!', 'success');
+                } else {
+                    await copyBookingLink();
+                }
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Share error:', err);
+                    showToast('❌ Share failed', 'error');
+                }
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function copyBookingLink() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+
+            try {
+                button.innerHTML = '<span class="loading-spinner me-2"></span>Copying...';
+                button.disabled = true;
+
+                const text = `📋 Service Proposal: {{ booking.booking_reference }}
+
+🔗 View Booking: ${window.location.href}
+🖼️ Download PNG: ${window.location.href}/png
+📄 Download PDF: ${window.location.href}/pdf
+
+📞 Tel: +662 2744216
+📧 Email: booking@dhakulchan.com
+📱 Line OA: @dhakulchan
+
+🔒 Secure link (expires in 30 days)`;
+
+                await navigator.clipboard.writeText(text);
+                showToast('📋 Link copied to clipboard!', 'success');
+
+            } catch (err) {
+                console.error('Copy error:', err);
+                showToast('❌ Could not copy to clipboard', 'error');
+            } finally {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function shareToLine() {
+            const text = `📋 Service Proposal: {{ booking.booking_reference }}
+
+🔗 ${window.location.href}
+
+📞 Tel: +662 2744216
+📱 Line OA: @dhakulchan`;
+
+            const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text)}`;
+            window.open(lineUrl, '_blank');
+            showToast('📱 Opening Line...', 'info');
+        }
+
+        // Toast notification system
+        function showToast(message, type = 'info') {
+            const toastContainer = getOrCreateToastContainer();
+
+            const toastId = 'toast-' + Date.now();
+            const bgClass = type === 'success' ? 'bg-success' :
+                type === 'error' ? 'bg-danger' :
+                    type === 'warning' ? 'bg-warning' : 'bg-info';
+
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-white ${bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+            const toastElement = document.getElementById(toastId);
+            const bsToast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: type === 'error' ? 5000 : 3000
+            });
+
+            bsToast.show();
+
+            // Remove from DOM after hiding
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                toastElement.remove();
+            });
+        }
+
+        function getOrCreateToastContainer() {
+            let container = document.getElementById('toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                container.style.zIndex = '1055';
+                document.body.appendChild(container);
+            }
+            return container;
+        }
+
+        // Auto-refresh if token expires (optional)
+        setTimeout(() => {
+            if (document.visibilityState === 'visible') {
+                // Could implement token refresh logic here
+            }
+        }, 30 * 24 * 60 * 60 * 1000); // 30 days
+    </script>
+</body>
+
+</html>

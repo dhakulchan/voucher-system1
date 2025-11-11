@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="{{ quote.title or 'Travel Quote' }} - {{ quote.description or 'Travel quote from Dhakul Chan Travel' }}">
+    <meta property="og:title" content="{{ quote.title or 'Travel Quote' }}">
+    <meta property="og:description" content="{{ quote.description or 'Travel quote from Dhakul Chan Travel' }}">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url }}">
+
+    <title>{{ quote.title or 'Travel Quote' }} - Dhakul Chan Travel</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .quote-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .quote-container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px 15px 0 0 !important;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .pricing-card {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .pricing-card .card-header {
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .share-buttons .btn {
+            border-radius: 25px;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            margin-bottom: 0.5rem;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .share-buttons .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        @media print {
+
+            .share-buttons,
+            .footer,
+            .quote-header .btn {
+                display: none !important;
+            }
+
+            .quote-header {
+                background: #6c757d !important;
+                print-color-adjust: exact;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .quote-header {
+                padding: 1.5rem 0;
+            }
+
+            .quote-container {
+                padding: 0 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Status Badge -->
+    <div class="status-badge">
+        {% if quote.is_valid %}
+        <span class="badge bg-success fs-6">
+            <i class="fas fa-check-circle me-1"></i>Valid
+        </span>
+        {% else %}
+        <span class="badge bg-danger fs-6">
+            <i class="fas fa-times-circle me-1"></i>Expired
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Header -->
+    <div class="quote-header">
+        <div class="quote-container">
+            <div class="text-center">
+                <h1 class="display-5 fw-bold mb-3">
+                    <i class="fas fa-file-invoice-dollar me-3"></i>
+                    {{ quote.title or 'Travel Quote' }}
+                </h1>
+                <p class="lead mb-3">Quote #{{ quote.quote_number }}</p>
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="d-flex justify-content-between text-white-50">
+                            <span>
+                                <i class="fas fa-calendar me-2"></i>
+                                Created: {{ quote.quote_date.strftime('%B %d, %Y') if quote.quote_date else 'N/A' }}
+                            </span>
+                            <span>
+                                <i class="fas fa-clock me-2"></i>
+                                Valid until: {{ quote.valid_until.strftime('%B %d, %Y') if quote.valid_until else 'N/A'
+                                }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="quote-container">
+        <div class="row">
+            <!-- Quote Details -->
+            <div class="col-lg-8">
+                <!-- Description Card -->
+                {% if quote.description %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Quote Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">{{ quote.description }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Travel Details Card -->
+                {% if booking %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-map-marker-alt me-2"></i>Travel Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <strong>Destination:</strong><br>
+                                <span class="text-muted">{{ booking.destination or 'N/A' }}</span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Travel Period:</strong><br>
+                                <span class="text-muted">
+                                    {% if booking.traveling_period_start and booking.traveling_period_end %}
+                                    {{ booking.traveling_period_start.strftime('%B %d') }} - {{
+                                    booking.traveling_period_end.strftime('%B %d, %Y') }}
+                                    {% else %}
+                                    To be confirmed
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Travelers:</strong><br>
+                                <span class="text-muted">
+                                    {{ booking.adults or 0 }} Adults
+                                    {% if booking.children %}, {{ booking.children }} Children{% endif %}
+                                    {% if booking.infants %}, {{ booking.infants }} Infants{% endif %}
+                                </span>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <strong>Duration:</strong><br>
+                                <span class="text-muted">
+                                    {% if booking.traveling_period_start and booking.traveling_period_end %}
+                                    {{ (booking.traveling_period_end - booking.traveling_period_start).days + 1 }} days
+                                    {% else %}
+                                    To be confirmed
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if booking.special_requests %}
+                        <hr>
+                        <div>
+                            <strong>Special Requests:</strong><br>
+                            <p class="text-muted mb-0">{{ booking.special_requests }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Package Details Card -->
+                {% if booking and (booking.packages or booking.tour_program) %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list-alt me-2"></i>Package Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if booking.packages %}
+                        <div class="mb-3">
+                            <strong>Included Packages:</strong><br>
+                            <p class="text-muted">{{ booking.packages }}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if booking.tour_program %}
+                        <div class="mb-3">
+                            <strong>Tour Program:</strong><br>
+                            <p class="text-muted">{{ booking.tour_program }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Terms & Conditions Card -->
+                {% if quote.terms_conditions %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-gavel me-2"></i>Terms & Conditions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-muted">
+                            {{ quote.terms_conditions|safe }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Pricing & Actions -->
+            <div class="col-lg-4">
+                <!-- Pricing Card -->
+                <div class="card pricing-card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0 text-white">
+                            <i class="fas fa-calculator me-2"></i>Pricing Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <span>{{ "%.2f"|format(quote.subtotal|float) }} {{ quote.currency or 'THB' }}</span>
+                        </div>
+
+                        {% if quote.discount_amount and quote.discount_amount > 0 %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Discount:</span>
+                            <span>-{{ "%.2f"|format(quote.discount_amount|float) }} {{ quote.currency or 'THB' }}</span>
+                        </div>
+                        {% endif %}
+
+                        {% if quote.tax_amount and quote.tax_amount > 0 %}
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax ({{ quote.tax_rate or 7 }}%):</span>
+                            <span>{{ "%.2f"|format(quote.tax_amount|float) }} {{ quote.currency or 'THB' }}</span>
+                        </div>
+                        {% endif %}
+
+                        <hr class="border-light">
+                        <div class="d-flex justify-content-between">
+                            <strong class="fs-5">Total Amount:</strong>
+                            <strong class="fs-4">{{ "%.2f"|format(quote.total_amount|float) }} {{ quote.currency or
+                                'THB' }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions Card -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-download me-2"></i>Download & Share
+                        </h5>
+                    </div>
+                    <div class="card-body share-buttons">
+                        <!-- Download Options -->
+                        <a href="{{ url_for('quote.generate_quote_pdf', quote_id=quote.id) }}" class="btn btn-danger"
+                            target="_blank" onclick="trackAction('pdf_download')">
+                            <i class="fas fa-file-pdf me-2"></i>Download PDF
+                        </a>
+
+                        <a href="{{ url_for('quote.generate_quote_png', quote_id=quote.id) }}" class="btn btn-info"
+                            target="_blank" onclick="trackAction('png_download')">
+                            <i class="fas fa-image me-2"></i>Download PNG
+                        </a>
+
+                        <button onclick="window.print()" class="btn btn-secondary">
+                            <i class="fas fa-print me-2"></i>Print Quote
+                        </button>
+
+                        <hr>
+
+                        <!-- Share Options -->
+                        <h6 class="text-center text-muted mb-3">Share this Quote</h6>
+
+                        <button onclick="shareOnFacebook()" class="btn btn-primary">
+                            <i class="fab fa-facebook-f me-2"></i>Share on Facebook
+                        </button>
+
+                        <button onclick="shareOnLine()" class="btn btn-success">
+                            <i class="fab fa-line me-2"></i>Share on LINE
+                        </button>
+
+                        <button onclick="copyQuoteLink()" class="btn btn-outline-secondary">
+                            <i class="fas fa-link me-2"></i>Copy Link
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quote Validity Card -->
+                {% if quote.days_until_expiry is not none %}
+                <div
+                    class="card {% if quote.days_until_expiry <= 3 %}border-warning{% elif quote.is_expired %}border-danger{% else %}border-success{% endif %}">
+                    <div class="card-body text-center">
+                        {% if quote.is_expired %}
+                        <i class="fas fa-exclamation-triangle text-danger fa-2x mb-2"></i>
+                        <h6 class="text-danger">Quote Expired</h6>
+                        <p class="text-muted mb-0">This quote is no longer valid</p>
+                        {% elif quote.days_until_expiry <= 3 %} <i
+                            class="fas fa-hourglass-half text-warning fa-2x mb-2"></i>
+                            <h6 class="text-warning">Expires Soon</h6>
+                            <p class="text-muted mb-0">{{ quote.days_until_expiry }} days remaining</p>
+                            {% else %}
+                            <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                            <h6 class="text-success">Valid Quote</h6>
+                            <p class="text-muted mb-0">{{ quote.days_until_expiry }} days remaining</p>
+                            {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="quote-container">
+            <div class="text-center">
+                <h5>Dhakul Chan Travel</h5>
+                <p class="mb-0">Your trusted travel partner</p>
+                <div class="mt-3">
+                    <a href="mailto:info@dhakulchan.com" class="text-light me-3">
+                        <i class="fas fa-envelope"></i> info@dhakulchan.com
+                    </a>
+                    <a href="tel:+66123456789" class="text-light">
+                        <i class="fas fa-phone"></i> +66 123 456 789
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Track quote view on page load
+        fetch('/quote/{{ quote.id }}/track-view', { method: 'POST' });
+
+        // Copy quote link function
+        function copyQuoteLink() {
+            const url = window.location.href;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(function () {
+                    showAlert('Link copied to clipboard!', 'success');
+                });
+            } else {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = url;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showAlert('Link copied to clipboard!', 'success');
+            }
+
+            trackShare('copy_link');
+        }
+
+        // Facebook share function
+        function shareOnFacebook() {
+            const url = window.location.href;
+            const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+
+            window.open(facebookUrl, '_blank', 'width=600,height=400');
+            trackShare('facebook');
+        }
+
+        // LINE share function
+        function shareOnLine() {
+            const url = window.location.href;
+            const text = "Check out this travel quote: {{ quote.title or 'Travel Quote' }}";
+            const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(text)}%0A${encodeURIComponent(url)}`;
+
+            window.open(lineUrl, '_blank', 'width=600,height=400');
+            trackShare('line');
+        }
+
+        // Track share function
+        function trackShare(platform) {
+            fetch('/quote/{{ quote.id }}/track-share', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ platform: platform })
+            });
+        }
+
+        // Track action function
+        function trackAction(action) {
+            fetch('/quote/{{ quote.id }}/track-view', { method: 'POST' });
+        }
+
+        // Show alert function
+        function showAlert(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 1050; min-width: 300px;" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+
+            // Auto-dismiss after 5 seconds
+            setTimeout(function () {
+                const alert = document.querySelector('.alert');
+                if (alert) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+
+</html>

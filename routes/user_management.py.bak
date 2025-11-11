@@ -1,0 +1,178 @@
+"""
+User Management Routes - Manager/Admin only
+"""
+
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
+from flask_login import current_user
+from decorators.auth_decorators import login_required, manager_required, admin_required
+from models.user import User
+from extensions import db
+from werkzeug.security import generate_password_hash
+import re
+
+user_mgmt_bp = Blueprint('user_mgmt', __name__, url_prefix='/admin/users')
+
+@user_mgmt_bp.route('/')
+@login_required
+@manager_required
+def list_users():
+    """List all users - Manager/Admin only"""
+    users = User.query.order_by(User.created_at.desc()).all()
+    return render_template('admin/users/list.html', users=users)
+
+@user_mgmt_bp.route('/create', methods=['GET', 'POST'])
+@login_required
+@manager_required  
+def create_user():
+    """Create new user - Manager/Admin only"""
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        role = request.form.get('role', 'staff')
+        
+        # Validation
+        errors = []
+        
+        if not username:
+            errors.append('Username is required')
+        elif len(username) < 3:
+            errors.append('Username must be at least 3 characters')
+        elif User.query.filter_by(username=username).first():
+            errors.append('Username already exists')
+        
+        if not email:
+            errors.append('Email is required')
+        elif not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', email):
+            errors.append('Invalid email format')
+        elif User.query.filter_by(email=email).first():
+            errors.append('Email already exists')
+        
+        if not password:
+            errors.append('Password is required')
+        elif len(password) < 6:
+            errors.append('Password must be at least 6 characters')
+        
+        if role not in ['staff', 'manager', 'admin']:
+            errors.append('Invalid role')
+        
+        # Only admin can create admin users
+        if role == 'admin' and current_user.role != 'admin':
+            errors.append('Only admin users can create admin accounts')
+        
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_template('admin/users/create.html')
+        
+        try:
+            # Create user
+            user = User(
+                username=username,
+                email=email,
+                role=role
+            )
+            user.set_password(password)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            flash(f'✅ User "{username}" created successfully with role "{role}"', 'success')
+            return redirect(url_for('user_mgmt.list_users'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'❌ Error creating user: {str(e)}', 'error')
+    
+    return render_template('admin/users/create.html')
+
+@user_mgmt_bp.route('/<int:user_id>/role', methods=['POST'])
+@login_required
+@manager_required
+def update_role(user_id):
+    """Update user role - Manager/Admin only"""
+    user = User.query.get_or_404(user_id)
+    new_role = request.form.get('role')
+    
+    # Validation
+    if new_role not in ['staff', 'manager', 'admin']:
+        flash('❌ Invalid role', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    # Only admin can modify admin roles
+    if (user.role == 'admin' or new_role == 'admin') and current_user.role != 'admin':
+        flash('❌ Only admin users can modify admin roles', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    # Can't modify own role
+    if user.id == current_user.id:
+        flash('❌ You cannot modify your own role', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    try:
+        old_role = user.role
+        user.role = new_role
+        db.session.commit()
+        
+        flash(f'✅ Role updated for "{user.username}": {old_role} → {new_role}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error updating role: {str(e)}', 'error')
+    
+    return redirect(url_for('user_mgmt.list_users'))
+
+@user_mgmt_bp.route('/<int:user_id>/reset-password', methods=['POST'])
+@login_required
+@manager_required
+def reset_password(user_id):
+    """Reset user password - Manager/Admin only"""
+    user = User.query.get_or_404(user_id)
+    new_password = request.form.get('password', '').strip()
+    
+    if not new_password:
+        flash('❌ Password is required', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    if len(new_password) < 6:
+        flash('❌ Password must be at least 6 characters', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    # Only admin can reset admin passwords
+    if user.role == 'admin' and current_user.role != 'admin':
+        flash('❌ Only admin users can reset admin passwords', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    try:
+        user.set_password(new_password)
+        db.session.commit()
+        
+        flash(f'✅ Password reset for "{user.username}"', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error resetting password: {str(e)}', 'error')
+    
+    return redirect(url_for('user_mgmt.list_users'))
+
+@user_mgmt_bp.route('/<int:user_id>/delete', methods=['POST'])
+@login_required
+@admin_required
+def delete_user(user_id):
+    """Delete user - Admin only"""
+    user = User.query.get_or_404(user_id)
+    
+    # Can't delete own account
+    if user.id == current_user.id:
+        flash('❌ You cannot delete your own account', 'error')
+        return redirect(url_for('user_mgmt.list_users'))
+    
+    try:
+        username = user.username
+        db.session.delete(user)
+        db.session.commit()
+        
+        flash(f'✅ User "{username}" deleted successfully', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error deleting user: {str(e)}', 'error')
+    
+    return redirect(url_for('user_mgmt.list_users'))

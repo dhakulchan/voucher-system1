@@ -1,0 +1,2646 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t('edit') }} {{ t('booking') }} - {{ booking.booking_reference }}{% endblock %}
+
+{% block extra_head %}
+<script>
+    // IMMEDIATE GLOBAL FUNCTIONS - TOP PRIORITY  
+    function openDatePicker(inputId) {
+        console.log('📅 IMMEDIATE: Opening date picker for:', inputId);
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.focus();
+            input.click();
+        } else {
+            console.error('❌ Input not found:', inputId);
+        }
+    }
+
+    function openDateTimePicker(inputId) {
+        console.log('🕐 IMMEDIATE: Opening datetime picker for:', inputId);
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.focus();
+            input.click();
+        } else {
+            console.error('❌ Input not found:', inputId);
+        }
+    }
+
+    // Also assign to window
+    window.openDatePicker = openDatePicker;
+    window.openDateTimePicker = openDateTimePicker;
+
+    console.log('🚀 IMMEDIATE functions loaded in HEAD - both global and window scope');
+    console.log('📋 Function types:', typeof openDatePicker, typeof openDateTimePicker);
+
+    // Immediate test
+    setTimeout(function () {
+        console.log('⏰ After 100ms - Functions available:', typeof openDatePicker, typeof openDateTimePicker);
+        console.log('⏰ Window functions:', typeof window.openDatePicker, typeof window.openDateTimePicker);
+
+        // Test if we can call them
+        try {
+            openDatePicker('test');
+        } catch (e) {
+            console.error('❌ Error calling openDatePicker:', e);
+        }
+    }, 100);
+</script>
+</script>
+
+<style>
+    :root {
+        --primary-color: #4f46e5;
+        --secondary-color: #06b6d4;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Full width layout adjustments */
+    .container-fluid {
+        max-width: 100%;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    /* Make cards stretch to full width */
+    .card {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Ensure all content sections use full width */
+    .row {
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    .col-12,
+    .col-lg-8,
+    .col-lg-4 {
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .modern-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        width: 100%;
+    }
+
+    .modern-card:hover {
+        box-shadow: var(--card-hover-shadow);
+        transform: translateY(-2px);
+    }
+
+    .admin-notes-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: var(--card-shadow);
+        background: linear-gradient(145deg, #fef3c7 0%, #fbbf24 100%);
+        transition: all 0.3s ease;
+    }
+
+    .admin-notes-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-hover-shadow);
+    }
+
+    .admin-toggle-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+    }
+
+    .admin-toggle-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: scale(1.05);
+    }
+
+    .modern-header {
+        background: var(--gradient-bg);
+        border-radius: 15px 15px 0 0;
+        padding: 1.5rem;
+        border: none;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e5e7eb;
+        transition: all 0.3s ease;
+        padding: 0.75rem 1rem;
+    }
+
+    /* Ensure line breaks are preserved in textareas */
+    textarea.form-control {
+        white-space: pre-line;
+        word-wrap: break-word;
+    }
+
+    /* Special styling for admin notes and manager memos */
+    #admin_notes,
+    #manager_memos,
+    #internal_note {
+        white-space: pre-line !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.5;
+    }
+
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: var(--gradient-bg);
+        border: none;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.6);
+    }
+
+    .animated-icon {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .glass-effect {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Enhanced Products Table Styling */
+    #products-table {
+        font-size: 0.95rem;
+    }
+
+    #products-table th {
+        font-weight: 600;
+        font-size: 0.9rem;
+        padding: 12px 8px;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border: 1px solid #cbd5e1;
+        text-align: center;
+    }
+
+    #products-table td {
+        padding: 8px 6px;
+        vertical-align: middle;
+    }
+
+    #products-table .form-control {
+        font-size: 0.9rem;
+        padding: 8px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    #products-table .form-control:focus {
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    /* Price and Amount columns specific styling */
+    #products-table .product-price,
+    #products-table .product-amount {
+        text-align: right;
+        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        font-weight: 600;
+    }
+
+    #products-table .product-amount {
+        background-color: #f8fafc;
+        color: #059669;
+    }
+
+    /* Row number styling */
+    #products-table .row-number {
+        text-align: center;
+        font-weight: 600;
+        color: #6366f1;
+        background-color: #f1f5f9;
+    }
+
+    /* Products table enhancements */
+    #products-table {
+        min-width: 539px;
+    }
+
+    #products-table .product-name {
+        min-width: 66px;
+    }
+
+    #products-table .product-quantity {
+        min-width: 33px;
+    }
+
+    #products-table .product-price {
+        min-width: 194px;
+    }
+
+    #products-table .product-amount {
+        min-width: 154px;
+        background-color: #f8f9fa;
+    }
+
+    /* Responsive improvements */
+    @media (max-width: 768px) {
+        #products-table {
+            font-size: 0.85rem;
+        }
+
+        #products-table th,
+        #products-table td {
+            padding: 6px 4px;
+        }
+
+        #products-table .form-control {
+            font-size: 0.85rem;
+            padding: 6px 8px;
+        }
+    }
+
+    /* Calendar Styles */
+    .calendar-table {
+        margin-bottom: 0;
+    }
+
+    .calendar-day {
+        width: 14.28%;
+        height: 45px;
+        vertical-align: middle;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-day:hover {
+        background-color: #f8f9fa !important;
+        color: #495057 !important;
+    }
+
+    .calendar-day.selected {
+        background-color: #2196f3 !important;
+        color: white !important;
+        font-weight: bold;
+    }
+
+    .calendar-btn {
+        border-left: 1px solid #ced4da;
+        transition: all 0.2s ease;
+    }
+
+    .calendar-btn:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+
+    .input-group .calendar-btn {
+        z-index: 3;
+    }
+
+    #calendarModal .modal-dialog {
+        max-width: 600px;
+    }
+
+    #calendar-container {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .calendar-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        text-align: center;
+        padding: 12px 8px;
+        border: 1px solid #dee2e6;
+    }
+
+    /* Unlock Button Styles */
+    .unlock-btn {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+    }
+
+    .unlock-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Admin Modal Styles */
+    .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header.bg-warning {
+        border-radius: 15px 15px 0 0;
+    }
+
+    /* Toast Styles */
+    .toast-container .toast {
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Locked Section Styles */
+    .locked-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.375rem;
+    }
+
+    .locked-content {
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .locked-icon {
+        color: #f59e0b;
+        font-size: 3rem;
+        margin-bottom: 15px;
+        animation: lockPulse 2s infinite;
+    }
+
+    @keyframes lockPulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    .locked-title {
+        color: #f59e0b;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .locked-description {
+        color: #6b7280;
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+
+    .section-locked {
+        position: relative;
+        pointer-events: none;
+    }
+
+    .section-locked input,
+    .section-locked button,
+    .section-locked select,
+    .section-locked textarea {
+        background-color: #f9fafb !important;
+        color: #9ca3af !important;
+        cursor: not-allowed !important;
+        opacity: 0.7;
+    }
+
+    .locked-badge {
+        background-color: #f59e0b !important;
+        color: white !important;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.375rem;
+    }
+</style>
+
+<script>
+    // Immediate global function definitions
+    window.openDatePicker = function (inputId) {
+        console.log('📅 Opening date picker for:', inputId);
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.focus();
+            input.click();
+        } else {
+            console.error('❌ Input not found:', inputId);
+        }
+    };
+
+    window.openDateTimePicker = function (inputId) {
+        console.log('🕐 Opening datetime picker for:', inputId);
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.focus();
+            input.click();
+        } else {
+            console.error('❌ Input not found:', inputId);
+        }
+    };
+
+    console.log('✅ Global date picker functions ready immediately');
+
+    // Legacy function definitions for compatibility
+    function openDatePicker(inputId) {
+        console.log('📅 Opening date picker for:', inputId);
+
+        const targetInput = document.getElementById(inputId);
+        if (!targetInput) {
+            console.error('❌ Input not found:', inputId);
+            return;
+        }
+
+        // Create temporary date input
+        const tempInput = document.createElement('input');
+        tempInput.type = 'date';
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-999px';
+        tempInput.style.top = '-999px';
+        tempInput.style.opacity = '0';
+
+        // Set current value if exists
+        if (targetInput.value) {
+            try {
+                const parts = targetInput.value.split('/');
+                if (parts.length === 3) {
+                    tempInput.value = parts[2] + '-' + parts[1].padStart(2, '0') + '-' + parts[0].padStart(2, '0');
+                }
+            } catch (e) {
+                console.log('Could not parse date');
+            }
+        }
+
+        document.body.appendChild(tempInput);
+
+        tempInput.onchange = function () {
+            if (this.value) {
+                const date = new Date(this.value);
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+
+                targetInput.value = day + '/' + month + '/' + year;
+                console.log('✅ Date set:', targetInput.value);
+
+                // Trigger change event
+                targetInput.dispatchEvent(new Event('change'));
+            }
+            document.body.removeChild(this);
+        };
+
+        // Show picker
+        tempInput.focus();
+        tempInput.click();
+
+        // Cleanup after 10 seconds
+        setTimeout(function () {
+            if (document.body.contains(tempInput)) {
+                document.body.removeChild(tempInput);
+            }
+        }, 10000);
+    }
+
+    function openDateTimePicker(inputId) {
+        console.log('🕐 Opening datetime picker for:', inputId);
+
+        const targetInput = document.getElementById(inputId);
+        if (!targetInput) {
+            console.error('❌ Input not found:', inputId);
+            return;
+        }
+
+        // Create temporary datetime-local input
+        const tempInput = document.createElement('input');
+        tempInput.type = 'datetime-local';
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-999px';
+        tempInput.style.top = '-999px';
+        tempInput.style.opacity = '0';
+
+        // Set current value if exists
+        if (targetInput.value) {
+            try {
+                const parts = targetInput.value.split(' ');
+                if (parts.length === 2) {
+                    const dateParts = parts[0].split('/');
+                    const timePart = parts[1];
+                    if (dateParts.length === 3) {
+                        tempInput.value = dateParts[2] + '-' + dateParts[1].padStart(2, '0') + '-' + dateParts[0].padStart(2, '0') + 'T' + timePart;
+                    }
+                }
+            } catch (e) {
+                console.log('Could not parse datetime');
+            }
+        }
+
+        document.body.appendChild(tempInput);
+
+        tempInput.onchange = function () {
+            if (this.value) {
+                const datetime = new Date(this.value);
+                const day = String(datetime.getDate()).padStart(2, '0');
+                const month = String(datetime.getMonth() + 1).padStart(2, '0');
+                const year = datetime.getFullYear();
+                const hours = String(datetime.getHours()).padStart(2, '0');
+                const minutes = String(datetime.getMinutes()).padStart(2, '0');
+
+                targetInput.value = day + '/' + month + '/' + year + ' ' + hours + ':' + minutes;
+                console.log('✅ DateTime set:', targetInput.value);
+
+                // Trigger change event
+                targetInput.dispatchEvent(new Event('change'));
+            }
+            document.body.removeChild(this);
+        };
+
+        // Show picker
+        tempInput.focus();
+        tempInput.click();
+
+        // Cleanup after 10 seconds
+        setTimeout(function () {
+            if (document.body.contains(tempInput)) {
+                document.body.removeChild(tempInput);
+            }
+        }, 10000);
+    }
+
+    console.log('✅ Simple date picker functions ready - moved to bottom');
+    console.log('🚀 Calendar functions loaded in head:', typeof window.openDatePicker, typeof window.openDateTimePicker);
+
+    // Ensure functions are ready when DOM loads
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('📋 DOM ready - Calendar functions available:', typeof window.openDatePicker, typeof window.openDateTimePicker);
+
+        // Ensure functions exist, create fallbacks if needed
+        if (typeof window.openDatePicker !== 'function') {
+            console.warn('⚠️ openDatePicker not found, creating fallback');
+            window.openDatePicker = function (inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.focus();
+                    input.click();
+                }
+            };
+        }
+
+        if (typeof window.openDateTimePicker !== 'function') {
+            console.warn('⚠️ openDateTimePicker not found, creating fallback');
+            window.openDateTimePicker = function (inputId) {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.focus();
+                    input.click();
+                }
+            };
+        }
+
+        // Add event delegation for calendar buttons
+        document.addEventListener('click', function (e) {
+            if (e.target && e.target.getAttribute && e.target.getAttribute('onclick')) {
+                const onclickValue = e.target.getAttribute('onclick');
+                if (onclickValue.includes('openDatePicker(') || onclickValue.includes('openDateTimePicker(')) {
+                    e.preventDefault();
+                    console.log('📅 Calendar button clicked via delegation:', onclickValue);
+                    try {
+                        eval(onclickValue);
+                    } catch (error) {
+                        console.error('❌ Error executing calendar function:', error);
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-2">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-edit me-2"></i>{{ t('edit') }} {{ t('booking') }}: {{ booking.booking_reference }}
+        </h1>
+        <div>
+            <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>{{ t('back') }}
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="modern-card">
+                <div class="modern-header text-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-edit me-2"></i>{{ t('booking') }} {{ t('edit') }}
+                    </h5>
+                    <p class="mb-0 opacity-75 mt-1 small">Update booking details below</p>
+                </div>
+                <div class="card-body p-3">
+                    <form method="POST" action="{{ url_for('booking.edit', id=booking.id) }}">
+                        <!-- Customer Information (Read-only for editing) -->
+                        <div class="mb-3">
+                            <label for="customer_name" class="form-label">
+                                <i class="fas fa-user me-2"></i>{{ t('customer') }}
+                            </label>
+                            <input type="text" class="form-control" id="customer_name"
+                                value="{{ booking.customer.name }} ({{ booking.customer.email }})" readonly>
+                            <div class="form-text">
+                                {{ t('customer') }} information cannot be changed after booking creation.
+                            </div>
+                        </div>
+
+                        <!-- Booking Type -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="booking_type" class="form-label">
+                                        <i class="fas fa-tag me-2"></i>Booking Type *
+                                    </label>
+                                    <select class="form-select" id="booking_type" name="booking_type" required>
+                                        <option value="">{{ t('search') }} {{ t('tour_type') }}</option>
+                                        <option value="package" {{ 'selected' if booking.booking_type=='package' }}>{{
+                                            'Package' if current_language == 'en' else 'แพ็คเกจ' }}</option>
+                                        <option value="tour" {{ 'selected' if booking.booking_type=='tour' }}>{{
+                                            'Tour' if current_language == 'en' else 'ทัวร์' }}</option>
+                                        <option value="collective-groups" {{ 'selected' if
+                                            booking.booking_type=='collective-groups' }}>{{
+                                            'Collective Groups' if current_language == 'en' else 'กลุ่มรวม' }}</option>
+                                        <option value="incentive-groups" {{ 'selected' if
+                                            booking.booking_type=='incentive-groups' }}>{{
+                                            'Incentive Groups' if current_language == 'en' else 'กลุ่มจูงใจ' }}</option>
+                                        <option value="air-ticket" {{ 'selected' if booking.booking_type=='air-ticket'
+                                            }}>{{
+                                            'Air Ticket' if current_language == 'en' else 'ตั๋วเครื่องบิน' }}</option>
+                                        <option value="hotel" {{ 'selected' if booking.booking_type=='hotel' }}>{{
+                                            'Hotel' if current_language == 'en' else 'โรงแรม' }}</option>
+                                        <option value="transport" {{ 'selected' if booking.booking_type=='transport' }}>
+                                            {{
+                                            'Transport' if current_language == 'en' else 'การขนส่ง' }}</option>
+                                        <option value="park-ticket" {{ 'selected' if booking.booking_type=='park-ticket'
+                                            }}>{{
+                                            'Park Ticket' if current_language == 'en' else 'ตั๋วสวนสนุก' }}</option>
+                                        <option value="fit" {{ 'selected' if booking.booking_type=='fit' }}>{{
+                                            'F.I.T.' if current_language == 'en' else 'F.I.T.' }}</option>
+                                        <option value="others" {{ 'selected' if booking.booking_type=='others' }}>{{
+                                            'Others' if current_language == 'en' else 'อื่นๆ' }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="party_name" class="form-label">
+                                        <i class="fas fa-users-cog me-2"></i>Party Name/ Code
+                                    </label>
+                                    <input type="text" class="form-control" id="party_name" name="party_name"
+                                        value="{{ booking.party_name or '' }}"
+                                        placeholder="{{ 'Enter group or party name' if current_language == 'en' else 'กรอกชื่อกลุ่มหรือคณะ' }}">
+                                    <div class="form-text">{{ 'Optional: Name for the group or party' if
+                                        current_language == 'en' else 'ไม่บังคับ: ชื่อสำหรับกลุ่มหรือคณะ' }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Travel Dates Row -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="arrival_date" class="form-label">
+                                        <i class="fas fa-calendar-plus me-2"></i>{{ 'Traveling from' if
+                                        current_language == 'en' else 'เดินทางตั้งแต่' }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control custom-date-input" id="arrival_date"
+                                            name="arrival_date"
+                                            value="{{ booking.arrival_date.strftime('%d/%m/%Y') if booking.arrival_date }}"
+                                            placeholder="DD/MM/YYYY"
+                                            pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/[0-9]{4}$"
+                                            data-bs-toggle="tooltip" title="Enter date in DD/MM/YYYY format">
+                                        <!-- Hidden HTML5 date input as fallback -->
+                                        <input type="date" class="d-none html5-date-fallback" id="arrival_date_fallback"
+                                            value="{{ booking.arrival_date.strftime('%Y-%m-%d') if booking.arrival_date }}">
+                                        <button class="btn btn-outline-secondary calendar-btn" type="button"
+                                            onclick="openDatePicker('arrival_date')">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="departure_date" class="form-label">
+                                        <i class="fas fa-calendar-minus me-2"></i>{{ 'Traveling to' if
+                                        current_language == 'en' else 'เดินทางถึง' }}
+                                    </label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control custom-date-input" id="departure_date"
+                                            name="departure_date"
+                                            value="{{ booking.departure_date.strftime('%d/%m/%Y') if booking.departure_date }}"
+                                            placeholder="DD/MM/YYYY"
+                                            pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/[0-9]{4}$"
+                                            data-bs-toggle="tooltip" title="Enter date in DD/MM/YYYY format">
+                                        <!-- Hidden HTML5 date input as fallback -->
+                                        <input type="date" class="d-none html5-date-fallback"
+                                            id="departure_date_fallback"
+                                            value="{{ booking.departure_date.strftime('%Y-%m-%d') if booking.departure_date }}">
+                                        <button class="btn btn-outline-secondary calendar-btn" type="button"
+                                            onclick="openDatePicker('departure_date')">>
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Passenger Information Row -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="adults" class="form-label">
+                                        <i class="fas fa-user-friends me-2"></i>{{ t('adults') if current_language ==
+                                        'en' else 'ผู้ใหญ่' }} *
+                                    </label>
+                                    <input type="number" class="form-control" id="adults" name="adults"
+                                        value="{{ booking.adults or 1 }}" min="1" max="50" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="children" class="form-label">
+                                        <i class="fas fa-child me-2"></i>{{ t('children') if current_language == 'en'
+                                        else 'เด็ก' }}
+                                    </label>
+                                    <input type="number" class="form-control" id="children" name="children"
+                                        value="{{ booking.children or 0 }}" min="0" max="50">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="total_pax" class="form-label">
+                                        <i class="fas fa-users me-2"></i>{{ 'Total Pax' if current_language == 'en'
+                                        else 'รวมผู้โดยสาร' }}
+                                    </label>
+                                    <input type="number" class="form-control" id="total_pax" name="total_pax"
+                                        value="{{ ((booking.adults or 0) + (booking.children or 0) + (booking.infants or 0)) }}"
+                                        readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="infants" class="form-label">
+                                        <i class="fas fa-baby me-2"></i>{% if current_language == 'en' %}Infants (-2Y){%
+                                        else %}ทารก (อายุต่ำกว่า 2 ปี){% endif %}
+                                    </label>
+                                    <input type="number" class="form-control" id="infants" name="infants"
+                                        value="{{ booking.infants or 0 }}" min="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Time Limit & Due Date Row -->
+                        <div class="row mb-3">
+                            <!-- Time Limit -->
+                            <div class="col-md-6">
+                                <label for="time_limit" class="form-label">Time Limit</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control custom-datetime-input" id="time_limit"
+                                        name="time_limit"
+                                        value="{{ booking.time_limit.strftime('%d/%m/%Y %H:%M') if booking.time_limit else '' }}"
+                                        placeholder="DD/MM/YYYY HH:MM"
+                                        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/[0-9]{4} ([01][0-9]|2[0-3]):[0-5][0-9]$"
+                                        data-bs-toggle="tooltip" title="Enter date and time in DD/MM/YYYY HH:MM format"
+                                        required>
+                                    <button class="btn btn-outline-secondary calendar-btn" type="button"
+                                        onclick="openDateTimePicker('time_limit')">
+                                        <i class="fas fa-calendar-clock"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Deadline for payment or confirmation</div>
+                            </div>
+
+                            <!-- Due Date -->
+                            <div class="col-md-6">
+                                <label for="due_date" class="form-label">Due Date</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control custom-date-input" id="due_date"
+                                        name="due_date"
+                                        value="{{ booking.due_date.strftime('%d/%m/%Y') if booking.due_date else '' }}"
+                                        placeholder="DD/MM/YYYY"
+                                        pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[012])/[0-9]{4}$"
+                                        data-bs-toggle="tooltip" title="Enter date in DD/MM/YYYY format">
+                                    <!-- Hidden HTML5 date input as fallback -->
+                                    <input type="date" class="d-none html5-date-fallback" id="due_date_fallback"
+                                        value="{{ booking.due_date.strftime('%Y-%m-%d') if booking.due_date else '' }}">
+                                    <button class="btn btn-outline-secondary calendar-btn" type="button"
+                                        onclick="openDatePicker('due_date')">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Date by which all requirements must be completed</div>
+                            </div>
+                        </div>
+
+                        <!-- Pickup Point & Pickup Time Row -->
+                        <div class="row mb-3">
+                            <!-- Pickup Point -->
+                            <div class="col-md-8">
+                                <label for="pickup_point" class="form-label">Pickup Point</label>
+                                <input type="text" class="form-control" id="pickup_point" name="pickup_point"
+                                    value="{{ booking.pickup_point or '' }}">
+                                <div class="form-text">Location for pickup (if applicable)</div>
+                            </div>
+
+                            <!-- Pickup Time -->
+                            <div class="col-md-4">
+                                <label for="pickup_time" class="form-label">Pickup Time</label>
+                                <input type="time" class="form-control" id="pickup_time" name="pickup_time"
+                                    value="{{ booking.pickup_time.strftime('%H:%M') if booking.pickup_time else '' }}">
+                                <div class="form-text">Time for pickup (if applicable)</div>
+                            </div>
+                        </div>
+
+                        <!-- Service Detail / Itinerary (full width) -->
+                        <div class="card mb-4">
+                            <div class="card-header" style="background-color: #17a2b8; color: white;">
+                                <h6 class="mb-0"><i class="fas fa-file-alt me-2"></i>{% if current_language == 'en'
+                                    %}Service Detail / Itinerary{% else %}รายละเอียด / กำหนดการ{% endif %}</h6>
+                            </div>
+                            <div class="card-body">
+                                <textarea class="form-control" id="service_detail" name="service_detail" rows="8"
+                                    style="white-space: pre-wrap; line-height: 1.4;"
+                                    placeholder="{{ 'Brief description of the booking...' if current_language == 'en' else 'รายละเอียดสั้นๆ เกี่ยวกับการจอง...' }}">{{ (booking.description or '')|replace('<p>', '')|replace('</p>', '\n')|replace('<br>', '\n')|replace('<br/>', '\n')|replace('<br />', '\n')|replace('\r\n', '\n')|replace('\r', '\n')|trim }}</textarea>
+                                <div class="form-text">{{ 'Brief description or notes about this booking' if
+                                    current_language == 'en' else 'รายละเอียดสั้นๆ หรือหมายเหตุเกี่ยวกับการจองนี้' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Name List / Rooming List (full width) -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-secondary text-white">
+                                <h6 class="mb-0"><i class="fas fa-users me-2"></i>{% if current_language == 'en' %}Name
+                                    List / Rooming List{% else %}รายชื่อผู้เดินทาง{% endif %}</h6>
+                            </div>
+                            <div class="card-body">
+                                {% set guests = booking.get_guest_list() %}
+                                {% if booking.guest_list %}
+                                {% set raw_guest_list = booking.guest_list|string %}
+                                {% set formatted_guest_list = raw_guest_list.replace('["', '').replace('"]',
+                                '').replace('", "', '\n') %}
+                                {% else %}
+                                {% set formatted_guest_list = '' %}
+                                {% endif %}
+                                <textarea class="form-control" id="guest_list" name="guest_list" rows="8"
+                                    placeholder="Enter guest information, table, or notes..."
+                                    style="white-space: pre-line;">{{ formatted_guest_list }}</textarea>
+                                <div class="form-text">
+                                    {{ 'Enter each guest name on a separate line' if current_language == 'en' else
+                                    'ใส่ชื่อผู้เดินทางคนละบรรทัด' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flight Information and Actions row -->
+                        <div class="row mb-4">
+                            <div class="col-lg-8">
+                                <div class="card h-100">
+                                    <div class="card-header bg-primary text-white">
+                                        <h6 class="mb-0"><i class="fas fa-plane me-2"></i>{% if current_language == 'en'
+                                            %}Flight Information{% else %}ข้อมูลเที่ยวบิน{% endif %}</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <textarea class="form-control" id="flight_info" name="flight_info" rows="4"
+                                            style="white-space: pre-wrap;">{% if booking.flight_info %}{{ booking.flight_info | flight_info_to_text }}{% endif %}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="card h-100" style="background-color: #17a2b8;">
+                                    <div class="card-header text-white"
+                                        style="background-color: #17a2b8; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Actions & Documents</h6>
+                                    </div>
+                                    <div class="card-body text-white">
+                                        <div class="mb-3">
+                                            <h6 class="text-white"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
+                                            <p class="small mb-0">Actions will be available here</p>
+                                        </div>
+                                        <div>
+                                            <h6 class="text-white"><i class="fas fa-file me-2"></i>Document Numbers</h6>
+                                            <p class="small mb-0">Document management features</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Products Calculation (moved after Flight Information) -->
+                        <div class="card mb-4">
+                            <div
+                                class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0"><i class="fas fa-box me-2"></i>Products & Calculation</h6>
+                                {% if booking.status == 'paid' or booking.status == 'vouchered' %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-warning"><i class="fas fa-lock me-1"></i>Locked</span>
+                                    <button type="button" class="btn btn-sm btn-outline-light unlock-btn"
+                                        onclick="showUnlockModal('products')" title="Admin Unlock">
+                                        <i class="fas fa-unlock me-1"></i>Unlock
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div
+                                class="card-body{% if booking.status == 'paid' or booking.status == 'vouchered' %} position-relative{% endif %}">
+                                {% if booking.status == 'paid' or booking.status == 'vouchered' %}
+                                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                    style="background-color: rgba(255, 255, 255, 0.8); z-index: 10;">
+                                    <div class="text-center">
+                                        <i class="fas fa-lock fa-3x text-warning mb-2"></i>
+                                        <h5 class="text-warning">Section Locked</h5>
+                                        <p class="text-muted">Products & Calculation cannot be modified<br>when booking
+                                            status is "{{ booking.status }}"</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="products-table" style="min-width: 539px;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 5%;">No.</th>
+                                                <th style="width: 19.7%;">Products</th>
+                                                <th style="width: 8%;">Quantity</th>
+                                                <th style="width: 30.3%;">Price</th>
+                                                <th style="width: 31%;">Amount</th>
+                                                <th style="width: 2.6%;">Order</th>
+                                                <th style="width: 3.4%;">Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-tbody">
+                                            {% set existing_products = booking.get_products() %}
+                                            {% if existing_products and existing_products|length > 0 %}
+                                            {% for product in existing_products %}
+                                            <tr class="product-row">
+                                                <td class="row-number">{{ loop.index }}</td>
+                                                <td>
+                                                    <input type="text" class="form-control product-name"
+                                                        name="products[{{ loop.index0 }}][name]"
+                                                        value="{{ product.name or '' }}"
+                                                        placeholder="Enter product name">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-quantity"
+                                                        name="products[{{ loop.index0 }}][quantity]" min="1"
+                                                        value="{{ product.quantity or 1 }}" placeholder="1">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-price"
+                                                        name="products[{{ loop.index0 }}][price]" step="0.01"
+                                                        value="{{ product.price or 0 }}" placeholder="0.00">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-amount"
+                                                        name="products[{{ loop.index0 }}][amount]" step="0.01"
+                                                        value="{{ product.amount or 0 }}" readonly>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group-vertical" role="group">
+                                                        <button type="button"
+                                                            class="btn btn-outline-primary btn-sm move-up"
+                                                            title="Move Up" style="font-size: 10px; padding: 2px 6px;">
+                                                            <i class="fas fa-chevron-up"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                            class="btn btn-outline-primary btn-sm move-down"
+                                                            title="Move Down"
+                                                            style="font-size: 10px; padding: 2px 6px;">
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm delete-row"
+                                                        title="Delete Row">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                            {% else %}
+                                            <!-- Default empty row if no existing products -->
+                                            <tr class="product-row">
+                                                <td class="row-number">1</td>
+                                                <td>
+                                                    <input type="text" class="form-control product-name"
+                                                        name="products[0][name]" placeholder="Enter product name">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-quantity"
+                                                        name="products[0][quantity]" min="1" value="1" placeholder="1">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-price"
+                                                        name="products[0][price]" step="0.01" placeholder="0.00">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-amount"
+                                                        name="products[0][amount]" step="0.01" readonly>
+                                                </td>
+                                                <td class="text-center">
+                                                    <div class="btn-group-vertical" role="group">
+                                                        <button type="button"
+                                                            class="btn btn-outline-primary btn-sm move-up"
+                                                            title="Move Up" style="font-size: 10px; padding: 2px 6px;">
+                                                            <i class="fas fa-chevron-up"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                            class="btn btn-outline-primary btn-sm move-down"
+                                                            title="Move Down"
+                                                            style="font-size: 10px; padding: 2px 6px;">
+                                                            <i class="fas fa-chevron-down"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button"
+                                                        class="btn btn-outline-danger btn-sm delete-row"
+                                                        title="Delete Row">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-product-row">
+                                        <i class="fas fa-plus me-2"></i>Add Row
+                                    </button>
+                                    <div class="text-end">
+                                        <strong>Total: <span id="grand-total">0.00</span> THB</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Information -->
+                        <div class="card mb-4">
+                            <div class="card-header d-flex justify-content-between align-items-center"
+                                style="background-color: #28a745; color: white;">
+                                <h6 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Financial Information</h6>
+                                {% if booking.status == 'paid' or booking.status == 'vouchered' %}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-warning"><i class="fas fa-lock me-1"></i>Locked</span>
+                                    <button type="button" class="btn btn-sm btn-outline-light unlock-btn"
+                                        onclick="showUnlockModal('financial')" title="Admin Unlock">
+                                        <i class="fas fa-unlock me-1"></i>Unlock
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div
+                                class="card-body{% if booking.status == 'paid' or booking.status == 'vouchered' %} position-relative{% endif %}">
+                                {% if booking.status == 'paid' or booking.status == 'vouchered' %}
+                                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                    style="background-color: rgba(255, 255, 255, 0.8); z-index: 10;">
+                                    <div class="text-center">
+                                        <i class="fas fa-lock fa-3x text-warning mb-2"></i>
+                                        <h5 class="text-warning">Section Locked</h5>
+                                        <p class="text-muted">Financial Information cannot be modified<br>when booking
+                                            status is "{{ booking.status }}"</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="total_amount" class="form-label">
+                                                <i class="fas fa-calculator me-2"></i>Total Amount <small
+                                                    class="text-muted">(Auto-calculated from products above)</small>
+                                            </label>
+                                            <input type="number" class="form-control bg-light" id="total_amount"
+                                                name="total_amount_display" value="{{ booking.total_amount or '0.00' }}"
+                                                step="0.01" min="0" placeholder="0.00" readonly>
+                                            <!-- Hidden field to ensure total_amount is always submitted -->
+                                            <input type="hidden" id="total_amount_hidden" name="total_amount"
+                                                value="{{ booking.total_amount or '0.00' }}">
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                This amount is automatically calculated from the products table above
+                                                and cannot be edited manually.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="currency" class="form-label">
+                                                <i class="fas fa-money-bill-wave me-2"></i>Currency
+                                            </label>
+                                            <select class="form-select" id="currency" name="currency">
+                                                <option value="THB" {{ 'selected' if booking.currency=='THB' else '' }}>
+                                                    🇹🇭 Thai Baht (THB)</option>
+                                                <option value="USD" {{ 'selected' if booking.currency=='USD' else '' }}>
+                                                    🇺🇸 US Dollar (USD)</option>
+                                                <option value="EUR" {{ 'selected' if booking.currency=='EUR' else '' }}>
+                                                    🇪🇺 Euro (EUR)</option>
+                                                <option value="GBP" {{ 'selected' if booking.currency=='GBP' else '' }}>
+                                                    🇬🇧 British Pound (GBP)</option>
+                                                <option value="JPY" {{ 'selected' if booking.currency=='JPY' else '' }}>
+                                                    🇯🇵 Japanese Yen (JPY)</option>
+                                                <option value="CNY" {{ 'selected' if booking.currency=='CNY' else '' }}>
+                                                    🇨🇳 Chinese Yuan (CNY)</option>
+                                                <option value="SGD" {{ 'selected' if booking.currency=='SGD' else '' }}>
+                                                    🇸🇬 Singapore Dollar (SGD)</option>
+                                                <option value="MYR" {{ 'selected' if booking.currency=='MYR' else '' }}>
+                                                    🇲🇾 Malaysian Ringgit (MYR)</option>
+                                                <option value="AUD" {{ 'selected' if booking.currency=='AUD' else '' }}>
+                                                    🇦🇺 Australian Dollar (AUD)</option>
+                                                <option value="CAD" {{ 'selected' if booking.currency=='CAD' else '' }}>
+                                                    🇨🇦 Canadian Dollar (CAD)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Special Requests (full width) -->
+                        <div class="card mb-4">
+                            <div class="card-header" style="background-color: #ffc107; color: #212529;">
+                                <h6 class="mb-0"><i class="fas fa-star me-2"></i>{{ t('special_requests') }}</h6>
+                            </div>
+                            <div class="card-body">
+                                <textarea class="form-control" id="special_request" name="special_request"
+                                    rows="6">{{ booking.special_request }}</textarea>
+                            </div>
+                        </div>
+
+                </div>
+            </div>
+
+            <!-- Admin & Management Notes Section (moved below main content) -->
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <!-- Admin Notes -->
+                    <div class="card mb-4">
+                        <div class="card-header" style="background-color: #dc3545; color: white;">
+                            <h6 class="mb-0"><i class="fas fa-user-shield me-2"></i>Admin Notes</h6>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control" id="admin_notes" name="admin_notes" rows="4"
+                                style="white-space: pre-line;">{% if booking.admin_notes %}{% set raw_text = booking.admin_notes %}{% if raw_text.startswith('[') and raw_text.endswith(']') %}{% set clean_text = raw_text[2:-2].replace('", "', '\n') %}{% else %}{% set clean_text = raw_text %}{% endif %}{{ clean_text|replace('<p>', '')|replace('</p>', '')|replace('<br>', '\n')|replace('&nbsp;', ' ')|replace('&lt;', '<')|replace('&gt;', '>')|trim }}{% endif %}</textarea>
+                            <div class="form-text">Critical administrative information</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <!-- Manager Memos -->
+                    <div class="card mb-4">
+                        <div class="card-header" style="background-color: #17a2b8; color: white;">
+                            <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Manager Memos</h6>
+                        </div>
+                        <div class="card-body">
+                            <textarea class="form-control" id="manager_memos" name="manager_memos" rows="4"
+                                style="white-space: pre-line;">{% if booking.manager_memos %}{% set raw_text = booking.manager_memos %}{% if raw_text.startswith('[') and raw_text.endswith(']') %}{% set clean_text = raw_text[2:-2].replace('", "', '\n') %}{% else %}{% set clean_text = raw_text %}{% endif %}{{ clean_text|replace('<p>', '')|replace('</p>', '')|replace('<br>', '\n')|replace('&nbsp;', ' ')|replace('&lt;', '<')|replace('&gt;', '>')|trim }}{% endif %}</textarea>
+                            <div class="form-text">Management instructions and notes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Internal Notes Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="fas fa-clipboard me-2"></i>Internal Notes</h6>
+                </div>
+                <div class="card-body">
+                    <textarea class="form-control" id="internal_note" name="internal_note" rows="4"
+                        style="white-space: pre-line;">{% if booking.internal_note %}{% set raw_text = booking.internal_note %}{% if raw_text.startswith('[') and raw_text.endswith(']') %}{% set clean_text = raw_text[2:-2].replace('", "', '\n') %}{% else %}{% set clean_text = raw_text %}{% endif %}{{ clean_text|replace('<p>', '')|replace('</p>', '')|replace('<br>', '\n')|replace('&nbsp;', ' ')|replace('&lt;', '<')|replace('&gt;', '>')|trim }}{% endif %}</textarea>
+                    <div class="form-text">Internal operational notes and reminders</div>
+                </div>
+            </div>
+
+            <!-- Form Action Buttons at the bottom -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>{{ t('save') }} {{ t('edit') }}
+                        </button>
+                        <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-2"></i>{{ t('cancel') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </form>
+
+        <script>
+            // Auto-calculate total pax
+            document.addEventListener('DOMContentLoaded', function () {
+                const adultsInput = document.getElementById('adults');
+                const childrenInput = document.getElementById('children');
+                const totalPaxInput = document.getElementById('total_pax');
+
+                function calculateTotalPax() {
+                    const adults = parseInt(adultsInput.value) || 0;
+                    const children = parseInt(childrenInput.value) || 0;
+                    const total = adults + children;
+
+                    if (total > 0) {
+                        totalPaxInput.value = total;
+                    }
+                }
+
+                adultsInput.addEventListener('change', calculateTotalPax);
+                childrenInput.addEventListener('change', calculateTotalPax);
+            });
+
+            // Simple form submission without TinyMCE
+            document.addEventListener('DOMContentLoaded', function () {
+                console.log('Booking edit form initialized - using standard textareas');
+
+                // Debug: Check if all form elements exist
+                const editForm = document.querySelector('form[method="POST"]');
+                const adminNotes = document.getElementById('admin_notes');
+                const managerMemos = document.getElementById('manager_memos');
+                const internalNote = document.getElementById('internal_note');
+                const guestList = document.getElementById('guest_list');
+                const specialRequest = document.getElementById('special_request');
+                const flightInfo = document.getElementById('flight_info');
+                const submitButton = document.querySelector('button[type="submit"]');
+
+                console.log('🔍 FORM ELEMENTS CHECK:');
+                console.log('  editForm:', !!editForm);
+                console.log('  adminNotes:', !!adminNotes, adminNotes ? `value="${adminNotes.value}"` : 'NOT FOUND');
+                console.log('  managerMemos:', !!managerMemos, managerMemos ? `value="${managerMemos.value}"` : 'NOT FOUND');
+                console.log('  internalNote:', !!internalNote, internalNote ? `value="${internalNote.value}"` : 'NOT FOUND');
+                console.log('  guestList:', !!guestList, guestList ? `value="${guestList.value}"` : 'NOT FOUND');
+                console.log('  specialRequest:', !!specialRequest, specialRequest ? `value="${specialRequest.value}"` : 'NOT FOUND');
+                console.log('  flightInfo:', !!flightInfo, flightInfo ? `value="${flightInfo.value}"` : 'NOT FOUND');
+                console.log('  submitButton:', !!submitButton);
+
+                // Check total_amount fields
+                const totalAmountDisplay = document.getElementById('total_amount');
+                const totalAmountHidden = document.getElementById('total_amount_hidden');
+                console.log('  totalAmountDisplay:', !!totalAmountDisplay, totalAmountDisplay ? `value="${totalAmountDisplay.value}" disabled=${totalAmountDisplay.disabled} readonly=${totalAmountDisplay.readOnly}` : 'NOT FOUND');
+                console.log('  totalAmountHidden:', !!totalAmountHidden, totalAmountHidden ? `value="${totalAmountHidden.value}"` : 'NOT FOUND');
+
+                // Add click event to submit button
+                if (submitButton) {
+                    submitButton.addEventListener('click', function (event) {
+                        console.log('🚨 SUBMIT BUTTON CLICKED!');
+
+                        // Debug: Log textarea values before submission
+                        const adminNotes = document.getElementById('admin_notes');
+                        const managerMemos = document.getElementById('manager_memos');
+                        const internalNote = document.getElementById('internal_note');
+                        const guestList = document.getElementById('guest_list');
+                        const specialRequest = document.getElementById('special_request');
+                        const flightInfo = document.getElementById('flight_info');
+
+                        console.log('=== FORM DEBUG VALUES (BUTTON CLICK) ===');
+                        if (adminNotes) console.log('admin_notes:', adminNotes.value);
+                        if (managerMemos) console.log('manager_memos:', managerMemos.value);
+                        if (internalNote) console.log('internal_note:', internalNote.value);
+                        if (guestList) console.log('guest_list:', guestList.value);
+                        if (specialRequest) console.log('special_request:', specialRequest.value);
+                        if (flightInfo) console.log('flight_info:', flightInfo.value);
+                        console.log('=== END DEBUG ===');
+
+                        // Check if any required fields are missing
+                        if (!editForm) {
+                            console.error('❌ FORM NOT FOUND!');
+                            event.preventDefault();
+                            return false;
+                        }
+
+                        console.log('✅ Form will submit normally');
+                        // DO NOT prevent default - let form submit to browser naturally
+                        // event.preventDefault(); // ← REMOVED THIS
+                        // The button click will trigger the form submit event
+                        return true;
+                    });
+                }
+
+                if (editForm) {
+                    console.log('✅ Found edit form:', editForm);
+                    console.log('✅ Form action:', editForm.action);
+                    console.log('✅ Form method:', editForm.method);
+
+                    editForm.addEventListener('submit', function (event) {
+                        console.log('🔥 FORM SUBMIT EVENT TRIGGERED!');
+
+                        // Debug: Check all form data
+                        const formData = new FormData(editForm);
+                        console.log('📋 FORM DATA BEING SENT:');
+                        let totalAmountFound = false;
+                        for (let [key, value] of formData.entries()) {
+                            console.log(`  ${key}: "${value}"`);
+                            if (key === 'total_amount') {
+                                totalAmountFound = true;
+                                console.log('✅ TOTAL_AMOUNT FOUND IN FORM DATA:', value);
+                            }
+                        }
+
+                        if (!totalAmountFound) {
+                            console.log('❌ WARNING: total_amount NOT found in form data!');
+                            // Check if total_amount field exists and has value
+                            const totalField = document.getElementById('total_amount');
+                            if (totalField) {
+                                console.log('🔍 Total field exists:', totalField.value, 'disabled:', totalField.disabled, 'readonly:', totalField.readOnly);
+                            }
+                        }
+
+                        // Check form action and method one more time
+                        console.log('🎯 FORM DETAILS:');
+                        console.log('  Action URL:', editForm.action);
+                        console.log('  Method:', editForm.method);
+                        console.log('  Current URL:', window.location.href);
+
+                        // DO NOT PREVENT DEFAULT - Let form submit normally
+                        console.log('🚀 ALLOWING FORM TO SUBMIT TO SERVER...');
+                        return true;
+                    });
+                } else {
+                    console.error('❌ EDIT FORM NOT FOUND!');
+                }        // Admin Notes Collapse Toggle Functionality
+                const toggleButton = document.getElementById('toggleAdminNotes');
+                const toggleText = document.getElementById('toggleText');
+                const adminCollapse = document.getElementById('adminNotesCollapse');
+
+                if (toggleButton && toggleText && adminCollapse) {
+                    // Handle toggle button click
+                    toggleButton.addEventListener('click', function () {
+                        const isExpanded = adminCollapse.classList.contains('show');
+
+                        if (isExpanded) {
+                            // Collapsing
+                            toggleText.textContent = 'Show';
+                            toggleButton.querySelector('i').className = 'fas fa-chevron-down me-2';
+                        } else {
+                            // Expanding
+                            toggleText.textContent = 'Hide';
+                            toggleButton.querySelector('i').className = 'fas fa-chevron-up me-2';
+                        }
+                    });
+
+                    // Bootstrap collapse events
+                    adminCollapse.addEventListener('shown.bs.collapse', function () {
+                        toggleText.textContent = 'Hide';
+                        toggleButton.querySelector('i').className = 'fas fa-chevron-up me-2';
+                    });
+
+                    adminCollapse.addEventListener('hidden.bs.collapse', function () {
+                        toggleText.textContent = 'Show';
+                        toggleButton.querySelector('i').className = 'fas fa-chevron-down me-2';
+                    });
+                }
+            });
+
+            // Products Calculation System for Edit Form
+            document.addEventListener('DOMContentLoaded', function () {
+                console.log('Initializing Products Calculation System for Edit Form...');
+
+                // Count existing rows to set proper starting index
+                const existingRows = document.querySelectorAll('.product-row');
+                let productRowCount = existingRows.length;
+                console.log('Found existing product rows:', productRowCount);
+
+                // Calculate amount for a single row
+                function calculateRowAmount(row) {
+                    console.log('Calculating row amount...');
+                    const quantityInput = row.querySelector('.product-quantity');
+                    const priceInput = row.querySelector('.product-price');
+                    const amountInput = row.querySelector('.product-amount');
+
+                    if (quantityInput && priceInput && amountInput) {
+                        const quantity = parseFloat(quantityInput.value) || 0;
+                        const price = parseFloat(priceInput.value) || 0;
+                        const amount = quantity * price;
+                        amountInput.value = amount.toFixed(2);
+                        console.log(`Row calculation: ${quantity} × ${price} = ${amount}`);
+                        updateGrandTotal();
+                    }
+                }
+
+                // Update grand total and sync with Total Amount field
+                function updateGrandTotal() {
+                    let total = 0;
+                    document.querySelectorAll('.product-amount').forEach(input => {
+                        total += parseFloat(input.value) || 0;
+                    });
+
+                    console.log('Grand total:', total);
+
+                    // Update grand total display
+                    const grandTotalSpan = document.getElementById('grand-total');
+                    if (grandTotalSpan) {
+                        grandTotalSpan.textContent = total.toFixed(2);
+                    }
+
+                    // Auto-sync with Total Amount fields (both display and hidden)
+                    const totalAmountField = document.getElementById('total_amount');
+                    const totalAmountHidden = document.getElementById('total_amount_hidden');
+
+                    if (totalAmountField) {
+                        totalAmountField.value = total.toFixed(2);
+                        console.log('Synced with Total Amount display field:', total.toFixed(2));
+                    }
+
+                    if (totalAmountHidden) {
+                        totalAmountHidden.value = total.toFixed(2);
+                        console.log('✅ HIDDEN FIELD UPDATED FOR SUBMISSION - total_amount:', total.toFixed(2));
+                    }
+                }
+
+                // Add new product row
+                function addProductRow() {
+                    console.log('Adding new product row...');
+                    const tbody = document.getElementById('products-tbody');
+                    if (!tbody) return;
+
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'product-row';
+                    newRow.innerHTML = `
+            <td class="row-number">${productRowCount + 1}</td>
+            <td>
+                <input type="text" class="form-control product-name" 
+                       name="products[${productRowCount}][name]" placeholder="Enter product name"
+                       style="min-width: 66px;">
+            </td>
+            <td>
+                <input type="number" class="form-control product-quantity" 
+                       name="products[${productRowCount}][quantity]" min="1" value="1" placeholder="1"
+                       style="min-width: 33px;">
+            </td>
+            <td>
+                <input type="number" class="form-control product-price" 
+                       name="products[${productRowCount}][price]" step="0.01" placeholder="0.00"
+                       style="min-width: 194px;">
+            </td>
+            <td>
+                <input type="number" class="form-control product-amount" 
+                       name="products[${productRowCount}][amount]" step="0.01" readonly
+                       style="min-width: 154px;">
+            </td>
+            <td class="text-center">
+                <div class="btn-group-vertical" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm move-up"
+                            title="Move Up" style="font-size: 10px; padding: 2px 6px;">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm move-down"
+                            title="Move Down" style="font-size: 10px; padding: 2px 6px;">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm delete-row"
+                        title="Delete Row">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+
+                    tbody.appendChild(newRow);
+                    productRowCount++;
+                    updateRowNumbers();
+                    updateInputNames();
+                    bindRowEvents(newRow);
+                    console.log('New row added, total rows:', productRowCount);
+                }
+
+                // Update row numbers
+                function updateRowNumbers() {
+                    document.querySelectorAll('.row-number').forEach((cell, index) => {
+                        cell.textContent = index + 1;
+                    });
+                }
+
+                // Bind events to a row
+                function bindRowEvents(row) {
+                    const quantityInput = row.querySelector('.product-quantity');
+                    const priceInput = row.querySelector('.product-price');
+                    const moveUpBtn = row.querySelector('.move-up');
+                    const moveDownBtn = row.querySelector('.move-down');
+                    const deleteBtn = row.querySelector('.delete-row');
+
+                    if (quantityInput) {
+                        quantityInput.addEventListener('input', function () {
+                            console.log('Quantity changed:', this.value);
+                            calculateRowAmount(row);
+                        });
+                    }
+
+                    if (priceInput) {
+                        priceInput.addEventListener('input', function () {
+                            console.log('Price changed:', this.value);
+                            calculateRowAmount(row);
+                        });
+                    }
+
+                    if (moveUpBtn) {
+                        moveUpBtn.addEventListener('click', function () {
+                            moveRowUp(row);
+                        });
+                    }
+
+                    if (moveDownBtn) {
+                        moveDownBtn.addEventListener('click', function () {
+                            moveRowDown(row);
+                        });
+                    }
+
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', function () {
+                            deleteRow(row);
+                        });
+                    }
+                }
+
+                // Move row up
+                function moveRowUp(row) {
+                    const previousRow = row.previousElementSibling;
+                    if (previousRow) {
+                        row.parentNode.insertBefore(row, previousRow);
+                        updateRowNumbers();
+                        updateInputNames();
+                        console.log('Row moved up');
+                    }
+                }
+
+                // Move row down
+                function moveRowDown(row) {
+                    const nextRow = row.nextElementSibling;
+                    if (nextRow) {
+                        row.parentNode.insertBefore(nextRow, row);
+                        updateRowNumbers();
+                        updateInputNames();
+                        console.log('Row moved down');
+                    }
+                }
+
+                // Delete row
+                function deleteRow(row) {
+                    const tbody = document.getElementById('products-tbody');
+                    const rows = tbody.querySelectorAll('.product-row');
+
+                    // Don't allow deleting if only one row remains
+                    if (rows.length <= 1) {
+                        alert('Cannot delete the last row. At least one product row is required.');
+                        return;
+                    }
+
+                    if (confirm('Are you sure you want to delete this row?')) {
+                        row.remove();
+                        productRowCount--;
+                        updateRowNumbers();
+                        updateInputNames();
+                        updateGrandTotal();
+                        console.log('Row deleted, remaining rows:', productRowCount);
+                    }
+                }
+
+                // Update input names after reordering
+                function updateInputNames() {
+                    document.querySelectorAll('.product-row').forEach((row, index) => {
+                        const nameInput = row.querySelector('.product-name');
+                        const quantityInput = row.querySelector('.product-quantity');
+                        const priceInput = row.querySelector('.product-price');
+                        const amountInput = row.querySelector('.product-amount');
+
+                        if (nameInput) nameInput.name = `products[${index}][name]`;
+                        if (quantityInput) quantityInput.name = `products[${index}][quantity]`;
+                        if (priceInput) priceInput.name = `products[${index}][price]`;
+                        if (amountInput) amountInput.name = `products[${index}][amount]`;
+                    });
+                }
+
+                // Initialize calculation system
+                console.log('Setting up products calculation for edit form...');
+
+                // Bind events to existing rows
+                existingRows.forEach(bindRowEvents);
+
+                // Add row button
+                const addRowBtn = document.getElementById('add-product-row');
+                if (addRowBtn) {
+                    addRowBtn.addEventListener('click', addProductRow);
+                    console.log('Add row button bound');
+                } else {
+                    console.error('Add row button not found');
+                }
+
+                // Calculate existing rows and update total
+                existingRows.forEach(calculateRowAmount);
+                updateGrandTotal();
+
+                console.log('Products calculation system for edit form initialized successfully!');
+
+                // แก้ไขปัญหา Unicode สำหรับข้อความภาษาไทย
+                function decodeUnicodeInTextarea(textareaId) {
+                    const textarea = document.getElementById(textareaId);
+                    if (textarea && textarea.value) {
+                        try {
+                            // Decode Unicode escape sequences
+                            let decoded = textarea.value.replace(/\\u[\dA-F]{4}/gi, function (match) {
+                                return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+                            });
+                            textarea.value = decoded;
+                        } catch (e) {
+                            console.log('Unicode decode error for ' + textareaId + ':', e);
+                        }
+                    }
+                }
+
+                // Apply Unicode decoding to all text areas
+                setTimeout(function () {
+                    decodeUnicodeInTextarea('guest_list');
+                    decodeUnicodeInTextarea('service_detail');
+                    decodeUnicodeInTextarea('manager_memos');
+                    decodeUnicodeInTextarea('admin_notes');
+                    decodeUnicodeInTextarea('internal_note');
+                    decodeUnicodeInTextarea('special_request');
+                }, 100);
+
+                // เพิ่ม form validation และ debugging
+                const form = document.querySelector('form');
+                if (form) {
+                    form.addEventListener('submit', function (e) {
+                        console.log('Form submitting...');
+                        console.log('Service Detail:', document.getElementById('service_detail')?.value);
+                        console.log('Guest List:', document.getElementById('guest_list')?.value);
+                        console.log('Manager Memos:', document.getElementById('manager_memos')?.value);
+                    });
+                }
+            });
+        </script>
+
+        <!-- Date Format Display Script -->
+        <script>
+            // Enhanced date picker functions using custom modal
+            window.openDatePicker = function (inputId) {
+                console.log('📅 Opening custom date picker for:', inputId);
+                const targetInput = document.getElementById(inputId);
+                if (!targetInput) {
+                    console.error('❌ Target input not found:', inputId);
+                    return;
+                }
+
+                // Use custom calendar modal
+                window.currentTargetInputId = inputId;
+                window.isDateTimeInput = false;
+
+                // Set current date from input if exists
+                if (targetInput.value) {
+                    try {
+                        const parts = targetInput.value.split('/');
+                        if (parts.length === 3) {
+                            window.currentDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+                    } catch (e) {
+                        console.log('Date parse error:', e);
+                        window.currentDate = new Date();
+                    }
+                } else {
+                    window.currentDate = new Date();
+                }
+
+                // Hide time picker for date-only inputs
+                const timePicker = document.getElementById('time-picker');
+                if (timePicker) {
+                    timePicker.style.display = 'none';
+                }
+
+                // Show the modal
+                const calendarModal = bootstrap.Modal.getInstance(document.getElementById('calendarModal')) ||
+                    new bootstrap.Modal(document.getElementById('calendarModal'));
+                calendarModal.show();
+                console.log('✅ Custom calendar modal opened for:', inputId);
+            };
+
+            window.openDateTimePicker = function (inputId) {
+                console.log('🕐 Opening custom datetime picker for:', inputId);
+                const targetInput = document.getElementById(inputId);
+                if (!targetInput) {
+                    console.error('❌ Target input not found:', inputId);
+                    return;
+                }
+
+                // Use custom calendar modal
+                window.currentTargetInputId = inputId;
+                window.isDateTimeInput = true;
+
+                // Set current date from input if exists
+                if (targetInput.value) {
+                    try {
+                        const parts = targetInput.value.split(' ');
+                        if (parts.length === 2) {
+                            const dateParts = parts[0].split('/');
+                            if (dateParts.length === 3) {
+                                window.currentDate = new Date(dateParts[2], dateParts[1] - 1, dateParts[0]);
+
+                                // Set time
+                                const timeParts = parts[1].split(':');
+                                if (timeParts.length === 2) {
+                                    window.currentDate.setHours(parseInt(timeParts[0]), parseInt(timeParts[1]));
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.log('DateTime parse error:', e);
+                        window.currentDate = new Date();
+                    }
+                } else {
+                    window.currentDate = new Date();
+                }
+
+                // Show time picker for datetime inputs
+                const timePicker = document.getElementById('time-picker');
+                if (timePicker) {
+                    timePicker.style.display = 'block';
+                    // Populate time selects
+                    if (typeof window.populateTimeSelects === 'function') {
+                        window.populateTimeSelects();
+                    }
+                }
+
+                // Show the modal
+                const calendarModal = bootstrap.Modal.getInstance(document.getElementById('calendarModal')) ||
+                    new bootstrap.Modal(document.getElementById('calendarModal'));
+                calendarModal.show();
+                console.log('✅ Custom datetime modal opened for:', inputId);
+            };
+
+            console.log('✅ Enhanced date picker functions ready');
+
+            document.addEventListener('DOMContentLoaded', function () {
+                // Date validation function
+                function isValidDate(dateString) {
+                    const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/[0-9]{4}$/;
+                    if (!regex.test(dateString)) return false;
+
+                    const parts = dateString.split('/');
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10);
+                    const year = parseInt(parts[2], 10);
+
+                    const date = new Date(year, month - 1, day);
+                    return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+                }
+
+                // DateTime validation function
+                function isValidDateTime(dateTimeString) {
+                    const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/[0-9]{4} ([01][0-9]|2[0-3]):[0-5][0-9]$/;
+                    if (!regex.test(dateTimeString)) return false;
+
+                    const parts = dateTimeString.split(' ');
+                    return isValidDate(parts[0]);
+                }
+
+                // Add validation to custom date inputs
+                document.querySelectorAll('.custom-date-input').forEach(input => {
+                    input.addEventListener('blur', function () {
+                        const value = this.value.trim();
+                        if (value && !isValidDate(value)) {
+                            this.classList.add('is-invalid');
+                            this.setCustomValidity('Please enter a valid date in DD/MM/YYYY format');
+                        } else {
+                            this.classList.remove('is-invalid');
+                            this.setCustomValidity('');
+                        }
+                    });
+                });
+            });
+        </script>
+
+        <!-- Calendar Modal -->
+        <div class="modal fade" id="calendarModal" tabindex="-1" aria-labelledby="calendarModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="calendarModalLabel">
+                            <i class="fas fa-calendar-alt me-2"></i>Select Date
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="calendar-container">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="prev-month">
+                                    <i class="fas fa-chevron-left"></i> Previous
+                                </button>
+                                <h5 id="calendar-month-year" class="mb-0"></h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="next-month">
+                                    Next <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered calendar-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-center">Sun</th>
+                                            <th class="text-center">Mon</th>
+                                            <th class="text-center">Tue</th>
+                                            <th class="text-center">Wed</th>
+                                            <th class="text-center">Thu</th>
+                                            <th class="text-center">Fri</th>
+                                            <th class="text-center">Sat</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="calendar-body">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="time-picker" class="mt-3" style="display: none;">
+                                <hr>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label for="time-hour" class="form-label">Hour:</label>
+                                        <select class="form-select" id="time-hour">
+                                            <!-- Hours 00-23 -->
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="time-minute" class="form-label">Minute:</label>
+                                        <select class="form-select" id="time-minute">
+                                            <!-- Minutes 00-59 -->
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="select-date">Select Date</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Date validation function
+                function isValidDate(dateString) {
+                    const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/[0-9]{4}$/;
+                    if (!regex.test(dateString)) return false;
+
+                    const parts = dateString.split('/');
+                    const day = parseInt(parts[0], 10);
+                    const month = parseInt(parts[1], 10);
+                    const year = parseInt(parts[2], 10);
+
+                    const date = new Date(year, month - 1, day);
+                    return date.getDate() === day && date.getMonth() === month - 1 && date.getFullYear() === year;
+                }
+
+                // DateTime validation function
+                function isValidDateTime(dateTimeString) {
+                    const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[012])\/[0-9]{4} ([01][0-9]|2[0-3]):[0-5][0-9]$/;
+                    if (!regex.test(dateTimeString)) return false;
+
+                    const parts = dateTimeString.split(' ');
+                    return isValidDate(parts[0]);
+                }
+
+                // Check if Bootstrap is available
+                if (typeof bootstrap === 'undefined') {
+                    console.error('❌ Bootstrap is not loaded. Using fallback behavior.');
+
+                    // Add fallback behavior
+                    document.querySelectorAll('.calendar-btn').forEach(btn => {
+                        btn.addEventListener('click', function () {
+                            const targetId = this.getAttribute('data-target');
+                            const targetInput = document.getElementById(targetId);
+                            const fallbackInput = document.getElementById(targetId + '_fallback');
+
+                            if (fallbackInput) {
+                                // Show HTML5 date picker
+                                fallbackInput.classList.remove('d-none');
+                                fallbackInput.style.position = 'absolute';
+                                fallbackInput.style.top = '0';
+                                fallbackInput.style.left = '0';
+                                fallbackInput.style.width = '100%';
+                                fallbackInput.style.height = '100%';
+                                fallbackInput.style.opacity = '0';
+                                fallbackInput.style.zIndex = '999';
+
+                                // Position over the button
+                                const btnRect = this.getBoundingClientRect();
+                                fallbackInput.style.position = 'fixed';
+                                fallbackInput.style.top = btnRect.top + 'px';
+                                fallbackInput.style.left = btnRect.left + 'px';
+                                fallbackInput.style.width = btnRect.width + 'px';
+                                fallbackInput.style.height = btnRect.height + 'px';
+
+                                // Trigger click on HTML5 date input
+                                fallbackInput.click();
+
+                                // Listen for change
+                                fallbackInput.addEventListener('change', function () {
+                                    if (this.value && targetInput) {
+                                        const date = new Date(this.value);
+                                        const dateStr = date.getDate().toString().padStart(2, '0') + '/' +
+                                            (date.getMonth() + 1).toString().padStart(2, '0') + '/' +
+                                            date.getFullYear();
+                                        targetInput.value = dateStr;
+
+                                        // Trigger validation
+                                        const event = new Event('blur');
+                                        targetInput.dispatchEvent(event);
+                                    }
+
+                                    // Hide fallback input
+                                    this.classList.add('d-none');
+                                }, { once: true });
+
+                                // Hide fallback input when focus is lost
+                                setTimeout(() => {
+                                    fallbackInput.classList.add('d-none');
+                                }, 5000);
+                            } else {
+                                // Simple fallback - set to today
+                                const currentDate = new Date();
+                                const dateStr = currentDate.getDate().toString().padStart(2, '0') + '/' +
+                                    (currentDate.getMonth() + 1).toString().padStart(2, '0') + '/' +
+                                    currentDate.getFullYear();
+                                if (targetInput) {
+                                    targetInput.value = dateStr;
+                                    alert('Calendar picker not available. Set to today: ' + dateStr);
+                                }
+                            }
+                        });
+                    });
+                    return;
+                }
+
+                let currentDate = new Date();
+                let targetInputId = '';
+                let isDateTime = false;
+
+                // Initialize calendar modal with error handling
+                let calendarModal;
+                try {
+                    const modalElement = document.getElementById('calendarModal');
+                    if (modalElement && typeof bootstrap !== 'undefined') {
+                        calendarModal = new bootstrap.Modal(modalElement);
+                        console.log('✅ Calendar modal initialized successfully');
+
+                        // Initialize global variables
+                        window.currentDate = new Date();
+                        window.currentTargetInputId = '';
+                        window.isDateTimeInput = false;
+
+                        // Initial calendar render
+                        if (typeof window.renderCalendar === 'function') {
+                            window.renderCalendar();
+                        }
+                    } else {
+                        console.error('❌ Calendar modal element or Bootstrap not found');
+                        return;
+                    }
+                } catch (error) {
+                    console.error('❌ Error initializing calendar modal:', error);
+                    return;
+                }
+
+                // Calendar button functionality is handled via onclick attributes
+                console.log('� Calendar buttons use onclick handlers - no event listeners needed');                // Calendar navigation
+                document.getElementById('prev-month')?.addEventListener('click', function () {
+                    window.currentDate.setMonth(window.currentDate.getMonth() - 1);
+                    window.renderCalendar();
+                });
+
+                document.getElementById('next-month')?.addEventListener('click', function () {
+                    window.currentDate.setMonth(window.currentDate.getMonth() + 1);
+                    window.renderCalendar();
+                });
+
+                // Select date button
+                document.getElementById('select-date')?.addEventListener('click', function () {
+                    const selectedDate = document.querySelector('.calendar-day.selected');
+                    if (selectedDate && window.currentTargetInputId) {
+                        const day = selectedDate.getAttribute('data-day');
+                        const month = String(window.currentDate.getMonth() + 1).padStart(2, '0');
+                        const year = window.currentDate.getFullYear();
+
+                        let dateString = `${day}/${month}/${year}`;
+
+                        // Add time if datetime input
+                        if (window.isDateTimeInput) {
+                            const hour = document.getElementById('time-hour').value;
+                            const minute = document.getElementById('time-minute').value;
+                            dateString += ` ${hour}:${minute}`;
+                        }
+
+                        document.getElementById(window.currentTargetInputId).value = dateString;
+                        console.log('✅ Date/DateTime set to:', dateString);
+
+                        // Trigger validation
+                        const event = new Event('blur');
+                        document.getElementById(window.currentTargetInputId).dispatchEvent(event);
+
+                        calendarModal.hide();
+                    }
+                });
+
+                // Populate time selects
+                window.populateTimeSelects = function () {
+                    const hourSelect = document.getElementById('time-hour');
+                    const minuteSelect = document.getElementById('time-minute');
+
+                    if (!hourSelect || !minuteSelect) return;
+
+                    // Clear existing options
+                    hourSelect.innerHTML = '';
+                    minuteSelect.innerHTML = '';
+
+                    // Get current time from the global currentDate or default to now
+                    const currentTime = window.currentDate || new Date();
+
+                    // Populate hours (00-23)
+                    for (let i = 0; i < 24; i++) {
+                        const hour = String(i).padStart(2, '0');
+                        const option = document.createElement('option');
+                        option.value = hour;
+                        option.textContent = hour;
+                        if (i === currentTime.getHours()) option.selected = true;
+                        hourSelect.appendChild(option);
+                    }
+
+                    // Populate minutes (00-59, step 5)
+                    for (let i = 0; i < 60; i += 5) {
+                        const minute = String(i).padStart(2, '0');
+                        const option = document.createElement('option');
+                        option.value = minute;
+                        option.textContent = minute;
+                        if (i === Math.round(currentTime.getMinutes() / 5) * 5) option.selected = true;
+                        minuteSelect.appendChild(option);
+                    }
+                }
+
+                // Render calendar
+                window.renderCalendar = function () {
+                    const monthNames = [
+                        'January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'
+                    ];
+
+                    const monthYearElement = document.getElementById('calendar-month-year');
+                    if (monthYearElement) {
+                        monthYearElement.textContent = `${monthNames[window.currentDate.getMonth()]} ${window.currentDate.getFullYear()}`;
+                    }
+
+                    const calendarBody = document.getElementById('calendar-body');
+                    if (!calendarBody) return;
+
+                    calendarBody.innerHTML = '';
+
+                    const firstDay = new Date(window.currentDate.getFullYear(), window.currentDate.getMonth(), 1);
+                    const lastDay = new Date(window.currentDate.getFullYear(), window.currentDate.getMonth() + 1, 0);
+                    const startDate = new Date(firstDay);
+                    startDate.setDate(startDate.getDate() - firstDay.getDay());
+                    const today = new Date();
+
+                    for (let week = 0; week < 6; week++) {
+                        const row = document.createElement('tr');
+
+                        for (let day = 0; day < 7; day++) {
+                            const cell = document.createElement('td');
+                            const cellDate = new Date(startDate);
+                            cellDate.setDate(startDate.getDate() + (week * 7) + day);
+
+                            cell.className = 'text-center calendar-day';
+                            cell.style.cursor = 'pointer';
+                            cell.style.padding = '10px';
+
+                            if (cellDate.getMonth() !== window.currentDate.getMonth()) {
+                                cell.style.color = '#ccc';
+                            }
+
+                            if (cellDate.toDateString() === today.toDateString()) {
+                                cell.style.backgroundColor = '#e3f2fd';
+                                cell.style.fontWeight = 'bold';
+                            }
+
+                            cell.textContent = cellDate.getDate();
+                            cell.setAttribute('data-day', String(cellDate.getDate()).padStart(2, '0'));
+                            cell.setAttribute('data-full-date', cellDate.toISOString().split('T')[0]);
+
+                            // Click handler for date selection
+                            cell.addEventListener('click', function () {
+                                // Remove previous selection
+                                document.querySelectorAll('.calendar-day.selected').forEach(c => {
+                                    c.classList.remove('selected');
+                                    c.style.backgroundColor = c.style.backgroundColor === 'rgb(227, 242, 253)' ? '#e3f2fd' : '';
+                                });
+
+                                // Add selection to clicked cell
+                                this.classList.add('selected');
+                                this.style.backgroundColor = '#2196f3';
+                                this.style.color = 'white';
+
+                                // Update currentDate to clicked date
+                                window.currentDate = new Date(cellDate);
+                            });
+
+                            row.appendChild(cell);
+                        }
+
+                        calendarBody.appendChild(row);
+
+                        // Break if we've shown all days of the month
+                        if (week === 5 && new Date(startDate.getTime() + (week * 7 + 6) * 24 * 60 * 60 * 1000).getMonth() !== window.currentDate.getMonth()) {
+                            break;
+                        }
+                    }
+                }
+
+                // Add validation to custom date inputs
+                document.querySelectorAll('.custom-date-input').forEach(input => {
+                    input.addEventListener('blur', function () {
+                        const value = this.value.trim();
+                        if (value && !isValidDate(value)) {
+                            this.classList.add('is-invalid');
+                            this.setCustomValidity('Please enter a valid date in DD/MM/YYYY format');
+                        } else {
+                            this.classList.remove('is-invalid');
+                            this.setCustomValidity('');
+                        }
+                    });
+                });
+
+                // Add validation to custom datetime inputs
+                document.querySelectorAll('.custom-datetime-input').forEach(input => {
+                    input.addEventListener('blur', function () {
+                        const value = this.value.trim();
+                        if (value && !isValidDateTime(value)) {
+                            this.classList.add('is-invalid');
+                            this.setCustomValidity('Please enter a valid date and time in DD/MM/YYYY HH:MM format');
+                        } else {
+                            this.classList.remove('is-invalid');
+                            this.setCustomValidity('');
+                        }
+                    });
+                });
+            });
+        </script>
+
+        <script>
+            // Calendar picker functions work via onclick - no need for duplicate event listeners
+            console.log('📅 Calendar picker ready - using onclick functions only');
+        </script>
+
+        <script>
+            // Lock Products & Calculation and Financial Information for paid/vouchered bookings
+            document.addEventListener('DOMContentLoaded', function () {
+                const bookingStatus = '{{ booking.status }}';
+                console.log('🔒 Checking booking status for locking sections:', bookingStatus);
+
+                if (bookingStatus === 'paid' || bookingStatus === 'vouchered') {
+                    console.log('🔒 Booking is paid/vouchered - locking Products & Financial sections');
+
+                    // Function to lock a card section
+                    function lockSection(sectionTitle) {
+                        const allCards = document.querySelectorAll('.card');
+                        let targetCard = null;
+
+                        allCards.forEach(card => {
+                            const header = card.querySelector('.card-header h6');
+                            if (header && header.textContent.includes(sectionTitle)) {
+                                targetCard = card;
+                            }
+                        });
+
+                        if (targetCard) {
+                            console.log(`🔒 Locking section: ${sectionTitle}`);
+
+                            // Add locked class to card body
+                            const cardBody = targetCard.querySelector('.card-body');
+                            if (cardBody) {
+                                cardBody.classList.add('section-locked');
+
+                                // Disable all interactive elements
+                                const interactiveElements = cardBody.querySelectorAll('input, button, select, textarea');
+                                interactiveElements.forEach(element => {
+                                    element.disabled = true;
+                                    element.style.pointerEvents = 'none';
+                                    element.setAttribute('readonly', 'readonly');
+                                });
+
+                                // Special handling for products table
+                                if (sectionTitle.includes('Products')) {
+                                    const addRowBtn = document.querySelector('#add-product-row');
+                                    if (addRowBtn) {
+                                        addRowBtn.disabled = true;
+                                        addRowBtn.style.pointerEvents = 'none';
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Lock both sections
+                    lockSection('Products & Calculation');
+                    lockSection('Financial Information');
+
+                    console.log('✅ Products & Financial sections locked successfully');
+
+                    // Add visual feedback
+                    setTimeout(() => {
+                        const lockedSections = document.querySelectorAll('.section-locked');
+                        lockedSections.forEach(section => {
+                            section.style.transition = 'all 0.3s ease';
+                            section.style.filter = 'grayscale(20%)';
+                        });
+                    }, 100);
+                }
+            });
+        </script>
+
+        <script>
+            // Global variables for unlock functionality
+            let currentUnlockSection = '';
+
+            // Show unlock modal
+            function showUnlockModal(section) {
+                currentUnlockSection = section;
+                console.log('🔓 Opening unlock modal for section:', section);
+
+                // Clear previous values
+                document.getElementById('adminUsername').value = '';
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('unlockReason').value = '';
+                document.getElementById('unlockError').classList.add('d-none');
+
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('adminUnlockModal'));
+                modal.show();
+            }
+
+            // Verify admin credentials and unlock section
+            async function verifyAdminAndUnlock() {
+                const username = document.getElementById('adminUsername').value.trim();
+                const password = document.getElementById('adminPassword').value;
+                const reason = document.getElementById('unlockReason').value.trim();
+
+                if (!username || !password || !reason) {
+                    showUnlockError('Please fill in all fields.');
+                    return;
+                }
+
+                // Show loading state
+                const unlockBtn = document.querySelector('#adminUnlockModal .btn-warning');
+                const originalText = unlockBtn.innerHTML;
+                unlockBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verifying...';
+                unlockBtn.disabled = true;
+
+                try {
+                    // Debug: Log the data being sent
+                    const requestData = {
+                        username: username,
+                        password: password,
+                        reason: reason,
+                        section: currentUnlockSection,
+                        booking_id: '{{ booking.id }}'
+                    };
+                    console.log('🔍 DEBUG: Sending unlock request:', {
+                        username: username,
+                        password: '***' + password.slice(-3), // Only show last 3 chars for security
+                        reason: reason,
+                        section: currentUnlockSection,
+                        booking_id: '{{ booking.id }}'
+                    });
+
+                    // Make API call to verify admin credentials
+                    const response = await fetch('/api/admin/verify-unlock', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        // Hide modal
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('adminUnlockModal'));
+                        modal.hide();
+
+                        // Unlock the section
+                        unlockSection(currentUnlockSection);
+
+                        // Show success message
+                        showSuccessMessage(`${currentUnlockSection} section has been unlocked successfully.`);
+
+                        // Log the unlock action
+                        console.log('✅ Section unlocked successfully:', currentUnlockSection);
+
+                    } else {
+                        showUnlockError(result.message || 'Invalid credentials. Please try again.');
+                    }
+                } catch (error) {
+                    console.error('❌ Unlock verification error:', error);
+                    showUnlockError('An error occurred. Please try again.');
+                } finally {
+                    // Reset button
+                    unlockBtn.innerHTML = originalText;
+                    unlockBtn.disabled = false;
+                }
+            }
+
+            // Show unlock error message
+            function showUnlockError(message) {
+                const errorDiv = document.getElementById('unlockError');
+                const errorMessage = document.getElementById('unlockErrorMessage');
+                errorMessage.textContent = message;
+                errorDiv.classList.remove('d-none');
+            }
+
+            // Show success message
+            function showSuccessMessage(message) {
+                // Create and show success toast
+                const toastHtml = `
+                    <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i>${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+
+                // Add toast container if not exists
+                let toastContainer = document.querySelector('.toast-container');
+                if (!toastContainer) {
+                    toastContainer = document.createElement('div');
+                    toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                    document.body.appendChild(toastContainer);
+                }
+
+                toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+                const toast = new bootstrap.Toast(toastContainer.lastElementChild);
+                toast.show();
+            }
+
+            // Unlock section function
+            function unlockSection(sectionTitle) {
+                console.log('🔓 Unlocking section:', sectionTitle);
+
+                // Map section names to actual header text
+                const sectionMapping = {
+                    'products': 'Products & Calculation',
+                    'financial': 'Financial Information'
+                };
+
+                const actualSectionName = sectionMapping[sectionTitle] || sectionTitle;
+                console.log('🔍 Looking for header containing:', actualSectionName);
+
+                const allCards = document.querySelectorAll('.card');
+                console.log('🔍 Found cards:', allCards.length);
+                let targetCard = null;
+
+                allCards.forEach((card, index) => {
+                    const header = card.querySelector('.card-header h6');
+                    if (header) {
+                        console.log(`🔍 Card ${index} header text:`, header.textContent);
+                        if (header.textContent.includes(actualSectionName)) {
+                            targetCard = card;
+                            console.log('✅ Found target card for section:', actualSectionName);
+                        }
+                    }
+                });
+
+                if (targetCard) {
+                    console.log('🎯 Target card found, unlocking...');
+
+                    // Remove locked overlay
+                    const overlay = targetCard.querySelector('.position-absolute');
+                    if (overlay) {
+                        console.log('✅ Removing overlay');
+                        overlay.remove();
+                    } else {
+                        console.log('⚠️ No overlay found');
+                    }
+
+                    // Enable all interactive elements
+                    const cardBody = targetCard.querySelector('.card-body');
+                    if (cardBody) {
+                        console.log('✅ Unlocking card body');
+                        cardBody.classList.remove('section-locked');
+                        cardBody.style.filter = 'none';
+
+                        const interactiveElements = cardBody.querySelectorAll('input, button, select, textarea');
+                        console.log(`✅ Enabling ${interactiveElements.length} interactive elements`);
+                        interactiveElements.forEach(element => {
+                            element.disabled = false;
+                            element.style.pointerEvents = 'auto';
+                            element.removeAttribute('readonly');
+                        });
+
+                        // Special handling for products table
+                        if (actualSectionName.includes('Products')) {
+                            const addRowBtn = document.querySelector('#add-product-row');
+                            if (addRowBtn) {
+                                addRowBtn.disabled = false;
+                                addRowBtn.style.pointerEvents = 'auto';
+                            }
+
+                            // Recalculate total after unlocking
+                            console.log('🔢 Recalculating total after products unlock');
+                            if (typeof updateGrandTotal === 'function') {
+                                updateGrandTotal();
+                            }
+
+                            // Re-bind calculation events for unlocked elements
+                            cardBody.querySelectorAll('.product-quantity, .product-price').forEach(input => {
+                                input.removeEventListener('input', updateGrandTotal);
+                                input.addEventListener('input', updateGrandTotal);
+                            });
+                            console.log('🔄 Re-bound calculation events after unlock');
+                        }
+
+                        // Special handling for Financial Information
+                        if (actualSectionName.includes('Financial')) {
+                            const totalAmountField = document.getElementById('total_amount');
+                            const totalAmountHidden = document.getElementById('total_amount_hidden');
+
+                            if (totalAmountField) {
+                                console.log('✅ Unlocking total_amount display field');
+                                totalAmountField.disabled = false;
+                                totalAmountField.readOnly = false;
+                                totalAmountField.removeAttribute('readonly');
+                                totalAmountField.style.pointerEvents = 'auto';
+                                totalAmountField.classList.remove('bg-light');
+                                totalAmountField.classList.add('bg-white');
+                                // Change name back to total_amount so it gets submitted
+                                totalAmountField.name = 'total_amount';
+                            }
+
+                            if (totalAmountHidden) {
+                                console.log('✅ Ensuring hidden field is ready for submission');
+                                // Remove hidden field since display field will be submitted
+                                totalAmountHidden.remove();
+                            }
+                        }
+                    }
+
+                    // Update header badge
+                    const badge = targetCard.querySelector('.badge');
+                    if (badge) {
+                        console.log('✅ Updating badge');
+                        badge.innerHTML = '<i class="fas fa-unlock me-1"></i>Unlocked';
+                        badge.className = 'badge bg-success';
+                    } else {
+                        console.log('⚠️ No badge found');
+                    }
+
+                    // Hide unlock button
+                    const unlockBtn = targetCard.querySelector('.unlock-btn');
+                    if (unlockBtn) {
+                        console.log('✅ Hiding unlock button');
+                        unlockBtn.style.display = 'none';
+                    } else {
+                        console.log('⚠️ No unlock button found');
+                    }
+                } else {
+                    console.log('❌ Target card NOT found for section:', sectionTitle);
+                    console.log('🔍 All card headers:');
+                    allCards.forEach((card, index) => {
+                        const header = card.querySelector('.card-header h6');
+                        if (header) {
+                            console.log(`  ${index}: "${header.textContent}"`);
+                        }
+                    });
+                }
+            }
+
+            // Handle Enter key in modal
+            document.addEventListener('DOMContentLoaded', function () {
+                const modal = document.getElementById('adminUnlockModal');
+                modal.addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        verifyAdminAndUnlock();
+                    }
+                });
+            });
+        </script>
+
+        <!-- Admin Unlock Modal -->
+        <div class="modal fade" id="adminUnlockModal" tabindex="-1" aria-labelledby="adminUnlockModalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="adminUnlockModalLabel">
+                            <i class="fas fa-shield-alt me-2"></i>Admin Authentication Required
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="alert alert-info" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Security Notice:</strong> This section is locked because the booking status is
+                            <span class="badge bg-primary">{{ booking.status }}</span>.
+                            Admin credentials are required to unlock.
+                        </div>
+
+                        <form id="adminUnlockForm">
+                            <div class="mb-3">
+                                <label for="adminUsername" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Admin Username
+                                </label>
+                                <input type="text" class="form-control" id="adminUsername"
+                                    placeholder="Enter admin username" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="adminPassword" class="form-label">
+                                    <i class="fas fa-key me-2"></i>Admin Password
+                                </label>
+                                <input type="password" class="form-control" id="adminPassword"
+                                    placeholder="Enter admin password" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="unlockReason" class="form-label">
+                                    <i class="fas fa-comment me-2"></i>Reason for Unlock
+                                </label>
+                                <textarea class="form-control" id="unlockReason" rows="3"
+                                    placeholder="Please provide a reason for unlocking this section..."
+                                    required></textarea>
+                            </div>
+                        </form>
+
+                        <div id="unlockError" class="alert alert-danger d-none" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <span id="unlockErrorMessage">Invalid credentials. Please try again.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Cancel
+                        </button>
+                        <button type="button" class="btn btn-warning" onclick="verifyAdminAndUnlock()">
+                            <i class="fas fa-unlock me-2"></i>Unlock Section
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% endblock %}

@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}Edit Supplier{% endblock %}
+{% block content %}
+<h2 class="h4 mb-3">Edit Supplier</h2>
+<form method="post" class="card p-3" style="max-width:880px;">
+    <div class="row">
+        <div class="col-md-4 mb-2">
+            <label class="form-label">Name *</label>
+            <input name="name" class="form-control" required value="{{ s.name }}">
+        </div>
+        <div class="col-md-4 mb-2">
+            <label class="form-label">Contact Name</label>
+            <input name="contact_name" class="form-control" value="{{ s.contact_name }}">
+        </div>
+        <div class="col-md-4 mb-2">
+            <label class="form-label">Active</label>
+            <div class="form-control bg-light">{% if s.active %}Yes{% else %}No{% endif %}</div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Phone</label>
+            <input name="phone" class="form-control" value="{{ s.phone }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Mobile</label>
+            <input name="mobile_phone" class="form-control" value="{{ s.mobile_phone }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Fax</label>
+            <input name="fax" class="form-control" value="{{ s.fax }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Email</label>
+            <input name="email" type="email" class="form-control" value="{{ s.email }}">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Real Name</label>
+            <input name="real_name" class="form-control" value="{{ s.real_name }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Real Tel</label>
+            <input name="real_tel" class="form-control" value="{{ s.real_tel }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Real Fax</label>
+            <input name="real_fax" class="form-control" value="{{ s.real_fax }}">
+        </div>
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Real Email</label>
+            <input name="real_email" type="email" class="form-control" value="{{ s.real_email }}">
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-3 mb-2">
+            <label class="form-label">Real Group Email</label>
+            <input name="real_group_email" type="email" class="form-control" value="{{ s.real_group_email }}"
+                placeholder="Group contact">
+        </div>
+    </div>
+    <div class="mb-2">
+        <label class="form-label">Address</label>
+        <textarea name="address" class="form-control" rows="2">{{ s.address }}</textarea>
+    </div>
+    <div class="mb-2">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control" rows="2">{{ s.notes }}</textarea>
+    </div>
+    <div class="mb-2">
+        <label class="form-label">Memos (Internal)</label>
+        <textarea name="memos" class="form-control" rows="2">{{ s.memos }}</textarea>
+    </div>
+    <div class="mb-2">
+        <label class="form-label">Remarks (External)</label>
+        <textarea name="remarks" class="form-control" rows="2">{{ s.remarks }}</textarea>
+    </div>
+    <div class="d-flex gap-2 mt-2">
+        <button class="btn btn-primary">Save</button>
+        <a href="{{ url_for('supplier.list_') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

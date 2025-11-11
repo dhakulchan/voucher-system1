@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Queue Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .current {
+            font-size: 48px;
+            font-weight: bold;
+            color: #1D5FE9;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 6px 8px;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .status-calling {
+            color: #e67e22;
+        }
+
+        .status-serving {
+            color: #27ae60;
+        }
+
+        .status-waiting {
+            color: #555;
+        }
+
+        .status-done {
+            color: #888;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Queue Channel: <span id="channel"></span></h1>
+    <div>Last Number: <span id="lastNumber">-</span></div>
+    <div class="current" id="currentCall">--</div>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Code</th>
+                <th>Status</th>
+                <th>Name</th>
+                <th>Service</th>
+            </tr>
+        </thead>
+        <tbody id="queueBody"></tbody>
+    </table>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const channel = params.get('channel') || '{{ channel }}';
+        const intervalMs = Math.min(60000, Math.max(1000, parseInt(params.get('interval') || '5000')));
+        const watermark = params.get('watermark');
+        document.getElementById('channel').textContent = channel;
+        if (watermark) {
+            const wm = document.createElement('div');
+            wm.textContent = watermark;
+            wm.style.cssText = 'position:fixed;bottom:8px;right:12px;opacity:0.35;font-size:12px;';
+            document.body.appendChild(wm);
+        }
+        async function loadQueue() {
+            try {
+                const res = await fetch(`/queue/status?channel=${encodeURIComponent(channel)}`);
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('lastNumber').textContent = data.last_number;
+                const tbody = document.getElementById('queueBody');
+                tbody.innerHTML = '';
+                let current = '--';
+                (data.tickets || []).forEach(t => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${t.number}</td><td>${t.display_code || ''}</td><td class="status-${t.status}">${t.status}</td><td>${t.customer_name || ''}</td><td>${t.service_type || ''}</td>`;
+                    tbody.appendChild(tr);
+                    if (['calling', 'serving'].includes(t.status) && current === '--') current = t.display_code || t.number;
+                });
+                document.getElementById('currentCall').textContent = current;
+            } catch (e) { console.warn(e); }
+        }
+        loadQueue();
+        setInterval(loadQueue, intervalMs);
+    </script>
+</body>
+
+</html>

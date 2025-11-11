@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote - {{ booking.booking_reference }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin-top: 0.5cm;
+            margin-bottom: 0.5cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+
+            @top-center {
+                content: "";
+                margin-top: 0.5cm;
+            }
+
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+                color: #666;
+                margin-bottom: 0.5cm;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #333;
+            background: #ffffff;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #1e40af;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .company-tagline {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 15px;
+            font-style: italic;
+        }
+
+        .company-details {
+            font-size: 11px;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .quote-info {
+            text-align: right;
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #10b981;
+        }
+
+        .quote-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .quote-number {
+            font-size: 14px;
+            font-weight: bold;
+            color: #10b981;
+            margin-bottom: 8px;
+        }
+
+        .quote-date {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        /* Customer Section */
+        .customer-section {
+            margin: 25px 0;
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .customer-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .customer-title::before {
+            content: "👤";
+            margin-right: 8px;
+        }
+
+        .customer-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .customer-field {
+            margin-bottom: 8px;
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: #374151;
+            margin-bottom: 3px;
+        }
+
+        .field-value {
+            color: #6b7280;
+            padding: 5px 0;
+        }
+
+        /* Products Section */
+        .products-section {
+            margin: 25px 0;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: "📋";
+            margin-right: 8px;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .products-table th {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .products-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .products-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .products-table tr:hover {
+            background-color: #f3f4f6;
+        }
+
+        .product-name {
+            text-align: left !important;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .price-cell {
+            text-align: right !important;
+            font-weight: 500;
+            color: #059669;
+        }
+
+        .discount-row {
+            background-color: #fef3c7 !important;
+            color: #d97706;
+        }
+
+        .discount-row td {
+            font-weight: bold;
+        }
+
+        .discount-row .price-cell {
+            color: #dc2626;
+        }
+
+        /* Total Section */
+        .total-section {
+            margin: 25px 0;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #10b981;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            padding: 8px 0;
+        }
+
+        .total-label {
+            font-size: 14px;
+            color: #374151;
+        }
+
+        .total-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: #059669;
+        }
+
+        .grand-total {
+            border-top: 2px solid #10b981;
+            padding-top: 12px;
+            margin-top: 12px;
+        }
+
+        .grand-total .total-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e40af;
+        }
+
+        .grand-total .total-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+
+        /* Services Section */
+        .services-section {
+            margin: 25px 0;
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #0ea5e9;
+        }
+
+        .service-item {
+            margin: 10px 0;
+            padding: 8px 0;
+        }
+
+        .service-label {
+            font-weight: bold;
+            color: #0369a1;
+            margin-bottom: 3px;
+        }
+
+        .service-value {
+            color: #64748b;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 11px;
+        }
+
+        .footer-note {
+            background: #fef7cd;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #f59e0b;
+            margin: 15px 0;
+            font-style: italic;
+        }
+
+        /* Responsive adjustments */
+        @media print {
+            .header {
+                break-inside: avoid;
+            }
+
+            .products-table {
+                break-inside: avoid;
+            }
+
+            .total-section {
+                break-inside: avoid;
+            }
+        }
+
+        /* Thai text improvements */
+        .thai-text {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', sans-serif;
+            line-height: 1.6;
+        }
+
+        /* Status indicators */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #dcfdf7;
+            color: #064e3b;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="company-info">
+            <div class="company-name">DHAKUL CHAN</div>
+            <div class="company-tagline">Premium Travel Services</div>
+            <div class="company-details">
+                📍 123 Tourism Avenue, Bangkok 10100<br>
+                📞 Tel: +66 2 123 4567<br>
+                ✉️ Email: info@dhakulchan.com<br>
+                🌐 Website: www.dhakulchan.com
+            </div>
+        </div>
+        <div class="quote-info">
+            <div class="quote-title">QUOTATION</div>
+            <div class="quote-number">Quote #: {{ quote_number or 'QT2509001' }}</div>
+            <div class="quote-date">Date: {{ generation_date or quote_date.strftime('%d/%m/%Y') if quote_date else
+                current_date.strftime('%d/%m/%Y') }}</div>
+        </div>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="customer-section">
+        <div class="customer-title">Customer Information</div>
+        <div class="customer-grid">
+            <div>
+                <div class="customer-field">
+                    <div class="field-label">Customer Name:</div>
+                    <div class="field-value thai-text">{{ customer.name if customer else 'N/A' }}</div>
+                </div>
+                <div class="customer-field">
+                    <div class="field-label">Email:</div>
+                    <div class="field-value">{{ customer.email if customer else 'N/A' }}</div>
+                </div>
+                <div class="customer-field">
+                    <div class="field-label">Phone:</div>
+                    <div class="field-value">{{ customer.phone if customer else 'N/A' }}</div>
+                </div>
+            </div>
+            <div>
+                <div class="customer-field">
+                    <div class="field-label">Booking Reference:</div>
+                    <div class="field-value">{{ booking.booking_reference or 'N/A' }}</div>
+                </div>
+                <div class="customer-field">
+                    <div class="field-label">Travel Period:</div>
+                    <div class="field-value">
+                        {% if booking.traveling_period_start and booking.traveling_period_end %}
+                        {{ booking.traveling_period_start.strftime('%d/%m/%Y') }} - {{
+                        booking.traveling_period_end.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        To be confirmed
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="customer-field">
+                    <div class="field-label">Passengers:</div>
+                    <div class="field-value">
+                        {{ booking.adults or 0 }} Adults
+                        {% if booking.children and booking.children > 0 %}, {{ booking.children }} Children{% endif %}
+                        {% if booking.infants and booking.infants > 0 %}, {{ booking.infants }} Infants{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products & Services -->
+    <div class="products-section">
+        <div class="section-title">Products & Calculation</div>
+
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%">No.</th>
+                    <th style="width: 40%">Products</th>
+                    <th style="width: 12%">Quantity</th>
+                    <th style="width: 20%">Price</th>
+                    <th style="width: 20%">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in products %}
+                <tr {% if item.is_negative %}class="discount-row" {% endif %}>
+                    <td>{{ item.no }}</td>
+                    <td class="product-name thai-text">{{ item.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="price-cell">{{ item.price }}</td>
+                    <td class="price-cell">{{ item.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Total Calculation -->
+    <div class="total-section">
+        <div class="total-row">
+            <span class="total-label">Total:</span>
+            <span class="total-value">{{ total_amount }} {{ currency or 'THB' }}</span>
+        </div>
+
+        <div class="total-row grand-total">
+            <span class="total-label">💰 Grand Total:</span>
+            <span class="total-value">{{ currency or 'THB' }} {{ total_amount }}</span>
+        </div>
+    </div>
+
+    <!-- Services Information -->
+    {% if booking.description or booking.special_request or booking.pickup_point %}
+    <div class="services-section">
+        <div class="section-title">Service Details</div>
+
+        {% if booking.description %}
+        <div class="service-item">
+            <div class="service-label">Description:</div>
+            <div class="service-value thai-text">{{ booking.description }}</div>
+        </div>
+        {% endif %}
+
+        {% if booking.pickup_point %}
+        <div class="service-item">
+            <div class="service-label">Pickup Point:</div>
+            <div class="service-value thai-text">{{ booking.pickup_point }}</div>
+        </div>
+        {% endif %}
+
+        {% if booking.destination %}
+        <div class="service-item">
+            <div class="service-label">Destination:</div>
+            <div class="service-value thai-text">{{ booking.destination }}</div>
+        </div>
+        {% endif %}
+
+        {% if booking.special_request %}
+        <div class="service-item">
+            <div class="service-label">Special Requests:</div>
+            <div class="service-value thai-text">{{ booking.special_request }}</div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-note">
+            📝 <strong>Important Note:</strong> This quotation is valid for 7 days from the date of issue.
+            Prices are subject to availability and may change without prior notice.
+        </div>
+
+        <div>
+            Thank you for choosing DHAKUL CHAN Travel Services<br>
+            We look forward to serving you!<br><br>
+
+            <div style="font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                <!-- Timestamp information removed from document -->
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,76 @@
+"""API route for generating secure share URLs"""
+
+from flask import Blueprint, jsonify, request, url_for
+from flask_login import login_required, current_user
+from models.booking import Booking
+
+api_share_bp = Blueprint('api_share', __name__, url_prefix='/api/share')
+
+@api_share_bp.route('/booking/<int:booking_id>/url', methods=['GET'])
+@login_required
+def get_secure_share_url(booking_id):
+    """Generate secure share URL for booking"""
+    # Check if user is authenticated
+    if not current_user.is_authenticated:
+        return jsonify({
+            'success': False,
+            'error': 'Authentication required'
+        }), 401
+    
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # สร้าง secure URL
+    base_url = request.url_root.rstrip('/')
+    secure_url = booking.get_secure_share_url(base_url)
+    
+    return jsonify({
+        'success': True,
+        'secure_url': secure_url,
+        'share_url': secure_url,  # For compatibility
+        'booking_reference': booking.booking_reference,
+        'expires_in_days': 30
+    })
+
+@api_share_bp.route('/booking/<int:booking_id>/png', methods=['GET'])
+@login_required
+def get_booking_png_url(booking_id):
+    """Generate PNG URL for booking Service Proposal"""
+    # Check if user is authenticated
+    if not current_user.is_authenticated:
+        return jsonify({
+            'success': False,
+            'error': 'Authentication required'
+        }), 401
+        
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # สร้าง Service Proposal PNG URL (ไม่ใช่ tour voucher)
+    png_url = url_for('booking.generate_booking_png', booking_id=booking_id, _external=True)
+    
+    return jsonify({
+        'success': True,
+        'png_url': png_url,
+        'booking_reference': booking.booking_reference,
+        'type': 'service_proposal'
+    })
+
+@api_share_bp.route('/booking/<int:booking_id>/public', methods=['GET'])
+@login_required
+def get_public_booking_info(booking_id):
+    """Generate public share URL and PNG URL for booking"""
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # สร้าง secure public URL
+    base_url = request.url_root.rstrip('/')
+    public_url = booking.get_secure_share_url(base_url)
+    
+    # สร้าง public PNG URL (ใช้ tour voucher PNG ที่ไม่ต้อง login)
+    public_png_url = url_for('booking.test_generate_booking_png', booking_id=booking_id, _external=True)
+    
+    return jsonify({
+        'success': True,
+        'public_url': public_url,
+        'public_png_url': public_png_url,
+        'booking_reference': booking.booking_reference,
+        'type': 'public_share'
+    })

@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Suppliers{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 mb-0">Suppliers</h2>
+    <form method="get" class="d-flex gap-2">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search name/contact/phone"
+            class="form-control form-control-sm" style="min-width:240px;" />
+        <button class="btn btn-sm btn-outline-secondary">Search</button>
+        <a href="{{ url_for('supplier.list_') }}" class="btn btn-sm btn-outline-light border">Reset</a>
+        <a href="{{ url_for('supplier.new') }}" class="btn btn-sm btn-primary"><i class="fas fa-plus me-1"></i>New</a>
+    </form>
+</div>
+<table class="table table-sm table-striped align-middle">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Contact</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Group Email</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in suppliers %}
+        <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.contact_name or '-' }}</td>
+            <td>{{ s.phone or '-' }}</td>
+            <td>{{ s.email or '-' }}</td>
+            <td>{{ s.real_group_email or '-' }}</td>
+            <td>{% if s.active %}<span class="badge bg-success">Active</span>{% else %}<span
+                    class="badge bg-secondary">Inactive</span>{% endif %}</td>
+            <td>{{ s.created_at.strftime('%d/%m/%Y') if s.created_at else '' }}</td>
+            <td class="text-end">
+                <div class="btn-group btn-group-sm">
+                    <a href="{{ url_for('supplier.edit', id=s.id) }}" class="btn btn-outline-primary" title="Edit"><i
+                            class="fas fa-edit"></i></a>
+                    <button type="button" class="btn btn-outline-secondary" title="Toggle Active"
+                        onclick="toggleSupplier({{ s.id }}, this)"><i class="fas fa-power-off"></i></button>
+                    <button type="button" class="btn btn-outline-danger" title="Soft Delete"
+                        onclick="deleteSupplier({{ s.id }}, this)"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<script>
+    function toggleSupplier(id, btn) {
+        fetch(`/supplier/${id}/toggle`, { method: 'POST' }).then(r => r.json()).then(j => { if (j.success) { location.reload(); } else alert('Toggle failed'); });
+    }
+    function deleteSupplier(id, btn) {
+        if (!confirm('Soft delete this supplier?')) return;
+        fetch(`/supplier/${id}/delete`, { method: 'POST' }).then(r => r.json()).then(j => { if (j.success) { location.reload(); } else alert('Delete failed'); });
+    }
+</script>
+{% endblock %}

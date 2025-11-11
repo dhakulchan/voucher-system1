@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Completed Bookings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="text-success">
+                    <i class="fas fa-flag-checkered me-2"></i>
+                    Completed Bookings
+                </h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar-alt me-1"></i>All Bookings
+                    </a>
+                    <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>New Booking
+                    </a>
+                </div>
+            </div>
+
+            {% if bookings %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Completed Bookings ({{ bookings|length }} found)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if total_completed_amount > 0 %}
+                    <div class="alert alert-success mb-0 rounded-0">
+                        <i class="fas fa-calculator me-2"></i>
+                        <strong>Total Completed Bookings Value:</strong>
+                        ฿{{ "{:,.2f}".format(total_completed_amount) }}
+                    </div>
+                    {% endif %}
+
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Booking #</th>
+                                    <th>Customer</th>
+                                    <th>Tour Date</th>
+                                    <th>PAX</th>
+                                    <th>Total Amount</th>
+                                    <th>Completed Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for booking in bookings %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ booking.booking_reference or booking['booking_reference'] }}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            {% if booking.created_at or booking['created_at'] %}
+                                            {% set created_date = booking.created_at or booking['created_at'] %}
+                                            {% if created_date %}
+                                            {{ created_date.strftime('%d/%m/%Y') if created_date.strftime else
+                                            created_date[:10] }}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                            {% else %}
+                                            N/A
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ (booking.customer_name or booking['customer_name']) or 'N/A'
+                                                }}</strong>
+                                            {% set customer_email = booking.customer_email or booking['customer_email']
+                                            %}
+                                            {% if customer_email %}
+                                            <br><small class="text-muted">{{ customer_email }}</small>
+                                            {% endif %}
+                                            {% set customer_phone = booking.customer_phone or booking['customer_phone']
+                                            %}
+                                            {% if customer_phone %}
+                                            <br><small class="text-muted">{{ customer_phone }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% set tour_date = booking.tour_date or booking['tour_date'] %}
+                                        {% if tour_date %}
+                                        {% if tour_date.strftime %}
+                                        {{ tour_date.strftime('%d/%m/%Y') }}
+                                        {% else %}
+                                        {{ tour_date[:10] if tour_date|string|length >= 10 else tour_date }}
+                                        {% endif %}
+                                        {% set pickup_time = booking.pickup_time or booking['pickup_time'] %}
+                                        {% if pickup_time %}
+                                        <br><small class="text-success">{{ pickup_time }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">Not Set</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ (booking.adult_pax or booking['adult_pax']) or 0 }}A
+                                            {% set child_pax = (booking.child_pax or booking['child_pax']) or 0 %}
+                                            {% if child_pax and child_pax > 0 %}
+                                            / {{ child_pax }}C
+                                            {% endif %}
+                                            {% set infant_pax = (booking.infant_pax or booking['infant_pax']) or 0 %}
+                                            {% if infant_pax and infant_pax > 0 %}
+                                            / {{ infant_pax }}I
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set total_amount = booking.total_amount or booking['total_amount'] %}
+                                        {% if total_amount %}
+                                        <strong class="text-success">฿{{ "{:,.2f}".format(total_amount|float)
+                                            }}</strong>
+                                        {% else %}
+                                        <span class="text-muted">฿0.00</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% set updated_at = booking.updated_at or booking['updated_at'] %}
+                                        {% if updated_at %}
+                                        {% if updated_at.strftime %}
+                                        {{ updated_at.strftime('%d/%m/%Y %H:%M') }}
+                                        {% else %}
+                                        {{ updated_at[:16] if updated_at|string|length >= 16 else updated_at }}
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% set booking_id = booking.id or booking['id'] %}
+                                            <a href="{{ url_for('booking.view', booking_id=booking_id) }}"
+                                                class="btn btn-outline-primary" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('booking.edit', booking_id=booking_id) }}"
+                                                class="btn btn-outline-secondary" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% set voucher_url = booking.voucher_url or booking['voucher_url'] %}
+                                            {% if voucher_url %}
+                                            <a href="{{ voucher_url }}" class="btn btn-outline-success"
+                                                title="Download Voucher" target="_blank">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- Empty State -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="fas fa-flag-checkered text-muted" style="font-size: 4rem;"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">No Completed Bookings Yet</h4>
+                    <p class="text-muted mb-4">
+                        Completed bookings will appear here once tours are finished.
+                    </p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar-alt me-1"></i>View All Bookings
+                        </a>
+                        <a href="{{ url_for('paid.list_paid_bookings') }}" class="btn btn-outline-success">
+                            <i class="fas fa-receipt me-1"></i>View Paid Bookings
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .badge {
+        font-size: 0.8rem;
+    }
+
+    .btn-group-sm .btn {
+        font-size: 0.875rem;
+    }
+
+    .card-header {
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .alert {
+        border: none;
+    }
+</style>
+{% endblock %}

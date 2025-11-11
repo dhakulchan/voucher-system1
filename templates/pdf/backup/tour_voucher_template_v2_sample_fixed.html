@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tour Voucher - {{ booking.booking_reference }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm 15mm 15mm 15mm;
+
+            @bottom-center {
+                content: "Dhakul Chan Travel Service   System DCTS V1.0 | Page " counter(page) " of " counter(pages);
+                font-size: 9px;
+                color: #666;
+            }
+        }
+
+        @page :first {
+            margin-top: 10mm;
+        }
+
+        @page :not(:first) {
+            margin-top: 10mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Thai', Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.3;
+            color: #000;
+        }
+
+        .voucher-container {
+            width: 100%;
+            padding: 0;
+        }
+
+        /* Main Header for page 1 */
+        .main-header {
+            width: 100%;
+            display: table;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #0066cc;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            page-break-inside: avoid;
+        }
+
+        .main-header .company-info {
+            display: table-cell;
+            vertical-align: top;
+            width: 75%;
+        }
+
+        .main-header .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #0066cc;
+        }
+
+        .main-header .company-address {
+            font-size: 9px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .main-header .company-logo {
+            display: table-cell;
+            vertical-align: top;
+            width: 25%;
+            text-align: right;
+        }
+
+        .main-header .company-logo img {
+            width: 80px;
+            height: auto;
+            max-height: 60px;
+        }
+
+        /* Page 2+ header */
+        .page2-header {
+            width: 100%;
+            display: table;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #0066cc;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            page-break-before: page;
+            page-break-inside: avoid;
+        }
+
+        .page2-header .header-info {
+            display: table-cell;
+            vertical-align: top;
+            width: 75%;
+        }
+
+        .page2-header .header-company {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #0066cc;
+        }
+
+        .page2-header .header-address {
+            font-size: 9px;
+            line-height: 1.3;
+            color: #333;
+        }
+
+        .page2-header .header-logo {
+            display: table-cell;
+            vertical-align: top;
+            width: 25%;
+            text-align: right;
+        }
+
+        .page2-header .header-logo img {
+            width: 80px;
+            height: auto;
+            max-height: 60px;
+        }
+
+        @media print {
+            .main-header {
+                display: table !important;
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                border-bottom: 2px solid #0066cc !important;
+                page-break-inside: avoid;
+                page-break-after: avoid;
+            }
+
+            .page2-header {
+                display: table !important;
+                background-color: #f8f9fa !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                border-bottom: 2px solid #0066cc !important;
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Title Section */
+        .title-section {
+            text-align: center;
+            margin: 20px 0 15px 0;
+        }
+
+        .main-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: underline;
+            margin-bottom: 10px;
+        }
+
+        /* Booking Info Grid */
+        .booking-info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            table-layout: fixed;
+        }
+
+        .booking-info-table td {
+            padding: 5px;
+            border: 1px solid #ddd;
+            font-size: 10px;
+            width: 33.33%;
+            vertical-align: top;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #333;
+            display: inline-block;
+            min-width: 80px;
+        }
+
+        .info-value {
+            color: #000;
+        }
+
+        /* Service Header */
+        .service-header {
+            background-color: #0066cc;
+            color: white;
+            padding: 8px 10px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 0;
+            font-size: 12px;
+        }
+
+        /* Service Table */
+        .service-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            table-layout: fixed;
+        }
+
+        .service-table th,
+        .service-table td {
+            border: 1px solid #ddd;
+            padding: 6px 4px;
+            text-align: left;
+            font-size: 9px;
+            vertical-align: top;
+        }
+
+        .service-table th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Guest Names Section */
+        .section-header {
+            background-color: #0066cc;
+            color: white;
+            padding: 8px 10px;
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 0;
+            font-size: 12px;
+        }
+
+        .section-content {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            min-height: 50px;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .guest-content {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 15px;
+            min-height: 80px;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .flight-content {
+            min-height: 60px;
+        }
+
+        /* Voucher Images */
+        .voucher-images-container {
+            margin-top: 15px;
+        }
+
+        .voucher-image-item {
+            margin-bottom: 10px;
+            page-break-inside: avoid;
+        }
+
+        .voucher-image-title {
+            background-color: #0066cc;
+            color: white;
+            padding: 5px 10px;
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+
+        .voucher-image {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ddd;
+            display: block;
+        }
+
+        /* Important Notes */
+        .important-notes {
+            border: 2px solid #ff6b6b;
+            background-color: #fff5f5;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+        }
+
+        .important-notes h3 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .important-notes ul {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .important-notes li {
+            margin-bottom: 5px;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        /* Contact Information */
+        .contact-info {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 10px;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="voucher-container">
+        <!-- Main Header - will be used for page 1 -->
+        <div class="main-header">
+            <div class="company-info">
+                <div class="company-name">DHAKUL CHAN NICE HOLIDAYS DISCOVERY GROUP COMPANY LIMITED.</div>
+                <div class="company-address">
+                    Flat C19, 21/F, Mai Yah Industrial Bldg., No. 1-7 Wan Shing Street, Kwai Chung, N.T. Hong Kong<br>
+                    Tel: +852 2392 1155 | Mobile: +852 2392 1177 | Email: info@dhakulchan.net | Website:
+                    www.dhakulchan.net
+                </div>
+            </div>
+            <div class="company-logo">
+                <img src="static/images/dcts-logo-vou.png" alt="DCTS Logo">
+            </div>
+        </div>
+
+        <!-- Title -->
+        <div class="title-section">
+            <div class="main-title">TOUR VOUCHER / SERVICE ORDER</div>
+        </div>
+
+        <!-- Booking Information Table -->
+        <table class="booking-info-table">
+            <tr>
+                <td>
+                    <span class="info-label">Quote Number:</span>
+                    <span class="info-value">{{ booking.quote_number or 'QT1759448946' }}</span>
+                </td>
+                <td>
+                    <span class="info-label">Booking Ref.:</span>
+                    <span class="info-value">{{ booking.booking_reference or 'BK20251002NAJZ' }}</span>
+                </td>
+                <td>
+                    <span class="info-label">Issue Date:</span>
+                    <span class="info-value">{{ booking.created_at.strftime('%d/%m/%Y') if booking.created_at else
+                        '02/10/2025' }}</span>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <span class="info-label">Customer:</span>
+                    <span class="info-value">{{ booking.customer_name or 'Najmaj Chanida' }}</span>
+                </td>
+                <td>
+                    <span class="info-label">Travel Date:</span>
+                    <span class="info-value">{{ booking.travel_date or '05/10/2025' }}</span>
+                </td>
+                <td>
+                    <span class="info-label">Adults:</span>
+                    <span class="info-value">{{ booking.adults or '2' }}</span>
+                    <span class="info-label">Children:</span>
+                    <span class="info-value">{{ booking.children or '0' }}</span>
+                    <span class="info-label">Infants:</span>
+                    <span class="info-value">{{ booking.infants or '0' }}</span>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Service Table -->
+        <div class="service-header">Hotel / Accommodation | Transfer | Others | Flight Detail</div>
+        <table class="service-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">No.</th>
+                    <th style="width: 18%;">Arrival</th>
+                    <th style="width: 18%;">Departure</th>
+                    <th style="width: 36%;">Service By / Supplier</th>
+                    <th style="width: 20%;">Type/Class/Pax/Pieces</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set daily_services = booking.get_daily_services() %}
+                {% if daily_services %}
+                {% for service in daily_services %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ service.get('arrival', service.get('arrival_date', 'DD/MM/YYYY')) }}</td>
+                    <td>{{ service.get('departure', service.get('departure_date', 'DD/MM/YYYY')) }}</td>
+                    <td>{{ service.get('service_by', service.get('supplier', 'Dhakul Chan Nice Holidays Group')) }}</td>
+                    <td>{{ service.get('type_class_pax', service.get('details', 'N/A')) }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td>1</td>
+                    <td>05/10/2025</td>
+                    <td>12/10/2025</td>
+                    <td>Dhakul Chan Nice Holidays Group</td>
+                    <td>Tourism Service / 2 Pax</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Guest Names Section -->
+        <div class="section-header">Guest Names :</div>
+        <div class="guest-content">
+            {% set guest_info = booking.guest_info %}
+            {% if guest_info and guest_info != 'GGGGGGG' %}
+            {% set processed_guests = guest_info | replace('Mr.', 'Mr.') | replace('Ms.', 'Ms.') | replace('Mrs.',
+            'Mrs.') %}
+            {% set guest_lines = processed_guests.split('\n') %}
+            {% if guest_lines | length > 1 %}
+            {% for line in guest_lines %}
+            {% if line.strip() %}
+            {{ loop.index }}. {{ line.strip() }}<br>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            {{ processed_guests | replace('\n', '<br>') | safe }}
+            {% endif %}
+            {% else %}
+            No guest information available
+            {% endif %}
+        </div>
+
+        <!-- Header for Page 2+ -->
+        <div class="page2-header">
+            <div class="header-info">
+                <div class="header-company">DHAKUL CHAN NICE HOLIDAYS DISCOVERY GROUP COMPANY LIMITED.</div>
+                <div class="header-address">
+                    Flat C19, 21/F, Mai Yah Industrial Bldg., No. 1-7 Wan Shing Street, Kwai Chung, N.T. Hong Kong<br>
+                    Tel: +852 2392 1155 | Mobile: +852 2392 1177 | Email: info@dhakulchan.net | Website:
+                    www.dhakulchan.net
+                </div>
+            </div>
+            <div class="header-logo">
+                <img src="static/images/dcts-logo-vou.png" alt="DCTS Logo">
+            </div>
+        </div>
+
+        <!-- Service Detail Section -->
+        <div class="section-header">Service Detail / Itinerary :</div>
+        <div class="section-content" style="white-space: pre-wrap;">{{ booking.description or booking.internal_note or
+            'SSSSSSS' }}</div>
+
+        <!-- Flight Information Section -->
+        <div class="section-header">Flight Information :</div>
+        <div class="section-content flight-content">
+            {% set flight_info = booking.flight_info %}
+            {% if flight_info and flight_info != 'FFFFFF' %}
+            {{ flight_info | replace('\n', '<br>') | safe }}
+            {% else %}
+            No flight information available
+            {% endif %}
+        </div>
+
+        <!-- Voucher Images Display -->
+        {% set voucher_images = booking.get_voucher_images() %}
+        {% if voucher_images %}
+        <div class="voucher-images-container" style="margin-top: 15px;">
+            {% for image in voucher_images %}
+            <div class="voucher-image-item">
+                {% if image.original and image.original.title %}
+                <div class="voucher-image-title">{{ image.original.title }}</div>
+                {% elif image.title %}
+                <div class="voucher-image-title">{{ image.title }}</div>
+                {% endif %}
+                <img src="{{ image.url }}" alt="Voucher Image" class="voucher-image">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Important Notes -->
+        <div class="important-notes">
+            <h3>🔴 IMPORTANT NOTES</h3>
+            <ul>
+                <li><strong>Voucher Validity:</strong> This voucher is valid for the dates specified above only.</li>
+                <li><strong>Identification Required:</strong> Please carry valid photo identification during travel.
+                </li>
+                <li><strong>Contact Information:</strong> For any assistance during your trip, please contact our 24/7
+                    hotline.</li>
+                <li><strong>Changes & Cancellations:</strong> Any changes must be requested at least 24 hours before
+                    service date.</li>
+                <li><strong>Emergency Contact:</strong> +852 2392 1177 (Available 24/7)</li>
+            </ul>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="contact-info">
+            <strong>24/7 Emergency Hotline:</strong> +852 2392 1177 | <strong>Email:</strong> info@dhakulchan.net |
+            <strong>Website:</strong> www.dhakulchan.net
+        </div>
+    </div>
+</body>
+
+</html>

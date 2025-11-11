@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote - {{ booking.booking_reference }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm 1.5cm;
+
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+                color: #666;
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        /* Header Section */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #0066cc;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-logo {
+            width: 80px;
+            height: 60px;
+            background: #0066cc;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .company-details h1 {
+            color: #0066cc;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .company-details p {
+            font-size: 10px;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .quote-title {
+            text-align: center;
+            flex: 1;
+        }
+
+        .quote-title h2 {
+            color: #0066cc;
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .quote-info {
+            text-align: right;
+            flex: 1;
+        }
+
+        .quote-info p {
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        /* Booking Info Section */
+        .booking-info {
+            margin: 20px 0;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .info-table th,
+        .info-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .info-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            font-size: 11px;
+        }
+
+        .info-table td {
+            font-size: 11px;
+        }
+
+        /* Description Section */
+        .description-section {
+            margin: 20px 0;
+        }
+
+        .description-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .description-header h3 {
+            color: #0066cc;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .due-date {
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* Products Table */
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .products-table th {
+            background-color: #f0f7ff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .products-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .products-table .text-left {
+            text-align: left;
+        }
+
+        .products-table .text-right {
+            text-align: right;
+        }
+
+        .discount-row {
+            color: #d9534f;
+        }
+
+        .grand-total {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 16px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        /* Service Sections */
+        .service-section {
+            margin: 20px 0;
+            page-break-inside: avoid;
+        }
+
+        .service-section h4 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .service-content {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 15px;
+            min-height: 80px;
+            white-space: pre-wrap;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        /* Terms Section */
+        .terms-section {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+
+        .terms-section h4 {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .terms-content {
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        .terms-content ul {
+            padding-left: 20px;
+        }
+
+        .terms-content li {
+            margin-bottom: 5px;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        <div class="company-info">
+            <div style="display: flex; align-items: center;">
+                <div class="company-logo">DCTS</div>
+                <div class="company-details">
+                    <h1>DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.</h1>
+                    <p>710, 716, 704, 706 Prachauthit Road, Samsenook, Huai Kwang, Bangkok 10310<br>
+                        Tel: 662-2746525 / +662-0266325 Fax: +662-0266525 Press 5 | Line: @dhakulchan<br>
+                        Website: www.dhakulchan.net | T.A.T License 11/03659</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="quote-title">
+            <h2>QUOTE</h2>
+        </div>
+
+        <div class="quote-info">
+            <p><strong>Quote Number:</strong> {{ quote_number }}</p>
+            <p><strong>Reference:</strong> {{ booking.booking_reference }}</p>
+            <p><strong>Booking Type:</strong> {{ booking.booking_type }}</p>
+        </div>
+    </div>
+
+    <!-- Party Info -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+        <div>
+            <strong>Party Name:</strong> {{ booking.party_code or 'PKG250922' }}<br>
+            <strong>Status:</strong> {{ booking.status }}
+        </div>
+    </div>
+
+    <!-- Booking Information Table -->
+    <table class="info-table">
+        <tr>
+            <th style="width: 20%;">Create Date</th>
+            <th style="width: 25%;">Traveling Period</th>
+            <th style="width: 35%;">Customer Name</th>
+            <th style="width: 20%;">PAX</th>
+        </tr>
+        <tr>
+            <td>{{ create_date }}<br>By: {{ created_by or 'admin' }}</td>
+            <td>{{ travel_period }}</td>
+            <td>{{ customer_name }}<br>Tel. {{ customer_phone }}</td>
+            <td>{{ total_pax }} pax<br>{{ pax_breakdown }}</td>
+        </tr>
+    </table>
+
+    <!-- Description Section -->
+    <div class="description-section">
+        <div class="description-header">
+            <h3>Description</h3>
+            <div class="due-date">Due Date: {{ due_date or 'DD/MM/YYYY' }}</div>
+        </div>
+
+        <!-- Products Table -->
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">No.</th>
+                    <th style="width: 30%;">Products</th>
+                    <th style="width: 15%;">Quantity</th>
+                    <th style="width: 22%;">Price (THB)</th>
+                    <th style="width: 25%;">Amount (THB)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in products %}
+                <tr{% if item.is_negative %} class="discount-row" {% endif %}>
+                    <td>{{ item.no }}</td>
+                    <td class="text-left">{{ item.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="text-right">{{ item.price }}</td>
+                    <td class="text-right">{{ item.amount }}</td>
+                    </tr>
+                    {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="grand-total">
+            Grand Total: THB {{ grand_total }}
+        </div>
+    </div>
+
+    <!-- Service Detail Section -->
+    <div class="service-section">
+        <h4>Service Detail / Itinerary:</h4>
+        <div class="service-content">{{ service_detail or
+            'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\nBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB' }}</div>
+    </div>
+
+    <!-- Name List Section -->
+    <div class="service-section">
+        <h4>Name List / Rooming List:</h4>
+        <div class="service-content">{{ name_list or
+            'CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC\nDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD' }}</div>
+    </div>
+
+    <!-- Flight Information Section -->
+    <div class="service-section">
+        <h4>Flight Information:</h4>
+        <div class="service-content">{{ flight_info or
+            'EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE\nFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF' }}</div>
+    </div>
+
+    <!-- Additional Flight Information -->
+    <div class="service-section">
+        <h4>Flight Information:</h4>
+        <div class="service-content">{{ additional_flight_info or
+            'GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG\nHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH' }}</div>
+    </div>
+
+    <!-- Terms & Conditions -->
+    <div class="terms-section">
+        <h4>Terms & Conditions Apply:</h4>
+        <div class="terms-content">
+            <ul>
+                <li>เอกสารยืนยันบัตรที่ใช้ในการเดินทาง อาเซียนเป็นการอนุมัติมาตรฐาน</li>
+                <li>ราคานี้สามารถเปลี่ยนแปลงได้ตามจำนวนคนที่เดินทาง รายการดูคลื่อบใหม่
+                    ราคาจะแจ้งให้ทราบอีกครั้งก่อนการยืนยัน</li>
+                <li>กรุณาสอบถามราคาเปิดใหม่ล่าสุดแจ้งมาหาเราก่อนยืนยันการจอง เพราะราคาห้องอาจเปลี่ยนแปลงได้</li>
+                <li>ในกรณีที่มีกำพิจหายที่ดิน หากเกิดราคา เกิดพิเชษราความไม่ทราบส่วนสำคัญ</li>
+                <li>การเปลี่ยนแปลงส่วนหลักสำคัญ จำเป็นตั้งแต่เตรียมปื่นจุดยืนยันมาตรา ราชอาการราคาค้าการ</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Dhakul Chan Nice Holidays Group - System DCTS V1.0</p>
+    </div>
+</body>
+
+</html>

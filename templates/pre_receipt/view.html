@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Pre-Receipt - {{ booking.booking_reference }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-file-invoice me-2"></i>Pre-Receipt - {{ booking.booking_reference }}
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{{ url_for('pre_receipt.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Pre-Receipts
+            </a>
+            <a href="{{ url_for('pre_receipt.generate_receipt', booking_id=booking.id, format='pdf') }}"
+                class="btn btn-danger" target="_blank">
+                <i class="fas fa-file-pdf me-1"></i>Download Receipt PDF
+            </a>
+            <a href="{{ url_for('pre_receipt.generate_receipt', booking_id=booking.id, format='png') }}"
+                class="btn btn-success" target="_blank">
+                <i class="fas fa-image me-1"></i>Download Receipt PNG
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Status Alert -->
+<div
+    class="alert alert-{{ 'success' if booking.status == 'paid' else ('dark' if booking.status == 'vouchered' else 'primary') }} mb-4">
+    <i class="fas fa-info-circle me-2"></i>
+    <strong>Status:</strong> {{ booking.status|title }} - Ready for Pre-Receipt Generation
+</div>
+
+<!-- Booking Information Card -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Booking Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Booking Reference:</dt>
+                            <dd class="col-sm-7"><strong>{{ booking.booking_reference }}</strong></dd>
+
+                            <dt class="col-sm-5">Customer:</dt>
+                            <dd class="col-sm-7">
+                                {% if booking.customer %}
+                                {{ booking.customer.name }}
+                                {% else %}
+                                <span class="text-muted">No customer</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-5">Booking Type:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-primary">{{ booking.booking_type|title }}</span>
+                            </dd>
+
+                            <dt class="col-sm-5">Status:</dt>
+                            <dd class="col-sm-7">
+                                <span
+                                    class="badge bg-{{ 'success' if booking.status == 'paid' else ('dark' if booking.status == 'vouchered' else 'primary') }}">
+                                    {{ booking.status|title }}
+                                </span>
+                            </dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row">
+                            <dt class="col-sm-5">Total Amount:</dt>
+                            <dd class="col-sm-7">
+                                <strong class="text-success">
+                                    {% if booking.total_amount %}
+                                    ฿{{ booking.total_amount|float|round(2) }}
+                                    {% else %}
+                                    ฿0.00
+                                    {% endif %}
+                                </strong>
+                            </dd>
+
+                            <dt class="col-sm-5">Created Date:</dt>
+                            <dd class="col-sm-7">
+                                {% if booking.created_at %}
+                                {{ booking.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </dd>
+
+                            <dt class="col-sm-5">Total Pax:</dt>
+                            <dd class="col-sm-7">{{ booking.total_pax or 'N/A' }}</dd>
+
+                            <dt class="col-sm-5">Quote Number:</dt>
+                            <dd class="col-sm-7">
+                                {% if booking.quote_number %}
+                                <code>{{ booking.quote_number }}</code>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Travel Details -->
+        {% if booking.arrival_date or booking.departure_date %}
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-calendar me-2"></i>Travel Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Arrival Date:</strong>
+                        {% if booking.arrival_date %}
+                        {{ booking.arrival_date.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Departure Date:</strong>
+                        {% if booking.departure_date %}
+                        {{ booking.departure_date.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Actions Sidebar -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('pre_receipt.generate_receipt', booking_id=booking.id, format='pdf') }}"
+                        class="btn btn-danger" target="_blank">
+                        <i class="fas fa-file-pdf me-2"></i>Download Receipt PDF
+                    </a>
+
+                    <a href="{{ url_for('pre_receipt.generate_receipt', booking_id=booking.id, format='png') }}"
+                        class="btn btn-success" target="_blank">
+                        <i class="fas fa-image me-2"></i>Download Receipt PNG
+                    </a>
+
+                    <hr>
+
+                    <h6 class="text-muted">Quote PDF/PNG (Fixed Template)</h6>
+
+                    <a href="{{ url_for('pre_receipt.generate_quote_pdf', booking_id=booking.id, format='pdf') }}"
+                        class="btn btn-outline-danger" target="_blank">
+                        <i class="fas fa-file-pdf me-2"></i>Quote PDF
+                    </a>
+
+                    <a href="{{ url_for('pre_receipt.generate_quote_pdf', booking_id=booking.id, format='png') }}"
+                        class="btn btn-outline-success" target="_blank">
+                        <i class="fas fa-image me-2"></i>Quote PNG
+                    </a>
+
+                    <a href="{{ url_for('pre_receipt.test_quote_template', booking_id=booking.id) }}"
+                        class="btn btn-outline-info" target="_blank">
+                        <i class="fas fa-eye me-2"></i>Preview Quote Template
+                    </a>
+
+                    <hr>
+
+                    <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-primary">
+                        <i class="fas fa-eye me-2"></i>View Full Booking
+                    </a>
+
+                    {% if booking.quote_id %}
+                    <a href="{{ url_for('quote.view_quote', quote_id=booking.quote_id) }}" class="btn btn-info">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>View Quote
+                    </a>
+                    {% endif %}
+
+                    <hr>
+
+                    <a href="{{ url_for('pre_receipt.list') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-list me-2"></i>All Pre-Receipts
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Timeline -->
+        <div class="card mt-3">
+            <div class="card-header bg-dark text-white">
+                <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Status Timeline</h6>
+            </div>
+            <div class="card-body">
+                <small class="text-muted">
+                    <div class="mb-2">
+                        <i class="fas fa-check-circle text-success me-1"></i>
+                        <strong>{{ booking.status|title }}</strong>
+                    </div>
+                    {% if booking.created_at %}
+                    <div class="mb-1">
+                        Created: {{ booking.created_at.strftime('%d/%m/%Y') }}
+                    </div>
+                    {% endif %}
+                    {% if booking.status == 'paid' and booking.invoice_paid_date %}
+                    <div class="mb-1">
+                        Paid: {{ booking.invoice_paid_date.strftime('%d/%m/%Y') }}
+                    </div>
+                    {% endif %}
+                    <div class="text-success">
+                        ✓ Ready for Pre-Receipt
+                    </div>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

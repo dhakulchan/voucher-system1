@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block title %}View Voucher - {{ booking.booking_reference }}{% endblock %}
+{% block content %}
+<div class="voucher-wrapper py-3">
+    <div class="d-flex justify-content-between align-items-start flex-wrap mb-3">
+        <div>
+            <h1 class="voucher-title mb-1">TOUR VOUCHER / SERVICE ORDER</h1>
+            <div class="small text-muted">Reference: {{ booking.booking_reference }}</div>
+            <div class="small fw-semibold text-primary">ARNO: {{ booking.invoice_number or '......' }} &nbsp; | &nbsp;
+                QTNO: {{ booking.quote_number or '......' }}</div>
+        </div>
+        <div class="btn-toolbar gap-2 d-print-none">
+            <a class="btn btn-sm btn-primary" href="{{ url_for('voucher.generate_pdf', id=booking.id) }}"><i
+                    class="fas fa-file-pdf me-1"></i>PDF</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('voucher.view', id=booking.id) }}"><i
+                    class="fas fa-edit me-1"></i>Edit Voucher</a>
+            <a class="btn btn-sm btn-outline-warning" href="{{ url_for('booking.edit', id=booking.id) }}"><i
+                    class="fas fa-pen me-1"></i>Edit Booking</a>
+            <a class="btn btn-sm btn-outline-success" onclick="window.print()"><i
+                    class="fas fa-print me-1"></i>Print</a>
+            <a class="btn btn-sm btn-outline-dark" href="{{ url_for('voucher.list') }}"><i
+                    class="fas fa-arrow-left me-1"></i>Back</a>
+        </div>
+    </div>
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="info-box p-2 h-100">
+                <div class="label">Create Date</div>
+                <div>{{ booking.created_at.strftime('%d %b %Y') if booking.created_at else '-' }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-box p-2 h-100">
+                <div class="label">Traveling Period</div>
+                <div>
+                    {% if booking.traveling_period_start %}
+                    {{ booking.traveling_period_start.strftime('%d.%b.%Y') }} - {{
+                    booking.traveling_period_end.strftime('%d.%b.%Y') if booking.traveling_period_end else '' }}
+                    {% elif booking.arrival_date %}
+                    {{ booking.arrival_date.strftime('%d.%b.%Y') }}{% if booking.departure_date and
+                    booking.departure_date != booking.arrival_date %} - {{ booking.departure_date.strftime('%d.%b.%Y')
+                    }}{% endif %}
+                    {% else %}-{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-box p-2 h-100">
+                <div class="label">Customer</div>
+                <div>{{ booking.customer.full_name or booking.customer.name }}</div>
+                <div class="small text-muted">{{ booking.customer.phone }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-box p-2 h-100">
+                <div class="label">PAX</div>
+                <div>{{ booking.total_pax }} pax</div>
+                <div class="small text-muted">Adult {{ booking.adults or 0 }}{% if booking.children %} / Child {{
+                    booking.children }}{% endif %}{% if booking.infants %} / Infant {{ booking.infants }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="info-box p-2 h-100">
+                <div class="label">Supplier</div>
+                <div>{% if booking.supplier %}{{ booking.supplier.name }}{% else %}<span class="text-muted">-</span>{%
+                    endif %}</div>
+            </div>
+        </div>
+    </div>
+    <div class="card mb-3 shadow-sm">
+        <div class="card-header bg-light fw-semibold"><i class="fas fa-users me-1"></i> Guest Names</div>
+        <div class="card-body small">
+            {% set guests = booking.get_guest_list() %}
+            {% if guests %}
+            <ol class="mb-0">
+                {% for guest in guests %}
+                <li class="mb-1" style="white-space: pre-line;">{{ guest }}</li>
+                {% endfor %}
+            </ol>
+            {% else %}
+            <em class="text-muted">No guests specified</em>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white fw-semibold"><i class="fas fa-table me-1"></i> Hotel /
+            Accommodation | Transfer | Others | Flight Detail</div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle mb-0">
+                <thead class="table-dark">
+                    <tr class="text-center">
+                        <th style="width:40px">No.</th>
+                        <th style="width:110px">ARRIVAL</th>
+                        <th style="width:110px">DEPARTURE</th>
+                        <th style="width:32%">SERVICE BY</th>
+                        <th>TYPE/CLASS/PAXS/PIECES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in booking.get_voucher_rows() %}
+                    <tr>
+                        <td class="text-center">{{ loop.index }}</td>
+                        <td>{{ (r.arrival or r['arrival']) }}</td>
+                        <td>{{ (r.departure or r['departure']) }}</td>
+                        <td>{{ (r.service_by or r['service_by']) }}</td>
+                        <td style="white-space:pre-wrap">{{ (r.type or r['type']) }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% if not booking.get_voucher_rows() %}<tr>
+                        <td colspan="5" class="text-center text-muted small">No rows</td>
+                    </tr>{% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light fw-semibold">Flight Info</div>
+        <div class="card-body small">
+            {% if booking.flight_info %}
+            <div id="flight-info-content" data-html="{{ booking.flight_info|e }}"
+                style="line-height: 1.4; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd; white-space: pre-line;">
+                Loading...
+            </div>
+            {% else %}
+            <div class="text-muted">No flight information available</div>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light fw-semibold">Service Detail / Itinerary</div>
+        <div class="card-body small">
+            {% set desc = booking.description or booking.internal_note %}
+            {% if desc %}
+            <div id="service-detail-content" data-html="{{ desc|e }}"
+                style="line-height: 1.4; padding: 10px; background-color: #f9f9f9; border: 1px solid #ddd;">
+                Loading...
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    // Process Service Detail content
+                    const element = document.getElementById('service-detail-content');
+                    if (element) {
+                        const htmlContent = element.getAttribute('data-html');
+                        // Create a temporary element to parse HTML
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = htmlContent;
+
+                        // Convert HTML to plain text with line breaks
+                        let textContent = tempDiv.innerHTML;
+                        textContent = textContent.replace(/<br\s*\/?>/gi, '\n');
+                        textContent = textContent.replace(/<\/p>/gi, '\n\n');
+                        textContent = textContent.replace(/<p[^>]*>/gi, '');
+                        textContent = textContent.replace(/<[^>]+>/g, '');
+                        textContent = textContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+                        textContent = textContent.trim();
+
+                        // Set the content with proper line breaks
+                        element.style.whiteSpace = 'pre-line';
+                        element.textContent = textContent;
+
+                        console.log('✅ Service detail processed:', textContent);
+                    }
+
+                    // Process Flight Info content
+                    const flightElement = document.getElementById('flight-info-content');
+                    if (flightElement) {
+                        const htmlContent = flightElement.getAttribute('data-html');
+                        // Create a temporary element to parse HTML
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = htmlContent;
+
+                        // Convert HTML to plain text with line breaks
+                        let textContent = tempDiv.innerHTML;
+                        textContent = textContent.replace(/<br\s*\/?>/gi, '\n');
+                        textContent = textContent.replace(/<\/p>/gi, '\n\n');
+                        textContent = textContent.replace(/<p[^>]*>/gi, '');
+                        textContent = textContent.replace(/<[^>]+>/g, '');
+                        textContent = textContent.replace(/\n\s*\n\s*\n/g, '\n\n');
+                        textContent = textContent.trim();
+
+                        // Set the content with proper line breaks
+                        flightElement.style.whiteSpace = 'pre-line';
+                        flightElement.textContent = textContent;
+
+                        console.log('✅ Flight info processed:', textContent);
+                    }
+                });
+            </script>
+            {% else %}<span class="text-muted">-</span>{% endif %}
+        </div>
+    </div>
+    <div class="card mb-5 shadow-sm">
+        <div class="card-body">
+            <div class="row text-center small">
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="fw-semibold">Confirmed By (DCTS):</div>
+                    <div class="signature-line"></div>
+                    <div class="mt-2">Date: {{ (booking.created_at.strftime('%d/%m/%y') if booking.created_at else '')
+                        }}</div>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <div class="fw-semibold">Accepted By:</div>
+                    <div class="signature-line"></div>
+                    <div class="mt-2">Date: ___/___/___</div>
+                </div>
+                <div class="col-md-4">
+                    <div class="fw-semibold">Sales By (DCTS):</div>
+                    <div class="signature-line"></div>
+                    <div class="mt-2">Date: ___/___/___</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="d-print-none mb-4 d-flex flex-wrap gap-2">
+        <a class="btn btn-primary" href="{{ url_for('voucher.generate_pdf', id=booking.id) }}"><i
+                class="fas fa-file-pdf me-1"></i>PDF</a>
+        <a class="btn btn-outline-secondary" onclick="window.print()"><i class="fas fa-print me-1"></i>Print</a>
+        <a class="btn btn-outline-warning" href="{{ url_for('booking.edit', id=booking.id) }}"><i
+                class="fas fa-edit me-1"></i>Edit Booking</a>
+        <a class="btn btn-outline-dark" href="{{ url_for('voucher.list') }}"><i
+                class="fas fa-arrow-left me-1"></i>Back</a>
+    </div>
+</div>
+{% endblock %}
+{% block extra_css %}
+<style>
+    .voucher-wrapper {
+        max-width: 1140px;
+        margin: 0 auto;
+    }
+
+    .voucher-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1d5fe9;
+        letter-spacing: .5px;
+    }
+
+    .info-box {
+        background: #fff;
+        border: 1px solid #e5e8ec;
+        border-radius: 8px;
+    }
+
+    .info-box .label {
+        font-size: .65rem;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .signature-line {
+        border-bottom: 1px solid #000;
+        height: 48px;
+        margin: 10px 20px;
+    }
+</style>
+{% endblock %}

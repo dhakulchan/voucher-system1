@@ -1,0 +1,49 @@
+/* Thai Font Support CSS for WeasyPrint */
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
+/* Define local font fallbacks */
+@font-face {
+    font-family: 'Thai-Safe';
+    src: local('Sarabun'),
+        local('Noto Sans Thai'),
+        local('TH Sarabun New'),
+        local('Arial Unicode MS'),
+        local('Arial');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Thai-Safe';
+    src: local('Sarabun Bold'),
+        local('Noto Sans Thai Bold'),
+        local('TH Sarabun New Bold'),
+        local('Arial Unicode MS Bold'),
+        local('Arial Bold');
+    font-weight: bold;
+    font-style: normal;
+}
+
+/* Apply Thai-safe fonts globally */
+* {
+    font-family: 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
+}
+
+/* Special Thai text handling */
+.thai-text {
+    font-family: 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0.02em;
+}
+
+/* Ensure proper rendering of Thai characters */
+html {
+    -webkit-font-feature-settings: "liga" 1, "kern" 1;
+    font-feature-settings: "liga" 1, "kern" 1;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
+}

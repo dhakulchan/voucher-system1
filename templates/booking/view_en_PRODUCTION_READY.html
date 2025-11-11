@@ -1,0 +1,2677 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Details{% endblock %}
+
+{% block extra_head %}
+<!-- Cache buster for JavaScript updates -->
+<meta name="js-version" content="v2.1.{{ range(1000, 9999) | random }}">
+<style>
+    /* Products & Calculation Table Styling */
+    .products-calculation-table {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .products-calculation-table th {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border: none;
+        padding: 12px 8px;
+    }
+
+    .products-calculation-table td {
+        padding: 12px 8px;
+        vertical-align: middle;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .products-calculation-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.001);
+        transition: all 0.2s ease;
+    }
+
+    .products-calculation-table .product-name {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .products-calculation-table .quantity-badge {
+        background: linear-gradient(45deg, #3498db, #5dade2);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .products-calculation-table .price-positive {
+        color: #27ae60;
+        font-weight: 600;
+    }
+
+    .products-calculation-table .price-negative {
+        color: #e74c3c;
+        font-weight: 600;
+    }
+
+    .products-calculation-table .amount-positive {
+        color: #27ae60;
+        font-weight: 700;
+        font-size: 1.05rem;
+    }
+
+    .products-calculation-table .amount-negative {
+        color: #e74c3c;
+        font-weight: 700;
+        font-size: 1.05rem;
+    }
+
+    .products-calculation-table tfoot {
+        background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+    }
+
+    .products-calculation-table tfoot td {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #2c3e50;
+        border: none;
+        padding: 15px 8px;
+    }
+
+    .total-badge {
+        background: linear-gradient(45deg, #27ae60, #2ecc71);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 4px rgba(39, 174, 96, 0.3);
+    }
+
+    .products-section-header {
+        color: #2c3e50;
+        border-bottom: 2px solid #3498db;
+        padding-bottom: 8px;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+
+    /* Admin Notes & Manager Memos Tabs Styling */
+    #adminTabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6c757d;
+        font-weight: 500;
+        padding: 12px 20px;
+        transition: all 0.3s ease;
+    }
+
+    #adminTabs .nav-link:hover {
+        border-color: #dee2e6;
+        background-color: #f8f9fa;
+        color: #495057;
+    }
+
+    #adminTabs .nav-link.active {
+        color: #495057;
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+        border-bottom-color: transparent;
+        font-weight: 600;
+    }
+
+    #adminTabs .nav-link.active[aria-controls="admin-notes-panel"] {
+        border-bottom-color: #dc3545;
+    }
+
+    #adminTabs .nav-link.active[aria-controls="manager-memos-panel"] {
+        border-bottom-color: #0dcaf0;
+    }
+
+    .admin-content-border {
+        border-left: 4px solid #dc3545;
+        padding-left: 1rem;
+    }
+
+    .manager-content-border {
+        border-left: 4px solid #0dcaf0;
+        padding-left: 1rem;
+    }
+
+    /* Payment Card Enhancements */
+    .payment-card {
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .payment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .payment-card-header {
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        border: none;
+        padding: 15px 20px;
+    }
+
+    .grand-total-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+        border-left: 4px solid #27ae60;
+    }
+
+    /* Quote/Invoice External Link Styling */
+    .quote-number-link,
+    .invoice-number-link {
+        transition: all 0.3s ease;
+        text-decoration: none !important;
+        position: relative;
+    }
+
+    .quote-number-link:hover,
+    .invoice-number-link:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        opacity: 0.9;
+    }
+
+    .quote-number-link .fas.fa-external-link-alt,
+    .invoice-number-link .fas.fa-external-link-alt {
+        font-size: 0.8em;
+        opacity: 0.7;
+        transition: opacity 0.3s ease;
+    }
+
+    .quote-number-link:hover .fas.fa-external-link-alt,
+    .invoice-number-link:hover .fas.fa-external-link-alt {
+        opacity: 1;
+        color: #0d6efd;
+    }
+
+    /* Action Buttons Styling */
+    .btn-outline-primary:hover,
+    .btn-outline-info:hover,
+    .btn-outline-success:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* External Link Indicator */
+    .external-link-badge {
+        position: relative;
+    }
+
+    .external-link-badge::after {
+        content: '\f35d';
+        font-family: 'Font Awesome 5 Free';
+        font-weight: 900;
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        font-size: 0.6em;
+        color: #28a745;
+        opacity: 0.8;
+    }
+
+    /* Status badges with better contrast */
+    .badge.bg-success {
+        background-color: #198754 !important;
+    }
+
+    .badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #000 !important;
+    }
+
+    .badge.bg-info {
+        background-color: #0dcaf0 !important;
+        color: #000 !important;
+    }
+
+    .badge.bg-secondary {
+        background-color: #6c757d !important;
+    }
+
+    /* Action buttons section styling */
+    .action-buttons-section h6 {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+
+    .action-buttons-section .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    /* Multi-Platform Share Modal Styles */
+    .share-platform-btn {
+        aspect-ratio: 1;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+        border: none;
+    }
+
+    .share-platform-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .share-platform-btn i {
+        transition: all 0.3s ease;
+    }
+
+    .share-platform-btn:hover i {
+        transform: scale(1.1);
+    }
+
+    #shareModal .modal-content {
+        border-radius: 15px;
+        border: none;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    #shareModal .modal-header {
+        border-top-left-radius: 15px;
+        border-top-right-radius: 15px;
+        border-bottom: none;
+    }
+
+    #shareModal .modal-footer {
+        border-top: 1px solid #dee2e6;
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+
+    /* Enhanced Share Button Styles */
+    .btn-success {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+    }
+
+    .btn-success:hover {
+        background: linear-gradient(135deg, #218838, #1ea080);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff, #6610f2);
+        border: none;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #0056b3, #520dc2);
+        transform: translateY(-1px);
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8, #6f42c1);
+        border: none;
+    }
+
+    .btn-info:hover {
+        background: linear-gradient(135deg, #138496, #59359a);
+        transform: translateY(-1px);
+    }
+
+    .btn-dark {
+        background: linear-gradient(135deg, #343a40, #495057);
+        border: none;
+    }
+
+    .btn-dark:hover {
+        background: linear-gradient(135deg, #23272b, #3d4142);
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-calendar-alt me-2"></i>Booking Details
+        </h1>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Bookings
+            </a>
+            {% if booking.status in ['confirmed','completed'] %}
+            <!-- Show Open Voucher button if invoice exists and booking is confirmed (paid) -->
+            {% if booking.invoice_number and booking.status == 'confirmed' %}
+            <a href="{{ url_for('voucher.view', id=booking.id) }}" class="btn btn-primary">
+                <i class="fas fa-ticket-alt me-2"></i>Open Voucher
+            </a>
+            {% elif booking.invoice_number %}
+            <span class="text-muted small">Voucher available after invoice is paid</span>
+            {% else %}
+            <span class="text-muted small">Voucher available after invoice is created and paid</span>
+            {% endif %}
+            {% elif booking.status not in ['draft', 'pending', 'confirmed', 'quoted', 'cancelled'] %}
+            <a href="{{ url_for('voucher.view', id=booking.id) }}" class="btn btn-outline-primary">
+                <i class="fas fa-ticket-alt me-2"></i>Generate Voucher
+            </a>
+            {% endif %}
+            <a href="{{ url_for('booking.edit', id=booking.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit me-2"></i>View/Edit Booking
+            </a>
+
+            {% if booking.status != 'cancelled' %}
+            <!-- Cancel Booking Button -->
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelBookingModal">
+                <i class="fas fa-times me-2"></i>Cancel Booking
+            </button>
+            {% endif %}
+
+            {% if booking.status == 'quoted' or booking.status == 'paid' or booking.status == 'vouchered' %}
+            <!-- Quote PDF/PNG Buttons with Share Options for Quoted Status -->
+            <a href="{{ url_for('booking.generate_quote_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+                class="btn btn-info">
+                <i class="fas fa-file-pdf me-2"></i>Quote PDF
+            </a>
+
+            <!-- Email Quote PDF Button -->
+            <a href="{{ url_for('booking.email_quote_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
+                <i class="fas fa-envelope me-2"></i>Email Quote PDF
+            </a>
+
+            <!-- Quote PNG with Share Options -->
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('booking.generate_quote_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                    class="btn btn-secondary" target="_blank">
+                    <i class="fas fa-image me-2"></i>Quote PNG (Multi-page)
+                </a>
+                <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { shareToLineOA('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('shareToLineOA error:', e); }">
+                            <i class="fab fa-line me-2" style="color: #00B900;"></i>Send to Line OA
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { copyLineMessage('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('copyLineMessage error:', e); }">
+                            <i class="fas fa-copy me-2"></i>Copy Line Message
+                        </a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { shareToSocialMedia('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('shareToSocialMedia error:', e); }">
+                            <i class="fas fa-share-alt me-2"></i>Social Media
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { openSharePage('{{ booking.id|default(0) }}', 'quote'); } catch(e) { console.error('openSharePage error:', e); }">
+                            <i class="fas fa-external-link-alt me-2"></i>Open Share Page
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% elif booking.status not in ['quoted', 'paid', 'vouchered', 'draft', 'cancelled'] %}
+            <!-- Booking PDF/PNG Buttons for Non-Quoted Status (excluding draft and cancelled) -->
+            <a href="{{ url_for('booking.generate_booking_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+                class="btn btn-info" target="_blank">
+                <i class="fas fa-file-pdf me-2"></i>Booking PDF
+            </a>
+
+            <!-- Email Booking PDF Button -->
+            <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
+                <i class="fas fa-envelope me-2"></i>Email Booking PDF
+            </a>
+            <!-- Booking PNG with Share Options -->
+            <div class="btn-group" role="group">
+                <a href="{{ url_for('booking.generate_booking_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                    class="btn btn-secondary" target="_blank">
+                    <i class="fas fa-image me-2"></i>Booking PNG
+                </a>
+                <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { shareToLineOA('{{ booking.id|default(0) }}'); } catch(e) { console.error('shareToLineOA error:', e); }">
+                            <i class="fab fa-line me-2" style="color: #00B900;"></i>Send to Line OA
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { copyLineMessage('{{ booking.id|default(0) }}'); } catch(e) { console.error('copyLineMessage error:', e); }">
+                            <i class="fas fa-copy me-2"></i>Copy Line Message
+                        </a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#"
+                            onclick="try { sharePublic('{{ booking.id|default(0) }}', event); } catch(e) { console.error('sharePublic error:', e); }">
+                            <i class="fas fa-share-alt me-2"></i>Share Public Link
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Enhanced Workflow Progress Component -->
+    {% include 'booking/workflow_progress.html' %}
+
+    <!-- Booking Status Alert -->
+    <div class="row mb-4">
+        <div class="col-12">
+            {% if booking.status == 'pending' %}
+            <div class="alert alert-warning" role="alert">
+                <i class="fas fa-clock me-2"></i>
+                <strong>Status: Pending</strong> - This booking is awaiting confirmation
+            </div>
+            {% elif booking.status == 'confirmed' %}
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>Status: Confirmed</strong> - This booking has been confirmed
+            </div>
+            {% elif booking.status == 'completed' %}
+            <div class="alert alert-info" role="alert">
+                <i class="fas fa-flag-checkered me-2"></i>
+                <strong>Status: Completed</strong> - The tour has been completed
+            </div>
+            {% elif booking.status == 'cancelled' %}
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-times-circle me-2"></i>
+                <strong>Status: Cancelled</strong> - This booking has been cancelled
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Customer Information -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user me-2"></i>Customer Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Name:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ booking.customer.name }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Email:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <a href="mailto:{{ booking.customer.email }}" class="text-decoration-none">
+                                {{ booking.customer.email }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Phone:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <a href="tel:{{ booking.customer.phone }}" class="text-decoration-none">
+                                {{ booking.customer.phone }}
+                            </a>
+                        </div>
+                    </div>
+                    {% if booking.customer.nationality %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Nationality:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ booking.customer.nationality }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if booking.customer.address %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Address:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ booking.customer.address }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if booking.customer.notes %}
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong>Notes:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <small class="text-muted">{{ booking.customer.notes|replace('\n', '<br>')|replace('</p>', '
+                                </p><br>')|safe }}</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Information -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-check me-2"></i>Booking Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Reference:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-primary">{{ booking.booking_reference }}</span>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Type:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-secondary text-capitalize">{{ booking.booking_type }}</span>
+                        </div>
+                    </div>
+                    {% if booking.arrival_date %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Traveling from:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ booking.arrival_date.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if booking.departure_date %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Traveling to:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ booking.departure_date.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Time Management -->
+                    {% if booking.time_limit %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-clock me-1 text-warning"></i>Time Limit:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-warning text-dark">
+                                {{ booking.time_limit.strftime('%d/%m/%Y %H:%M') }}
+                            </span>
+                            <small class="text-muted d-block">Booking confirmation deadline</small>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if booking.due_date %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-calendar-check me-1 text-info"></i>Due Date:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-info">
+                                {{ booking.due_date.strftime('%d/%m/%Y') }}
+                            </span>
+                            <small class="text-muted d-block">Payment or action due date</small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Party Code -->
+                    {% if booking.party_code %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Party Code:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-info">{{ booking.party_code }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <!-- Passenger Details -->
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Passengers:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-primary">Adults: {{ booking.adults or 0 }}</span>
+                                <span class="badge bg-info">Children: {{ booking.children or 0 }}</span>
+                                <span class="badge bg-warning text-dark">Infants (Under 2Y.): {{ booking.infants or 0
+                                    }}</span>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Total:</strong> <span class="badge bg-dark">{{ (booking.adults or 0) +
+                                    (booking.children or 0) + (booking.infants or 0) }}</span> persons
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong>Booked:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ booking.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Admin & Management Section -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header" style="background-color: #fff3cd; border-bottom: 1px solid #faebcc;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-0" style="color: #856404;">
+                                <i class="fas fa-shield-alt me-2 text-warning"></i>Admin & Management
+                            </h5>
+                            <small class="text-muted">
+                                <i class="fas fa-lock me-1"></i>Internal Use Only
+                            </small>
+                        </div>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#adminManagementContent" aria-expanded="false"
+                            aria-controls="adminManagementContent"
+                            onclick="try { this.innerHTML = this.innerHTML.includes('Hide') ? '<i class=\'fas fa-chevron-down me-1\'></i>Show' : '<i class=\'fas fa-chevron-up me-1\'></i>Hide'; } catch(e) { console.error('Toggle error:', e); }"
+                            <i class="fas fa-chevron-down me-1"></i>Show
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="collapse" id="adminManagementContent">
+                        <!-- Admin Notes -->
+                        <div class="p-4 border-bottom bg-light">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-danger rounded-circle p-2 me-3">
+                                    <i class="fas fa-user-shield text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-danger mb-0">Admin Notes</h6>
+                                    <small class="text-muted">Critical administrative information</small>
+                                </div>
+                            </div>
+                            <div class="border rounded p-3 bg-white">
+                                {% if booking.admin_notes %}
+                                <div>{{ booking.admin_notes|safe }}</div>
+                                {% else %}
+                                <div class="text-muted">None</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Manager Memos -->
+                        <div class="p-4 bg-light">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info rounded-circle p-2 me-3">
+                                    <i class="fas fa-clipboard-list text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-info mb-0">Manager Memos</h6>
+                                    <small class="text-muted">Management instructions and notes</small>
+                                </div>
+                            </div>
+                            <div class="border rounded p-3 bg-white">
+                                {% if booking.manager_memos %}
+                                <div>{{ booking.manager_memos|safe }}</div>
+                                {% else %}
+                                <div class="text-muted">None</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Operation Notes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clipboard me-2"></i>Operation Notes
+                    </h5>
+                    <small class="text-light opacity-75">
+                        <i class="fas fa-users me-1"></i>Staff only - operational details and reminders
+                    </small>
+                </div>
+                <div class="card-body">
+                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                        {% if booking.internal_note %}
+                        <div class="text-dark">{{ booking.internal_note|replace('\n', '<br>')|replace('</p>', '</p>
+                            <br>')|safe }}
+                        </div>
+                        {% else %}
+                        <div class="text-muted">None</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Guest Names Section -->
+    {% if booking.guest_list %}
+    {% if booking.pickup_point or booking.pickup_time %}
+    <div class="row mb-3">
+        {% if booking.pickup_point %}
+        <div class="col-sm-6">
+            <div class="row">
+                <div class="col-sm-4">
+                    <strong>Pickup Point:</strong>
+                </div>
+                <div class="col-sm-8">
+                    <span class="badge bg-success">{{ booking.pickup_point }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% if booking.pickup_time %}
+        <div class="col-sm-6">
+            <div class="row">
+                <div class="col-sm-4">
+                    <strong>Pickup Time:</strong>
+                </div>
+                <div class="col-sm-8">
+                    <span class="badge bg-success">{{ booking.pickup_time }}</span>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Additional Information -->
+    <div class="row mb-4">
+        {% if booking.description %}
+        <div class="col-12 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Service Detail / Itinerary
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ booking.description|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Name List / Rooming List (moved here after Description) -->
+        {% if booking.guest_list %}
+        <div class="col-12 mb-3">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users me-2"></i>Name List / Rooming List
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="guest-item" style="white-space: pre-line;">
+                        {% set guest_text = booking.get_guest_list_for_edit() %}
+                        {% if guest_text and guest_text.strip() %}
+                        {{ guest_text.strip() }}
+                        {% else %}
+                        <span class="text-muted">
+                            <i class="fas fa-info-circle me-2"></i>No guest list available
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Flight Information and Internal Note -->
+    <div class="row mb-4">
+        {% if booking.flight_info and booking.flight_info.strip() %}
+        <div class="col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-plane me-2"></i>Flight Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% set clean_flight_info = booking.flight_info|replace('\n', '<br>')|replace('</p>', '</p>
+                    <br>')|safe %}
+                    {% if clean_flight_info and clean_flight_info != '<p></p>' %}
+                    <p class="mb-0">{{ clean_flight_info }}</p>
+                    {% else %}
+                    <p class="mb-0 text-muted">No flight information available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+
+    </div>
+
+    <!-- Special Requests -->
+    {% if booking.special_request %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Special Requests
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ booking.special_request|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+
+    <!-- Payment Information -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card payment-card">
+                <div class="card-header payment-card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-money-bill me-2"></i>Payment Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Products & Calculation Section -->
+                    {% if booking.get_products() %}
+                    <div class="mb-4">
+                        <h6 class="products-section-header">
+                            <i class="fas fa-calculator me-2"></i>Products & Calculation
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table products-calculation-table">
+                                <thead>
+                                    <tr>
+                                        <th class="text-center">No.</th>
+                                        <th>Products</th>
+                                        <th class="text-center">Quantity</th>
+                                        <th class="text-end">Price</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in booking.get_products() %}
+                                    <tr>
+                                        <td class="text-center">
+                                            <span class="badge bg-secondary">{{ loop.index }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="product-name">{{ product.name if product.name is defined else
+                                                product['name'] }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="quantity-badge">{{ product.quantity if product.quantity is
+                                                defined else product.get('quantity', 1) }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            {% set price = product.price if product.price is defined else
+                                            product.get('price', 0) %}
+                                            {% if price < 0 %} <span class="price-negative">-{{
+                                                "{:,.2f}".format(price * -1) }}</span>
+                                                {% else %}
+                                                <span class="price-positive">{{ "{:,.2f}".format(price)
+                                                    }}</span>
+                                                {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            {% set amount = product.amount if product.amount is defined else
+                                            product.get('price', 0) %}
+                                            {% if amount < 0 %} <span class="amount-negative">-{{
+                                                "{:,.2f}".format(amount * -1) }}</span>
+                                                {% else %}
+                                                <span class="amount-positive">{{ "{:,.2f}".format(amount)
+                                                    }}</span>
+                                                {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4" class="text-end">
+                                            <i class="fas fa-calculator me-2"></i>Total:
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="total-badge">
+                                                {{ "{:,.2f}".format((booking.total_amount|float) if booking.total_amount
+                                                else 0) }} {{ booking.currency or
+                                                'THB' }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Grand Total Summary -->
+                    <div class="grand-total-section">
+                        <div class="row align-items-center">
+                            <div class="col-6">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-coins me-2 text-success"></i>
+                                    <strong>Grand Total:</strong>
+                                </h6>
+                            </div>
+                            <div class="col-6 text-end">
+                                <span class="total-badge">
+                                    {{ booking.currency or 'THB' }} {{ "{:,.2f}".format((booking.total_amount|float) if
+                                    booking.total_amount else 0) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        {% if booking.get_products() %}
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Product breakdown shows {{ booking.get_products()|length }} item(s) with detailed
+                                    pricing
+                                </small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-file-alt me-2"></i>Actions & Documents
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Actions Section -->
+                    <div class="mb-4">
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-cogs me-2"></i>Quick Actions
+                        </h6>
+                        <div class="d-flex align-items-center justify-content-center">
+                            {% if booking.status in ['quoted', 'paid', 'vouchered'] and booking.quotes %}
+                            <!-- Show View Quote button only for quoted, paid, or vouchered status -->
+                            <a href="{{ url_for('booking.generate_quote_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
+                                class="btn btn-outline-info">
+                                <i class="fas fa-eye me-2"></i>View Quote
+                            </a>
+                            {% elif booking.status in ['pending', 'confirmed'] %}
+                            <!-- For pending and confirmed status, show no buttons - clean interface -->
+                            <div class="text-muted small text-center">
+                                {% if booking.status == 'pending' %}
+                                <i class="fas fa-hourglass-half me-2"></i>Pending booking confirmation
+                                {% else %}
+                                <i class="fas fa-check-circle me-2"></i>Booking confirmed - awaiting next step
+                                {% endif %}
+                            </div>
+                            {% elif booking.status == 'draft' %}
+                            <!-- For draft status, show info message -->
+                            <div class="text-muted small">
+                                <i class="fas fa-edit me-2"></i>Complete booking details first
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Quote & Invoice Information -->
+                    <div class="border-top pt-3">
+                        <h6 class="text-secondary mb-3">
+                            <i class="fas fa-file-invoice me-2"></i>Document Numbers
+                        </h6>
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <strong class="text-muted">Quote Number:</strong>
+                                    <div>
+                                        <!-- Show quote number only for appropriate statuses -->
+                                        {% if booking.status in ['quoted', 'paid', 'vouchered'] and booking.quotes %}
+                                        {% set latest_quote = booking.quotes[-1] %}
+                                        {% if latest_quote.share_token and latest_quote.is_public %}
+                                        <!-- Use public route with direct URL -->
+                                        <a href="/quote/public/{{ latest_quote.share_token }}"
+                                            class="badge bg-success text-decoration-none"
+                                            title="Click to view quote details">
+                                            {{ latest_quote.quote_number }} <i class="fas fa-eye ms-1"></i>
+                                        </a>
+                                        {% else %}
+                                        <!-- Show quote number but disable link (no login) -->
+                                        <span class="badge bg-secondary" title="Login required to view quote details">
+                                            {{ latest_quote.quote_number }} <i class="fas fa-lock ms-1"></i>
+                                        </span>
+                                        {% endif %}
+                                        {% elif booking.status in ['pending', 'confirmed'] %}
+                                        <!-- For pending/confirmed status, show appropriate message -->
+                                        <span class="text-muted">
+                                            {% if booking.status == 'pending' %}
+                                            Pending confirmation
+                                            {% else %}
+                                            Ready for quote
+                                            {% endif %}
+                                        </span>
+                                        {% if booking.quotes %}
+                                        <!-- Debug: Show data inconsistency warning for admin -->
+                                        <small class="text-warning d-block">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Data inconsistency: Has quotes but status is {{ booking.status }}
+                                        </small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <strong class="text-muted">Bank Received:</strong>
+                                    <div>
+                                        {% if booking.bank_received %}
+                                        <span class="text-dark">{{ booking.bank_received }}</span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <strong class="text-muted">Received Date:</strong>
+                                    <div>
+                                        {% if booking.received_date %}
+                                        <span class="text-dark">{{ booking.received_date.strftime('%d/%m/%Y') if
+                                            booking.received_date.strftime else booking.received_date }}</span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <strong class="text-muted">Received Amount:</strong>
+                                    <div>
+                                        {% if booking.received_amount %}
+                                        <span class="text-dark">{{ "{:,.2f}".format(booking.received_amount) }}
+                                            THB</span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <strong class="text-muted">Product Type:</strong>
+                                    <div>
+                                        {% if booking.product_type %}
+                                        <span class="text-dark">{{ booking.product_type }}</span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <strong class="text-muted">Notes:</strong>
+                                    <div>
+                                        {% if booking.notes %}
+                                        <span class="text-dark">{{ booking.notes }}</span>
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Ninja Integration Removed -->
+
+    <!-- Status Change Actions -->
+    {% if booking.status != 'cancelled' %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>Status Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group" role="group">
+                        {% if booking.status == 'pending' %}
+                        <form method="POST" action="{{ url_for('booking.update_status', id=booking.id) }}"
+                            class="d-inline">
+                            <input type="hidden" name="status" value="confirmed">
+                            <button type="submit" class="btn btn-success me-2">
+                                <i class="fas fa-check me-2"></i>Confirm Booking
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if booking.status in ['pending', 'confirmed'] %}
+                        <form method="POST" action="{{ url_for('booking.update_status', id=booking.id) }}"
+                            class="d-inline">
+                            <input type="hidden" name="status" value="cancelled">
+                            <button type="submit" class="btn btn-danger me-2"
+                                onclick="return confirm('Are you sure you want to cancel this booking?')">
+                                <i class="fas fa-times me-2"></i>Cancel Booking
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Define confirmBooking function globally to prevent "not defined" errors
+    if (typeof window.confirmBooking === 'undefined') {
+        window.confirmBooking = function (bookingId) {
+            // Try to find and load the workflow functionality
+            return false;
+        };
+    }
+
+    // Add defensive checks for other common functions that might be called before they're loaded
+    const defineIfMissing = (funcName, fallback) => {
+        if (typeof window[funcName] === 'undefined') {
+            window[funcName] = fallback;
+        }
+    };
+
+    defineIfMissing('createQuoteWorkflow', (bookingId) => {
+        return false;
+    });
+
+    // Show alert function for notifications
+    function showAlert(message, type = 'info') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        // Insert at top of main content
+        const mainContent = document.querySelector('.container-fluid .row .col-md-9') || document.body;
+        mainContent.insertBefore(alertDiv, mainContent.firstChild);
+
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    defineIfMissing('viewQuote', (bookingId) => {
+        console.log(`[viewQuote] Starting quote fetch for booking ${bookingId}`);
+
+        // First get the quote ID for this booking, then open the quote view
+        fetch(`/api/booking/${bookingId}/quote-id`)
+            .then(response => {
+                console.log(`[viewQuote] Response status: ${response.status}`);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showAlert(`Booking ${bookingId} not found or no quote available. Please check if the booking exists and has been quoted.`, 'warning');
+                        return null;
+                    }
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.quote_id) {
+                    console.log(`[viewQuote] Opening quote ${data.quote_id}`);
+                    window.location.href = `/quote/${data.quote_id}`;
+                } else if (data === null) {
+                    // 404 case - already handled above
+                    console.log(`[viewQuote] 404 handled gracefully`);
+                } else {
+                    showAlert(`No quote found for booking ${bookingId}. Please create a quote first.`, 'warning');
+                }
+            })
+            .catch(error => {
+                console.warn(`[viewQuote] Handled error: ${error.message}`);
+                showAlert(`Unable to fetch quote for booking ${bookingId}: ${error.message}`, 'error');
+                // Don't open fallback window for 404 errors
+                if (!error.message.includes('404')) {
+                    window.location.href = '/quote/';
+                }
+            });
+        return false;
+    });
+
+    defineIfMissing('applyToInvoiceWorkflow', (bookingId) => {
+        return false;
+    });
+
+    // Auto-refresh page every 30 seconds for status updates
+    setTimeout(function () {
+        location.reload();
+    }, 30000);
+
+    // Handle collapse toggle for Admin Notes and Manager Memos
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            const adminNotesCollapse = document.getElementById('adminNotesContent');
+            const managerMemosCollapse = document.getElementById('managerMemosContent');
+
+            if (adminNotesCollapse) {
+                const adminButton = document.querySelector('[data-bs-target="#adminNotesContent"]');
+                adminNotesCollapse.addEventListener('show.bs.collapse', function () {
+                    if (adminButton) {
+                        adminButton.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Hide';
+                    }
+                });
+                adminNotesCollapse.addEventListener('hide.bs.collapse', function () {
+                    if (adminButton) {
+                        adminButton.innerHTML = '<i class="fas fa-eye me-1"></i>Show';
+                    }
+                });
+            }
+
+            if (managerMemosCollapse) {
+                const managerButton = document.querySelector('[data-bs-target="#managerMemosContent"]');
+                managerMemosCollapse.addEventListener('show.bs.collapse', function () {
+                    if (managerButton) {
+                        managerButton.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Hide';
+                    }
+                });
+                managerMemosCollapse.addEventListener('hide.bs.collapse', function () {
+                    if (managerButton) {
+                        managerButton.innerHTML = '<i class="fas fa-eye me-1"></i>Show';
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error initializing collapse handlers:', error);
+        }
+    });
+
+    // Share Functions (defined globally outside DOMContentLoaded)
+    window.shareToLineOA = function (bookingId) {
+        try {
+            // ดึง Service Proposal PNG URL จาก API
+            fetch(`/api/share/booking/${bookingId}/png`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const pngUrl = data.png_url;
+                        const bookingRef = data.booking_reference;
+                        const lineOAId = '{{ config.COMPANY_LINE_OA|default("@dhakulchan") }}'; // @dhakulchan
+
+                        // วิธีที่ 1: พยายามส่งข้อความพร้อม Service Proposal PNG URL ไป Line OA
+                        const message = `สวัสดีครับ ต้องการสอบถามเรื่องการจอง ${bookingRef}\nService Proposal: ${pngUrl}`;
+                        const lineUrl = `https://line.me/R/oaMessage/${lineOAId}/?${encodeURIComponent(message)}`;
+
+                        // วิธีที่ 2: Add Friend URL
+                        const addFriendUrl = `https://line.me/R/ti/p/${lineOAId}`;
+
+                        const userChoice = confirm(
+                            `📱 เลือกวิธีส่งข้อความไป Line OA:\n\n` +
+                            `✅ OK = ส่งข้อความพร้อม Service Proposal PNG (ต้องเป็น friend แล้ว)\n` +
+                            `📋 Cancel = เปิดหน้า Add Friend ก่อน`
+                        );
+
+                        if (userChoice) {
+                            window.open(lineUrl, '_blank');
+                            setTimeout(() => {
+                                showToast(`📱 หากไม่สามารถเปิด Line OA ได้\nให้เพิ่ม friend ก่อน: ${lineOAId}`, 'info');
+                            }, 1500);
+                        } else {
+                            window.open(addFriendUrl, '_blank');
+                            navigator.clipboard.writeText(message).then(() => {
+                                showToast(`📋 ข้อความคัดลอกแล้ว!\nเพิ่ม friend แล้วส่งข้อความที่คัดลอกไว้`, 'success');
+                            });
+                        }
+                    } else {
+                        showToast('❌ ไม่สามารถสร้าง Service Proposal PNG ได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('❌ เกิดข้อผิดพลาดในการสร้าง Service Proposal PNG', 'error');
+                });
+        } catch (error) {
+            console.error('Error in shareToLineOA:', error);
+            showToast('❌ เกิดข้อผิดพลาดในการแชร์ไป Line OA', 'error');
+        }
+    };
+
+    window.copyLineMessage = function (bookingId) {
+        try {
+            // ดึง secure share URL จาก API
+            fetch(`/api/share/booking/${bookingId}/url`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const secureUrl = data.secure_url;
+                        const bookingRef = data.booking_reference;
+
+                        const message = `สวัสดีครับ
+ท่านต้องการสอบถามรายการและรายละเอียด หรือการจอง ${bookingRef}
+
+📋 Service Proposal: ${secureUrl}
+
+🖼️ Download PNG: ${secureUrl}/png
+
+📄 Download PDF: ${secureUrl}/pdf
+
+
+📞 Tel: +662 2744216
+📧 Email: booking@dhakulchan.com
+📱 Line OA: @dhakulchan
+🏛️ รู้จักตระกูลเฉินฯ: https://www.dhakulchan.net/page/about-dhakulchan`;
+
+                        navigator.clipboard.writeText(message).then(() => {
+                            showToast(`📋 Secure link message copied!\n\nใช้ลิงก์ปลอดภัยส่งให้ @dhakulchan`, 'success');
+                        }).catch(() => {
+                            // Fallback
+                            const textArea = document.createElement('textarea');
+                            textArea.value = message;
+                            document.body.appendChild(textArea);
+                            textArea.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(textArea);
+                            showToast(`📋 Secure link message copied!`, 'success');
+                        });
+                    } else {
+                        showToast('❌ ไม่สามารถสร้าง Secure Share URL ได้', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('❌ เกิดข้อผิดพลาดในการสร้าง Service Proposal PNG', 'error');
+                });
+        } catch (error) {
+            console.error('Error in copyLineMessage:', error);
+            showToast('❌ เกิดข้อผิดพลาดในการคัดลอกข้อความ', 'error');
+        }
+    };
+
+    window.sharePublic = async function (bookingId, event) {
+        let button = null;
+        let originalText = 'Share Public Message';
+
+        try {
+            // Get button element and show loading state
+            if (event && event.target) {
+                button = event.target;
+            } else {
+                // Fallback to find button by onclick attribute
+                button = document.querySelector(`[onclick*="sharePublic('${bookingId}')"]`);
+            }
+
+            originalText = button ? button.textContent : 'Share Public Message';
+
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>สร้างลิงก์แชร์...';
+                button.disabled = true;
+            }
+
+            // Show loading toast
+            showToast('🔄 กำลังสร้างลิงก์แชร์ที่ปลอดภัย...', 'info');
+
+            // Get secure token-based URL (30-day expiration)
+            const response = await fetch(`/api/share/booking/${bookingId}/url`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                const secureUrl = data.secure_url || data.share_url;
+                const bookingRef = data.booking_reference;
+                const expiryDays = data.expires_in_days || 30;
+
+                // Create comprehensive share message
+                const shareMessage = `สวัสดีครับ
+ท่านต้องการสอบถามรายการและรายละเอียด หรือการจอง ${bookingRef}
+
+📋 Service Proposal: ${secureUrl}
+
+🖼️ Download PNG: ${secureUrl}/png
+
+📄 Download PDF: ${secureUrl}/pdf
+
+
+📞 Tel: +662 2744216
+📧 Email: booking@dhakulchan.com
+📱 Line OA: @dhakulchan
+🏛️ รู้จักตระกูลเฉินฯ: https://www.dhakulchan.net/page/about-dhakulchan`;
+
+                // Store for modal sharing
+                window.currentShareMessage = shareMessage;
+                window.currentShareUrl = secureUrl;
+
+                // Detect platform and use appropriate sharing method
+                const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+                // Try native sharing first on mobile
+                if (navigator.share && isMobile) {
+                    try {
+                        await navigator.share({
+                            title: `Service Proposal - ${bookingRef}`,
+                            text: shareMessage,
+                            url: secureUrl
+                        });
+                        showToast('📤 แชร์ Service Proposal เรียบร้อยแล้ว!', 'success');
+                        return;
+                    } catch (shareError) {
+                        console.log('Native share cancelled or failed:', shareError);
+                    }
+                }
+
+                // Show enhanced platform selection dialog
+                showMultiPlatformShareDialog(shareMessage, secureUrl, bookingRef);
+
+            } else {
+                throw new Error(data.message || 'ไม่สามารถสร้างลิงก์แชร์ได้');
+            }
+
+        } catch (error) {
+            console.error('Share error:', error);
+            showToast(`❌ เกิดข้อผิดพลาด: ${error.message}`, 'error');
+        } finally {
+            // Restore button state
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+    };
+
+    window.showToast = function (message, type = 'info') {
+        // Create toast element
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+
+        // Add to toast container or create one
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '1055';
+            document.body.appendChild(toastContainer);
+        }
+
+        // Add toast
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        const toastElement = toastContainer.lastElementChild;
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+
+        // Remove after shown
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    };
+
+    // Helper function for secure link fallback
+    window.copySecureLinkFallback = function (message, secureUrl) {
+        navigator.clipboard.writeText(message).then(() => {
+            const userChoice = confirm(
+                `📋 Secure link message copied!\n\n` +
+                `เลือกแพลตฟอร์มที่ต้องการแชร์:\n\n` +
+                `✅ OK = เปิด WhatsApp\n` +
+                `🌐 Cancel = เปิด Share Page`
+            );
+
+            if (userChoice) {
+                // เปิด WhatsApp
+                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+                showToast('📱 WhatsApp opened with secure link!', 'info');
+            } else {
+                // เปิด Share Page
+                window.open(secureUrl, '_blank');
+                showToast('🌐 Secure share page opened!', 'info');
+            }
+        }).catch(() => {
+            // Manual copy fallback
+            const textArea = document.createElement('textarea');
+            textArea.value = message;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            window.open(secureUrl, '_blank');
+            showToast('📋 Secure link copied and page opened!', 'success');
+        });
+    };
+
+    // Invoice sync functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const syncButtons = document.querySelectorAll('.sync-invoice-btn');
+
+        syncButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const bookingId = this.getAttribute('data-booking-id');
+                const originalContent = this.innerHTML;
+
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Syncing...';
+                this.disabled = true;
+
+                // Make AJAX request
+                fetch(`/booking/${bookingId}/sync-invoice-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showToast('Success', data.message, 'success');
+                            // Reload page to show updated status
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            showToast('Error', data.message || 'Failed to sync invoice status', 'error');
+                            // Restore button
+                            this.innerHTML = originalContent;
+                            this.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error syncing invoice:', error);
+                        showToast('Error', 'Failed to sync invoice status', 'error');
+                        // Restore button
+                        this.innerHTML = originalContent;
+                        this.disabled = false;
+                    });
+            });
+        });
+
+        // Workflow functionality (Create Quote, Apply to Invoice, etc.) is handled by the workflow_progress.html component
+    });
+</script>
+
+<!-- Mark as Paid Modal -->
+<div class="modal fade" id="markPaidModal" tabindex="-1" aria-labelledby="markPaidModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="markPaidModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Mark Invoice as Paid
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form id="markPaidForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Admin Only:</strong> This action will mark the invoice as paid and enable voucher
+                        creation.
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="quoteNumberEdit" class="form-label">Quote Number:</label>
+                            <input type="text" class="form-control" id="quoteNumberEdit" name="quote_number"
+                                placeholder="QT0344997">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="invoiceNumberEdit" class="form-label">Invoice Number:</label>
+                            <input type="text" class="form-control" id="invoiceNumberEdit" name="invoice_number"
+                                placeholder="AR0388592">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="invoiceStatusEdit" class="form-label">Invoice Status:</label>
+                        <select class="form-control" id="invoiceStatusEdit" name="invoice_status">
+                            <option value="unknown">UNKNOWN</option>
+                            <option value="draft">PENDING</option>
+                            <option value="sent">SENT</option>
+                            <option value="viewed">VIEWED</option>
+                            <option value="approved">APPROVED</option>
+                            <option value="partial">PARTIAL</option>
+                            <option value="paid">PAID</option>
+                            <option value="cancelled">CANCELLED</option>
+                            <option value="reversed">REVERSED</option>
+                            <option value="overdue">OVERDUE</option>
+                            <option value="pending">PENDING</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="payment_password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Admin Password: <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" class="form-control" id="payment_password" name="payment_password"
+                            placeholder="Enter admin password" required>
+                        <small class="form-text text-muted">Contact system administrator for password</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i>Mark as Paid
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Paid Status Modal -->
+<div class="modal fade" id="confirmPaidModal" tabindex="-1" aria-labelledby="confirmPaidModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="confirmPaidModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Confirm Payment & Enable Voucher Creation
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <form id="confirmPaidForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Confirm Payment:</strong>
+                        This will confirm the payment status as "PAID" and enable Tour Voucher creation. You can also
+                        update invoice information if needed.
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="confirmQuoteNumberEdit" class="form-label">Quote Number:</label>
+                            <input type="text" class="form-control" id="confirmQuoteNumberEdit" name="quote_number"
+                                placeholder="QT0344997">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="confirmInvoiceNumberEdit" class="form-label">Invoice Number:</label>
+                            <input type="text" class="form-control" id="confirmInvoiceNumberEdit" name="invoice_number"
+                                placeholder="AR0388592">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirmStatusEdit" class="form-label">Invoice Status:</label>
+                        <select class="form-select" id="confirmStatusEdit" name="invoice_status">
+                            <option value="paid" selected>Paid</option>
+                            <option value="partial">Partial</option>
+                            <option value="approved">Approved</option>
+                            <option value="sent">Sent</option>
+                            <option value="viewed">Viewed</option>
+                            <option value="pending">Pending</option>
+                            <option value="draft">Pending</option>
+                            <option value="unknown">Unknown</option>
+                        </select>
+                        <small class="form-text text-muted">Confirm as "Paid" to enable voucher creation</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirm_payment_password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Admin Password: <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" class="form-control" id="confirm_payment_password"
+                            name="payment_password" placeholder="Enter admin password" required>
+                        <small class="form-text text-muted">Contact system administrator for password</small>
+                    </div>
+
+                    <!-- Hidden field to maintain paid status -->
+                    <input type="hidden" name="maintain_paid_status" value="true">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle me-1"></i>Confirm Payment & Enable Voucher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Payment Status Modal -->
+<div class="modal fade" id="editPaymentModal" tabindex="-1" aria-labelledby="editPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="editPaymentModalLabel">
+                    <i class="fas fa-edit me-2"></i>Edit Payment Status
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editPaymentForm" method="POST">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Admin Control:</strong>
+                        Reset payment status and update invoice information. This will change status back to "Mark as
+                        Paid".
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editQuoteNumberEdit" class="form-label">Quote Number:</label>
+                            <input type="text" class="form-control" id="editQuoteNumberEdit" name="quote_number"
+                                placeholder="QT0344997">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editInvoiceNumberEdit" class="form-label">Invoice Number:</label>
+                            <input type="text" class="form-control" id="editInvoiceNumberEdit" name="invoice_number"
+                                placeholder="AR0388592">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="editStatusEdit" class="form-label">New Invoice Status:</label>
+                        <select class="form-select" id="editStatusEdit" name="invoice_status">
+                            <option value="unknown">Unknown</option>
+                            <option value="draft">Pending</option>
+                            <option value="sent">Sent</option>
+                            <option value="viewed">Viewed</option>
+                            <option value="approved">Approved</option>
+                            <option value="partial">Partial</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="reversed">Reversed</option>
+                            <option value="overdue">Overdue</option>
+                            <option value="pending">Pending</option>
+                        </select>
+                        <small class="form-text text-muted">Select the status to reset to (defaults to
+                            "Unknown")</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="edit_payment_password" class="form-label">
+                            <i class="fas fa-lock me-1"></i>Admin Password: <span class="text-danger">*</span>
+                        </label>
+                        <input type="password" class="form-control" id="edit_payment_password" name="payment_password"
+                            placeholder="Enter admin password" required>
+                        <small class="form-text text-muted">Contact system administrator for password</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-undo me-1"></i>Reset Payment Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle Mark as Paid Modal
+    const markPaidModal = document.getElementById('markPaidModal');
+    if (markPaidModal) {
+        markPaidModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const bookingId = button.getAttribute('data-booking-id');
+            const invoiceNumber = button.getAttribute('data-invoice-number');
+            const quoteNumber = button.getAttribute('data-quote-number');
+            const invoiceStatus = button.getAttribute('data-invoice-status');
+
+            const form = document.getElementById('markPaidForm');
+            const invoiceEdit = document.getElementById('invoiceNumberEdit');
+            const quoteEdit = document.getElementById('quoteNumberEdit');
+            const statusEdit = document.getElementById('invoiceStatusEdit');
+
+            form.action = `/booking/${bookingId}/mark-paid`;
+            invoiceEdit.value = invoiceNumber || '';
+            quoteEdit.value = quoteNumber || '';
+            statusEdit.value = invoiceStatus || 'unknown';
+        });
+
+        // Clear fields when modal is hidden
+        markPaidModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('payment_password').value = '';
+            document.getElementById('invoiceNumberEdit').value = '';
+            document.getElementById('quoteNumberEdit').value = '';
+            document.getElementById('invoiceStatusEdit').value = 'unknown';
+        });
+    }
+
+    // Handle Confirm Paid Status Modal
+    const confirmPaidModal = document.getElementById('confirmPaidModal');
+    if (confirmPaidModal) {
+        confirmPaidModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const bookingId = button.getAttribute('data-booking-id');
+            const invoiceNumber = button.getAttribute('data-invoice-number');
+            const quoteNumber = button.getAttribute('data-quote-number');
+            const invoiceStatus = button.getAttribute('data-invoice-status');
+
+            const form = document.getElementById('confirmPaidForm');
+            const invoiceEdit = document.getElementById('confirmInvoiceNumberEdit');
+            const quoteEdit = document.getElementById('confirmQuoteNumberEdit');
+            const statusEdit = document.getElementById('confirmStatusEdit');
+
+            form.action = `/booking/${bookingId}/mark-paid`;
+            invoiceEdit.value = invoiceNumber || '';
+            quoteEdit.value = quoteNumber || '';
+            // Default to 'paid' for confirmation, but show current status if it's already paid-related
+            statusEdit.value = (invoiceStatus === 'paid' || invoiceStatus === 'partial') ? invoiceStatus : 'paid';
+        });
+
+        // Clear fields when modal is hidden
+        confirmPaidModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('confirm_payment_password').value = '';
+            document.getElementById('confirmInvoiceNumberEdit').value = '';
+            document.getElementById('confirmQuoteNumberEdit').value = '';
+            document.getElementById('confirmStatusEdit').value = 'paid';
+        });
+    }
+
+    // Handle Edit Payment Status Modal
+    const editPaymentModal = document.getElementById('editPaymentModal');
+    if (editPaymentModal) {
+        editPaymentModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const bookingId = button.getAttribute('data-booking-id');
+            const invoiceNumber = button.getAttribute('data-invoice-number');
+            const quoteNumber = button.getAttribute('data-quote-number');
+            const invoiceStatus = button.getAttribute('data-invoice-status');
+
+            const form = document.getElementById('editPaymentForm');
+            const invoiceEdit = document.getElementById('editInvoiceNumberEdit');
+            const quoteEdit = document.getElementById('editQuoteNumberEdit');
+            const statusEdit = document.getElementById('editStatusEdit');
+
+            form.action = `/booking/${bookingId}/unmark-paid`;
+            invoiceEdit.value = invoiceNumber || '';
+            quoteEdit.value = quoteNumber || '';
+            statusEdit.value = invoiceStatus || 'unknown';
+        });
+
+        // Clear fields when modal is hidden
+        editPaymentModal.addEventListener('hidden.bs.modal', function () {
+            document.getElementById('edit_payment_password').value = '';
+            document.getElementById('editInvoiceNumberEdit').value = '';
+            document.getElementById('editQuoteNumberEdit').value = '';
+            document.getElementById('editStatusEdit').value = 'unknown';
+        });
+    }
+
+    // ========================================
+    // Multi-Platform Share Dialog Functions
+    // ========================================
+
+    function showMultiPlatformShareDialog(message, shareUrl, bookingRef) {
+        // First copy to clipboard
+        navigator.clipboard.writeText(message).then(() => {
+            showToast('📋 ข้อความถูกคัดลอกไปยัง clipboard แล้ว!', 'success');
+        }).catch(() => {
+            console.log('Clipboard copy failed, will show fallback');
+        });
+
+        // Create modal dialog with platform options
+        const modalHtml = `
+            <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title" id="shareModalLabel">
+                                <i class="fas fa-share-alt me-2"></i>
+                                เลือกแพลตฟอร์มที่ต้องการแชร์
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted mb-3">
+                                <i class="fas fa-check-circle text-success me-2"></i>
+                                ข้อความได้ถูกคัดลอกไปยัง clipboard แล้ว
+                            </p>
+                            
+                            <div class="row g-2">
+                                <!-- WhatsApp -->
+                                <div class="col-6">
+                                    <button class="btn btn-success w-100 share-platform-btn" 
+                                            onclick="openPlatform('whatsapp', '${encodeURIComponent(message)}', '${shareUrl}')">
+                                        <i class="fab fa-whatsapp fs-4 mb-1"></i><br>
+                                        <small>WhatsApp</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Line -->
+                                <div class="col-6">
+                                    <button class="btn btn-success w-100 share-platform-btn" 
+                                            onclick="openPlatform('line', '${encodeURIComponent(message)}', '${shareUrl}')">
+                                        <i class="fab fa-line fs-4 mb-1"></i><br>
+                                        <small>Line</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Facebook -->
+                                <div class="col-6">
+                                    <button class="btn btn-primary w-100 share-platform-btn" 
+                                            onclick="openPlatform('facebook', '${encodeURIComponent(message)}', '${shareUrl}')">
+                                        <i class="fab fa-facebook fs-4 mb-1"></i><br>
+                                        <small>Facebook</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Email -->
+                                <div class="col-6">
+                                    <button class="btn btn-info w-100 share-platform-btn" 
+                                            onclick="openPlatform('email', '${encodeURIComponent(message)}', '${shareUrl}', '${bookingRef}')">
+                                        <i class="fas fa-envelope fs-4 mb-1"></i><br>
+                                        <small>Email</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Telegram -->
+                                <div class="col-6">
+                                    <button class="btn btn-info w-100 share-platform-btn" 
+                                            onclick="openPlatform('telegram', '${encodeURIComponent(message)}', '${shareUrl}')">
+                                        <i class="fab fa-telegram fs-4 mb-1"></i><br>
+                                        <small>Telegram</small>
+                                    </button>
+                                </div>
+                                
+                                <!-- Twitter -->
+                                <div class="col-6">
+                                    <button class="btn btn-dark w-100 share-platform-btn" 
+                                            onclick="openPlatform('twitter', '${encodeURIComponent(message)}', '${shareUrl}')">
+                                        <i class="fab fa-twitter fs-4 mb-1"></i><br>
+                                        <small>Twitter</small>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-3">
+                            
+                            <!-- Direct Actions -->
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100" 
+                                            onclick="copyToClipboard('${message}')">
+                                        <i class="fas fa-copy me-2"></i>Copy Message
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-secondary w-100" 
+                                            onclick="openShareUrl('${shareUrl}')">
+                                        <i class="fas fa-external-link-alt me-2"></i>Open Page
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <small class="text-muted w-100 text-center">
+                                <i class="fas fa-shield-alt me-1"></i>
+                                ลิงก์ปลอดภัย หมดอายุใน 30 วัน
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('shareModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('shareModal'));
+        modal.show();
+
+        // Clean up when modal is hidden
+        document.getElementById('shareModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+    }
+
+    // Platform-specific sharing functions
+    function openPlatform(platform, encodedMessage, shareUrl, bookingRef) {
+        let url;
+        const message = decodeURIComponent(encodedMessage);
+
+        switch (platform) {
+            case 'whatsapp':
+                url = `https://wa.me/?text=${encodedMessage}`;
+                break;
+
+            case 'line':
+                url = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodedMessage}`;
+                break;
+
+            case 'facebook':
+                url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodedMessage}`;
+                break;
+
+            case 'twitter':
+                url = `https://twitter.com/intent/tweet?text=${encodedMessage}`;
+                break;
+
+            case 'telegram':
+                url = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodedMessage}`;
+                break;
+
+            case 'email':
+                const subject = `Service Proposal - Booking ${bookingRef}`;
+                url = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodedMessage}`;
+                break;
+
+            default:
+                url = shareUrl;
+        }
+
+        // Open in new window/tab
+        window.open(url, '_blank', 'width=600,height=400');
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('shareModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast(`📱 เปิด ${platform.charAt(0).toUpperCase() + platform.slice(1)} แล้ว`, 'info');
+    }
+
+    // Helper functions
+    function copyToClipboard() {
+        const message = window.currentShareMessage || window.currentShareUrl;
+        if (!message) {
+            showToast('❌ ไม่มีข้อมูลที่จะคัดลอก', 'error');
+            return;
+        }
+
+        navigator.clipboard.writeText(message).then(() => {
+            showToast('📋 คัดลอกข้อความเรียบร้อยแล้ว!', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = message;
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            try {
+                document.execCommand('copy');
+                showToast('📋 คัดลอกข้อความเรียบร้อยแล้ว!', 'success');
+            } catch (err) {
+                showToast('❌ ไม่สามารถคัดลอกได้', 'error');
+            }
+
+            document.body.removeChild(textArea);
+        });
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('shareModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
+
+    function openShareUrl(shareUrl) {
+        window.open(shareUrl, '_blank');
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('shareModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        showToast('🌐 เปิดหน้าแชร์แล้ว', 'info');
+    }
+</script>
+
+<!-- Multi-Platform Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="shareModalLabel">
+                    <i class="fas fa-share-alt me-2"></i>Share Booking Information
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <p class="text-muted mb-3">Choose a platform to share booking information</p>
+                </div>
+
+                <!-- Native Share Option (Mobile) -->
+                <div id="nativeShareOption" class="text-center mb-3" style="display: none;">
+                    <button type="button" class="btn btn-primary btn-lg w-100"
+                        onclick="window.currentShareFunction && window.currentShareFunction()">
+                        <i class="fas fa-mobile-alt me-2"></i>Share via Mobile
+                    </button>
+                    <hr class="my-3">
+                    <small class="text-muted">Or choose a specific platform:</small>
+                </div>
+
+                <!-- Platform Grid -->
+                <div class="row g-3 justify-content-center">
+                    <!-- WhatsApp -->
+                    <div class="col-4">
+                        <button type="button" class="btn btn-success share-platform-btn w-100 py-3"
+                            onclick="openPlatform('whatsapp')" title="Share via WhatsApp">
+                            <i class="fab fa-whatsapp fa-2x d-block mb-1"></i>
+                            <small>WhatsApp</small>
+                        </button>
+                    </div>
+
+                    <!-- Line -->
+                    <div class="col-4">
+                        <button type="button" class="btn btn-success share-platform-btn w-100 py-3"
+                            onclick="openPlatform('line')" title="Share via Line">
+                            <i class="fab fa-line fa-2x d-block mb-1"></i>
+                            <small>Line</small>
+                        </button>
+                    </div>
+
+                    <!-- Facebook -->
+                    <div class="col-4">
+                        <button type="button" class="btn btn-primary share-platform-btn w-100 py-3"
+                            onclick="openPlatform('facebook')" title="Share via Facebook">
+                            <i class="fab fa-facebook-f fa-2x d-block mb-1"></i>
+                            <small>Facebook</small>
+                        </button>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-4">
+                        <button type="button" class="btn btn-info share-platform-btn w-100 py-3"
+                            onclick="openPlatform('email')" title="Share via Email">
+                            <i class="fas fa-envelope fa-2x d-block mb-1"></i>
+                            <small>Email</small>
+                        </button>
+                    </div>
+
+                    <!-- Telegram -->
+                    <div class="col-4">
+                        <button type="button" class="btn btn-info share-platform-btn w-100 py-3"
+                            onclick="openPlatform('telegram')" title="Share via Telegram">
+                            <i class="fab fa-telegram-plane fa-2x d-block mb-1"></i>
+                            <small>Telegram</small>
+                        </button>
+                    </div>
+
+                    <!-- Twitter -->
+                    <div class="col-4">
+                        <button type="button" class="btn btn-dark share-platform-btn w-100 py-3"
+                            onclick="openPlatform('twitter')" title="Share via Twitter">
+                            <i class="fab fa-twitter fa-2x d-block mb-1"></i>
+                            <small>Twitter</small>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Copy Link Section -->
+                <hr class="my-4">
+                <div class="text-center">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="copyToClipboard()">
+                        <i class="fas fa-copy me-2"></i>Copy Link to Clipboard
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <small class="text-muted w-100 text-center">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    Secure link expires in 30 days
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quote Share Functions -->
+<script>
+    /**
+     * Share Quote to Line OA
+     */
+    function shareToLineOA(bookingId, type = 'quote') {
+        console.log(`Sharing ${type} to Line OA for booking ${bookingId}`);
+
+        // Create Line OA message
+        const message = type === 'quote' ?
+            `📋 Quote Available for Booking #${bookingId}\n\nClick to view: ${window.location.origin}/booking/view/${bookingId}` :
+            `📋 Booking #${bookingId} Information\n\nClick to view: ${window.location.origin}/booking/view/${bookingId}`;
+
+        // Line OA share URL
+        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
+
+        // Open Line share
+        window.open(lineUrl, '_blank');
+    }
+
+    /**
+     * Copy Line Message to Clipboard
+     */
+    function copyLineMessage(bookingId, type = 'quote') {
+        const message = type === 'quote' ?
+            `📋 Quote Available for Booking #${bookingId}\n\nClick to view: ${window.location.origin}/booking/view/${bookingId}` :
+            `📋 Booking #${bookingId} Information\n\nClick to view: ${window.location.origin}/booking/view/${bookingId}`;
+
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(message).then(() => {
+                alert('✅ Line message copied to clipboard!');
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                fallbackCopyTextToClipboard(message);
+            });
+        } else {
+            fallbackCopyTextToClipboard(message);
+        }
+    }
+
+    /**
+     * Enhanced Share to Social Media with Modern Design
+     */
+    function shareToSocialMedia(bookingId, type = 'quote') {
+        const url = `${window.location.origin}/booking/view/${bookingId}`;
+        const text = type === 'quote' ?
+            `📋 Quote Available for Booking #${bookingId}\n\nClick to view: ${url}` :
+            `📋 Booking #${bookingId} Information\n\nClick to view: ${url}`;
+
+        // Show enhanced share modal
+        showEnhancedShareModal(bookingId, type, url, text);
+    }
+
+    /**
+     * Enhanced Share Modal with Multiple Platforms
+     */
+    function showEnhancedShareModal(bookingId, type, url, message) {
+        // Create enhanced modal HTML matching the design in the image
+        const modalHtml = `
+            <div class="modal fade" id="enhancedShareModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <!-- Header with close button -->
+                        <div class="modal-header border-0 position-relative" style="background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">
+                            <div class="d-flex align-items-center w-100">
+                                <i class="fas fa-arrow-left me-3" style="font-size: 1.2rem; cursor: pointer;" 
+                                   onclick="document.getElementById('enhancedShareModal').querySelector('.btn-close').click()"></i>
+                                <h5 class="modal-title mb-0 flex-grow-1">เลือกแพลตฟอร์มที่ต้องการแชร์</h5>
+                                <button type="button" class="btn-close btn-close-white border-0 bg-transparent" 
+                                        data-bs-dismiss="modal" aria-label="Close">
+                                    <i class="fas fa-times" style="font-size: 1.2rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Success message -->
+                        <div class="px-4 py-2 bg-light">
+                            <div class="text-success small">
+                                <i class="fas fa-check-circle me-2"></i>ข้อความได้ถูกเตรียมคลิปบอร์ด แล้ว
+                            </div>
+                        </div>
+
+                        <!-- Platform options -->
+                        <div class="modal-body p-4">
+                            <!-- Row 1: WhatsApp & Line -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                            style="background-color: #25D366; color: white; min-height: 80px;"
+                                            onclick="shareToWhatsApp('${message}')">
+                                        <i class="fab fa-whatsapp" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                        <span style="font-size: 1rem; font-weight: 500;">WhatsApp</span>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                            style="background-color: #00B900; color: white; min-height: 80px;"
+                                            onclick="shareToLine('${message}')">
+                                        <i class="fab fa-line" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                        <span style="font-size: 1rem; font-weight: 500;">Line</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Facebook & Email -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-6">
+                                    <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                            style="background-color: #1877F2; color: white; min-height: 80px;"
+                                            onclick="shareToFacebook('${url}')">
+                                        <i class="fab fa-facebook-f" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                        <span style="font-size: 1rem; font-weight: 500;">Facebook</span>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                            style="background-color: #00BCD4; color: white; min-height: 80px;"
+                                            onclick="shareToEmail('${message}', '${url}')">
+                                        <i class="fas fa-envelope" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                        <span style="font-size: 1rem; font-weight: 500;">Email</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Telegram & Twitter -->
+                            <div class="row g-3 mb-4">
+                                <div class="col-6">
+                                    <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                            style="background-color: #0088CC; color: white; min-height: 80px;"
+                                            onclick="shareToTelegram('${message}')">
+                                        <i class="fab fa-telegram-plane" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                        <span style="font-size: 1rem; font-weight: 500;">Telegram</span>
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn w-100 h-100 d-flex flex-column align-items-center justify-content-center py-4 border-0 rounded-3" 
+                                            style="background-color: #1DA1F2; color: white; min-height: 80px;"
+                                            onclick="shareToTwitter('${message}', '${url}')">
+                                        <i class="fab fa-twitter" style="font-size: 2.5rem; margin-bottom: 8px;"></i>
+                                        <span style="font-size: 1rem; font-weight: 500;">Twitter</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Action buttons -->
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button class="btn btn-outline-primary w-100 py-3 rounded-3" 
+                                            onclick="copyMessageToClipboard('${message}')">
+                                        <i class="fas fa-copy me-2"></i>Copy Message
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button class="btn btn-outline-secondary w-100 py-3 rounded-3" 
+                                            onclick="openPublicUrl('${url}')">
+                                        <i class="fas fa-external-link-alt me-2"></i>Open Page
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="modal-footer border-0 justify-content-center bg-light">
+                            <small class="text-muted d-flex align-items-center">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                ลิงค์ปลอดภัย หมดอายุใน 30 วัน
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Remove existing modal if any
+        const existingModal = document.getElementById('enhancedShareModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Add modal to page
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHtml;
+        document.body.appendChild(modalContainer);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('enhancedShareModal'));
+        modal.show();
+
+        // Auto-copy message to clipboard when modal opens
+        copyMessageToClipboard(message, false);
+
+        // Clean up when modal is hidden
+        document.getElementById('enhancedShareModal').addEventListener('hidden.bs.modal', () => {
+            modalContainer.remove();
+        });
+    }
+
+    // Platform-specific share functions
+    function shareToWhatsApp(message) {
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    function shareToLine(message) {
+        const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
+        window.open(lineUrl, '_blank');
+    }
+
+    function shareToFacebook(url) {
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        window.open(facebookUrl, '_blank');
+    }
+
+    function shareToEmail(message, url) {
+        const subject = "Booking Information Shared";
+        const body = `${message}\n\nDirect link: ${url}`;
+        const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = emailUrl;
+    }
+
+    function shareToTelegram(message) {
+        const telegramUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+        window.open(telegramUrl, '_blank');
+    }
+
+    function shareToTwitter(message, url) {
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+        window.open(twitterUrl, '_blank');
+    }
+
+    function copyMessageToClipboard(message, showAlert = true) {
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(message).then(() => {
+                if (showAlert) {
+                    // Show success feedback
+                    const toast = document.createElement('div');
+                    toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed';
+                    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999;';
+                    toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="fas fa-check-circle me-2"></i>Message copied to clipboard!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                }
+            }).catch(err => {
+                fallbackCopyTextToClipboard(message);
+            });
+        } else {
+            fallbackCopyTextToClipboard(message);
+        }
+    }
+
+    function openPublicUrl(url) {
+        window.open(url + '?share=1', '_blank');
+    }
+
+    /**
+     * Open Share Page (Public Share Page) with 30-day secure token
+     */
+    async function openSharePage(bookingId, type = 'quote') {
+        const button = event ? event.target : document.querySelector(`[onclick*="openSharePage('${bookingId}')"]`);
+        const originalText = button ? button.textContent : 'Open Share Page';
+
+        try {
+            // Show loading state
+            if (button) {
+                button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creating secure link...';
+                button.disabled = true;
+            }
+
+            // Get secure token-based URL (30-day expiration)
+            const response = await fetch(`/api/share/booking/${bookingId}/url`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Open secure public share page in new tab
+                window.open(data.secure_url, '_blank');
+
+                // Show success notification
+                showToast('🔗 Secure share page opened! Link expires in 30 days', 'success');
+            } else {
+                throw new Error(data.error || 'Failed to create secure share link');
+            }
+
+        } catch (error) {
+            console.error('Error creating secure share link:', error);
+            showToast(`❌ Error: ${error.message}`, 'error');
+        } finally {
+            // Restore button state
+            if (button) {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+    }
+
+    /**
+     * Fallback function for copying text
+     */
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) {
+                alert('✅ Message copied to clipboard!');
+            } else {
+                alert('❌ Failed to copy message');
+            }
+        } catch (err) {
+            console.error('Fallback: Oops, unable to copy', err);
+            alert('❌ Failed to copy message');
+        }
+
+        document.body.removeChild(textArea);
+    }
+</script>
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelBookingModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Cancel Booking
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-warning me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone.
+                </div>
+                <p>Are you sure you want to cancel booking <strong>{{ booking.booking_reference }}</strong>?</p>
+                <p class="text-muted mb-0">
+                    Customer: <strong>{{ booking.customer.first_name }} {{ booking.customer.last_name }}</strong><br>
+                    Current Status: <strong>{{ booking.status|title }}</strong>
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Keep Booking
+                </button>
+                <form method="POST" action="{{ url_for('booking.cancel_booking', booking_id=booking.id) }}"
+                    style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-check me-2"></i>Yes, Cancel Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,437 @@
+{% extends "base.html" %}
+
+{% block title %}รายการใบบัตร - ระบบจัดการใบบัตรทัวร์{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-ticket-alt me-2 text-primary"></i>รายการใบบัตร
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary">
+            <i class="fas fa-calendar-alt me-2"></i>ดูการจอง
+        </a>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-filter me-2"></i>กรองข้อมูล
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="status" class="form-label">สถานะ</label>
+                        <select class="form-select" id="status" name="status">
+                            <option value="">ทั้งหมด</option>
+                            <option value="active" {% if request.args.get('status')=='active' %}selected{% endif %}>
+                                ใช้งานได้</option>
+                            <option value="used" {% if request.args.get('status')=='used' %}selected{% endif %}>ใช้แล้ว
+                            </option>
+                            <option value="expired" {% if request.args.get('status')=='expired' %}selected{% endif %}>
+                                หมดอายุ</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="voucher_type" class="form-label">ประเภทใบบัตร</label>
+                        <select class="form-select" id="voucher_type" name="voucher_type">
+                            <option value="">ทั้งหมด</option>
+                            <option value="tour" {% if request.args.get('voucher_type')=='tour' %}selected{% endif %}>
+                                ใบบัตรทัวร์</option>
+                            <option value="meal" {% if request.args.get('voucher_type')=='meal' %}selected{% endif %}>
+                                ใบบัตรอาหาร</option>
+                            <option value="transport" {% if request.args.get('voucher_type')=='transport' %}selected{%
+                                endif %}>ใบบัตรขนส่ง</option>
+                            <option value="accommodation" {% if request.args.get('voucher_type')=='accommodation'
+                                %}selected{% endif %}>ใบบัตรที่พัก</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="date_from" class="form-label">วันที่เริ่มต้น</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from"
+                            value="{{ request.args.get('date_from', '') }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">ค้นหา</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search" name="search"
+                                placeholder="หมายเลขใบบัตร, ชื่อลูกค้า..." value="{{ request.args.get('search', '') }}">
+                            <button class="btn btn-outline-secondary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">ใช้งานได้</h5>
+                        <h2 class="mb-0 thai-number">{{ stats.active or 0 }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">ใช้แล้ว</h5>
+                        <h2 class="mb-0 thai-number">{{ stats.used or 0 }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-ticket-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">หมดอายุ</h5>
+                        <h2 class="mb-0 thai-number">{{ stats.expired or 0 }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h5 class="card-title">รวมทั้งหมด</h5>
+                        <h2 class="mb-0 thai-number">{{ vouchers|length if vouchers else 0 }}</h2>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vouchers Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list me-2"></i>รายการใบบัตร
+            <span class="badge bg-secondary ms-2 thai-number">{{ vouchers|length if vouchers else 0 }}</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if vouchers %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>หมายเลขใบบัตร</th>
+                        <th>การจอง</th>
+                        <th>ลูกค้า</th>
+                        <th>ประเภท</th>
+                        <th>สถานะ</th>
+                        <th>วันที่สร้าง</th>
+                        <th>วันหมดอายุ</th>
+                        <th>การดำเนินการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voucher in vouchers %}
+                    <tr>
+                        <td>
+                            <span class="fw-bold text-primary">#{{ voucher.voucher_number }}</span>
+                            {% if voucher.qr_code_path %}
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-qrcode me-1"></i>มี QR Code
+                            </small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('booking.view', id=voucher.id) }}" class="text-decoration-none">
+                                <span class="fw-bold">#{{ voucher.booking_reference }}</span>
+                            </a>
+                            <br>
+                            <small class="text-muted">{{ voucher.booking_type }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('voucher.view', id=voucher.id) }}" class="btn btn-outline-primary"
+                                    title="ดูใบบัตร"><i class="fas fa-eye"></i></a>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>{{ voucher.customer.name }}</strong>
+                                <br>
+                                <small class="text-muted">{{ voucher.customer.email }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            {% if voucher.voucher_type == 'tour' %}
+                            <span class="badge bg-primary">ใบบัตรทัวร์</span>
+                            {% elif voucher.voucher_type == 'meal' %}
+                            <span class="badge bg-warning text-dark">ใบบัตรอาหาร</span>
+                            {% elif voucher.voucher_type == 'transport' %}
+                            <span class="badge bg-info">ใบบัตรขนส่ง</span>
+                            {% elif voucher.voucher_type == 'accommodation' %}
+                            <span class="badge bg-success">ใบบัตรที่พัก</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ voucher.voucher_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if voucher.status == 'active' %}
+                            <span class="badge bg-success">ใช้งานได้</span>
+                            {% elif voucher.status == 'used' %}
+                            <span class="badge bg-secondary">ใช้แล้ว</span>
+                            {% if voucher.used_at %}
+                            <br>
+                            <small class="text-muted">
+                                ใช้เมื่อ: <span class="thai-number">{{ voucher.used_at.strftime('%d/%m/%Y') }}</span>
+                            </small>
+                            {% endif %}
+                            {% elif voucher.status == 'expired' %}
+                            <span class="badge bg-danger">หมดอายุ</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="thai-number">{{ voucher.created_at.strftime('%d/%m/%Y') }}</span>
+                            <br>
+                            <small class="text-muted">{{ voucher.created_at.strftime('%H:%M') }}</small>
+                        </td>
+                        <td>
+                            {% if voucher.valid_until %}
+                            <span class="thai-number">{{ voucher.valid_until.strftime('%d/%m/%Y') }}</span>
+                            <br>
+                            {% set days_left = (voucher.valid_until - now()).days %}
+                            {% if days_left < 0 %} <small class="text-danger">หมดอายุแล้ว</small>
+                                {% elif days_left <= 7 %} <small class="text-warning">เหลือ {{ days_left }} วัน</small>
+                                    {% else %}
+                                    <small class="text-muted">เหลือ {{ days_left }} วัน</small>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">ไม่มีกำหนด</span>
+                                    {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{{ url_for('voucher.view', id=voucher.id) }}"
+                                    class="btn btn-sm btn-outline-primary" title="ดูใบบัตร"><i
+                                        class="fas fa-eye"></i></a>
+                                <a href="{{ url_for('voucher.generate_pdf', id=voucher.id) }}"
+                                    class="btn btn-sm btn-outline-success" title="ดาวน์โหลด PDF">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% if voucher.status == 'active' %}
+                                <button type="button" class="btn btn-sm btn-outline-warning"
+                                    title="ทำเครื่องหมายใช้แล้ว" onclick="markAsUsed('{{ voucher.id }}')"><i
+                                        class="fas fa-check"></i></button>
+                                {% endif %}
+                                {% if voucher.qr_code_path %}
+                                <a href="{{ url_for('voucher.qr_code', id=voucher.id) }}"
+                                    class="btn btn-sm btn-outline-info" title="ดู QR Code">
+                                    <i class="fas fa-qrcode"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-ticket-alt fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">ไม่พบใบบัตร</h4>
+            <p class="text-muted">ยังไม่มีใบบัตรในระบบ หรือไม่มีข้อมูลที่ตรงกับเงื่อนไขการค้นหา</p>
+            <a href="{{ url_for('booking.list') }}" class="btn btn-primary">
+                <i class="fas fa-calendar-alt me-2"></i>ดูการจองเพื่อสร้างใบบัตร
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bulk Actions -->
+{% if vouchers %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>การดำเนินการแบบกลุ่ม
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="bulkActionForm">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">เลือกการดำเนินการ</label>
+                            <select class="form-select" id="bulkAction">
+                                <option value="">เลือกการดำเนินการ</option>
+                                <option value="download">ดาวน์โหลด PDF หลายไฟล์</option>
+                                <option value="mark_used">ทำเครื่องหมายใช้แล้ว</option>
+                                <option value="send_email">ส่งอีเมลใบบัตร</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">เลือกใบบัตร (ใช้ Ctrl+Click เพื่อเลือกหลายรายการ)</label>
+                            <select class="form-select" id="selectedVouchers" multiple size="3">
+                                {% for voucher in vouchers %}
+                                <option value="{{ voucher.id }}">
+                                    #{{ voucher.voucher_number }} - {{ voucher.customer.first_name }} {{
+                                    voucher.customer.last_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary w-100" onclick="executeBulkAction()">
+                                <i class="fas fa-play me-2"></i>ดำเนินการ
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+    function markAsUsed(voucherId) {
+        if (confirm('คุณต้องการทำเครื่องหมายใบบัตรนี้เป็น "ใช้แล้ว" หรือไม่?')) {
+            // Create form to submit mark as used request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/voucher/${voucherId}/mark-used`;
+
+            // Add CSRF token if available
+            const csrfToken = document.querySelector('meta[name=csrf-token]');
+            if (csrfToken) {
+                const tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = 'csrf_token';
+                tokenInput.value = csrfToken.getAttribute('content');
+                form.appendChild(tokenInput);
+            }
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    function executeBulkAction() {
+        const action = document.getElementById('bulkAction').value;
+        const selectedVouchers = Array.from(document.getElementById('selectedVouchers').selectedOptions)
+            .map(option => option.value);
+
+        if (!action) {
+            alert('กรุณาเลือกการดำเนินการ');
+            return;
+        }
+
+        if (selectedVouchers.length === 0) {
+            alert('กรุณาเลือกใบบัตรอย่างน้อย 1 ใบ');
+            return;
+        }
+
+        switch (action) {
+            case 'download':
+                downloadMultipleVouchers(selectedVouchers);
+                break;
+            case 'mark_used':
+                markMultipleAsUsed(selectedVouchers);
+                break;
+            case 'send_email':
+                sendMultipleEmails(selectedVouchers);
+                break;
+        }
+    }
+
+    function downloadMultipleVouchers(voucherIds) {
+        // Create download links for each voucher
+        voucherIds.forEach(id => {
+            const link = document.createElement('a');
+            link.href = `/voucher/${id}/download`;
+            link.target = '_blank';
+            link.click();
+        });
+    }
+
+    function markMultipleAsUsed(voucherIds) {
+        if (confirm(`คุณต้องการทำเครื่องหมายใบบัตร ${voucherIds.length} ใบเป็น "ใช้แล้ว" หรือไม่?`)) {
+            // Submit form with multiple IDs
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/voucher/bulk-mark-used';
+
+            voucherIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'voucher_ids';
+                input.value = id;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    function sendMultipleEmails(voucherIds) {
+        if (confirm(`คุณต้องการส่งอีเมลใบบัตร ${voucherIds.length} ใบให้ลูกค้าหรือไม่?`)) {
+            // Submit form with multiple IDs
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/voucher/bulk-send-email';
+
+            voucherIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'voucher_ids';
+                input.value = id;
+                form.appendChild(input);
+            });
+
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    // Auto-refresh page every 60 seconds to update status
+    setInterval(function () {
+        // Only refresh if no bulk action is being performed
+        if (!document.querySelector('.modal.show')) {
+            location.reload();
+        }
+    }, 60000);
+</script>
+{% endblock %}

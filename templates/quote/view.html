@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}{{ quote.title }} - Travel Quote{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="text-primary">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>
+                        {{ quote.title or 'Travel Quote' }}
+                    </h2>
+                    <h5 class="text-muted">Quote #{{ quote.quote_number }}</h5>
+                </div>
+                <div class="text-end">
+                    {% if quote.is_valid %}
+                    <span class="badge bg-success fs-6">
+                        <i class="fas fa-check-circle me-1"></i>Valid
+                    </span>
+                    {% else %}
+                    <span class="badge bg-danger fs-6">
+                        <i class="fas fa-times-circle me-1"></i>Expired
+                    </span>
+                    {% endif %}
+
+                    {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-outline-primary ms-2">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Booking
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row">
+        <!-- Quote Information Column -->
+        <div class="col-lg-8">
+            <!-- Quote Details Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Quote Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Quote Date:</strong><br>
+                            <span class="text-muted">{{ quote.quote_date.strftime('%B %d, %Y') if quote.quote_date else
+                                'N/A' }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Valid Until:</strong><br>
+                            <span class="text-muted {% if quote.is_expired %}text-danger{% endif %}">
+                                {{ quote.valid_until.strftime('%B %d, %Y') if quote.valid_until else 'N/A' }}
+                                {% if quote.days_until_expiry is not none %}
+                                <small>({{ quote.days_until_expiry }} days remaining)</small>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    {% if quote.description %}
+                    <hr>
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Description:</strong><br>
+                            <p class="text-muted">{{ quote.description }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            </tr>
+            <tr>
+                <td><strong>Created Date:</strong></td>
+                <td>{{ created_date.strftime('%d/%m/%Y %H:%M') if created_date else 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Valid Until:</strong></td>
+                <td>{{ valid_until.strftime('%d/%m/%Y') if valid_until else 'N/A' }}</td>
+            </tr>
+            </table>
+        </div>
+        <div class="col-md-6">
+            <h5>Booking Information</h5>
+            <table class="table table-borderless">
+                <tr>
+                    <td><strong>Booking Reference:</strong></td>
+                    <td><span class="badge bg-secondary">{{ booking.booking_reference }}</span></td>
+                </tr>
+                <tr>
+                    <td><strong>Customer:</strong></td>
+                    <td>{{ booking.customer.name if booking.customer else booking.party_name or 'N/A' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Travel Period:</strong></td>
+                    <td>
+                        {% if booking.traveling_period_start and booking.traveling_period_end %}
+                        {{ booking.traveling_period_start.strftime('%d/%m/%Y') }} - {{
+                        booking.traveling_period_end.strftime('%d/%m/%Y') }}
+                        {% elif booking.arrival_date and booking.departure_date %}
+                        {{ booking.arrival_date.strftime('%d/%m/%Y') }} - {{
+                        booking.departure_date.strftime('%d/%m/%Y') }}
+                        {% else %}
+                        N/A - N/A
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Passengers:</strong></td>
+                    <td>{{ booking.total_pax or 1 }} persons</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Quote Content -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-list me-2"></i>Quote Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Public Notes Display -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6>Quote Summary</h6>
+                        <div class="bg-light p-3 rounded">
+                            <pre class="mb-0" style="white-space: pre-wrap; font-family: inherit;">Quote for Booking ID: {{ booking.id }} 
+Reference: {{ booking.booking_reference }} 
+Travel Period: {% if booking.traveling_period_start and booking.traveling_period_end %}{{ booking.traveling_period_start.strftime('%d/%m/%Y') }} - {{ booking.traveling_period_end.strftime('%d/%m/%Y') }}{% elif booking.arrival_date and booking.departure_date %}{{ booking.arrival_date.strftime('%d/%m/%Y') }} - {{ booking.departure_date.strftime('%d/%m/%Y') }}{% else %}N/A - N/A{% endif %}
+
+Special Requests: {{ booking.special_request or 'None' }}
+Grand Total: THB {{ "%.2f"|format(total_amount) if total_amount else '0.00' }}
+----------------------------------------
+Generated automatically by Dhakul Chan Management System 1.0</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Products/Services -->
+                {% if products %}
+                <div class="row">
+                    <div class="col-12">
+                        <h6>Products & Services</h6>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product/Service</th>
+                                        <th class="text-center">Quantity</th>
+                                        <th class="text-end">Unit Price</th>
+                                        <th class="text-end">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in products %}
+                                    <tr>
+                                        <td>{{ product.get('name', 'Unknown Product') }}</td>
+                                        <td class="text-center">{{ product.get('quantity', 1) }}</td>
+                                        <td class="text-end">THB {{ "%.2f"|format(product.get('price', 0)) }}</td>
+                                        <td class="text-end">THB {{ "%.2f"|format(product.get('amount', 0)) }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="3" class="text-end">Grand Total:</th>
+                                        <th class="text-end">THB {{ "%.2f"|format(total_amount) if total_amount else
+                                            '0.00' }}</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Special Requests -->
+                {% if booking.special_request %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Special Requests</h6>
+                        <div class="bg-light p-3 rounded">
+                            {{ booking.special_request }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('booking.view', id=booking.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Booking
+                            </a>
+                            <button class="btn btn-primary" onclick="window.print()">
+                                <i class="fas fa-print me-2"></i>Print Quote
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<style>
+    /* External Link Button Styling */
+    .external-link-btn {
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .external-link-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    }
+
+    .external-link-btn .fas.fa-external-link-alt {
+        transition: transform 0.3s ease;
+    }
+
+    .external-link-btn:hover .fas.fa-external-link-alt {
+        transform: scale(1.1);
+    }
+
+    @media print {
+
+        .btn,
+        .card-header .d-flex>div:last-child {
+            display: none !important;
+        }
+
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+</style>
+{% endblock %}

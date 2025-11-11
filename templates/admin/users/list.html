@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Dhakul Chan Group Smart System V.202501{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-users"></i> User Management</h2>
+                    <p class="text-muted">Manage system users and their roles</p>
+                </div>
+                <a href="{{ url_for('user_mgmt.create_user') }}" class="btn btn-success">
+                    <i class="fas fa-plus"></i> Add New User
+                </a>
+            </div>
+
+            <!-- User Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ users|selectattr('role', 'equalto', 'Administrator')|list|length }}</h4>
+                                    <p class="mb-0">Administrators</p>
+                                </div>
+                                <i class="fas fa-crown fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ users|selectattr('role', 'equalto', 'Manager')|list|length }}</h4>
+                                    <p class="mb-0">Managers</p>
+                                </div>
+                                <i class="fas fa-user-tie fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ users|selectattr('role', 'equalto', 'Operation')|list|length }}</h4>
+                                    <p class="mb-0">Operation Users</p>
+                                </div>
+                                <i class="fas fa-cog fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4>{{ users|selectattr('role', 'equalto', 'Staff')|list|length }}</h4>
+                                    <p class="mb-0">Staff Members</p>
+                                </div>
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">All Users ({{ users|length }} total)</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Created</th>
+                                    <th>Last Updated</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr {% if user.id==current_user.id %}class="table-info" {% endif %}>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-3">
+                                                <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center text-white"
+                                                    style="width: 40px; height: 40px;">
+                                                    {{ user.username[0].upper() }}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <strong>{{ user.username }}</strong>
+                                                {% if user.id == current_user.id %}
+                                                <span class="badge bg-info ms-2">You</span>
+                                                {% endif %}
+                                                <br>
+                                                <small class="text-muted">{{ user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge {{ user.role_badge_class() }}">
+                                            {{ user.role_display() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else
+                                            'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ user.updated_at.strftime('%Y-%m-%d %H:%M') if user.updated_at else
+                                            'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        {% if user.id != current_user.id %}
+                                        <div class="btn-group" role="group">
+                                            <!-- Role Update -->
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal" data-bs-target="#roleModal{{ user.id }}">
+                                                <i class="fas fa-user-edit"></i> Role
+                                            </button>
+
+                                            <!-- Password Reset -->
+                                            {% if (user.role != 'Administrator') or (current_user.role ==
+                                            'Administrator') %}
+                                            <button type="button" class="btn btn-sm btn-outline-warning"
+                                                data-bs-toggle="modal" data-bs-target="#passwordModal{{ user.id }}">
+                                                <i class="fas fa-key"></i> Password
+                                            </button>
+                                            {% endif %}
+
+                                            <!-- Delete User -->
+                                            {% if current_user.role == 'Administrator' %}
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ user.id }}">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted"><i class="fas fa-lock"></i> Own Account</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals for each user -->
+{% for user in users %}
+{% if user.id != current_user.id %}
+
+<!-- Role Update Modal -->
+<div class="modal fade" id="roleModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Role - {{ user.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('user_mgmt.update_role', user_id=user.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Select New Role:</label>
+                        <select name="role" class="form-select" required>
+                            <option value="staff" {% if user.role=='Staff' %}selected{% endif %}>Staff</option>
+                            <option value="operation" {% if user.role=='Operation' %}selected{% endif %}>Operation User
+                            </option>
+                            <option value="manager" {% if user.role=='Manager' %}selected{% endif %}>Manager</option>
+                            {% if current_user.role == 'Administrator' %}
+                            <option value="admin" {% if user.role=='Administrator' %}selected{% endif %}>Administrator
+                            </option>
+                            {% endif %}
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>Current:</strong> {{ user.role }}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Password Reset Modal -->
+{% if (user.role != 'Administrator') or (current_user.role == 'Administrator') %}
+<div class="modal fade" id="passwordModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reset Password - {{ user.username }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('user_mgmt.reset_password', user_id=user.id) }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">New Password:</label>
+                        <input type="password" name="password" class="form-control" required minlength="6">
+                        <div class="form-text">Minimum 6 characters</div>
+                    </div>
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Warning:</strong> This will immediately change the user's password.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Delete User Modal -->
+{% if current_user.role == 'Administrator' %}
+<div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Delete User - {{ user.username }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('user_mgmt.delete_user', user_id=user.id) }}">
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <strong>⚠️ This action cannot be undone!</strong>
+                    </div>
+                    <p>Are you sure you want to delete user <strong>{{ user.username }}</strong>?</p>
+                    <ul>
+                        <li>Email: {{ user.email }}</li>
+                        <li>Role: {{ user.role_display() }}</li>
+                        <li>Created: {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}</li>
+                    </ul>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete User</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+{% endfor %}
+
+{% endblock %}
