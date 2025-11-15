@@ -1,11 +1,17 @@
-/* Thai Font Support CSS for WeasyPrint */
+/* Enhanced Font Support CSS for WeasyPrint */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;450;500;520;550;580;600;650;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
 
-/* Define local font fallbacks */
+/* Define local font fallbacks with modern English support */
 @font-face {
     font-family: 'Thai-Safe';
-    src: local('Sarabun'),
+    src: local('-apple-system'),
+        local('BlinkMacSystemFont'),
+        local('Segoe UI'),
+        local('Roboto'),
+        local('Inter'),
+        local('Sarabun'),
         local('Noto Sans Thai'),
         local('TH Sarabun New'),
         local('Arial Unicode MS'),
@@ -25,16 +31,40 @@
     font-style: normal;
 }
 
-/* Apply Thai-safe fonts globally */
+/* Apply optimized font stack globally */
 * {
-    font-family: 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
 }
 
-/* Special Thai text handling */
+/* Special Thai text handling with English readability */
 .thai-text {
-    font-family: 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Thai-Safe', 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Arial Unicode MS', Arial, sans-serif !important;
     line-height: 1.6 !important;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.01em;
+}
+
+/* Enhanced English content optimization */
+.english-text,
+[lang="en"],
+.product-name,
+.section-title {
+    font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif !important;
+    letter-spacing: 0.015em !important;
+    font-feature-settings: "liga" 1, "kern" 1, "tnum" 1 !important;
+    line-height: 1.6 !important;
+}
+
+/* Premium typography for better readability */
+.premium-text {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 450 !important;
+    line-height: 1.65 !important;
+    letter-spacing: 0.012em !important;
+    word-spacing: 0.02em !important;
+    color: #374151 !important;
 }
 
 /* Ensure proper rendering of Thai characters */
