@@ -454,7 +454,7 @@
                 <td>{{ (booking.party_name or customer.name if customer else 'PKG250922')|replace('\n', '<br>')|safe }}
                 </td>
                 <td class="label">Create Date<br><small style="font-size: 8px; color: #666;">(DD/MM/YYYY)</small></td>
-                <td>{{ booking.created_at|thai_date if booking.created_at else generation_date }}<br>By: {{
+                <td>{{ booking.created_at.strftime('%d/%m/%Y') if booking.created_at else generation_date }}<br>By: {{
                     created_by or 'admin' }}</td>
             </tr>
             <tr>
@@ -464,8 +464,9 @@
                 </td>
                 <td>
                     {% if booking.traveling_period_start and booking.traveling_period_end %}
-                    Travel From: {{ booking.traveling_period_start|thai_date }}<br>Travel To: {{
-                    booking.traveling_period_end|thai_date }}
+                    Travel From: {{ booking.traveling_period_start.strftime('%d/%m/%Y') if
+                    booking.traveling_period_start else 'N/A' }}<br>Travel To: {{
+                    booking.traveling_period_end.strftime('%d/%m/%Y') if booking.traveling_period_end else 'N/A' }}
                     {% else %}
                     Travel From: 22/09/2025<br>Travel To: 22/09/2025
                     {% endif %}
@@ -514,8 +515,8 @@
                 <td>{{ item.no }}</td>
                 <td class="product-name thai-text">{{ item.name }}</td>
                 <td>{{ item.quantity }}</td>
-                <td class="price-amount">{{ item.price|thai_currency }}</td>
-                <td class="price-amount">{{ item.amount|thai_currency }}</td>
+                <td class="price-amount">฿{{ "%.2f"|format(item.price|float) if item.price else '0.00' }}</td>
+                <td class="price-amount">฿{{ "%.2f"|format(item.amount|float) if item.amount else '0.00' }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -523,7 +524,7 @@
 
     <!-- Grand Total Section -->
     <div style="margin: 0px 0; text-align: right; font-size: 14px; font-weight: bold;">
-        💰 Grand Total: {{ total_amount|thai_currency }}
+        💰 Grand Total: ฿{{ "%.2f"|format(total_amount|float) if total_amount else '0.00' }}
     </div>
 
     <!-- Service Details -->

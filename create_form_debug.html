@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Booking</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome - Using stable version 5.15.4 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"
+        crossorigin="anonymous">
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Thai Fonts - multiple options for better compatibility -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
+    </noscript>
+
+    <!-- TinyMCE WYSIWYG Editor (Always use jsDelivr to avoid read-only warnings) -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <!-- Global TinyMCE Configuration -->
+    <script>
+        // Override TinyMCE init to prevent read-only warnings
+        window.addEventListener('load', function () {
+            if (typeof tinymce !== 'undefined') {
+                // Set global defaults
+                tinymce.defaultSettings = {
+                    readonly: false,
+                    deprecation_warnings: false
+                };
+
+                // Override init function to ensure readonly is always false
+                const originalInit = tinymce.init;
+                tinymce.init = function (settings) {
+                    settings = settings || {};
+                    settings.readonly = false;
+                    settings.deprecation_warnings = false;
+                    return originalInit.call(this, settings);
+                };
+
+                // Suppress console warnings
+                const originalConsoleWarn = console.warn;
+                console.warn = function (message) {
+                    if (typeof message === 'string' && message.includes('read-only')) {
+                        return; // Suppress TinyMCE read-only warnings
+                    }
+                    originalConsoleWarn.apply(console, arguments);
+                };
+            }
+        });
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+            font-display: optional;
+        }
+
+        /* Thai text specific styling with better fallbacks */
+        [lang="th"],
+        .thai-text {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'Sukhumvit Set', 'Thonburi', 'Arial Unicode MS', 'Tahoma', 'Leelawadee UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-display: swap;
+        }
+
+        /* Font optimization - Updated for Font Awesome 5 */
+        .fas,
+        .far,
+        .fab {
+            font-display: swap;
+            font-family: "Font Awesome 5 Free", "Font Awesome 5 Brands", sans-serif !important;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: #87ceeb !important;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            color: #ffffff !important;
+            transform: scale(1.05);
+        }
+
+        .navbar-brand .fas {
+            font-size: 1.2em;
+            color: #87ceeb !important;
+        }
+
+        .navbar-brand:hover .fas {
+            color: #ffffff !important;
+        }
+
+        .sidebar {
+            background-color: #003366;
+            min-height: calc(100vh - 56px);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, .8);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin: 0.125rem 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, .1);
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, .2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+        }
+
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: #003366;
+            border-color: #003366;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #002244;
+            border-color: #002244;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
+        }
+
+        .table th {
+            background-color: #003366;
+            color: white;
+            border: none;
+            font-weight: 500;
+        }
+
+        .badge-pending {
+            background-color: #ffc107 !important;
+            color: #000;
+        }
+
+        .badge-confirmed {
+            background-color: #28a745 !important;
+        }
+
+        .badge-cancelled {
+            background-color: #dc3545 !important;
+        }
+
+        .badge-completed {
+            background-color: #17a2b8 !important;
+        }
+
+        /* Thai Number Format */
+        .thai-number {
+            font-feature-settings: "tnum";
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Fallback for Font Awesome loading issues */
+        .fa-fallback .fas:before,
+        .fa-fallback .far:before,
+        .fa-fallback .fab:before {
+            content: "•";
+            color: #666;
+        }
+
+        .fa-fallback .fa-home:before {
+            content: "🏠";
+        }
+
+        .fa-fallback .fa-user:before {
+            content: "👤";
+        }
+
+        .fa-fallback .fa-building:before {
+            content: "🏢";
+        }
+
+        .fa-fallback .fa-calendar-alt:before {
+            content: "📅";
+        }
+
+        .fa-fallback .fa-ticket-alt:before {
+            content: "🎫";
+        }
+
+        .fa-fallback .fa-users:before {
+            content: "👥";
+        }
+
+        .fa-fallback .fa-receipt:before {
+            content: "🧾";
+        }
+
+        .fa-fallback .fa-code:before {
+            content: "💻";
+        }
+
+        .fa-fallback .fa-tachometer-alt:before {
+            content: "📊";
+        }
+    </style>
+
+    <!-- Font Loading Optimization -->
+    <script>
+        // Optimize font loading and prevent FOUT
+        if ('fonts' in document) {
+            document.fonts.ready.then(function () {
+                document.body.classList.add('fonts-loaded');
+            });
+        }
+
+        // Handle Font Awesome loading errors
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if Font Awesome loaded properly
+            const testElement = document.createElement('i');
+            testElement.className = 'fas fa-home';
+            testElement.style.visibility = 'hidden';
+            document.body.appendChild(testElement);
+
+            const computedStyle = window.getComputedStyle(testElement, ':before');
+            if (computedStyle.content === 'none' || computedStyle.content === '') {
+                console.warn('Font Awesome failed to load, using fallback icons');
+                document.body.classList.add('fa-fallback');
+            }
+
+            document.body.removeChild(testElement);
+        });
+    </script>
+
+    
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class="fas fa-building me-2 text-light"></i>
+                <span class="fw-bold
+                <span class=" navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                                data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>admin
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/auth/profile">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="/auth/logout">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </a></li>
+                            </ul>
+                        </li>
+                        
+                    </ul>
+                </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-block sidebar show">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active"
+                                href="/booking/list">
+                                <i class="fas fa-calendar-alt me-2"></i>Booking
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/quote/">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Quotes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/voucher/list">
+                                <i class="fas fa-ticket-alt me-2"></i>Voucher
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/booking/customers">
+                                <i class="fas fa-users me-2"></i>Customer
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/supplier/list">
+                                <i class="fas fa-truck-loading me-2"></i>Supplier
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/sync/">
+                                <i class="fas fa-sync me-2"></i>Sync
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/admin/users/">
+                                <i class="fas fa-users-cog me-2"></i>User Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/api/docs">
+                                <i class="fas fa-code me-2"></i>API Docs
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Language Switcher -->
+                    <div class="mt-4 px-3">
+                        <div class="d-flex flex-column gap-2">
+                            <small class="text-white-50">Language</small>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <a href="/language/set-language/th"
+                                    class="btn btn-outline-light btn-sm ">
+                                    🇹🇭 ไทย
+                                </a>
+                                <a href="/language/set-language/en"
+                                    class="btn btn-outline-light btn-sm active">
+                                    🇺🇸 English
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                
+
+                    <div class="pt-3">
+                        <!-- Flash Messages -->
+                        
+                        
+                        
+
+                        <!-- Page Content -->
+                        
+<div class="container-fluid py-2">
+    <!-- Modern Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h3 mb-1 fw-bold">
+                <i class="fas fa-plus-circle me-2 animated-icon text-primary"></i>Create New Booking
+            </h1>
+            <p class="text-muted mb-0 small">Create a new booking entry with all details</p>
+        </div>
+        <div>
+            <a href="/booking/list" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Bookings
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="modern-card">
+                <div class="modern-header text-white">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-clipboard-list me-2"></i>Booking Information
+                    </h5>
+                    <p class="mb-0 opacity-75 mt-1 small">Fill in the booking details below</p>
+                </div>
+                <div class="card-body p-3">
+                    <form method="POST" id="bookingForm">
+                        <!-- Customer Selection -->
+                        <div class="mb-3">
+                            <label for="customer_id" class="form-label">
+                                <i class="fas fa-user me-2"></i>Customer *
+                            </label>
+                            <select class="form-select" id="customer_id" name="customer_id" required>
+                                <option value="">Select Customer</option>
+                                
+                                <option value="2">John Smith (john@example.com)</option>
+                                
+                                <option value="3">Maria Garcia (maria@example.com)</option>
+                                
+                                <option value="35">PCCM YC (thailand@dhakulchanl.com)</option>
+                                
+                                <option value="4">Pumm Y (thailand@dhakulchan.com)</option>
+                                
+                                <option value="9">Test Activity (test@example.com)</option>
+                                
+                                <option value="11">Test Activity (test@example.com)</option>
+                                
+                                <option value="13">Test Activity (test@example.com)</option>
+                                
+                                <option value="15">Test Activity (test@example.com)</option>
+                                
+                                <option value="17">Test Activity (test@example.com)</option>
+                                
+                                <option value="19">Test Activity (test@example.com)</option>
+                                
+                                <option value="21">Test Activity (test@example.com)</option>
+                                
+                                <option value="23">Test Activity (test@example.com)</option>
+                                
+                                <option value="25">Test Activity (test@example.com)</option>
+                                
+                                <option value="27">Test Activity (test@example.com)</option>
+                                
+                                <option value="29">Test Activity (test@example.com)</option>
+                                
+                                <option value="31">Test Activity (test@example.com)</option>
+                                
+                                <option value="1">Test Customer (test@example.com)</option>
+                                
+                                <option value="32">Test Customer for Workflow (test.workflow.20250930071652@example.com)</option>
+                                
+                                <option value="33">Test Customer Workflow 20250930071830 (test.workflow.20250930071830@example.com)</option>
+                                
+                                <option value="34">Test Customer Workflow 20250930071948 (test.workflow.20250930071948@example.com)</option>
+                                
+                            </select>
+                            <div class="form-text">
+                                Can't find the customer?
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#customerModal">Add a new
+                                    customer</a>
+                            </div>
+                        </div>
+
+                        <!-- Booking Type and Party Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="booking_type" class="form-label">
+                                        <i class="fas fa-tag me-2"></i>Booking Type *
+                                    </label>
+                                    <select class="form-select" id="booking_type" name="booking_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="package">Package</option>
+                                        <option value="tour">Tour</option>
+                                        <option value="collective-groups">Collective Groups</option>
+                                        <option value="incentive-groups">Incentive Groups</option>
+                                        <option value="air-ticket">Air Ticket</option>
+                                        <option value="hotel">Hotel</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="park-ticket">Park Ticket</option>
+                                        <option value="fit">F.I.T.</option>
+                                        <option value="others">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="party_name" class="form-label">
+                                        <i class="fas fa-users-cog me-2"></i>Party Name/ Code
+                                    </label>
+                                    <input type="text" class="form-control" id="party_name" name="party_name"
+                                        placeholder="Enter group or party name">
+                                    <div class="form-text">Optional: Name for the group or party</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="arrival_date" class="form-label">
+                                        <i class="fas fa-calendar-plus me-2 text-success"></i>Traveling from
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="arrival_date_display"
+                                            placeholder="DD/MM/YYYY" style="padding-right: 45px;">
+                                        <input type="date" class="form-control d-none" id="arrival_date"
+                                            name="arrival_date">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDatePicker('arrival_date')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="departure_date" class="form-label">
+                                        <i class="fas fa-calendar-minus me-2 text-danger"></i>Traveling to
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="departure_date_display"
+                                            placeholder="DD/MM/YYYY" style="padding-right: 45px;">
+                                        <input type="date" class="form-control d-none" id="departure_date"
+                                            name="departure_date">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDatePicker('departure_date')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Time Management -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="time_limit" class="form-label">
+                                        <i class="fas fa-clock me-2 text-warning"></i>Time Limit *
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="time_limit_display"
+                                            placeholder="MM/DD/YYYY HH:MM" required>
+                                        <input type="datetime-local" class="form-control d-none" id="time_limit"
+                                            name="time_limit" required>
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDateTimePicker('time_limit')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Deadline for booking confirmation (Required) - Format:
+                                        MM/DD/YYYY HH:MM</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="due_date" class="form-label">
+                                        <i class="fas fa-calendar-check me-2 text-info"></i>Due Date
+                                    </label>
+                                    <div class="date-wrapper position-relative">
+                                        <input type="text" class="form-control" id="due_date_display"
+                                            placeholder="DD/MM/YYYY">
+                                        <input type="date" class="form-control d-none" id="due_date" name="due_date">
+                                        <button type="button"
+                                            class="btn btn-outline-secondary position-absolute end-0 top-0 h-100 px-3 calendar-btn"
+                                            onclick="showDatePicker('due_date')"
+                                            style="border-left: none; border-radius: 0 0.375rem 0.375rem 0;">
+                                            <i class="fas fa-calendar-alt"></i>
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Payment or action due date - Format: DD/MM/YYYY</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Guest Information -->
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="adults" class="form-label">
+                                        <i class="fas fa-user-friends me-2"></i>Adults *
+                                    </label>
+                                    <input type="number" class="form-control" id="adults" name="adults" min="1" max="50"
+                                        value="1" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="children" class="form-label">
+                                        <i class="fas fa-child me-2"></i>Children
+                                    </label>
+                                    <input type="number" class="form-control" id="children" name="children" min="0"
+                                        max="20" value="0">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="total_pax" class="form-label">
+                                        <i class="fas fa-users me-2"></i>Total Pax *
+                                    </label>
+                                    <input type="number" class="form-control" id="total_pax" name="total_pax" min="1"
+                                        max="50" value="1" required readonly>
+                                    <div class="form-text">Adults+Children</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="infants" class="form-label">
+                                        <i class="fas fa-baby me-2"></i>Infants -2Y
+                                    </label>
+                                    <input type="number" class="form-control" id="infants" name="infants" min="0"
+                                        max="10" value="0">
+                                    <div class="form-text">Infants are not counted in total guests</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service Detail / Itinerary -->
+                        <div class="mb-4">
+                            <label for="description" class="form-label">
+                                <i class="fas fa-file-alt me-2"></i>Service Detail / Itinerary
+                            </label>
+                            <textarea class="form-control" id="description" name="description" rows="4"
+                                placeholder="Brief description of the booking..."></textarea>
+                            <div class="form-text">Brief description or notes about this booking</div>
+                        </div>
+
+                        <!-- Pickup Information -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pickup_point" class="form-label">
+                                        <i class="fas fa-map-marker-alt me-2 text-success"></i>Pickup Point
+                                    </label>
+                                    <input type="text" class="form-control" id="pickup_point" name="pickup_point"
+                                        placeholder="Enter pickup location">
+                                    <small class="text-muted">Pickup location for guests</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pickup_time" class="form-label">
+                                        <i class="fas fa-clock me-2 text-primary"></i>Pickup Time
+                                    </label>
+                                    <input type="time" class="form-control" id="pickup_time" name="pickup_time">
+                                    <small class="text-muted">Time to pickup guests</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Flight Information -->
+                        <div class="mb-4">
+                            <label for="flight_info" class="form-label">
+                                <i class="fas fa-plane me-2 text-info"></i>Flight Information
+                            </label>
+                            <textarea class="form-control" id="flight_info" name="flight_info" rows="4"
+                                placeholder="Flight details (optional)"></textarea>
+                            <div class="form-text">Flight arrival/departure information for transfers</div>
+                        </div>
+
+                        <!-- Products Calculation -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-calculator me-2 text-primary"></i>Products &
+                                    Calculation</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered" id="products-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width: 8%;">No.</th>
+                                                <th style="width: 35%;">Products</th>
+                                                <th style="width: 12%;">Quantity</th>
+                                                <th style="width: 22%;">Price</th>
+                                                <th style="width: 23%;">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="products-tbody">
+                                            <tr class="product-row">
+                                                <td class="row-number">1</td>
+                                                <td>
+                                                    <input type="text" class="form-control product-name"
+                                                        name="products[0][name]" placeholder="Enter product name">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-quantity"
+                                                        name="products[0][quantity]" min="1" value="1" placeholder="1">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-price"
+                                                        name="products[0][price]" step="0.01" placeholder="0.00">
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control product-amount"
+                                                        name="products[0][amount]" step="0.01" readonly>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="add-product-row">
+                                        <i class="fas fa-plus me-2"></i>Add Row
+                                    </button>
+                                    <div class="text-end">
+                                        <strong>Total: <span id="grand-total">0.00</span> THB</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2 text-success"></i>Financial
+                                    Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="total_amount" class="form-label">
+                                                <i class="fas fa-dollar-sign me-2"></i>Total Amount
+                                                <small class="text-muted">(Auto-calculated from products above)</small>
+                                            </label>
+                                            <input type="number" class="form-control" id="total_amount"
+                                                name="total_amount" step="0.01" min="0" placeholder="0.00" value="0.00"
+                                                readonly>
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                This amount is automatically calculated from the products table above
+                                                and cannot be edited manually.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label for="currency" class="form-label">
+                                                <i class="fas fa-coins me-2"></i>Currency
+                                            </label>
+                                            <select class="form-select" id="currency" name="currency">
+                                                <option value="THB" selected>🇹🇭 Thai Baht (THB)</option>
+                                                <option value="HKD">🇭🇰 Hong Kong Dollar (HKD)</option>
+                                                <option value="CNY">🇨🇳 Chinese Yuan (CNY)</option>
+                                                <option value="USD">🇺🇸 US Dollar (USD)</option>
+                                                <option value="EUR">🇪🇺 Euro (EUR)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h6 class="mb-0"><i class="fas fa-sticky-note me-2 text-warning"></i>Additional
+                                    Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <!-- Name List / Rooming List -->
+                                <div class="mb-4">
+                                    <label for="guest_list" class="form-label">
+                                        <i class="fas fa-list-ul me-2"></i>Name List / Rooming List:
+                                    </label>
+                                    <textarea class="form-control tinymce-editor" id="guest_list" name="guest_list"
+                                        rows="6"
+                                        placeholder="Enter detailed guest list with names, ages, special requirements..."></textarea>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Detailed list of all guests including
+                                        names, ages, and special requirements
+                                    </div>
+                                </div>
+
+                                <!-- Special Requests -->
+                                <div class="mb-3">
+                                    <label for="special_request" class="form-label">
+                                        <i class="fas fa-comment-alt me-2"></i>Special Requests
+                                    </label>
+                                    <textarea class="form-control" id="special_request" name="special_request" rows="4"
+                                        placeholder="Special requirements, dietary restrictions, accessibility needs, or other important notes..."></textarea>
+                                    <div class="form-text">These notes will be visible to all staff members</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-plus-circle me-2"></i>Create Booking
+                            </button>
+                            <a href="/booking/list" class="btn btn-outline-secondary px-4">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin & Management Notes Sidebar -->
+        <div class="col-lg-4">
+            <!-- Admin & Management Notes -->
+            <div class="admin-notes-card mb-3">
+                <div class="card-header bg-transparent border-0 p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1 fw-bold text-dark">
+                                <i class="fas fa-shield-alt me-2 text-warning"></i>Admin & Management
+                            </h6>
+                            <small class="text-muted">
+                                <i class="fas fa-lock me-1"></i>Internal Use Only
+                            </small>
+                        </div>
+                        <!-- Modern Toggle Button -->
+                        <button class="admin-toggle-btn text-dark fw-semibold" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#adminNotesCollapse" aria-expanded="false"
+                            aria-controls="adminNotesCollapse" id="toggleAdminNotes">
+                            <i class="fas fa-chevron-down me-2"></i>
+                            <span id="toggleText">Show</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Collapsible Content (Hidden by default) -->
+                <div class="collapse" id="adminNotesCollapse">
+                    <div class="card-body p-3 pt-0">
+                        <!-- Admin Notes Section -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-danger text-white rounded-circle p-2 me-3">
+                                    <i class="fas fa-user-shield"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 text-danger fw-bold">Admin Notes</h6>
+                                    <small class="text-muted">Critical administrative information</small>
+                                </div>
+                            </div>
+                            <div class="admin-notes-editor">
+                                <textarea class="form-control tinymce-editor border-danger" id="admin_notes"
+                                    name="admin_notes" form="bookingForm"
+                                    placeholder="Enter critical administrative notes and instructions..."
+                                    rows="4"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Manager Memos Section -->
+                        <div class="mb-3">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-info text-white rounded-circle p-2 me-3">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 text-info fw-bold">Manager Memos</h6>
+                                    <small class="text-muted">Management instructions and notes</small>
+                                </div>
+                            </div>
+                            <div class="manager-memos-editor">
+                                <textarea class="form-control tinymce-editor border-info" id="manager_memos"
+                                    name="manager_memos" form="bookingForm"
+                                    placeholder="Enter management instructions and memos..." rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operation Notes -->
+            <div class="modern-card">
+                <div class="card-header bg-secondary text-white border-0 py-2">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-white text-secondary rounded-circle p-2 me-2">
+                            <i class="fas fa-sticky-note"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Operation Notes</h6>
+                            <small class="opacity-75">Internal operational information</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+                    <textarea class="form-control" id="internal_note" name="internal_note" form="bookingForm" rows="3"
+                        placeholder="📝 Operation notes (not visible to customer)"></textarea>
+                    <div class="form-text mt-1">
+                        <i class="fas fa-users me-1"></i>Staff only - operational details and reminders
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Customer Modal -->
+<div class="modal fade" id="customerModal" tabindex="-1" aria-labelledby="customerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="customerModalLabel">
+                    <i class="fas fa-users me-2"></i>Customer Management
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Customer List/Add New Customer Tabs -->
+                <ul class="nav nav-tabs" id="customerTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="customer-list-tab" data-bs-toggle="tab"
+                            data-bs-target="#customer-list" type="button" role="tab">
+                            <i class="fas fa-list me-2"></i>Customer List
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="add-customer-tab" data-bs-toggle="tab"
+                            data-bs-target="#add-customer" type="button" role="tab">
+                            <i class="fas fa-plus me-2"></i>Add New Customer
+                        </button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="customerTabContent">
+                    <!-- Customer List Tab -->
+                    <div class="tab-pane fade show active" id="customer-list" role="tabpanel">
+                        <div class="p-4">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="customerSearch"
+                                    placeholder="🔍 Search customers by name, email, or phone...">
+                            </div>
+                            <div id="customerListContainer" style="max-height: 400px; overflow-y: auto;">
+                                <!-- Customer list will be loaded here -->
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2">Loading customers...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Add New Customer Tab -->
+                    <div class="tab-pane fade" id="add-customer" role="tabpanel">
+                        <div class="p-4">
+                            <form id="addCustomerForm">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="newCustomerFirstName" class="form-label">First Name *</label>
+                                            <input type="text" class="form-control" id="newCustomerFirstName" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="newCustomerLastName" class="form-label">Last Name *</label>
+                                            <input type="text" class="form-control" id="newCustomerLastName" required>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="newCustomerEmail" class="form-label">Email *</label>
+                                            <input type="email" class="form-control" id="newCustomerEmail" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="newCustomerPhone" class="form-label">Phone</label>
+                                            <input type="tel" class="form-control" id="newCustomerPhone">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newCustomerNationality" class="form-label">Nationality</label>
+                                    <input type="text" class="form-control" id="newCustomerNationality">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newCustomerAddress" class="form-label">Address</label>
+                                    <textarea class="form-control" id="newCustomerAddress" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="newCustomerNotes" class="form-label">Notes/Remarks</label>
+                                    <textarea class="form-control" id="newCustomerNotes" rows="3"
+                                        placeholder="Additional notes or remarks about the customer..."></textarea>
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-plus me-2"></i>Add Customer
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-populate departure date when arrival date changes (next day)
+    document.getElementById('arrival_date').addEventListener('change', function () {
+        const arrivalDate = new Date(this.value);
+        if (arrivalDate) {
+            const departureDate = new Date(arrivalDate);
+            departureDate.setDate(departureDate.getDate() + 1);
+            document.getElementById('departure_date').value = departureDate.toISOString().split('T')[0];
+        }
+    });
+
+    // Customer Modal Management
+    let currentCustomers = [];
+
+    // Load customers when modal is shown
+    document.getElementById('customerModal').addEventListener('show.bs.modal', function () {
+        loadCustomers();
+    });
+
+    // Load customers from server
+    async function loadCustomers() {
+        try {
+            const response = await fetch('/api/customers');
+            const customers = await response.json();
+            currentCustomers = customers;
+            displayCustomers(customers);
+        } catch (error) {
+            console.error('Error loading customers:', error);
+            document.getElementById('customerListContainer').innerHTML =
+                '<div class="alert alert-danger">Error loading customers. Please try again.</div>';
+        }
+    }
+
+    // Display customers in the list
+    function displayCustomers(customers) {
+        const container = document.getElementById('customerListContainer');
+        if (customers.length === 0) {
+            container.innerHTML = '<div class="text-center py-4"><p class="text-muted">No customers found</p></div>';
+            return;
+        }
+
+        let html = '<div class="list-group">';
+        customers.forEach(customer => {
+            html += `
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${customer.name || (customer.first_name + ' ' + customer.last_name)}</h6>
+                        <p class="mb-1 text-muted">${customer.email || 'No email'}</p>
+                        <small class="text-muted">${customer.phone || 'No phone'}</small>
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="selectCustomer(${customer.id}, '${customer.name || (customer.first_name + ' ' + customer.last_name)}')">
+                        <i class="fas fa-check me-1"></i>Select
+                    </button>
+                </div>
+            `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+    }
+
+    // Search customers
+    document.getElementById('customerSearch').addEventListener('input', function () {
+        const query = this.value.toLowerCase();
+        const filtered = currentCustomers.filter(customer =>
+            (customer.name || '').toLowerCase().includes(query) ||
+            (customer.first_name || '').toLowerCase().includes(query) ||
+            (customer.last_name || '').toLowerCase().includes(query) ||
+            (customer.email || '').toLowerCase().includes(query) ||
+            (customer.phone || '').toLowerCase().includes(query)
+        );
+        displayCustomers(filtered);
+    });
+
+    // Select customer
+    function selectCustomer(customerId, customerName) {
+        const customerSelect = document.getElementById('customer_id');
+        customerSelect.value = customerId;
+
+        // Update the select display
+        const option = customerSelect.querySelector(`option[value="${customerId}"]`);
+        if (option) {
+            option.selected = true;
+        } else {
+            // Add new option if not exists
+            const newOption = new Option(customerName, customerId, true, true);
+            customerSelect.appendChild(newOption);
+        }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('customerModal'));
+        modal.hide();
+    }
+
+    // Add new customer
+    document.getElementById('addCustomerForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = {
+            first_name: document.getElementById('newCustomerFirstName').value,
+            last_name: document.getElementById('newCustomerLastName').value,
+            email: document.getElementById('newCustomerEmail').value,
+            phone: document.getElementById('newCustomerPhone').value,
+            nationality: document.getElementById('newCustomerNationality').value,
+            address: document.getElementById('newCustomerAddress').value,
+            notes: document.getElementById('newCustomerNotes').value
+        };
+
+        try {
+            const response = await fetch('/api/customers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                // Clear form
+                this.reset();
+
+                // Select the new customer
+                selectCustomer(result.id, result.name);
+
+                // Show success message
+                alert('Customer added successfully!');
+            } else {
+                alert('Error adding customer: ' + (result.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error adding customer:', error);
+            alert('Error adding customer. Please try again.');
+        }
+    });
+
+    // Auto-calculate total guests (adults + children)
+    function calculateTotalGuests() {
+        const adults = parseInt(document.getElementById('adults').value) || 0;
+        const children = parseInt(document.getElementById('children').value) || 0;
+        const total = adults + children;
+
+        // Ensure minimum of 1 guest
+        document.getElementById('total_pax').value = Math.max(1, total);
+
+        // Update estimate when total changes
+        updateEstimate();
+    }
+
+    // Add event listeners for auto-calculation
+    document.getElementById('adults').addEventListener('input', calculateTotalGuests);
+    document.getElementById('children').addEventListener('input', calculateTotalGuests);
+
+    // Calculate estimated amount based on type and guests
+    document.getElementById('booking_type').addEventListener('change', updateEstimate);
+    document.getElementById('total_pax').addEventListener('change', updateEstimate);
+
+    function updateEstimate() {
+        const type = document.getElementById('booking_type').value;
+        const pax = parseInt(document.getElementById('total_pax').value) || 1;
+
+        const rates = {
+            'package': 2500,
+            'tour': 1500,
+            'collective-groups': 1200,
+            'incentive-groups': 1800,
+            'air-ticket': 800,
+            'hotel': 2000,
+            'transport': 800,
+            'park-ticket': 600,
+            'fit': 2200,
+            'others': 1000
+        };
+
+        if (type && rates[type]) {
+            const estimate = rates[type] * pax;
+            document.getElementById('total_amount').value = estimate;
+        }
+    }
+
+    // Initialize total guests calculation on page load
+    calculateTotalGuests();
+
+    // Initialize TinyMCE WYSIWYG Editor after DOM is ready
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Description editor
+        tinymce.init({
+            selector: '#description',
+            height: 200,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
+            plugins: 'lists link code help wordcount',
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; line-height: 1.5; }',
+            branding: false,
+            setup: function (editor) {
+                editor.on('init', function () {
+                    console.log('TinyMCE Description initialized successfully');
+                });
+            }
+        });
+
+        // Initialize Guest List editor
+        tinymce.init({
+            selector: '#guest_list',
+            height: 250,
+            menubar: false,
+            toolbar: 'undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist | table | forecolor backcolor | removeformat | help',
+            plugins: 'lists table help wordcount',
+            table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+            table_class_list: [
+                { title: 'Default', value: '' },
+                { title: 'Bordered Table', value: 'table-bordered' },
+                { title: 'Striped Table', value: 'table-striped' }
+            ],
+            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; } table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }',
+            branding: false,
+            statusbar: false,
+            setup: function (editor) {
+                editor.on('init', function () {
+                    console.log('TinyMCE Guest List initialized successfully');
+                });
+            }
+        });
+
+        // Initialize Admin Notes editor (always ready, even if hidden)
+        setTimeout(() => {
+            if (!tinymce.get('admin_notes')) {
+                tinymce.init({
+                    selector: '#admin_notes',
+                    height: 180,
+                    menubar: false,
+                    toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link | removeformat | help',
+                    plugins: 'lists link help wordcount autoresize',
+                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; padding: 10px; }',
+                    branding: false,
+                    statusbar: false,
+                    resize: false,
+                    setup: function (editor) {
+                        editor.on('change input blur', function () {
+                            editor.save();
+                        });
+                        editor.on('init', function () {
+                            console.log('TinyMCE Admin Notes initialized successfully');
+                        });
+                    }
+                });
+            }
+        }, 500);
+
+        // Initialize Manager Memos editor (always ready, even if hidden)
+        setTimeout(() => {
+            if (!tinymce.get('manager_memos')) {
+                tinymce.init({
+                    selector: '#manager_memos',
+                    height: 180,
+                    menubar: false,
+                    toolbar: 'undo redo | formatselect | bold italic underline | forecolor backcolor | alignleft aligncenter alignright | bullist numlist | link | removeformat | help',
+                    plugins: 'lists link help wordcount autoresize',
+                    content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.6; padding: 10px; }',
+                    branding: false,
+                    statusbar: false,
+                    resize: false,
+                    setup: function (editor) {
+                        editor.on('change input blur', function () {
+                            editor.save();
+                        });
+                        editor.on('init', function () {
+                            console.log('TinyMCE Manager Memos initialized successfully');
+                        });
+                    }
+                });
+            }
+        }, 700);
+    });
+
+    // Admin & Management toggle functionality
+    document.addEventListener('DOMContentLoaded', function () {
+        const adminNotesCollapse = document.getElementById('adminManagementContent');
+        const toggleButton = document.querySelector('[data-bs-target="#adminManagementContent"]');
+
+        if (!adminNotesCollapse || !toggleButton) return;
+
+        adminNotesCollapse.addEventListener('show.bs.collapse', function () {
+            toggleButton.innerHTML = '<i class="fas fa-chevron-up me-2"></i><span>Hide</span>';
+        });
+
+        adminNotesCollapse.addEventListener('hide.bs.collapse', function () {
+            toggleButton.innerHTML = '<i class="fas fa-chevron-down me-2"></i><span>Show</span>';
+        });
+    });
+
+    // Form submission handler to save TinyMCE content
+    document.addEventListener('DOMContentLoaded', function () {
+        const bookingForm = document.querySelector('form[method="POST"]');
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', function (e) {
+                // Prevent the default submission temporarily
+                e.preventDefault();
+
+                console.log('🔄 Form submission intercepted, syncing TinyMCE content...');
+
+                // Save all TinyMCE instances before form submission
+                tinymce.triggerSave();
+
+                // Manually save each editor if they exist
+                const adminNotes = tinymce.get('admin_notes');
+                const managerMemos = tinymce.get('manager_memos');
+                const guestList = tinymce.get('guest_list');
+
+                // Detailed debugging
+                console.log('🔍 TinyMCE Instances:', {
+                    adminNotes: adminNotes ? 'found' : 'not found',
+                    managerMemos: managerMemos ? 'found' : 'not found',
+                    guestList: guestList ? 'found' : 'not found'
+                });
+
+                if (adminNotes) {
+                    const content = adminNotes.getContent();
+                    adminNotes.save();
+                    console.log('Admin Notes Content:', content);
+
+                    // Force set the textarea value directly
+                    const textarea = document.getElementById('admin_notes');
+                    if (textarea) {
+                        textarea.value = content;
+                        console.log('✅ Admin Notes textarea updated');
+                    } else {
+                        console.error('❌ Admin Notes textarea not found!');
+                    }
+                }
+
+                if (managerMemos) {
+                    const content = managerMemos.getContent();
+                    managerMemos.save();
+                    console.log('Manager Memos Content:', content);
+
+                    // Force set the textarea value directly
+                    const textarea = document.getElementById('manager_memos');
+                    if (textarea) {
+                        textarea.value = content;
+                        console.log('✅ Manager Memos textarea updated');
+                    } else {
+                        console.error('❌ Manager Memos textarea not found!');
+                    }
+                }
+
+                if (guestList) {
+                    const content = guestList.getContent();
+                    guestList.save();
+                    console.log('Guest List Content:', content);
+
+                    // Force set the textarea value directly
+                    const textarea = document.getElementById('guest_list');
+                    if (textarea) {
+                        textarea.value = content;
+                        console.log('✅ Guest List textarea updated');
+                    } else {
+                        console.error('❌ Guest List textarea not found!');
+                    }
+                }
+
+                // Final verification - check textarea values
+                console.log('🔍 Final Textarea Values:');
+                const adminTextarea = document.getElementById('admin_notes');
+                const managerTextarea = document.getElementById('manager_memos');
+                const guestTextarea = document.getElementById('guest_list');
+
+                if (adminTextarea) console.log('Admin Notes Textarea Value:', adminTextarea.value);
+                if (managerTextarea) console.log('Manager Memos Textarea Value:', managerTextarea.value);
+                if (guestTextarea) console.log('Guest List Textarea Value:', guestTextarea.value);
+
+                // Check if form data will include our values
+                const formData = new FormData(bookingForm);
+                console.log('🔍 FormData will include:');
+                console.log('admin_notes from FormData:', formData.get('admin_notes'));
+                console.log('manager_memos from FormData:', formData.get('manager_memos'));
+                console.log('internal_note from FormData:', formData.get('internal_note'));
+
+                console.log('Form submitting, TinyMCE content saved');
+
+                // Wait a moment to ensure everything is synced, then submit
+                setTimeout(function () {
+                    console.log('🚀 Now submitting form...');
+                    bookingForm.submit();
+                }, 200);
+            });
+        }
+
+        // Products Calculation System
+        let productRowCount = 1;
+
+        // Calculate amount for a single row
+        function calculateRowAmount(row) {
+            const quantity = parseFloat(row.querySelector('.product-quantity').value) || 0;
+            const price = parseFloat(row.querySelector('.product-price').value) || 0;
+            const amount = quantity * price;
+            row.querySelector('.product-amount').value = amount.toFixed(2);
+            updateGrandTotal();
+        }
+
+        // Update grand total and sync with Total Amount field
+        function updateGrandTotal() {
+            let total = 0;
+            document.querySelectorAll('.product-amount').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+
+            // Update grand total display
+            document.getElementById('grand-total').textContent = total.toFixed(2);
+
+            // Auto-sync with Total Amount field in Financial Information
+            const totalAmountField = document.getElementById('total_amount');
+            if (totalAmountField) {
+                totalAmountField.value = total.toFixed(2);
+            }
+        }
+
+        // Add new product row
+        function addProductRow() {
+            const tbody = document.getElementById('products-tbody');
+            const newRow = document.createElement('tr');
+            newRow.className = 'product-row';
+            newRow.innerHTML = `
+                <td class="row-number">${productRowCount + 1}</td>
+                <td>
+                    <input type="text" class="form-control product-name" 
+                           name="products[${productRowCount}][name]" placeholder="Enter product name">
+                </td>
+                <td>
+                    <input type="number" class="form-control product-quantity" 
+                           name="products[${productRowCount}][quantity]" min="1" value="1" placeholder="1">
+                </td>
+                <td>
+                    <input type="number" class="form-control product-price" 
+                           name="products[${productRowCount}][price]" step="0.01" placeholder="0.00">
+                </td>
+                <td>
+                    <input type="number" class="form-control product-amount" 
+                           name="products[${productRowCount}][amount]" step="0.01" readonly>
+                </td>
+            `;
+
+            tbody.appendChild(newRow);
+            productRowCount++;
+            updateRowNumbers();
+            bindRowEvents(newRow);
+        }
+
+        // Update row numbers
+        function updateRowNumbers() {
+            document.querySelectorAll('.row-number').forEach((cell, index) => {
+                cell.textContent = index + 1;
+            });
+        }
+
+        // Bind events to a row
+        function bindRowEvents(row) {
+            const quantityInput = row.querySelector('.product-quantity');
+            const priceInput = row.querySelector('.product-price');
+
+            quantityInput.addEventListener('input', () => calculateRowAmount(row));
+            priceInput.addEventListener('input', () => calculateRowAmount(row));
+        }
+
+        // Initialize products calculation
+        document.addEventListener('DOMContentLoaded', function () {
+            // Bind events to existing rows
+            document.querySelectorAll('.product-row').forEach(bindRowEvents);
+
+            // Add row button
+            document.getElementById('add-product-row').addEventListener('click', addProductRow);
+
+            // Initial calculation
+            updateGrandTotal();
+        });
+    });
+</script>
+
+<!-- Products Calculation Script -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('Initializing Products Calculation System...');
+
+        let productRowCount = 1;
+
+        // Calculate amount for a single row
+        function calculateRowAmount(row) {
+            console.log('Calculating row amount...');
+            const quantityInput = row.querySelector('.product-quantity');
+            const priceInput = row.querySelector('.product-price');
+            const amountInput = row.querySelector('.product-amount');
+
+            if (quantityInput && priceInput && amountInput) {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const amount = quantity * price;
+                amountInput.value = amount.toFixed(2);
+                console.log(`Row calculation: ${quantity} × ${price} = ${amount}`);
+                updateGrandTotal();
+            }
+        }
+
+        // Update grand total and sync with Total Amount field
+        function updateGrandTotal() {
+            let total = 0;
+            document.querySelectorAll('.product-amount').forEach(input => {
+                total += parseFloat(input.value) || 0;
+            });
+
+            console.log('Grand total:', total);
+
+            // Update grand total display
+            const grandTotalSpan = document.getElementById('grand-total');
+            if (grandTotalSpan) {
+                grandTotalSpan.textContent = total.toFixed(2);
+            }
+
+            // Auto-sync with Total Amount field in Financial Information
+            const totalAmountField = document.getElementById('total_amount');
+            if (totalAmountField) {
+                totalAmountField.value = total.toFixed(2);
+                console.log('Synced with Total Amount field:', total.toFixed(2));
+            }
+        }
+
+        // Add new product row
+        function addProductRow() {
+            console.log('Adding new product row...');
+            const tbody = document.getElementById('products-tbody');
+            if (!tbody) return;
+
+            const newRow = document.createElement('tr');
+            newRow.className = 'product-row';
+            newRow.innerHTML = `
+            <td class="row-number">${productRowCount + 1}</td>
+            <td>
+                <input type="text" class="form-control product-name" 
+                       name="products[${productRowCount}][name]" placeholder="Enter product name">
+            </td>
+            <td>
+                <input type="number" class="form-control product-quantity" 
+                       name="products[${productRowCount}][quantity]" min="1" value="1" placeholder="1">
+            </td>
+            <td>
+                <input type="number" class="form-control product-price" 
+                       name="products[${productRowCount}][price]" step="0.01" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" class="form-control product-amount" 
+                       name="products[${productRowCount}][amount]" step="0.01" readonly>
+            </td>
+        `;
+
+            tbody.appendChild(newRow);
+            productRowCount++;
+            updateRowNumbers();
+            bindRowEvents(newRow);
+            console.log('New row added, total rows:', productRowCount);
+        }
+
+        // Update row numbers
+        function updateRowNumbers() {
+            document.querySelectorAll('.row-number').forEach((cell, index) => {
+                cell.textContent = index + 1;
+            });
+        }
+
+        // Bind events to a row
+        function bindRowEvents(row) {
+            const quantityInput = row.querySelector('.product-quantity');
+            const priceInput = row.querySelector('.product-price');
+
+            if (quantityInput) {
+                quantityInput.addEventListener('input', function () {
+                    console.log('Quantity changed:', this.value);
+                    calculateRowAmount(row);
+                });
+            }
+
+            if (priceInput) {
+                priceInput.addEventListener('input', function () {
+                    console.log('Price changed:', this.value);
+                    calculateRowAmount(row);
+                });
+            }
+        }
+
+        // Initialize calculation system
+        console.log('Setting up products calculation...');
+
+        // Bind events to existing rows
+        const existingRows = document.querySelectorAll('.product-row');
+        console.log('Found existing rows:', existingRows.length);
+        existingRows.forEach(bindRowEvents);
+
+        // Add row button
+        const addRowBtn = document.getElementById('add-product-row');
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', addProductRow);
+            console.log('Add row button bound');
+        } else {
+            console.error('Add row button not found');
+        }
+
+        // Initial calculation
+        updateGrandTotal();
+
+        console.log('Products calculation system initialized successfully!');
+    });
+</script>
+
+<script>
+    // Initialize booking create form with date handlers
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🚀 Initializing booking create form...');
+
+        // Make sure input fields start empty with placeholder
+        const arrivalDateDisplay = document.getElementById('arrival_date_display');
+        const departureDateDisplay = document.getElementById('departure_date_display');
+        const arrivalDateHidden = document.getElementById('arrival_date');
+        const departureDateHidden = document.getElementById('departure_date');
+
+        // Set initial state - empty values with placeholders
+        if (arrivalDateDisplay) {
+            arrivalDateDisplay.value = '';
+            arrivalDateDisplay.placeholder = 'DD/MM/YYYY';
+        }
+
+        if (departureDateDisplay) {
+            departureDateDisplay.value = '';
+            departureDateDisplay.placeholder = 'DD/MM/YYYY';
+        }
+
+        // Helper function to format date for display
+        function formatDateForDisplay(dateStr, includeTime = false) {
+            if (!dateStr) return '';
+
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return '';
+
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const year = date.getFullYear();
+
+                if (includeTime) {
+                    const hours = date.getHours().toString().padStart(2, '0');
+                    const minutes = date.getMinutes().toString().padStart(2, '0');
+                    return `${day}/${month}/${year} ${hours}:${minutes}`;
+                }
+
+                return `${day}/${month}/${year}`;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // Helper function to add days to a date
+        function addDays(dateStr, days) {
+            if (!dateStr) return '';
+
+            try {
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return '';
+
+                date.setDate(date.getDate() + days);
+                return date.toISOString().slice(0, 10); // YYYY-MM-DD format
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // Handle arrival date change to auto-set departure date (+1 day)
+        if (arrivalDateHidden && departureDateHidden && departureDateDisplay) {
+            // Monitor changes to arrival date (hidden field)
+            const observer = new MutationObserver(function (mutations) {
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                        const arrivalValue = arrivalDateHidden.value;
+                        if (arrivalValue) {
+                            // Auto-set departure date to +1 day
+                            const departureValue = addDays(arrivalValue, 1);
+                            if (departureValue) {
+                                departureDateHidden.value = departureValue;
+                                departureDateDisplay.value = formatDateForDisplay(departureValue);
+                                console.log(`✅ Auto-set departure date: ${departureValue} (${formatDateForDisplay(departureValue)})`);
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Start observing
+            observer.observe(arrivalDateHidden, {
+                attributes: true,
+                attributeFilter: ['value']
+            });
+
+            // Also handle input event
+            arrivalDateHidden.addEventListener('change', function () {
+                const arrivalValue = this.value;
+                if (arrivalValue) {
+                    const departureValue = addDays(arrivalValue, 1);
+                    if (departureValue) {
+                        departureDateHidden.value = departureValue;
+                        departureDateDisplay.value = formatDateForDisplay(departureValue);
+                        console.log(`✅ Auto-set departure date: ${departureValue} (${formatDateForDisplay(departureValue)})`);
+                    }
+                }
+            });
+        }
+
+        // Handle manual input for arrival date display field
+        if (arrivalDateDisplay && arrivalDateHidden) {
+            arrivalDateDisplay.addEventListener('input', function () {
+                // Parse DD/MM/YYYY format
+                const displayValue = this.value;
+                const match = displayValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+                if (match) {
+                    const [, day, month, year] = match;
+                    const date = new Date(year, month - 1, day);
+
+                    if (!isNaN(date.getTime())) {
+                        const isoValue = date.toISOString().slice(0, 10);
+                        arrivalDateHidden.value = isoValue;
+
+                        // Auto-trigger departure date update
+                        arrivalDateHidden.dispatchEvent(new Event('change'));
+                    }
+                }
+            });
+        }
+
+        // Handle manual input for departure date display field
+        if (departureDateDisplay && departureDateHidden) {
+            departureDateDisplay.addEventListener('input', function () {
+                // Parse DD/MM/YYYY format
+                const displayValue = this.value;
+                const match = displayValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+                if (match) {
+                    const [, day, month, year] = match;
+                    const date = new Date(year, month - 1, day);
+
+                    if (!isNaN(date.getTime())) {
+                        const isoValue = date.toISOString().slice(0, 10);
+                        departureDateHidden.value = isoValue;
+                    }
+                }
+            });
+        }
+
+        console.log('✅ Booking create form initialized with auto-departure date feature');
+    });
+</script>
+
+<!-- Calendar Picker Functions -->
+<script src="/static/js/calendar-picker.js"></script>
+
+<!-- Date Format Handlers -->
+<script src="/static/js/date-handlers.js"></script>
+
+
+                    </div>
+                </main>
+        </div>
+    </div> <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Font loading optimization -->
+    <script>
+        // Preload system fonts as fallback
+        if ('fonts' in document) {
+            // Try to load Google Fonts with timeout
+            const fontTimeout = setTimeout(() => {
+                console.log('Google Fonts timeout - using system fonts');
+            }, 3000);
+
+            document.fonts.ready.then(() => {
+                clearTimeout(fontTimeout);
+            });
+        }
+    </script>
+
+    
+</body>
+
+</html>

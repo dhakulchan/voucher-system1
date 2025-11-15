@@ -1397,12 +1397,12 @@ def debug_quote_pdf(id):
     booking = Booking.query.get_or_404(id)
     
     try:
-        from services.quote_pdf_generator import QuotePDFGenerator
-        quote_generator = QuotePDFGenerator()
+        from services.quote_weasyprint_generator import QuoteWeasyPrintGenerator
+        quote_generator = QuoteWeasyPrintGenerator()
         
-        # Generate Quote PDF
-        pdf_filename = quote_generator.generate_quote_pdf(booking)
-        pdf_path = f'static/generated/quotes/{pdf_filename}'
+        # Generate Quote PDF using WeasyPrint
+        pdf_path = quote_generator.generate_quote_pdf(booking)
+        pdf_filename = os.path.basename(pdf_path)
         
         return jsonify({
             'success': True,

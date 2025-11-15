@@ -1,0 +1,23 @@
+# 📋 Manual Deployment Commands for Font Improvements
+# Copy and paste these commands on your production server
+
+# 1. Backup current files
+cp ~/voucher-ro_v1.0/templates/pdf/quote_template_final_v2.html ~/backup_quote_template_$(date +%Y%m%d_%H%M%S).html
+cp ~/voucher-ro_v1.0/static/css/thai-fonts.css ~/backup_thai_fonts_$(date +%Y%m%d_%H%M%S).css
+
+# 2. Pull latest changes from GitHub
+cd ~/voucher-ro_v1.0
+git pull origin main
+
+# 3. Restart services
+sudo systemctl restart voucher-system
+sudo systemctl reload nginx
+
+# 4. Check status
+sudo systemctl status voucher-system --no-pager
+
+# 5. Test the improvements
+curl -I https://service.dhakulchan.net/booking/3/quote-pdf
+
+echo "✅ Font improvements deployed successfully!"
+echo "🔍 Test URL: https://service.dhakulchan.net/booking/3/quote-pdf?v=$(date +%s)"

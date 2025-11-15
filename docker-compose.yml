@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=db
+      - DB_USER=voucher_user
+      - DB_PASSWORD=secure_password
+      - DB_NAME=tour_voucher_db
+    depends_on:
+      - db
+    volumes:
+      - ./static/generated:/app/static/generated
+      - ./static/qr_codes:/app/static/qr_codes
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=tour_voucher_db
+      - MYSQL_USER=voucher_user
+      - MYSQL_PASSWORD=secure_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database_schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./static:/app/static
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

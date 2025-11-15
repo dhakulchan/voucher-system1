@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+        language_version: python3
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.5.6
+    hooks:
+      - id: ruff
+        args: [--fix]
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-ast
+      - id: debug-statements
+  - repo: local
+    hooks:
+      - id: pytest-fast
+        name: pytest (fast set)
+        entry: bash -c 'pytest -q -k "(zebra or terms or allowed_tags)"'
+        language: system
+        pass_filenames: false

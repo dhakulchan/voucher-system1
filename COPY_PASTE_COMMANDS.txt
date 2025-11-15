@@ -1,0 +1,15 @@
+# 🚨 COPY AND PASTE THESE COMMANDS ON YOUR SERVER:
+
+# 1. Force update code
+cd ~/voucher-ro_v1.0 && git fetch --all && git reset --hard origin/main
+
+# 2. Verify Arial font is there
+grep "Arial" ~/voucher-ro_v1.0/templates/pdf/quote_template_final_v2.html
+
+# 3. Clear cache and restart
+find ~/voucher-ro_v1.0 -name "*.pyc" -delete && sudo systemctl restart voucher-system && sudo systemctl reload nginx
+
+# 4. Test immediately
+curl -I "https://service.dhakulchan.net/booking/3/quote-pdf?v=$(date +%s)"
+
+echo "✅ Done! Check: https://service.dhakulchan.net/booking/3/quote-pdf?v=$(date +%s)"

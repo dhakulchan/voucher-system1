@@ -1,0 +1,556 @@
+"""
+Special Route Handler for Booking #46
+แก้ปัญหา datetime corruption โดยใช้ raw MariaDB connection
+"""
+
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required
+from mariadb_helper import get_mariadb_cursor
+import logging
+
+class SimpleBooking:
+    """Wrapper class to make dictionary data compatible with template object expectati        # Get form data
+        form_data = request.form.to_dict()
+        
+        # Debug admin fields in form
+        print(f"🔍 UPDATE DEBUG admin_notes='{form_data.get('admin_notes')}' manager_memos='{form_data.get('manager_memos')}' internal_note='{form_data.get('internal_note')}'")
+        
+        # Debug products fields
+        form_dict = request.form.to_dict(flat=False)
+        products_fields = [k for k in form_dict.keys() if 'products' in k]
+        print(f"🔍 PRODUCTS DEBUG: Found {len(products_fields)} product fields")
+        for key in sorted(products_fields):
+            print(f"   {key}: {form_dict[key]}")"
+    def __init__(self, booking_data):
+        # Copy all data from dictionary to object attributes
+        for key, value in booking_data.items():
+            # Convert numeric fields to proper types for template compatibility
+            if key in ['total_amount', 'adults', 'children', 'infants', 'total_pax'] and value:
+                try:
+                    if key == 'total_amount':
+                        setattr(self, key, float(value))
+                    else:
+                        setattr(self, key, int(value))
+                except (ValueError, TypeError):
+                    setattr(self, key, value)
+            else:
+                setattr(self, key, value)
+    
+    def get_products(self):
+        """Return products list for template compatibility"""
+        return getattr(self, 'products', [])
+    
+    def get_guest_list(self):
+        """Parse guest list JSON for template"""
+        if hasattr(self, 'guest_list') and self.guest_list:
+            try:
+                import json
+                return json.loads(self.guest_list)
+            except:
+                return [self.guest_list] if self.guest_list else []
+        return []
+    
+    def get_guest_list_for_edit(self):
+        """Return guest list formatted for editing"""
+        guest_list = self.get_guest_list()
+        if isinstance(guest_list, list):
+            # Convert list to textarea format (one per line)
+            return '\n'.join([str(item).strip('<p>').strip('</p>') for item in guest_list])
+        return guest_list if guest_list else ''
+    
+    def get_products(self):
+        """Parse products JSON for template"""
+        if hasattr(self, 'products') and self.products:
+            try:
+                import json
+                return json.loads(self.products)
+            except:
+                return []
+        return []
+    
+    def get_daily_services(self):
+        """Parse daily services JSON for template"""
+        if hasattr(self, 'daily_services') and self.daily_services:
+            try:
+                import json
+                return json.loads(self.daily_services)
+            except:
+                return []
+        return []
+    
+    def get_activity_logs(self):
+        """Return activity logs for view template compatibility"""
+        return getattr(self, 'activity_logs', [])
+    
+    def __getattr__(self, name):
+        """Fallback for any missing attributes"""
+        return None
+
+class SimpleCustomer:
+    """Simple customer object for template compatibility"""
+    def __init__(self, name=None, email=None, phone=None):
+        self.name = name
+        self.email = email
+        self.phone = phone
+
+class SafeDatetime:
+    """Wrapper class to make string datetime values compatible with template datetime operations"""
+    def __init__(self, datetime_str):
+        self.datetime_str = str(datetime_str) if datetime_str else ""
+        self._parsed_datetime = None
+        
+    def __str__(self):
+        return self.datetime_str
+    
+    def __repr__(self):
+        return f"SafeDatetime('{self.datetime_str}')"
+    
+    def strftime(self, format_str):
+        """Handle .strftime() calls from templates"""
+        if not self.datetime_str:
+            return ""
+        
+        # Try to parse the datetime string if not already parsed
+        if not self._parsed_datetime:
+            try:
+                # Common datetime formats to try
+                formats = [
+                    '%Y-%m-%d %H:%M:%S',
+                    '%Y-%m-%d',
+                    '%d/%m/%Y %H:%M:%S',
+                    '%d/%m/%Y',
+                    '%Y-%m-%d %H:%M',
+                    '%d/%m/%Y %H:%M'
+                ]
+                
+                for fmt in formats:
+                    try:
+                        from datetime import datetime
+                        self._parsed_datetime = datetime.strptime(self.datetime_str, fmt)
+                        break
+                    except ValueError:
+                        continue
+                        
+                # If parsing fails, return the original string
+                if not self._parsed_datetime:
+                    return self.datetime_str
+                    
+            except Exception:
+                return self.datetime_str
+        
+        try:
+            return self._parsed_datetime.strftime(format_str)
+        except Exception:
+            return self.datetime_str
+    
+    def __bool__(self):
+        """For truthiness checks in templates"""
+        return bool(self.datetime_str)
+    
+    def __eq__(self, other):
+        """For comparison operations"""
+        if isinstance(other, SafeDatetime):
+            return self.datetime_str == other.datetime_str
+        return self.datetime_str == str(other)
+    
+    # Make it behave like the original string in most contexts
+    def __getattr__(self, name):
+        return getattr(self.datetime_str, name)
+
+logger = logging.getLogger(__name__)
+
+# Create blueprint for booking #46 special handling
+booking_46_bp = Blueprint('booking_46', __name__)
+
+@booking_46_bp.route('/booking/view/46')
+@login_required
+def view_booking_46():
+    """Special handler for viewing booking #46 to bypass datetime corruption"""
+    try:
+        print("🔍 Entering view_booking_46 function")
+        
+        # Get booking data using raw MariaDB
+        with get_mariadb_cursor() as (cursor, conn):
+            print("🔍 Connected to MariaDB for view")
+            cursor.execute("""
+                SELECT 
+                    b.*,
+                    c.name as customer_name,
+                    c.email as customer_email,
+                    c.phone as customer_phone,
+                    c.first_name as customer_first_name,
+                    c.last_name as customer_last_name
+                FROM bookings b
+                LEFT JOIN customers c ON b.customer_id = c.id
+                WHERE b.id = 46
+            """)
+            
+            result = cursor.fetchone()
+            print(f"🔍 Query result: {result is not None}")
+            
+            if not result:
+                flash('Booking #46 not found', 'error')
+                print("🔍 No booking found - redirecting")
+                return redirect(url_for('booking.list'))
+            
+            # Convert to dictionary
+            columns = [desc[0] for desc in cursor.description]
+            booking_data = dict(zip(columns, result))
+            print(f"🔍 Booking data loaded: {len(booking_data)} fields")
+            
+        # Convert ALL date/time related fields to SafeDatetime objects for template compatibility
+        datetime_field_names = [
+            'time_limit', 'created_at', 'updated_at', 'confirmed_at', 
+            'quoted_at', 'invoiced_at', 'paid_at', 'vouchered_at', 
+            'invoice_paid_date', 'date', 'datetime', 'timestamp',
+            'arrival_date', 'departure_date', 'traveling_period_start',
+            'traveling_period_end', 'due_date'
+        ]
+        
+        print(f"📊 Original time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
+        
+        for field_name in datetime_field_names:
+            if field_name in booking_data and booking_data[field_name]:
+                original_value = booking_data[field_name]
+                booking_data[field_name] = SafeDatetime(booking_data[field_name])
+                print(f"🔄 Converted {field_name}: {original_value} -> {booking_data[field_name]} (type: {type(booking_data[field_name])})")
+        
+        # Second pass: catch any remaining fields that might contain datetime data
+        for key, value in booking_data.items():
+            if value and isinstance(value, str):
+                # Check if it looks like a date/time string pattern
+                if any(x in key.lower() for x in ['date', 'time', 'created', 'updated', 'at']) and not isinstance(value, SafeDatetime):
+                    original_value = value
+                    booking_data[key] = SafeDatetime(value)
+                    print(f"🔄 Second pass converted {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
+        
+        print(f"📊 Final time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
+            
+        # Preserve existing products data from database
+        booking_data['products'] = booking_data.get('products', '[]')  # Keep existing products JSON
+        
+        # Ensure payment fields are available 
+        booking_data['quote_number'] = booking_data.get('quote_number', '')
+        booking_data['invoice_number'] = booking_data.get('invoice_number', '')
+        booking_data['invoice_status'] = booking_data.get('invoice_status', 'unknown')
+        booking_data['is_paid'] = booking_data.get('is_paid', False)
+        
+        # Create customer object for template compatibility
+        customer_obj = SimpleCustomer()
+        if booking_data.get('customer_name'):
+            customer_obj.name = booking_data['customer_name']
+            customer_obj.email = booking_data.get('customer_email', '')
+            customer_obj.phone = booking_data.get('customer_phone', '')
+            customer_obj.first_name = booking_data.get('customer_first_name', '')
+            customer_obj.last_name = booking_data.get('customer_last_name', '')
+        
+        booking_data['customer'] = customer_obj
+        
+        # Get activity logs for this booking
+        with get_mariadb_cursor() as (cursor2, conn2):
+            cursor2.execute("""
+                SELECT al.*, u.username, u.full_name
+                FROM activity_logs al
+                LEFT JOIN users u ON al.user_id = u.id
+                WHERE al.description LIKE %s
+                ORDER BY al.created_at DESC
+                LIMIT 20
+            """, (f'%[BOOKING #{46}]%',))
+            
+            activity_logs_data = cursor2.fetchall()
+            print(f"📋 Found {len(activity_logs_data)} activity logs for booking {46}")
+            
+            # Create activity log objects for template
+            class ActivityLogDisplay:
+                def __init__(self, log_data):
+                    (self.id, self.user_id, self.action, self.description, self.ip_address, 
+                     self.user_agent, self.created_at, username, full_name) = log_data
+                    
+                    # Convert created_at to SafeDatetime for template compatibility
+                    if self.created_at:
+                        self.created_at = SafeDatetime(self.created_at)
+                    
+                    # Create user info
+                    class UserDisplay:
+                        def __init__(self, username, full_name):
+                            self.username = username or 'System'
+                            self.full_name = full_name or ''
+                    
+                    self.user = UserDisplay(username, full_name)
+            
+            # Convert activity logs to display objects
+            booking_data['activity_logs'] = [ActivityLogDisplay(log_data) for log_data in activity_logs_data]
+        
+        # Create booking object wrapper for template compatibility
+        booking_obj = SimpleBooking(booking_data)
+        
+        # Debug admin fields
+        print(f"🔍 Admin fields debug:")
+        print(f"  - admin_notes: {getattr(booking_obj, 'admin_notes', 'NOT FOUND')}")
+        print(f"  - manager_memos: {getattr(booking_obj, 'manager_memos', 'NOT FOUND')}")
+        print(f"  - internal_note: {getattr(booking_obj, 'internal_note', 'NOT FOUND')}")
+        
+        # Debug other fields
+        print(f"🔍 Other fields debug:")
+        print(f"  - guest_list: {getattr(booking_obj, 'guest_list', 'NOT FOUND')}")
+        print(f"  - flight_info: {getattr(booking_obj, 'flight_info', 'NOT FOUND')}")
+        print(f"  - special_request: {getattr(booking_obj, 'special_request', 'NOT FOUND')}")
+        print(f"  - products: {getattr(booking_obj, 'products', 'NOT FOUND')}")
+        print(f"  - quote_number: {getattr(booking_obj, 'quote_number', 'NOT FOUND')}")
+        print(f"  - invoice_status: {getattr(booking_obj, 'invoice_status', 'NOT FOUND')}")
+        print(f"  - is_paid: {getattr(booking_obj, 'is_paid', 'NOT FOUND')}")
+        
+        print(f"🔍 About to render view template with booking object type: {type(booking_obj)}")
+        logger.info(f"✅ Successfully loaded booking #46 for view: {booking_data.get('booking_reference', 'N/A')}")
+        
+        # Check current language
+        from flask import session
+        current_language = session.get('language', 'en')
+        template_name = f'booking/view_{current_language}.html'
+        
+        # Try to render with language-specific template, fallback to English
+        try:
+            return render_template(template_name, booking=booking_obj, special_mode=True)
+        except:
+            return render_template('booking/view_en.html', booking=booking_obj, special_mode=True)
+        
+    except Exception as e:
+        print(f"🔍 Exception in view_booking_46: {e}")
+        logger.error(f"❌ Error loading booking #46 for view: {e}", exc_info=True)
+        flash(f'Database error loading booking #46 view: {str(e)}', 'error')
+        return redirect(url_for('booking.list'))
+
+@booking_46_bp.route('/booking/edit/46')
+@login_required
+def edit_booking_46():
+    """Special handler for booking #46 to bypass datetime corruption"""
+    try:
+        print("🔍 Entering edit_booking_46 function")
+        
+        # Get booking data using raw MariaDB
+        with get_mariadb_cursor() as (cursor, conn):
+            print("🔍 Connected to MariaDB")
+            cursor.execute("""
+                SELECT 
+                    b.*,
+                    c.name as customer_name,
+                    c.email as customer_email,
+                    c.phone as customer_phone
+                FROM bookings b
+                LEFT JOIN customers c ON b.customer_id = c.id
+                WHERE b.id = 46
+            """)
+            
+            result = cursor.fetchone()
+            print(f"🔍 Query result: {result is not None}")
+            
+            if not result:
+                flash('Booking #46 not found', 'error')
+                print("🔍 No booking found - redirecting")
+                return redirect(url_for('booking.list'))
+            
+            # Convert to dictionary
+            columns = [desc[0] for desc in cursor.description]
+            booking_data = dict(zip(columns, result))
+            print(f"🔍 Booking data loaded: {len(booking_data)} fields")
+            
+        # Convert ALL date/time related fields to SafeDatetime objects for template compatibility
+        datetime_field_names = [
+            'time_limit', 'created_at', 'updated_at', 'confirmed_at', 
+            'quoted_at', 'invoiced_at', 'paid_at', 'vouchered_at', 
+            'invoice_paid_date', 'date', 'datetime', 'timestamp'
+        ]
+        
+        print(f"📊 Original time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
+        
+        for field_name in datetime_field_names:
+            if field_name in booking_data and booking_data[field_name]:
+                original_value = booking_data[field_name]
+                booking_data[field_name] = SafeDatetime(booking_data[field_name])
+                print(f"🔄 Converted {field_name}: {original_value} -> {booking_data[field_name]} (type: {type(booking_data[field_name])})")
+        
+        # Second pass: catch any remaining fields that might contain datetime data
+        for key, value in booking_data.items():
+            if value and isinstance(value, str):
+                # Check if it looks like a date/time string pattern
+                if any(x in key.lower() for x in ['date', 'time', 'created', 'updated', 'at']) and not isinstance(value, SafeDatetime):
+                    original_value = value
+                    booking_data[key] = SafeDatetime(value)
+                    print(f"🔄 Second pass converted {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
+        
+        print(f"📊 Final time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
+            
+        # Set empty products since booking_products table doesn't exist
+        booking_data['products'] = []
+        
+        # Create customer object for template compatibility
+        customer_obj = SimpleCustomer()
+        if booking_data.get('customer_name'):
+            customer_obj.name = booking_data['customer_name']
+            customer_obj.email = booking_data.get('customer_email', '')
+            customer_obj.phone = booking_data.get('customer_phone', '')
+        
+        booking_data['customer'] = customer_obj
+        
+        # Create booking object wrapper for template compatibility
+        booking_obj = SimpleBooking(booking_data)
+        
+        print(f"🔍 About to render template with booking object type: {type(booking_obj)}")
+        print(f"🔍 Booking has get_products method: {hasattr(booking_obj, 'get_products')}")
+        print(f"🔍 Booking time_limit type: {type(booking_obj.time_limit)}")
+        logger.info(f"✅ Successfully loaded booking #46 data: {booking_data.get('booking_reference', 'N/A')}")
+        return render_template('booking/edit.html', booking=booking_obj, special_mode=True)
+        
+    except Exception as e:
+        print(f"🔍 Exception in edit_booking_46: {e}")
+        logger.error(f"❌ Error loading booking #46: {e}", exc_info=True)
+        flash(f'Database error loading booking #46: {str(e)}', 'error')
+        return redirect(url_for('booking.list'))
+
+@booking_46_bp.route('/booking/edit/46', methods=['POST'])
+@login_required  
+def update_booking_46():
+    """Special handler for updating booking #46"""
+    try:
+        # Get form data
+        form_data = request.form.to_dict()
+        
+        # Debug admin fields in form
+        print(f"🔍 UPDATE DEBUG admin_notes='{form_data.get('admin_notes')}' manager_memos='{form_data.get('manager_memos')}' internal_note='{form_data.get('internal_note')}'")
+        
+        # Prepare update query
+        updates = []
+        values = []
+        
+        # Safe fields to update
+        safe_fields = {
+            'adults': 'adults',
+            'children': 'children',
+            'infants': 'infants', 
+            'total_pax': 'total_pax',
+            'pickup_point': 'pickup_point',
+            'pickup_time': 'pickup_time',
+            'total_amount': 'total_amount',
+            'status': 'status',
+            'currency': 'currency',
+            'notes': 'notes',
+            'party_name': 'party_name',
+            'description': 'description',
+            'admin_notes': 'admin_notes',
+            'manager_memos': 'manager_memos',
+            'internal_note': 'internal_note',
+            'guest_list': 'guest_list',
+            'flight_info': 'flight_info',
+            'special_request': 'special_request',
+            'products': 'products'
+        }
+        
+        for form_field, db_field in safe_fields.items():
+            if form_field in form_data and form_data[form_field] is not None:
+                # Special handling for products
+                if form_field == 'products':
+                    # Handle products data from dynamic form
+                    products = []
+                    form_dict = request.form.to_dict(flat=False)
+                    
+                    i = 0
+                    while True:
+                        name_key = f'products[{i}][name]'
+                        quantity_key = f'products[{i}][quantity]'
+                        price_key = f'products[{i}][price]'
+                        amount_key = f'products[{i}][amount]'
+                        
+                        if name_key not in form_dict:
+                            break
+                            
+                        name = form_dict[name_key][0] if form_dict[name_key] else ''
+                        quantity = form_dict[quantity_key][0] if quantity_key in form_dict and form_dict[quantity_key] else '1'
+                        price = form_dict[price_key][0] if price_key in form_dict and form_dict[price_key] else '0'
+                        amount = form_dict[amount_key][0] if amount_key in form_dict and form_dict[amount_key] else '0'
+                        
+                        if name.strip():  # Only add products with names
+                            products.append({
+                                'name': name.strip(),
+                                'quantity': int(quantity) if quantity else 1,
+                                'price': float(price) if price else 0.0,
+                                'amount': float(amount) if amount else 0.0
+                            })
+                        
+                        i += 1
+                    
+                    # Convert to JSON
+                    import json
+                    updates.append(f"{db_field} = %s")
+                    values.append(json.dumps(products))
+                # Special handling for guest_list 
+                elif form_field == 'guest_list':
+                    guest_list_text = form_data[form_field]
+                    if guest_list_text:
+                        # Convert textarea input to list format
+                        lines = [line.strip() for line in guest_list_text.split('\n') if line.strip()]
+                        if lines:
+                            import json
+                            updates.append(f"{db_field} = %s")
+                            values.append(json.dumps(lines))
+                        else:
+                            updates.append(f"{db_field} = NULL")
+                    else:
+                        updates.append(f"{db_field} = NULL")
+                else:
+                    updates.append(f"{db_field} = %s")
+                    values.append(form_data[form_field])
+        
+        # Always update timestamp
+        updates.append("updated_at = NOW()")
+        values.append(46)  # booking_id
+        
+        if updates:
+            query = f"""
+                UPDATE bookings 
+                SET {', '.join(updates)}
+                WHERE id = %s
+            """
+            
+            with get_mariadb_cursor() as (cursor, conn):
+                cursor.execute(query, values)
+                conn.commit()
+                
+                if cursor.rowcount > 0:
+                    flash('Booking #46 updated successfully!', 'success')
+                    
+                    # Log the update
+                    cursor.execute("""
+                        INSERT INTO activity_logs (user_id, action, description, created_at)
+                        VALUES (%s, %s, %s, NOW())
+                    """, (
+                        1,  # admin user
+                        'booking_updated',
+                        f'[BOOKING #46] Booking updated via special handler'
+                    ))
+                    conn.commit()
+                    
+                    # Redirect to view page after successful update
+                    return redirect(url_for('booking_46.view_booking_46'))
+                else:
+                    flash('No changes were made to booking #46', 'info')
+                    return redirect(url_for('booking_46.view_booking_46'))
+        
+        return redirect(url_for('booking_46.edit_booking_46'))
+        
+    except Exception as e:
+        logger.error(f"Error updating booking #46: {e}")
+        flash(f'Error updating booking #46: {str(e)}', 'error')
+        return redirect(url_for('booking_46.edit_booking_46'))
+
+def register_booking_46_routes(app):
+    """Register booking #46 special routes with the app"""
+    app.register_blueprint(booking_46_bp)
+    logger.info("✅ Booking #46 special routes registered")
+
+if __name__ == "__main__":
+    print("🧪 Testing Booking #46 Special Routes...")
+    print("✅ Routes defined and ready to register")
+    print("📋 Available routes:")
+    print("   GET  /booking/edit/46 - Special edit form")
+    print("   POST /booking/edit/46 - Special update handler (redirects to view)")
+    print("   GET  /booking/view/46 - Special view page")

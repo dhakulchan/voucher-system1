@@ -1234,7 +1234,7 @@ class ClassicPDFGenerator:
             doc = BaseDocTemplate(
                 output_path,
                 pagesize=A4,
-                topMargin=35*mm,     # Space for header
+                topMargin=5*mm,      # Space for header - 0.5cm
                 bottomMargin=20*mm,  # Space for footer
                 leftMargin=15*mm,
                 rightMargin=15*mm
@@ -1293,7 +1293,7 @@ class ClassicPDFGenerator:
             content_frame = Frame(
                 15*mm, 20*mm,  # x, y (bottom margin for footer)
                 A4[0] - 30*mm,  # width (page width - left/right margins)
-                A4[1] - 55*mm,  # height (page height - top/bottom margins)
+                A4[1] - 25*mm,  # height (page height - top/bottom margins) - adjusted for 0.5cm top
                 id='content_frame'
             )
             

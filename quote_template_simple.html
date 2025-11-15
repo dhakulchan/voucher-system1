@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tour Voucher - {{ booking.booking_reference }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #007acc;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007acc;
+            margin-bottom: 5px;
+        }
+
+        .voucher-title {
+            font-size: 18px;
+            color: #333;
+            margin-top: 10px;
+        }
+
+        .booking-ref {
+            font-size: 16px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin-top: 10px;
+        }
+
+        .content-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #007acc;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .guest-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007acc;
+        }
+
+        .tour-details {
+            background-color: #fff5f5;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .important-note {
+            background-color: #fffbf0;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #f39c12;
+            margin-top: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            margin-top: 30px;
+        }
+
+        .row {
+            display: table;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .col {
+            display: table-cell;
+            vertical-align: top;
+            padding-right: 15px;
+        }
+
+        .col:last-child {
+            padding-right: 0;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .value {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="company-name">TOUR OPERATOR COMPANY</div>
+        <div class="voucher-title">TOUR VOUCHER</div>
+        <div class="booking-ref">{{ booking.booking_reference }}</div>
+    </div>
+
+    <div class="content-section guest-info">
+        <div class="section-title">Guest Information</div>
+        <div class="row">
+            <div class="col">
+                <span class="label">Guest Name:</span>
+                <span class="value">{{ booking.guest_name or 'N/A' }}</span>
+            </div>
+            <div class="col">
+                <span class="label">Email:</span>
+                <span class="value">{{ booking.guest_email or 'N/A' }}</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <span class="label">Phone:</span>
+                <span class="value">{{ booking.guest_phone or 'N/A' }}</span>
+            </div>
+            <div class="col">
+                <span class="label">Nationality:</span>
+                <span class="value">{{ booking.guest_nationality or 'N/A' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-section tour-details">
+        <div class="section-title">Tour Details</div>
+        <div class="row">
+            <div class="col">
+                <span class="label">Tour Date:</span>
+                <span class="value">{{ booking.tour_date.strftime('%d %B %Y') if booking.tour_date else 'N/A' }}</span>
+            </div>
+            <div class="col">
+                <span class="label">Duration:</span>
+                <span class="value">{{ booking.duration or 'N/A' }}</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <span class="label">Pickup Location:</span>
+                <span class="value">{{ booking.pickup_location or 'N/A' }}</span>
+            </div>
+            <div class="col">
+                <span class="label">Pickup Time:</span>
+                <span class="value">{{ booking.pickup_time or 'N/A' }}</span>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <span class="label">Adults:</span>
+                <span class="value">{{ booking.adults or 0 }}</span>
+            </div>
+            <div class="col">
+                <span class="label">Children:</span>
+                <span class="value">{{ booking.children or 0 }}</span>
+            </div>
+        </div>
+        {% if booking.special_requirements %}
+        <div class="row">
+            <div class="col">
+                <span class="label">Special Requirements:</span>
+                <span class="value">{{ booking.special_requirements }}</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="important-note">
+        <div class="section-title">Important Information</div>
+        <p><strong>Please bring this voucher on the tour date.</strong></p>
+        <p>• Please arrive at the pickup location 15 minutes before scheduled time</p>
+        <p>• Bring valid identification document</p>
+        <p>• Contact us immediately if you need to make changes</p>
+        <p>• Weather conditions may affect tour schedule</p>
+    </div>
+
+    <div class="footer">
+        <p>Generated on {{ current_date.strftime('%d %B %Y at %H:%M') if current_date else 'N/A' }}</p>
+        <p>Thank you for choosing our tour services!</p>
+    </div>
+</body>
+
+</html>

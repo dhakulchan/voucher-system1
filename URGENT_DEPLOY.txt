@@ -1,0 +1,16 @@
+# 🚀 URGENT: Deploy Font Improvements to Production
+# Copy and run these commands on your server:
+
+cd ~/voucher-ro_v1.0 && git pull origin main && sudo systemctl restart voucher-system && sudo systemctl reload nginx
+
+# Verify deployment:
+curl -s -o /dev/null -w "%{http_code}\n" https://service.dhakulchan.net/booking/3/quote-pdf
+
+# Check service status:
+sudo systemctl status voucher-system --no-pager -l
+
+# If still not working, force restart:
+sudo pkill -f "python.*app.py"
+cd ~/voucher-ro_v1.0 && python app.py &
+
+echo "✅ Deployment complete! Check: https://service.dhakulchan.net/booking/3/quote-pdf?v=$(date +%s)"

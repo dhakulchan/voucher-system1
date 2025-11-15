@@ -272,6 +272,86 @@ def create_app():
     except Exception as e:
         print(f"❌ Failed to register mark-paid API: {e}")
     
+    # Add Quote PDF generation route
+    @app.route('/booking/<booking_ref>/quote_pdf')
+    def generate_quote_pdf(booking_ref):
+        """Generate Quote PDF using WeasyPrint"""
+        from flask import Response
+        from weasyprint_quote_generator import WeasyPrintQuoteGenerator
+        import os
+        import sqlite3
+        import json
+        
+        try:
+            # Create a simple booking class for SQLite data
+            class SimpleBooking:
+                def __init__(self, data):
+                    self.id = data[0]
+                    self.booking_reference = data[1]
+                    self.guest_list = data[2] 
+                    self.description = data[3]
+                    self.customer_name = data[4]
+                    self.customer_phone = data[5]
+                    self.total_amount = data[6]
+                    self.adults = data[7]
+                    self.children = data[8]
+                    self.infants = data[9]
+                    # Add mock fields for PDF generation
+                    self.flight_info = None
+                    self.service_date = None
+                    
+            # Query SQLite directly 
+            conn = sqlite3.connect('voucher_system.db')
+            cursor = conn.cursor()
+            
+            # Try to find booking by ID first, then by reference
+            booking_data = None
+            try:
+                booking_id = int(booking_ref)
+                cursor.execute('SELECT * FROM bookings WHERE id = ?', (booking_id,))
+                booking_data = cursor.fetchone()
+            except ValueError:
+                cursor.execute('SELECT * FROM bookings WHERE booking_reference = ?', (booking_ref,))
+                booking_data = cursor.fetchone()
+            
+            conn.close()
+            
+            if not booking_data:
+                app.logger.error(f"❌ Booking not found: {booking_ref}")
+                return Response("Booking not found", status=404)
+                
+            # Create booking object
+            booking = SimpleBooking(booking_data)
+            
+            # Generate PDF
+            generator = WeasyPrintQuoteGenerator()
+            pdf_path = generator.generate_quote_pdf(booking)
+            
+            # Read and return PDF
+            if os.path.exists(pdf_path):
+                with open(pdf_path, 'rb') as f:
+                    pdf_data = f.read()
+                
+                app.logger.info(f"✅ Quote PDF generated successfully: {pdf_path} ({len(pdf_data)} bytes)")
+                
+                return Response(
+                    pdf_data,
+                    mimetype='application/pdf',
+                    headers={
+                        'Content-Disposition': f'inline; filename="Quote_{booking_ref}.pdf"',
+                        'Content-Length': str(len(pdf_data))
+                    }
+                )
+            else:
+                app.logger.error(f"❌ PDF file not found: {pdf_path}")
+                return Response("PDF generation failed - file not found", status=500)
+                
+        except Exception as e:
+            import traceback
+            app.logger.error(f"❌ Quote PDF generation error: {str(e)}")
+            app.logger.error(f"❌ Stack trace: {traceback.format_exc()}")
+            return Response(f"PDF generation failed: {str(e)}", status=500)
+    
     # Add favicon route
     @app.route('/favicon.ico')
     def favicon():

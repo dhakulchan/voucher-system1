@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quote - Thai Test</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Sarabun', Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+        
+        .thai-content {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .force-thai {
+            background: yellow !important;
+            color: red !important;
+            font-weight: bold;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>QUOTATION / SERVICE PROPOSAL</h1>
+        <p>Quote Number: {{ quote_number or 'QT001' }}</p>
+        <p>Date: {{ quote_date or '14/11/2025' }}</p>
+    </div>
+    
+    <div class="section">
+        <h3>Booking Information</h3>
+        <p><strong>Booking ID:</strong> {{ booking.id }}</p>
+        <p><strong>Reference:</strong> {{ booking.booking_reference }}</p>
+        <p><strong>Status:</strong> {{ booking.status }}</p>
+    </div>
+    
+    <div class="section">
+        <h3>🔥 Direct Booking Data Test (ข้อมูลโดยตรงจาก Booking)</h3>
+        
+        <div class="thai-content">
+            <h4>Service Detail (booking.description):</h4>
+            <div class="force-thai">{{ booking.description }}</div>
+        </div>
+        
+        <div class="thai-content">
+            <h4>Guest List (booking.guest_list):</h4>
+            <div class="force-thai">{{ booking.guest_list }}</div>
+        </div>
+        
+        <div class="thai-content">
+            <h4>Flight Info (booking.flight_info):</h4>
+            <div class="force-thai">{{ booking.flight_info }}</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>🔥 Template Variables Test</h3>
+        
+        <div class="thai-content">
+            <h4>Service Detail (service_detail variable):</h4>
+            <div class="force-thai">{{ service_detail or 'ไม่มีข้อมูล service_detail' }}</div>
+        </div>
+        
+        <div class="thai-content">
+            <h4>Name List (name_list variable):</h4>
+            <div class="force-thai">{{ name_list or 'ไม่มีข้อมูล name_list' }}</div>
+        </div>
+        
+        <div class="thai-content">
+            <h4>Flight Info (flight_info variable):</h4>
+            <div class="force-thai">{{ flight_info or 'ไม่มีข้อมูล flight_info' }}</div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>🧪 Hard-coded Thai Test</h3>
+        <div class="thai-content">
+            <p>ทดสอบภาษาไทย: โรงแรม, ที่พัก, นักท่องเที่ยว</p>
+            <p>เที่ยวบิน: การบินไทย TG123</p>
+            <p>รายชื่อผู้โดยสาร: นาย ทดสอบ ระบบ</p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h3>Pricing</h3>
+        <p><strong>Total Amount:</strong> {{ total_amount or '7,100.00' }} THB</p>
+    </div>
+    
+    <footer style="margin-top: 50px; text-align: center; font-size: 12px;">
+        <p>Generated: {{ generation_timestamp or 'Now' }}</p>
+        <p>Template: quote_thai_test.html</p>
+    </footer>
+</body>
+</html>

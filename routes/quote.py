@@ -313,10 +313,11 @@ def download_quote_png(quote_id):
         quote = Quote.query.get_or_404(quote_id)
         
         if not quote.png_path or not os.path.exists(quote.png_path):
-            # Generate PNG if not exists
-            from services.quote_pdf_generator import QuotePDFGenerator
-            pdf_generator = QuotePDFGenerator()
-            pdf_path, png_path = pdf_generator.generate_quote_pdf(quote, quote.booking, quote.booking.customer)
+            # Generate PNG if not exists using WeasyPrint
+            from services.quote_weasyprint_generator import QuoteWeasyPrintGenerator
+            pdf_generator = QuoteWeasyPrintGenerator()
+            pdf_path = pdf_generator.generate_quote_pdf(quote.booking)
+            png_path = pdf_generator.generate_quote_png(quote.booking)
             
             quote.pdf_path = pdf_path
             quote.png_path = png_path

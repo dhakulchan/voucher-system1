@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quote Thai Test - Forced Display</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;600;700&display=swap');
+
+        * {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'THSarabunNew', Arial, sans-serif !important;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 20px;
+            line-height: 1.6;
+            color: #000;
+            background: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #333;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+        }
+
+        .section-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #000;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .thai-content {
+            background: #ffff99 !important;
+            border: 3px solid #ff0000 !important;
+            padding: 10px;
+            margin: 10px 0;
+            color: #000 !important;
+            font-size: 13px !important;
+            line-height: 1.5 !important;
+            white-space: pre-wrap;
+        }
+
+        .force-visible {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: #000 !important;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+
+        .info-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        .label {
+            background: #e0e0e0;
+            font-weight: bold;
+            width: 120px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🇹🇭 QUOTATION / SERVICE PROPOSAL</h1>
+        <h2>Quote Number: {{ quote_number or 'QT-TEST' }}</h2>
+        <h3>Date: {{ quote_date.strftime('%d/%m/%Y') if quote_date else '14/11/2025' }}</h3>
+    </div>
+
+    <div class="section">
+        <div class="section-title">📋 Booking Information</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Booking ID:</td>
+                <td>{{ booking.id }}</td>
+            </tr>
+            <tr>
+                <td class="label">Reference:</td>
+                <td>{{ booking.booking_reference }}</td>
+            </tr>
+            <tr>
+                <td class="label">Status:</td>
+                <td>{{ booking.status }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🏨 Service Detail / รายละเอียดบริการ</div>
+        <div class="thai-content force-visible">
+            <!-- 🔥 DIRECT BOOKING DATA TEST -->
+            RAW BOOKING DESCRIPTION:
+            {{ booking.description }}
+
+            <!-- FALLBACK TEST -->
+            {% if not booking.description %}
+            ⚠️ No booking.description found - using fallback
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">👥 Name List / รายชื่อผู้โดยสาร</div>
+        <div class="thai-content force-visible">
+            <!-- 🔥 DIRECT BOOKING GUEST LIST TEST -->
+            RAW BOOKING GUEST_LIST:
+            {{ booking.guest_list }}
+
+            <!-- FALLBACK TEST -->
+            {% if not booking.guest_list %}
+            ⚠️ No booking.guest_list found - using fallback
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">✈️ Flight Information / ข้อมูลเที่ยวบิน</div>
+        <div class="thai-content force-visible">
+            <!-- 🔥 DIRECT BOOKING FLIGHT INFO TEST -->
+            RAW BOOKING FLIGHT_INFO:
+            {{ booking.flight_info }}
+
+            <!-- FALLBACK TEST -->
+            {% if not booking.flight_info %}
+            ⚠️ No booking.flight_info found - using fallback
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🧪 Hard-coded Thai Font Test</div>
+        <div class="thai-content force-visible">
+            การทดสอบฟอนต์ภาษาไทย:
+            ก ข ค ง จ ฉ ช ซ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ล ว ศ ษ ส ห ฬ อ ฮ
+            ที่พัก โรงแรม นักท่องเที่ยว เที่ยวบิน สนามบิน การบินไทย
+            ราคา ๑๒,๓๔๕ บาท
+        </div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">💰 Pricing Information</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Total Amount:</td>
+                <td><strong>{{ total_amount or '7,100.00' }} THB</strong></td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">🔍 Debug Information</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Template:</td>
+                <td>quote_thai_debug.html</td>
+            </tr>
+            <tr>
+                <td class="label">Generation Time:</td>
+                <td>{{ generation_timestamp or 'Now' }}</td>
+            </tr>
+            <tr>
+                <td class="label">Booking Object:</td>
+                <td>{{ booking.__class__.__name__ if booking else 'None' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <footer style="margin-top: 40px; text-align: center; border-top: 2px solid #000; padding-top: 20px;">
+        <h3>DHAKUL CHAN NICE HOLIDAYS DISCOVERY GROUP COMPANY LIMITED.</h3>
+        <p>Generated: {{ generation_timestamp or 'Now' }} | Template: quote_thai_debug.html</p>
+        <p style="color: red; font-weight: bold;">🔥 THAI CONTENT FORCED DISPLAY TEST 🔥</p>
+    </footer>
+</body>
+
+</html>

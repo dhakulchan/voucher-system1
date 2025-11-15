@@ -1,0 +1,1592 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking List</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome - Using stable version 5.15.4 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"
+        crossorigin="anonymous">
+
+    <!-- Preconnect to Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Thai Fonts - multiple options for better compatibility -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet">
+    </noscript>
+
+    <!-- TinyMCE WYSIWYG Editor (Always use jsDelivr to avoid read-only warnings) -->
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
+
+    <!-- Global TinyMCE Configuration -->
+    <script>
+        // Override TinyMCE init to prevent read-only warnings
+        window.addEventListener('load', function () {
+            if (typeof tinymce !== 'undefined') {
+                // Set global defaults
+                tinymce.defaultSettings = {
+                    readonly: false,
+                    deprecation_warnings: false
+                };
+
+                // Override init function to ensure readonly is always false
+                const originalInit = tinymce.init;
+                tinymce.init = function (settings) {
+                    settings = settings || {};
+                    settings.readonly = false;
+                    settings.deprecation_warnings = false;
+                    return originalInit.call(this, settings);
+                };
+
+                // Suppress console warnings
+                const originalConsoleWarn = console.warn;
+                console.warn = function (message) {
+                    if (typeof message === 'string' && message.includes('read-only')) {
+                        return; // Suppress TinyMCE read-only warnings
+                    }
+                    originalConsoleWarn.apply(console, arguments);
+                };
+            }
+        });
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        * {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+            font-display: optional;
+        }
+
+        /* Thai text specific styling with better fallbacks */
+        [lang="th"],
+        .thai-text {
+            font-family: 'Sarabun', 'Noto Sans Thai', 'Sukhumvit Set', 'Thonburi', 'Arial Unicode MS', 'Tahoma', 'Leelawadee UI', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            font-display: swap;
+        }
+
+        /* Font optimization - Updated for Font Awesome 5 */
+        .fas,
+        .far,
+        .fab {
+            font-display: swap;
+            font-family: "Font Awesome 5 Free", "Font Awesome 5 Brands", sans-serif !important;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            color: #87ceeb !important;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand:hover {
+            color: #ffffff !important;
+            transform: scale(1.05);
+        }
+
+        .navbar-brand .fas {
+            font-size: 1.2em;
+            color: #87ceeb !important;
+        }
+
+        .navbar-brand:hover .fas {
+            color: #ffffff !important;
+        }
+
+        .sidebar {
+            background-color: #003366;
+            min-height: calc(100vh - 56px);
+        }
+
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, .8);
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+            margin: 0.125rem 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, .1);
+            transform: translateX(5px);
+        }
+
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, .2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+        }
+
+        .main-content {
+            background-color: #f8f9fa;
+            min-height: calc(100vh - 56px);
+        }
+
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: none;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background-color: #003366;
+            border-color: #003366;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #002244;
+            border-color: #002244;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
+        }
+
+        .table th {
+            background-color: #003366;
+            color: white;
+            border: none;
+            font-weight: 500;
+        }
+
+        .badge-pending {
+            background-color: #ffc107 !important;
+            color: #000;
+        }
+
+        .badge-confirmed {
+            background-color: #28a745 !important;
+        }
+
+        .badge-cancelled {
+            background-color: #dc3545 !important;
+        }
+
+        .badge-completed {
+            background-color: #17a2b8 !important;
+        }
+
+        /* Thai Number Format */
+        .thai-number {
+            font-feature-settings: "tnum";
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                min-height: auto;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+        }
+
+        /* Fallback for Font Awesome loading issues */
+        .fa-fallback .fas:before,
+        .fa-fallback .far:before,
+        .fa-fallback .fab:before {
+            content: "•";
+            color: #666;
+        }
+
+        .fa-fallback .fa-home:before {
+            content: "🏠";
+        }
+
+        .fa-fallback .fa-user:before {
+            content: "👤";
+        }
+
+        .fa-fallback .fa-building:before {
+            content: "🏢";
+        }
+
+        .fa-fallback .fa-calendar-alt:before {
+            content: "📅";
+        }
+
+        .fa-fallback .fa-ticket-alt:before {
+            content: "🎫";
+        }
+
+        .fa-fallback .fa-users:before {
+            content: "👥";
+        }
+
+        .fa-fallback .fa-receipt:before {
+            content: "🧾";
+        }
+
+        .fa-fallback .fa-code:before {
+            content: "💻";
+        }
+
+        .fa-fallback .fa-tachometer-alt:before {
+            content: "📊";
+        }
+    </style>
+
+    <!-- Font Loading Optimization -->
+    <script>
+        // Optimize font loading and prevent FOUT
+        if ('fonts' in document) {
+            document.fonts.ready.then(function () {
+                document.body.classList.add('fonts-loaded');
+            });
+        }
+
+        // Handle Font Awesome loading errors
+        document.addEventListener('DOMContentLoaded', function () {
+            // Check if Font Awesome loaded properly
+            const testElement = document.createElement('i');
+            testElement.className = 'fas fa-home';
+            testElement.style.visibility = 'hidden';
+            document.body.appendChild(testElement);
+
+            const computedStyle = window.getComputedStyle(testElement, ':before');
+            if (computedStyle.content === 'none' || computedStyle.content === '') {
+                console.warn('Font Awesome failed to load, using fallback icons');
+                document.body.classList.add('fa-fallback');
+            }
+
+            document.body.removeChild(testElement);
+        });
+    </script>
+
+    
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <i class="fas fa-building me-2 text-light"></i>
+                <span class="fw-bold
+                <span class=" navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                                data-bs-toggle="dropdown">
+                                <i class="fas fa-user me-1"></i>admin
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/auth/profile">
+                                        <i class="fas fa-user-cog me-2"></i>Profile
+                                    </a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item" href="/auth/logout">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                    </a></li>
+                            </ul>
+                        </li>
+                        
+                    </ul>
+                </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-block sidebar show">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active"
+                                href="/booking/list">
+                                <i class="fas fa-calendar-alt me-2"></i>Booking
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/quote/">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Quotes
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/voucher/list">
+                                <i class="fas fa-ticket-alt me-2"></i>Voucher
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/booking/customers">
+                                <i class="fas fa-users me-2"></i>Customer
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/supplier/list">
+                                <i class="fas fa-truck-loading me-2"></i>Supplier
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/sync/">
+                                <i class="fas fa-sync me-2"></i>Sync
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link "
+                                href="/admin/users/">
+                                <i class="fas fa-users-cog me-2"></i>User Management
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/api/docs">
+                                <i class="fas fa-code me-2"></i>API Docs
+                            </a>
+                        </li>
+                    </ul>
+
+                    <!-- Language Switcher -->
+                    <div class="mt-4 px-3">
+                        <div class="d-flex flex-column gap-2">
+                            <small class="text-white-50">Language</small>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <a href="/language/set-language/th"
+                                    class="btn btn-outline-light btn-sm ">
+                                    🇹🇭 ไทย
+                                </a>
+                                <a href="/language/set-language/en"
+                                    class="btn btn-outline-light btn-sm active">
+                                    🇺🇸 English
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                
+
+                    <div class="pt-3">
+                        <!-- Flash Messages -->
+                        
+                        
+                        
+                        <div class="alert alert-success alert-dismissible fade show"
+                            role="alert">
+                            Login successful!
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        
+                        
+                        
+
+                        <!-- Page Content -->
+                        
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-calendar-alt me-2"></i>Booking Management
+        </h1>
+        <div>
+            <a href="/booking/create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>New Booking
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <!-- Row 1: Primary status cards -->
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-secondary">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-secondary">
+                        <i class="fas fa-edit fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">11</h3>
+                    <p class="text-muted mb-0">Draft</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-warning">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">2</h3>
+                    <p class="text-muted mb-0">Pending</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">5</h3>
+                    <p class="text-muted mb-0">Confirmed</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-info">
+                        <i class="fas fa-file-invoice fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">12</h3>
+                    <p class="text-muted mb-0">Quoted</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Payment and completion status cards -->
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-primary">
+                        <i class="fas fa-credit-card fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">2</h3>
+                    <p class="text-muted mb-0">Paid</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">
+                        <i class="fas fa-ticket-alt fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">4</h3>
+                    <p class="text-muted mb-0">Vouchered</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-danger">
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    </h5>
+                    <h3 class="mb-0">3</h3>
+                    <p class="text-muted mb-0">Cancelled</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-search me-2"></i>Search & Filter
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" class="form-control" name="search"
+                        placeholder="Customer, email, booking ref, quote number (QT...), guest name..."
+                        value="">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        <option value="draft" >
+                            Draft</option>
+                        <option value="pending" >
+                            Pending</option>
+                        <option value="confirmed" >
+                            Confirmed</option>
+                        <option value="cancelled" >
+                            Cancelled</option>
+                        <option value="quoted" >
+                            Quoted</option>
+                        <option value="paid" >
+                            Paid</option>
+                        <option value="vouchered" >
+                            Vouchered</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_from"
+                        value="" placeholder="From Date">
+                </div>
+                <div class="col-md-2">
+                    <input type="date" class="form-control" name="date_to" value=""
+                        placeholder="To Date">
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bookings List -->
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>Bookings (18 found)
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Reference</th>
+                            <th>Customer</th>
+                            <th>Type</th>
+                            <th>Arrival</th>
+                            <th>Guests</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250930ZBO0</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">john@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                01/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">6</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 11,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-warning">Pending</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/45"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/45"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK202509302V59</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Pumm Y</strong>
+                                </div>
+                                <small class="text-muted">thailand@dhakulchan.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                02/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">3</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 6,332.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/41"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/41"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250930ONHB</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Test Activity</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                15/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/34"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/34"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250930M5U0</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Test Activity</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                15/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">Confirmed</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/33"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/33"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929DGQH</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Test Activity</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                15/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/32"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/32"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK202509295LQU</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Test Activity</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                15/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">Confirmed</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/31"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/31"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK202509296QUE</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Test Activity</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                15/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/30"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/30"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK202509294ANH</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Test Activity</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                15/10/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/29"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/29"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929A0LT</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                <span class="text-muted">Not set</span>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">1</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 1,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/28"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/28"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929J56G</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">maria@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                30/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 2,800.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/27"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/27"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929F4Q8</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                24/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 2,600.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/26"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/26"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929788A</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">maria@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                30/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    None 900.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/25"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/25"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929TE64</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">maria@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                30/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    THB 900.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/24"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/24"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250929XQII</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Pumm Y</strong>
+                                </div>
+                                <small class="text-muted">thailand@dhakulchan.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                29/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    THB 7,300.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-secondary">Draft</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/23"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/23"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250920MWCF</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>Pumm Y</strong>
+                                </div>
+                                <small class="text-muted">thailand@dhakulchan.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                23/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    THB 8,500.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">Confirmed</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/21"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/21"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250914Y6R5</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                24/09/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">2</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    THB 7,500.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-warning">Pending</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/10"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/10"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">TEST_THAI_1757824659</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">test@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                <span class="text-muted">Not set</span>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">3</span>
+                            </td>
+                            <td>
+                                
+                                <span class="text-muted">Not set</span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">Confirmed</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/9"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/9"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <tr>
+                            <td>
+                                <strong class="text-primary">BK20250913003</strong>
+                            </td>
+                            <td>
+                                
+                                <div>
+                                    <strong>No Name</strong>
+                                </div>
+                                <small class="text-muted">maria@example.com</small>
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary text-capitalize">Not set</span>
+                            </td>
+                            <td>
+                                
+                                01/12/2025
+                                
+                            </td>
+                            <td>
+                                <span class="badge bg-info">3</span>
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">
+                                    THB 11,000.00
+                                </span>
+                                
+                            </td>
+                            <td>
+                                
+                                <span class="badge bg-success">Confirmed</span>
+                                
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="/booking/view/3"
+                                        class="btn btn-outline-primary btn-sm" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    
+                                    <a href="/booking/edit/3"
+                                        class="btn btn-outline-secondary btn-sm" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    
+                                    
+                                </div>
+                            </td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+                    </div>
+                </main>
+        </div>
+    </div> <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Font loading optimization -->
+    <script>
+        // Preload system fonts as fallback
+        if ('fonts' in document) {
+            // Try to load Google Fonts with timeout
+            const fontTimeout = setTimeout(() => {
+                console.log('Google Fonts timeout - using system fonts');
+            }, 3000);
+
+            document.fonts.ready.then(() => {
+                clearTimeout(fontTimeout);
+            });
+        }
+    </script>
+
+    
+</body>
+
+</html>

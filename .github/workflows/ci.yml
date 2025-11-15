@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Download CJK font (Noto Sans CJK SC Regular)
+        run: |
+          mkdir -p fonts
+          curl -L -o fonts/NotoSansCJKsc-Regular.otf https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/SimplifiedChinese/NotoSansCJKsc-Regular.otf
+          ls -lh fonts
+      - name: Font preflight
+        run: |
+          python scripts/font_preflight.py --require NotoSansCJKsc-Regular --assert-cjk
+      - name: Run tests (fast)
+        env:
+          PDF_FONT_DIR: ${{ github.workspace }}/fonts
+          PDF_FALLBACK_FONTS: NotoSansCJKsc-Regular,NotoSansThai,DejaVuSans,Helvetica
+          PDF_DISABLE_FONT_SUBSETTING: 'true'
+          PDF_FORCE_EMBED_FONTS: 'true'
+        run: |
+          pytest -q

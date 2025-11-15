@@ -537,8 +537,8 @@ def list():
     try:
         connection = pymysql.connect(
             host='localhost',
-            user='root',
-            password='',
+            user='voucher_user',
+            password='voucher_secure_2024',
             database='voucher_enhanced',
             charset='utf8mb4'
         )
@@ -926,8 +926,8 @@ def create():
             try:
                 connection = pymysql.connect(
                     host='localhost',
-                    user='root',
-                    password='',
+                    user='voucher_user',
+                    password='voucher_secure_2024',
                     database='voucher_enhanced',
                     charset='utf8mb4'
                 )
@@ -3069,9 +3069,60 @@ def apply_to_invoice_workflow(booking_id):
                 {"quote_id": quote_id}
             )
             
+            # Store old status for activity logging
+            old_status = booking.status
+            
             # Update booking status
             booking.mark_as_paid()
             db.session.commit()
+            
+            # Create activity log entries for applying quote to invoice (using direct pymysql for reliability)
+            try:
+                import pymysql
+                from datetime import datetime
+                
+                connection = pymysql.connect(
+                    host='localhost',
+                    user='voucher_user',
+                    password='voucher_secure_2024',
+                    database='voucher_enhanced',
+                    charset='utf8mb4'
+                )
+                
+                with connection.cursor() as cursor:
+                    # Create status change activity log if status changed
+                    if old_status != booking.status:
+                        cursor.execute("""
+                            INSERT INTO activity_logs (booking_id, action, description, created_at) 
+                            VALUES (%s, %s, %s, %s)
+                        """, (
+                            booking_id,
+                            'status_updated',
+                            f'Booking status changed from {old_status} to {booking.status}',
+                            datetime.now()
+                        ))
+                        current_app.logger.info(f"✅ Activity log created for booking {booking_id} status change: {old_status} → {booking.status}")
+                    
+                    # Create quote-to-invoice activity log
+                    apply_description = f"[BOOKING #{booking_id}] Quote {quote_number} applied to Invoice {booking.invoice_number} - Status: PAID"
+                    cursor.execute("""
+                        INSERT INTO activity_logs (booking_id, action, description, created_at) 
+                        VALUES (%s, %s, %s, %s)
+                    """, (
+                        booking_id,
+                        'quote_applied_to_invoice',
+                        apply_description,
+                        datetime.now()
+                    ))
+                    
+                    connection.commit()
+                    current_app.logger.info(f"✅ Quote-to-invoice activity log created for booking {booking_id}: {apply_description}")
+                    
+            except Exception as e:
+                current_app.logger.error(f"❌ Failed to create activity logs for booking {booking_id}: {e}")
+            finally:
+                if 'connection' in locals():
+                    connection.close()
             
             logger.info(f"✅ Quote {quote_number} applied to Invoice {booking.invoice_number}")
             
@@ -3223,12 +3274,62 @@ def api_mark_as_paid(booking_id):
         except (ValueError, TypeError):
             return jsonify({'success': False, 'error': 'จำนวนเงินไม่ถูกต้อง'}), 400
         
+        # Store old status for activity logging
+        old_status = booking.status
+        
         # Update booking status
         booking.status = 'paid'
         booking.is_paid = True
         booking.invoice_paid_date = dt_import.now()
         
         db.session.commit()
+        
+        # Create activity log entries for payment (using direct pymysql for reliability)
+        try:
+            import pymysql
+            
+            connection = pymysql.connect(
+                host='localhost',
+                user='voucher_user',
+                password='voucher_secure_2024',
+                database='voucher_enhanced',
+                charset='utf8mb4'
+            )
+            
+            with connection.cursor() as cursor:
+                # Create status change activity log if status changed
+                if old_status != booking.status:
+                    cursor.execute("""
+                        INSERT INTO activity_logs (booking_id, action, description, created_at) 
+                        VALUES (%s, %s, %s, %s)
+                    """, (
+                        booking_id,
+                        'status_updated',
+                        f'Booking status changed from {old_status} to {booking.status}',
+                        dt_import.now()
+                    ))
+                    current_app.logger.info(f"✅ Activity log created for booking {booking_id} status change: {old_status} → {booking.status}")
+                
+                # Create payment activity log
+                payment_description = f"[BOOKING #{booking_id}] Payment received: {amount_float:,.2f} THB via {bank_name} (API)"
+                cursor.execute("""
+                    INSERT INTO activity_logs (booking_id, action, description, created_at) 
+                    VALUES (%s, %s, %s, %s)
+                """, (
+                    booking_id,
+                    'payment_received',
+                    payment_description,
+                    dt_import.now()
+                ))
+                
+                connection.commit()
+                current_app.logger.info(f"✅ Payment activity log created for booking {booking_id}: {payment_description}")
+                
+        except Exception as e:
+            current_app.logger.error(f"❌ Failed to create activity logs for booking {booking_id}: {e}")
+        finally:
+            if 'connection' in locals():
+                connection.close()
         
         logger.info(f"✅ Booking {booking_id} marked as paid with amount {amount_float} THB via {bank_name}")
         
@@ -3412,6 +3513,60 @@ def test_generate_quote_pdf(booking_id):
             
     except Exception as e:
         logger.error(f'TEST: Exception in quote PDF generation: {e}')
+        return f'Exception: {str(e)}', 500
+
+@booking_bp.route('/booking/<int:booking_id>/quote-pdf')
+def generate_quote_pdf_public(booking_id):
+    """Generate Quote PDF for booking - Public access with WeasyPrint + Jinja2"""
+    try:
+        # ⭐ REAL-TIME DATA SYNC: ดึงข้อมูลล่าสุดจาก database แบบ force refresh
+        from extensions import db
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        
+        # Clear any cached data and force fresh query
+        db.session.close()
+        
+        # Get fresh booking data using Universal Extractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return f'Booking {booking_id} not found', 404
+            
+        logger.info(f'Generating Quote PDF for booking {booking.booking_reference} (WeasyPrint + Jinja2)')
+        
+        # Use WeasyPrint Quote Generator with quote_template_final_v2.html
+        from services.weasyprint_quote_generator import WeasyPrintQuoteGenerator
+        
+        quote_generator = WeasyPrintQuoteGenerator()
+        pdf_filename = quote_generator.generate_quote_pdf(booking)
+        
+        if pdf_filename:
+            # Generate PDF path
+            output_dir = os.path.join('static', 'generated')
+            pdf_path = os.path.join(output_dir, pdf_filename)
+            
+            if os.path.exists(pdf_path):
+                logger.info(f'Quote PDF generated successfully with WeasyPrint: {pdf_filename}')
+                
+                # Generate download filename with timestamp for cache busting
+                from datetime import datetime
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                download_filename = f'quote_{booking.booking_reference}_{timestamp}.pdf'
+                
+                return send_file(pdf_path, 
+                               as_attachment=True, 
+                               download_name=download_filename,
+                               mimetype='application/pdf')
+            else:
+                logger.error(f'Generated PDF file not found: {pdf_path}')
+                return f'PDF file not found: {pdf_path}', 500
+        else:
+            logger.error('PDF generation failed')
+            return 'PDF generation failed', 500
+            
+    except Exception as e:
+        logger.error(f'Exception in quote PDF generation: {e}')
+        import traceback
+        traceback.print_exc()
         return f'Exception: {str(e)}', 500
 
 @booking_bp.route('/<int:booking_id>/quote-pdf')

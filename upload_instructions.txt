@@ -1,0 +1,29 @@
+
+🚀 MANUAL UPLOAD INSTRUCTIONS:
+
+=== 1. Upload Template File ===
+File: templates/pdf/quote_thai_forced.html
+Size: 5698 characters
+Action: Use Adminer file manager or SCP to upload
+
+=== 2. Upload Generator File ===  
+File: services/weasyprint_quote_generator.py
+Size: 53422 characters
+Action: Use Adminer file manager or SCP to upload
+
+=== 3. Restart Server ===
+Command: sudo supervisorctl restart voucher_app
+
+=== 4. Test URLs ===
+Test PDF: https://service.dhakulchan.net/booking/test-quote-pdf/3
+Debug Data: https://service.dhakulchan.net/debug/quote/3
+
+🎯 EXPECTED RESULT:
+- PDF should display Thai content from database
+- Service Detail: ที่พักขึ้นใหม่ 3 วัน 2 คืน - เดินทางโดยรถปรับอากาศ...
+- Guest List: นายสมชาย โจดี 2. นางสาวสุคา สวยงาม...
+- Flight Info: เที่ยวบิน: Thai Airways TG118 เส้นทาง: กรุงเทพฯ...
+
+📁 FILES READY FOR UPLOAD:
+- templates/pdf/quote_thai_forced.html
+- services/weasyprint_quote_generator.py

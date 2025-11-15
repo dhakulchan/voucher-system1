@@ -120,7 +120,7 @@ class QuotePDFGenerator:
             doc = BaseDocTemplate(
                 pdf_path,
                 pagesize=A4,
-                topMargin=35*mm,     # Space for header
+                topMargin=30*mm,     # Space for header - 3.0cm
                 bottomMargin=20*mm,  # Space for footer
                 leftMargin=15*mm,
                 rightMargin=15*mm
@@ -131,28 +131,36 @@ class QuotePDFGenerator:
                 """Draw header and footer on each page"""
                 canvas.saveState()
                 
-                # Header - Company Info and Logo
+                # Header - Logo left, Company info center (4 lines), Quote right  
                 try:
-                    # Logo path
+                    # Logo on the left
                     logo_path = "/opt/bitnami/apache/htdocs/dcts-logo-vou.png" if os.path.exists("/opt/bitnami") else "dcts-logo-vou.png"
                     if os.path.exists(logo_path):
                         from reportlab.lib.utils import ImageReader
                         logo_reader = ImageReader(logo_path)
-                        canvas.drawImage(logo_reader, 15*mm, A4[1] - 30*mm, width=35*mm, height=17*mm, mask='auto')
+                        canvas.drawImage(logo_reader, 15*mm, A4[1] - 15*mm, width=25*mm, height=12*mm, mask='auto')
                     
-                    # Company info in header
-                    canvas.setFont('Helvetica-Bold', 11)
-                    canvas.setFillColor(colors.Color(44/255, 62/255, 80/255))  # #2C3E50
-                    canvas.drawString(55*mm, A4[1] - 15*mm, "DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.")
+                    # Company info - 4 Lines Structure (1cm from logo end)
+                    # L1: Company Name - Bold, Blue  
+                    canvas.setFont('Helvetica-Bold', 10)
+                    canvas.setFillColor(colors.Color(0, 102/255, 204/255))  # #0066cc
+                    canvas.drawString(50*mm, A4[1] - 13*mm, "DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.")
                     
+                    # L2, L3, L4: Details - Regular, Gray
                     canvas.setFont('Helvetica', 8)
-                    canvas.setFillColor(colors.Color(127/255, 140/255, 141/255))  # #7F8C8D
-                    canvas.drawString(55*mm, A4[1] - 20*mm, "710, 716, 704, 706 Prachauthit Road, Samseenook, Huai Kwang, Bangkok 10310")
-                    canvas.drawString(55*mm, A4[1] - 24*mm, "Tel: +662 2744218 | +662 0266525 Fax: +662 0266525 Press 5 | Line: @dhakulchan")
+                    canvas.setFillColor(colors.Color(85/255, 85/255, 85/255))  # #555
                     
-                    canvas.setFont('Helvetica', 8)
-                    canvas.setFillColor(colors.Color(52/255, 152/255, 219/255))  # #3498DB
-                    canvas.drawString(55*mm, A4[1] - 28*mm, "Website: www.dhakulchan.net | T.A.T License 11/03659")
+                    # L2: Address
+                    canvas.drawString(50*mm, A4[1] - 17*mm, "710, 716, 704, 706 Prachautthit Road, Samsennok, Huai Kwang, Bangkok 10310")
+                    # L3: Contact Info
+                    canvas.drawString(50*mm, A4[1] - 21*mm, "Tel: +662 2744218 I +662 0266525 Fax: +662 0266525 Press 5 I Line: @dhakulchan")
+                    # L4: Website & License
+                    canvas.drawString(50*mm, A4[1] - 25*mm, "Website: www.dhakulchan.net I T.A.T License 11/03659")
+                    
+                    # QUOTE label on the right (reduced size by 50%)
+                    canvas.setFont('Helvetica-Bold', 12)
+                    canvas.setFillColor(colors.Color(0, 102/255, 204/255))  # #0066cc
+                    canvas.drawString(165*mm, A4[1] - 13*mm, "QUOTE")
                     
                 except Exception as e:
                     logger.warning(f"Could not draw header: {str(e)}")
@@ -179,7 +187,7 @@ class QuotePDFGenerator:
             content_frame = Frame(
                 15*mm, 20*mm,  # x, y (bottom margin for footer)
                 A4[0] - 30*mm,  # width (page width - left/right margins)
-                A4[1] - 55*mm,  # height (page height - top/bottom margins)
+                A4[1] - 50*mm,  # height (page height - top/bottom margins) - adjusted for 3.0cm top
                 id='content_frame'
             )
             
@@ -568,7 +576,7 @@ class QuotePDFGenerator:
             doc = BaseDocTemplate(
                 filepath,
                 pagesize=A4,
-                topMargin=35*mm,     # Space for header
+                topMargin=30*mm,     # Space for header - 3.0cm
                 bottomMargin=20*mm,  # Space for footer
                 leftMargin=15*mm,
                 rightMargin=15*mm
@@ -579,28 +587,36 @@ class QuotePDFGenerator:
                 """Draw header and footer on each page"""
                 canvas.saveState()
                 
-                # Header - Company Info and Logo
+                # Header - Logo left, Company info center (4 lines), Quote right
                 try:
-                    # Logo path
+                    # Logo on the left
                     logo_path = "/opt/bitnami/apache/htdocs/dcts-logo-vou.png" if os.path.exists("/opt/bitnami") else "dcts-logo-vou.png"
                     if os.path.exists(logo_path):
                         from reportlab.lib.utils import ImageReader
                         logo_reader = ImageReader(logo_path)
-                        canvas.drawImage(logo_reader, 15*mm, A4[1] - 30*mm, width=35*mm, height=17*mm, mask='auto')
+                        canvas.drawImage(logo_reader, 15*mm, A4[1] - 15*mm, width=25*mm, height=12*mm, mask='auto')
                     
-                    # Company info in header
-                    canvas.setFont('Helvetica-Bold', 11)
-                    canvas.setFillColor(colors.Color(44/255, 62/255, 80/255))  # #2C3E50
-                    canvas.drawString(55*mm, A4[1] - 15*mm, "DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.")
+                    # Company info - 4 Lines Structure (1cm from logo end)
+                    # L1: Company Name - Bold, Blue  
+                    canvas.setFont('Helvetica-Bold', 10)
+                    canvas.setFillColor(colors.Color(0, 102/255, 204/255))  # #0066cc
+                    canvas.drawString(50*mm, A4[1] - 13*mm, "DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.")
                     
+                    # L2, L3, L4: Details - Regular, Gray
                     canvas.setFont('Helvetica', 8)
-                    canvas.setFillColor(colors.Color(127/255, 140/255, 141/255))  # #7F8C8D
-                    canvas.drawString(55*mm, A4[1] - 20*mm, "710, 716, 704, 706 Prachauthit Road, Samseenook, Huai Kwang, Bangkok 10310")
-                    canvas.drawString(55*mm, A4[1] - 24*mm, "Tel: +662 2744218 | +662 0266525 Fax: +662 0266525 Press 5 | Line: @dhakulchan")
+                    canvas.setFillColor(colors.Color(85/255, 85/255, 85/255))  # #555
                     
-                    canvas.setFont('Helvetica', 8)
-                    canvas.setFillColor(colors.Color(52/255, 152/255, 219/255))  # #3498DB
-                    canvas.drawString(55*mm, A4[1] - 28*mm, "Website: www.dhakulchan.net | T.A.T License 11/03659")
+                    # L2: Address
+                    canvas.drawString(50*mm, A4[1] - 17*mm, "710, 716, 704, 706 Prachautthit Road, Samsennok, Huai Kwang, Bangkok 10310")
+                    # L3: Contact Info
+                    canvas.drawString(50*mm, A4[1] - 21*mm, "Tel: +662 2744218 I +662 0266525 Fax: +662 0266525 Press 5 I Line: @dhakulchan")
+                    # L4: Website & License
+                    canvas.drawString(50*mm, A4[1] - 25*mm, "Website: www.dhakulchan.net I T.A.T License 11/03659")
+                    
+                    # QUOTE label on the right (reduced size by 50%)
+                    canvas.setFont('Helvetica-Bold', 12)
+                    canvas.setFillColor(colors.Color(0, 102/255, 204/255))  # #0066cc
+                    canvas.drawString(165*mm, A4[1] - 13*mm, "QUOTE")
                     
                 except Exception as e:
                     logger.warning(f"Could not draw header: {str(e)}")
@@ -626,7 +642,7 @@ class QuotePDFGenerator:
             content_frame = Frame(
                 15*mm, 20*mm,  # x, y (bottom margin for footer)
                 A4[0] - 30*mm,  # width (page width - left/right margins)
-                A4[1] - 55*mm,  # height (page height - top/bottom margins)
+                A4[1] - 50*mm,  # height (page height - top/bottom margins) - adjusted for 3.0cm top
                 id='content_frame'
             )
             
