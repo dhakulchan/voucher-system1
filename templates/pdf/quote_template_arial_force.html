@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ใบเสนอราคา</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 15mm 10mm 20mm 10mm;
+            background: white;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif !important;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #000000;
+            letter-spacing: 0.4px;
+            font-weight: 500;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #000000;
+        }
+
+        .company-info h1 {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 18px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .company-info p {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 13px;
+            color: #000000;
+            margin: 2px 0;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .quote-header {
+            text-align: right;
+        }
+
+        .quote-title {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 16px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .quote-number {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 13px;
+            color: #000000;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .customer-section {
+            margin-bottom: 25px;
+        }
+
+        .customer-title {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 12px;
+            letter-spacing: 0.4px;
+        }
+
+        .customer-info p {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 13px;
+            margin: 4px 0;
+            color: #000000;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .products-section {
+            margin-bottom: 25px;
+        }
+
+        .products-title {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 15px;
+            letter-spacing: 0.4px;
+        }
+
+        .products-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .products-table th {
+            font-family: Arial, Helvetica, sans-serif !important;
+            background-color: #f8f9fa;
+            border: 2px solid #000000;
+            padding: 12px 8px;
+            text-align: left;
+            font-size: 13px;
+            font-weight: bold;
+            color: #000000;
+            letter-spacing: 0.3px;
+        }
+
+        .products-table td {
+            font-family: Arial, Helvetica, sans-serif !important;
+            border: 2px solid #000000;
+            padding: 10px 8px;
+            font-size: 13px;
+            color: #000000;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .product-name {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-weight: 600;
+            color: #000000;
+            letter-spacing: 0.3px;
+        }
+
+        .price-amount {
+            font-family: Arial, Helvetica, sans-serif !important;
+            text-align: right;
+            font-weight: 600;
+            color: #000000;
+            letter-spacing: 0.3px;
+        }
+
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: flex-end;
+            margin: 8px 0;
+        }
+
+        .total-label {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-weight: 600;
+            margin-right: 20px;
+            min-width: 120px;
+            color: #000000;
+            letter-spacing: 0.3px;
+        }
+
+        .total-value {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-weight: bold;
+            min-width: 100px;
+            text-align: right;
+            color: #000000;
+            letter-spacing: 0.3px;
+        }
+
+        .grand-total {
+            border-top: 2px solid #000000;
+            padding-top: 10px;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .terms-section {
+            margin-top: 30px;
+            page-break-inside: avoid;
+        }
+
+        .terms-title {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 14px;
+            font-weight: bold;
+            color: #000000;
+            margin-bottom: 12px;
+            letter-spacing: 0.4px;
+        }
+
+        .terms-content {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #000000;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .service-content {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #000000;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .font-semibold {
+            font-weight: 600;
+        }
+
+        .font-bold {
+            font-weight: bold;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .mt-4 {
+            margin-top: 1rem;
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        <div class="company-info">
+            <h1>{{ company_name or 'DHAKUL CHAN NICE HOLIDAYS GROUP' }}</h1>
+            <p>{{ company_address or 'Hong Kong Office' }}</p>
+            <p>โทร: {{ company_phone or '+852-1234-5678' }}</p>
+            <p>อีเมล: {{ company_email or 'info@dhakulchan.net' }}</p>
+        </div>
+        <div class="quote-header">
+            <div class="quote-title">ใบเสนอราคา</div>
+            <div class="quote-number">เลขที่: {{ quote_number or 'Q000001' }}</div>
+            <div class="quote-number">วันที่: {{ quote_date or '15/11/2025' }}</div>
+        </div>
+    </div>
+
+    <!-- Customer Section -->
+    <div class="customer-section">
+        <div class="customer-title">ข้อมูลลูกค้า:</div>
+        <div class="customer-info">
+            <p><strong>ชื่อ:</strong> {{ customer_name or 'ลูกค้าทดสอบ' }}</p>
+            <p><strong>โทรศัพท์:</strong> {{ customer_phone or '081-234-5678' }}</p>
+            <p><strong>อีเมล:</strong> {{ customer_email or 'customer@example.com' }}</p>
+        </div>
+    </div>
+
+    <!-- Products Section -->
+    <div class="products-section">
+        <div class="products-title">รายการสินค้า/บริการ:</div>
+        <table class="products-table">
+            <thead>
+                <tr>
+                    <th style="width: 8%;">ลำดับ</th>
+                    <th style="width: 42%;">รายการ</th>
+                    <th style="width: 15%;">จำนวน</th>
+                    <th style="width: 15%;">ราคาต่อหน่วย</th>
+                    <th style="width: 20%;">รวม</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if products %}
+                {% for product in products %}
+                <tr>
+                    <td class="text-center">{{ loop.index }}</td>
+                    <td class="product-name">{{ product.name }}</td>
+                    <td class="text-center">{{ product.quantity }}</td>
+                    <td class="price-amount">{{ "{:,.2f}".format(product.price) }}</td>
+                    <td class="price-amount">{{ "{:,.2f}".format(product.total) }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td class="text-center">1</td>
+                    <td class="product-name">ทัวร์ทดสอบ - แพ็คเกจพิเศษ</td>
+                    <td class="text-center">2</td>
+                    <td class="price-amount">15,000.00</td>
+                    <td class="price-amount">30,000.00</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+
+        <!-- Total Section -->
+        <div class="total-section">
+            <div class="total-row">
+                <span class="total-label">รวมค่าสินค้า:</span>
+                <span class="total-value">{{ "{:,.2f}".format(subtotal or 30000) }} บาท</span>
+            </div>
+            {% if vat and vat > 0 %}
+            <div class="total-row">
+                <span class="total-label">ภาษีมูลค่าเพิ่ม {{ vat_rate or 7 }}%:</span>
+                <span class="total-value">{{ "{:,.2f}".format(vat) }} บาท</span>
+            </div>
+            {% endif %}
+            <div class="total-row grand-total">
+                <span class="total-label">รวมทั้งสิ้น:</span>
+                <span class="total-value">{{ "{:,.2f}".format(grand_total or 30000) }} บาท</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms Section -->
+    <div class="terms-section">
+        <div class="terms-title">เงื่อนไขการชำระเงิน:</div>
+        <div class="terms-content">
+            {{ terms_and_conditions or '• ชำระเงินมัดจำ 50% ของค่าทัวร์<br>• ชำระส่วนที่เหลือก่อนเดินทาง 7 วัน<br>• ยกเลิกการจองก่อนเดินทาง 15 วัน คืนเงิน 80%' }}
+        </div>
+    </div>
+
+    {% if service_content %}
+    <div class="terms-section">
+        <div class="terms-title">รายละเอียดบริการ:</div>
+        <div class="service-content">{{ service_content }}</div>
+    </div>
+    {% endif %}
+</body>
+</html>

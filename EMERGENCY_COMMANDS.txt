@@ -1,0 +1,7 @@
+# 🚨 EMERGENCY: คัดลอกและวางคำสั่งนี้ในเซิร์ฟเวอร์
+
+# สร้างและรัน emergency fix
+curl -s https://raw.githubusercontent.com/dhakulchan/voucher-system1/main/EMERGENCY_ARIAL_FIX.sh -o ~/emergency_fix.sh && chmod +x ~/emergency_fix.sh && ~/emergency_fix.sh
+
+# หรือถ้าไม่ได้ ให้รันคำสั่งนี้แทน:
+cd ~/voucher-ro_v1.0 && git fetch --all && git reset --hard origin/main && find . -name "*.pyc" -delete && sudo systemctl restart voucher-system && sudo systemctl reload nginx && echo "Fixed! Test: https://service.dhakulchan.net/booking/3/quote-pdf?v=$(date +%s)"
