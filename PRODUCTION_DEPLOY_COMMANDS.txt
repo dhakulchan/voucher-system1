@@ -1,0 +1,50 @@
+=========================================
+🚨 PRODUCTION DEPLOYMENT - ARIAL FONT FIX
+=========================================
+
+1. SSH TO PRODUCTION SERVER:
+   ssh your_user@service.dhakulchan.net
+
+2. NAVIGATE TO PROJECT:
+   cd ~/voucher-ro_v1.0
+
+3. PULL LATEST CHANGES:
+   git fetch --all
+   git reset --hard origin/main
+
+4. COPY ARIAL TEMPLATE:
+   cp templates/pdf/quote_template_arial_force.html templates/pdf/quote_template_final_v2.html
+
+5. RESTART SERVICES:
+   sudo systemctl restart voucher-system
+   sudo systemctl reload nginx
+
+6. CLEAR CACHE:
+   find . -name "*.pyc" -delete
+   find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
+=========================================
+🧪 TESTING URLs (Use after deployment):
+=========================================
+
+Direct Routes to Test:
+- https://service.dhakulchan.net/pre_receipt/quote-pdf/1/pdf?cache_bust=v9
+- https://service.dhakulchan.net/booking/1/quote-pdf?cache_bust=v9
+- https://service.dhakulchan.net/voucher/1/quote-pdf?cache_bust=v9
+
+=========================================
+🔍 VERIFICATION STEPS:
+=========================================
+
+1. Check if Arial font is loading
+2. Verify letter-spacing is applied
+3. Confirm table readability improved
+4. Test PDF download works
+
+=========================================
+⚡ ONE-LINER COMMAND:
+=========================================
+
+cd ~/voucher-ro_v1.0 && git fetch --all && git reset --hard origin/main && cp templates/pdf/quote_template_arial_force.html templates/pdf/quote_template_final_v2.html && sudo systemctl restart voucher-system && sudo systemctl reload nginx && find . -name "*.pyc" -delete
+
+=========================================
