@@ -8,8 +8,8 @@ class Config:
     # Database Configuration
     DATABASE_URL = os.environ.get('DATABASE_URL')
     if not DATABASE_URL:
-        # Use MariaDB for local development
-        SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://voucher_user:voucher_secure_2024@localhost:3306/voucher_enhanced?charset=utf8mb4'
+        # Use MariaDB for local development - Changed to voucher_db
+        SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://voucher_user:voucher_secure_2024@localhost:3306/voucher_db?charset=utf8mb4'
     else:
         SQLALCHEMY_DATABASE_URI = DATABASE_URL
     
