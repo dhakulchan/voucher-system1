@@ -1,6 +1,26 @@
 {% extends 'base.html' %}
 {% block title %}Tour Voucher / Service - {{ booking.booking_reference }}{% endblock %}
 {% block content %}
+<!-- Force cache refresh - v3 -->
+<script>
+    const CURRENT_VERSION = '2025-11-29-v3-fix';
+    console.log('🔍 Current page version:', CURRENT_VERSION);
+
+    // Check if this is a cached version
+    if (!window.VOUCHER_JS_VERSION || window.VOUCHER_JS_VERSION !== CURRENT_VERSION) {
+        console.warn('🔄 Detected old version:', window.VOUCHER_JS_VERSION, '→ New:', CURRENT_VERSION);
+        window.VOUCHER_JS_VERSION = CURRENT_VERSION;
+        // Force reload once
+        const storageKey = 'voucher_cache_' + CURRENT_VERSION;
+        if (!sessionStorage.getItem(storageKey)) {
+            console.warn('⚠️ FORCING RELOAD...');
+            sessionStorage.setItem(storageKey, 'true');
+            location.reload(true);
+        }
+    } else {
+        console.log('✅ Page version is current:', CURRENT_VERSION);
+    }
+</script>
 <div class="voucher-wrapper py-3">
     <!-- Updated Header -->
     <div class="voucher-header mb-3">
@@ -99,8 +119,8 @@
                         <th style="width:40px">No.</th>
                         <th style="width:110px">ARRIVAL</th>
                         <th style="width:110px">DEPARTURE</th>
-                        <th style="width:32%">SERVICE BY / SUPPLIER</th>
-                        <th>TYPE/CLASS/PAXS/PIECES</th>
+                        <th style="width:38%">SERVICE BY / SUPPLIER</th>
+                        <th style="width:27%">TYPE/CLASS/PAXS/PIECES</th>
                         <th style="width:40px"><i class="fas fa-arrows-alt" title="Drag to reorder"></i></th>
                     </tr>
                 </thead>
@@ -116,12 +136,17 @@
                         <td><input type="text" name="departure" value="{{ r.departure or r['departure'] }}"
                                 placeholder="DD/MM/YYYY" class="form-control form-control-sm date-input" /></td>
                         {% set current_service = r.service_by or r['service_by'] %}
-                        <td>
+                        <td class="supplier-cell">
                             <select name="service_by_supplier" class="form-select form-select-sm mb-1"
                                 data-current="{{ current_service }}" onchange="handleSupplierChange(this)"></select>
+                            <div class="supplier-display" style="display:none;">
+                                <div class="supplier-name" style="font-weight: 700;"></div>
+                                <div class="supplier-details" style="font-weight: normal; white-space: pre-wrap;"></div>
+                            </div>
                             <textarea name="service_by" rows="2"
                                 class="form-control form-control-sm supplier-custom thai-text"
-                                placeholder="Custom supplier name" style="display:none">{{ current_service }}</textarea>
+                                placeholder="Custom supplier name" style="display:none"
+                                oninput="formatSupplierText(this)">{{ current_service }}</textarea>
                         </td>
                         <td><textarea name="type" rows="3"
                                 class="form-control form-control-sm thai-text">{{ r.type or r['type'] }}</textarea></td>
@@ -263,20 +288,8 @@
         <div class="card h-100 shadow-sm">
             <div class="card-header bg-light fw-semibold">Service Detail / Itinerary</div>
             <div class="card-body small p-0">
-                <!-- Read-only view with proper line breaks -->
-                <div id="itinerary-view" class="p-3"
-                    style="display: block; white-space: pre-line !important; line-height: 1.4; min-height: 200px; background: #f9f9f9; border: 1px solid #ddd;">
-                    {% set display_content = (booking.description or booking.internal_note or 'No service details
-                    available') %}
-                    <div id="itinerary-content" data-raw="{{ display_content|e }}"
-                        style="white-space: pre-line !important; word-wrap: break-word; overflow-wrap: break-word;">
-                        Loading...
-                    </div>
-                </div>
-
-                <!-- Edit mode textarea (hidden by default) -->
-                <textarea id="itineraryText" class="form-control border-0 rounded-0 tinymce-area thai-text"
-                    style="min-height:200px; resize:vertical; font-size:.8rem; white-space: pre-wrap; line-height: 1.4; display: none;">{{ display_content|replace('<p>', '')|replace('</p>', '\n')|replace('<br>', '\n')|replace('<br/>', '\n')|replace('<br />', '\n')|replace('\r\n', '\n')|replace('\r', '\n')|striptags|trim }}</textarea>
+                <textarea id="itineraryText" class="form-control border-0 rounded-0 thai-text" readonly
+                    style="min-height:200px; resize:vertical; font-size:.8rem; white-space: pre-wrap; line-height: 1.8; background-color: #f9f9f9;">{{ (booking.description or booking.internal_note or '') | service_detail_to_text }}</textarea>
 
                 <!-- Toggle button -->
                 <div class="p-2 bg-light border-top">
@@ -598,39 +611,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         // Add a small delay to ensure everything is loaded
         setTimeout(function () {
-            // Initialize itinerary content display
-            console.log('🔍 Looking for itinerary-content element...');
-            const contentDiv = document.getElementById('itinerary-content');
-            if (contentDiv) {
-                console.log('✅ Found itinerary-content element');
-                const rawData = contentDiv.getAttribute('data-raw');
-                console.log('📝 Raw data:', rawData);
-                if (rawData && rawData.trim()) {
-                    // Convert HTML to plain text with line breaks
-                    let displayContent = rawData
-                        .replace(/<p[^>]*>/gi, '')
-                        .replace(/<\/p>/gi, '\n\n')
-                        .replace(/<br\s*\/?>/gi, '\n')
-                        .replace(/<[^>]+>/g, '')
-                        .replace(/\n\s*\n\s*\n/g, '\n\n')
-                        .trim();
-
-                    console.log('🔄 Processed content:', displayContent);
-                    contentDiv.textContent = displayContent;
-                    // Force the CSS styles with !important
-                    contentDiv.style.setProperty('white-space', 'pre-line', 'important');
-                    contentDiv.style.setProperty('word-wrap', 'break-word', 'important');
-                    contentDiv.style.setProperty('overflow-wrap', 'break-word', 'important');
-                    contentDiv.style.setProperty('line-height', '1.4', 'important');
-                    console.log('✅ Itinerary content initialized with line breaks');
-                    console.log('🎨 Applied CSS styles:', contentDiv.style.cssText);
-                } else {
-                    console.log('❌ No raw data found');
-                    contentDiv.textContent = 'No content available';
-                }
-            } else {
-                console.log('❌ itinerary-content element not found');
-            }
+            console.log('✅ Voucher view initialized');
         }, 100); // Wait 100ms
 
         const btn = document.getElementById('pngMultiPageBtn');
@@ -651,22 +632,21 @@
 
     // Toggle function for itinerary edit mode
     window.toggleItineraryEdit = function () {
-        const viewDiv = document.getElementById('itinerary-view');
         const editTextarea = document.getElementById('itineraryText');
         const toggleBtn = event.target;
         const saveBtn = document.getElementById('save-itinerary-btn');
 
-        if (viewDiv.style.display !== 'none') {
+        if (editTextarea.hasAttribute('readonly')) {
             // Switch to edit mode
-            viewDiv.style.display = 'none';
-            editTextarea.style.display = 'block';
+            editTextarea.removeAttribute('readonly');
+            editTextarea.style.backgroundColor = '#fff';
             saveBtn.style.display = 'inline-block';
             toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i>View Mode';
             editTextarea.focus();
         } else {
             // Switch to view mode
-            viewDiv.style.display = 'block';
-            editTextarea.style.display = 'none';
+            editTextarea.setAttribute('readonly', 'readonly');
+            editTextarea.style.backgroundColor = '#f9f9f9';
             saveBtn.style.display = 'none';
             toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit Itinerary';
         }
@@ -699,22 +679,12 @@
                 if (data.success) {
                     console.log('✅ Itinerary saved successfully');
 
-                    // Update the view content with proper line breaks
-                    const contentDiv = document.getElementById('itinerary-content');
-                    if (contentDiv) {
-                        // Convert line breaks for display
-                        const displayContent = content.trim();
-                        contentDiv.textContent = displayContent;
-                        contentDiv.style.whiteSpace = 'pre-line';
-                    }
-
                     // Switch back to view mode
-                    const viewDiv = document.getElementById('itinerary-view');
                     const saveBtn = document.getElementById('save-itinerary-btn');
                     const toggleBtn = document.querySelector('button[onclick="toggleItineraryEdit()"]');
 
-                    viewDiv.style.display = 'block';
-                    editTextarea.style.display = 'none';
+                    editTextarea.setAttribute('readonly', 'readonly');
+                    editTextarea.style.backgroundColor = '#f9f9f9';
                     saveBtn.style.display = 'none';
                     toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit Itinerary';
 
@@ -1228,6 +1198,36 @@
         font-size: .75rem;
     }
 
+    /* SERVICE BY / SUPPLIER - Line Break Support */
+    #voucher-table textarea[name="service_by"],
+    #voucher-table .supplier-custom {
+        font-weight: normal;
+        white-space: pre-wrap;
+        line-height: 1.5;
+        font-family: inherit;
+    }
+
+    /* Supplier Display Formatting */
+    .supplier-display {
+        padding: 6px 12px;
+        background: #fff;
+        border: 1px solid #d9dee3;
+        border-radius: 4px;
+        font-size: .75rem;
+        min-height: 42px;
+    }
+
+    .supplier-display .supplier-name {
+        font-weight: 700;
+        margin-bottom: 2px;
+    }
+
+    .supplier-display .supplier-details {
+        font-weight: normal;
+        white-space: pre-wrap;
+        line-height: 1.4;
+    }
+
     #voucher-table thead th {
         font-size: .65rem;
         letter-spacing: .5px;
@@ -1408,19 +1408,8 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
 <!-- TinyMCE is already loaded in base.html -->
 <script>
-        // Init TinyMCE for itinerary
-        tinymce.init({
-            selector: '#itineraryText',
-            menubar: false,
-            statusbar: false,
-            height: 200,
-            plugins: 'lists link table',
-            toolbar: 'bold italic underline | bullist numlist | link | table | removeformat',
-            content_style: 'body { font-size:12px; }',
-            readonly: false
-        });
-
-        // Init TinyMCE for guest list
+        // TinyMCE disabled for itineraryText - using plain textarea with line breaks
+        // Init TinyMCE for guest list only
         tinymce.init({
             selector: '#guest-list-textarea',
             menubar: false,
@@ -1458,7 +1447,8 @@
         const origSaveRows = window.saveRows;
         function saveRows() {
             const rows = collectRows();
-            const description = tinymce.get('itineraryText') ? tinymce.get('itineraryText').getContent() : document.getElementById('itineraryText').value.trim();
+            // itineraryText is now plain textarea (no TinyMCE)
+            const description = document.getElementById('itineraryText').value.trim();
             const flight_info = document.getElementById('flightInfoText').value.trim();
 
             // Get guest list from TinyMCE or fallback to textarea
@@ -1674,10 +1664,37 @@
         }
 
         function refreshSuppliers() { loadSuppliers(() => { /* refreshed */ }); }
+
+        // Format supplier text to show first line bold, rest normal
+        function formatSupplierText(textarea) {
+            const cell = textarea.closest('.supplier-cell');
+            if (!cell) return;
+
+            const display = cell.querySelector('.supplier-display');
+            const nameDiv = cell.querySelector('.supplier-name');
+            const detailsDiv = cell.querySelector('.supplier-details');
+
+            if (!display || !nameDiv || !detailsDiv) return;
+
+            const text = textarea.value;
+            const lines = text.split('\n');
+
+            if (lines.length > 0) {
+                nameDiv.textContent = lines[0]; // First line bold
+                detailsDiv.textContent = lines.slice(1).join('\n'); // Rest normal
+            }
+        }
+
         function handleSupplierChange(sel) {
-            const ta = sel.parentElement.querySelector('textarea[name="service_by"]');
+            const cell = sel.closest('.supplier-cell');
+            const ta = cell.querySelector('textarea[name="service_by"]');
+            const display = cell.querySelector('.supplier-display');
+            const nameDiv = cell.querySelector('.supplier-name');
+            const detailsDiv = cell.querySelector('.supplier-details');
+
             if (sel.value === '__custom__') {
                 ta.style.display = 'block';
+                if (display) display.style.display = 'none';
                 ta.focus();
             }
             else if (sel.value === '__add_new__') {
@@ -1689,31 +1706,47 @@
                 const supplier = SUPPLIERS.find(s => s.id == sel.value);
                 if (supplier) {
                     let supplierText = supplier.name || '';
+                    const details = [];
+
                     if (supplier.address) {
-                        supplierText += '\n' + supplier.address;
+                        details.push(supplier.address);
                     }
                     if (supplier.phone) {
-                        supplierText += '\n' + supplier.phone;
+                        details.push(supplier.phone);
                     }
                     if (supplier.notes) {
-                        supplierText += '\n' + supplier.notes;
+                        details.push(supplier.notes);
+                    }
+                    if (supplier.remarks) {
+                        details.push(supplier.remarks);
+                    }
+
+                    // Set textarea value (for form submission)
+                    if (details.length > 0) {
+                        supplierText += '\n' + details.join('\n');
                     }
                     ta.value = supplierText;
 
-                    // Only show textarea if supplier has additional info (multi-line)
-                    if (supplier.address || supplier.phone || supplier.notes) {
-                        ta.style.display = 'block';
-                    } else {
+                    // Show formatted display
+                    if (nameDiv && detailsDiv && display) {
+                        nameDiv.textContent = supplier.name || '';
+                        detailsDiv.textContent = details.join('\n');
+                        display.style.display = 'block';
                         ta.style.display = 'none';
+                    } else {
+                        // Fallback to textarea
+                        ta.style.display = details.length > 0 ? 'block' : 'none';
                     }
                 } else {
                     // Simple supplier name only
                     ta.value = sel.options[sel.selectedIndex]?.dataset.sname || '';
+                    if (display) display.style.display = 'none';
                     ta.style.display = 'none';
                 }
             }
             else {
                 ta.style.display = 'none';
+                if (display) display.style.display = 'none';
                 ta.value = '';
             }
 
@@ -1738,7 +1771,14 @@
             tr.innerHTML = `<td class="text-center index-col"><i class="fas fa-grip-vertical text-muted me-1" style="cursor:move"></i><span class="row-number"></span></td>
 <td><input type="text" name="arrival" class="form-control form-control-sm date-input" placeholder="DD/MM/YYYY"/></td>
 <td><input type="text" name="departure" class="form-control form-control-sm date-input" placeholder="DD/MM/YYYY"/></td>
-<td><select name="service_by_supplier" class="form-select form-select-sm mb-1" onchange="handleSupplierChange(this)"></select><textarea name="service_by" rows="2" class="form-control form-control-sm supplier-custom thai-text" style="display:none" placeholder="Custom supplier name"></textarea></td>
+<td class="supplier-cell">
+    <select name="service_by_supplier" class="form-select form-select-sm mb-1" onchange="handleSupplierChange(this)"></select>
+    <div class="supplier-display" style="display:none;">
+        <div class="supplier-name" style="font-weight: 700;"></div>
+        <div class="supplier-details" style="font-weight: normal; white-space: pre-wrap;"></div>
+    </div>
+    <textarea name="service_by" rows="2" class="form-control form-control-sm supplier-custom thai-text" style="display:none" placeholder="Custom supplier name" oninput="formatSupplierText(this)"></textarea>
+</td>
 <td><textarea name="type" rows="3" class="form-control form-control-sm thai-text"></textarea></td>
 <td class="text-center"><button class="btn btn-link text-danger p-0" onclick="removeRow(this)"><i class='fas fa-times'></i></button></td>`;
             tbody.appendChild(tr); renumber(); initDatePickers(tr.querySelectorAll('.date-input'));
@@ -2058,7 +2098,19 @@
         document.addEventListener('DOMContentLoaded', function () {
             initImageSortable();
             initImageZoom();
+            initSupplierDisplays();
         });
+
+        // Initialize supplier displays for existing rows
+        function initSupplierDisplays() {
+            document.querySelectorAll('#voucher-body tr').forEach(tr => {
+                const select = tr.querySelector('select[name="service_by_supplier"]');
+                if (select && select.value) {
+                    // Trigger handleSupplierChange to format display
+                    handleSupplierChange(select);
+                }
+            });
+        }
 
         // Image Zoom Modal Functions
         function initImageZoom() {
@@ -2271,16 +2323,37 @@
         }
 
         function loadFiles() {
-            fetch(`/voucher/api/{{ booking.id }}/files`)
-                .then(response => response.json())
-                .then(data => {
-                    const filesList = document.getElementById('files-list');
+            // First, generate booking share token
+            fetch(`{{ url_for('voucher.generate_share_token', id=booking.id) }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ minutes: 172800 }) // 120 days
+            })
+                .then(r => r.json())
+                .then(tokenData => {
+                    if (!tokenData.success || !tokenData.token) {
+                        throw new Error('Failed to generate share token');
+                    }
+                    const bookingToken = tokenData.token;
 
-                    if (data.files && data.files.length > 0) {
-                        let html = '<div class="row g-2">';
-                        data.files.forEach(file => {
-                            const shareUrl = `${window.location.origin}/voucher/public/${file.public_token}/files`;
-                            html += `
+                    // Now load files with the token
+                    return fetch(`/voucher/api/{{ booking.id }}/files`)
+                        .then(response => response.json())
+                        .then(data => {
+                            const filesList = document.getElementById('files-list');
+
+                            if (data.files && data.files.length > 0) {
+                                console.log('📁 Loading files with booking token:', bookingToken);
+                                let html = '<div class="row g-2">';
+                                data.files.forEach(file => {
+                                    // Use booking token for file download URL
+                                    const shareUrl = `${window.location.origin}/public/voucher/file/${file.id}/${bookingToken}`;
+                                    console.log('🔗 Generated share URL for file', file.id, ':', shareUrl);
+                                    html += `
                         <div class="col-12">
                             <div class="card mb-2">
                                 <div class="card-body p-3">
@@ -2306,7 +2379,7 @@
                                                         class="btn btn-sm btn-outline-info" title="Edit Title">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
-                                                <a href="/voucher/download/${file.id}" 
+                                                <a href="${shareUrl}" target="_blank"
                                                    class="btn btn-sm btn-outline-primary" title="Download">
                                                     <i class="fas fa-download"></i>
                                                 </a>
@@ -2321,20 +2394,22 @@
                             </div>
                         </div>
                     `;
-                        });
-                        html += '</div>';
-                        filesList.innerHTML = html;
-                    } else {
-                        filesList.innerHTML = `
+                                });
+                                html += '</div>';
+                                filesList.innerHTML = html;
+                            } else {
+                                filesList.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-folder-open fa-2x mb-2"></i>
                         <p>No files shared yet</p>
                     </div>
                 `;
-                    }
+                            }
+                        });
                 })
                 .catch(error => {
                     console.error('Error loading files:', error);
+                    showMessage('Error loading files', 'error');
                 });
         }
 
@@ -2625,6 +2700,8 @@
 
         // Initialize sharing features on page load
         document.addEventListener('DOMContentLoaded', function () {
+            console.log('🚀 Voucher page loaded - Version: 2025-11-29-v2');
+            console.log('📋 Loading files and links...');
             loadFiles();
             loadLinks();
         });
