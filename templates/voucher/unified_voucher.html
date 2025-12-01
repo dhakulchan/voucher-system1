@@ -189,10 +189,15 @@
                         <div class="voucher-image-item position-relative border rounded p-2"
                             data-image-id="{{ img.id or 'img_' + loop.index0|string }}" draggable="true"
                             style="width: 200px;">
+                            <!-- Order Badge -->
+                            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                                <span class="badge bg-primary image-order-badge">{{ loop.index }}</span>
+                            </div>
+
                             <!-- Title Input -->
                             <div class="mb-2">
                                 <input type="text" class="form-control form-control-sm image-title-input"
-                                    placeholder="Image Title (Optional)" value="{{ img.title or '' }}"
+                                    placeholder="ชื่อรูป (ไม่จำเป็น)" value="{{ img.title or '' }}"
                                     onchange="updateImageTitle(this, '{{ img.id or 'img_' + loop.index0|string }}')">
                             </div>
 
@@ -209,16 +214,24 @@
 
                             <div class="text-center small mt-1">
                                 <span class="badge bg-secondary">{{ loop.index }}</span>
+                                <div class="text-muted" style="font-size: 0.7rem;">
+                                    <i class="fas fa-arrows-alt"></i> ลากเพื่อเรียงลำดับ
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
                         {% elif booking.voucher_image_path %}
                         <div class="voucher-image-item position-relative border rounded p-2" data-image-id="main"
                             draggable="true" style="width: 200px;">
+                            <!-- Order Badge -->
+                            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                                <span class="badge bg-primary image-order-badge">1</span>
+                            </div>
+
                             <!-- Title Input for legacy image -->
                             <div class="mb-2">
                                 <input type="text" class="form-control form-control-sm image-title-input"
-                                    placeholder="Image Title (Optional)" value=""
+                                    placeholder="ชื่อรูป (ไม่จำเป็น)" value=""
                                     onchange="updateImageTitle(this, 'main')">
                             </div>
 
@@ -229,21 +242,54 @@
                                 <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
                                     style="transform:translate(40%, -40%);" onclick="deleteVoucherImage(this, 'main')">
                                     <i class="fas fa-times"></i>
-                                </button>
+                                    <div class="text-center small mt-1">
+                                        <span class="badge bg-secondary">1</span>
+                                        <div class="text-muted" style="font-size: 0.7rem;">
+                                            <i class="fas fa-arrows-alt"></i> ลากเพื่อเรียงลำดับ
+                                        </div>
+                                    </div>
                             </div>
-
-                            <div class="text-center small mt-1">
-                                <span class="badge bg-secondary">1</span>
-                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                     </div>
+
+                    <!-- Image Preview for new uploads -->
                 </div>
 
                 <!-- Image Preview for new uploads -->
                 <div id="voucherImagePreview" class="d-flex flex-wrap gap-2"></div>
 
                 <!-- Removed "Generated Voucher Image" section as requested -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Voucher Library Albums Selection -->
+    <div class="col-md-12">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
+                <span><i class="fas fa-images me-2"></i>คลังรูปภาพ Voucher (เลือกจากแกลเลอรี่)</span>
+                <a href="{{ url_for('voucher_library.list_albums') }}" target="_blank"
+                    class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-external-link-alt me-1"></i>เปิดคลังรูป
+                </a>
+            </div>
+            <div class="card-body small">
+                <label for="voucherAlbumsSelect" class="form-label">เลือกรูปภาพจากคลัง Voucher เพื่อแสดงใน
+                    PDF/PNG:</label>
+                <select id="voucherAlbumsSelect" name="voucher_album_ids" class="form-select form-select-sm" multiple
+                    size="8">
+                    <!-- Options will be loaded dynamically -->
+                </select>
+                <div class="form-text mt-2">
+                    <i class="fas fa-info-circle"></i> กด Ctrl (Cmd บน Mac) เพื่อเลือกหลายรูป - รูปที่เลือกจะแสดงใน
+                    voucher PDF/PNG
+                </div>
+
+                <!-- Preview of selected albums -->
+                <div id="selectedAlbumsPreview" class="d-flex flex-wrap gap-3 mt-3">
+                    <!-- Selected album thumbnails will appear here -->
+                </div>
             </div>
         </div>
     </div>
@@ -1343,16 +1389,102 @@
     }
 
     .voucher-image-item {
-        transition: transform 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: move;
     }
 
     .voucher-image-item:hover {
         transform: scale(1.02);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     }
 
     .voucher-image-item.dragging {
-        opacity: 0.7;
-        transform: scale(0.95) rotate(2deg);
+        opacity: 0.5;
+        transform: scale(0.95) rotate(3deg);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        border: 2px dashed #007bff !important;
+    }
+
+    .voucher-image-item.drag-over {
+        border: 2px solid #28a745 !important;
+        background-color: #f0f8ff;
+    }
+
+    /* Image order badge */
+    .image-order-badge {
+        font-size: 0.9rem;
+        padding: 0.4rem 0.6rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Library image styling */
+    .voucher-library-item {
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: move !important;
+        user-select: none;
+        -webkit-user-drag: element;
+    }
+
+    .voucher-library-item * {
+        pointer-events: none;
+        /* ทำให้ลากได้ง่ายขึ้น */
+    }
+
+    .voucher-library-item:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        cursor: grab !important;
+    }
+
+    .voucher-library-item:active {
+        cursor: grabbing !important;
+    }
+
+    .voucher-library-item.dragging {
+        opacity: 0.5 !important;
+        transform: scale(0.95) rotate(3deg) !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+        border: 2px dashed #28a745 !important;
+        background-color: #fff3cd !important;
+    }
+
+    .voucher-library-item.drag-over {
+        border: 3px solid #28a745 !important;
+        background-color: #d4edda !important;
+    }
+
+    .library-order-badge {
+        font-size: 1rem !important;
+        padding: 0.5rem 0.7rem !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3) !important;
+        font-weight: bold !important;
+        z-index: 100 !important;
+        position: relative !important;
+    }
+
+    /* Toast animation */
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
     }
 
     /* Drag handle styling */
@@ -1465,6 +1597,10 @@
             const voucher_images = collectVoucherImages();
             console.log('saveRows: about to send voucher_images:', voucher_images);
 
+            // Collect selected voucher album IDs from library
+            const voucher_album_ids = collectVoucherAlbumIds();
+            console.log('saveRows: about to send voucher_album_ids:', voucher_album_ids);
+
             const supplier_id = document.getElementById('supplierSelect')?.value || '';
 
             const payload = {
@@ -1473,7 +1609,8 @@
                 flight_info,
                 guest_list,
                 supplier_id,
-                voucher_images
+                voucher_images,
+                voucher_album_ids
             };
             console.log('saveRows: full payload:', payload);
 
@@ -1524,10 +1661,32 @@
             return images;
         }
 
-        // Update image title function
+        // Collect selected voucher album IDs from library
+        function collectVoucherAlbumIds() {
+            const select = document.getElementById('voucherAlbumsSelect');
+            if (!select) {
+                console.log('collectVoucherAlbumIds: select not found');
+                return [];
+            }
+
+            const selectedOptions = Array.from(select.selectedOptions);
+            const albumIds = selectedOptions.map(option => parseInt(option.value)).filter(id => !isNaN(id));
+
+            console.log('collectVoucherAlbumIds: collected', albumIds.length, 'album IDs:', albumIds);
+            return albumIds;
+        }
+
+        // Update image title function with immediate save
         function updateImageTitle(input, imageId) {
-            // The title will be saved when saveRows() is called
-            console.log('Image title updated for', imageId, ':', input.value);
+            const title = input.value.trim();
+            console.log('📝 Image title updated for', imageId, ':', title);
+
+            // Show feedback
+            const originalBorder = input.style.border;
+            input.style.border = '2px solid #28a745';
+            setTimeout(() => {
+                input.style.border = originalBorder;
+            }, 500);
         }
 
         // Declare SUPPLIERS variable globally
@@ -1908,7 +2067,7 @@
         function uploadVoucherImages() {
             const fileInput = document.getElementById('voucherImagesInput');
             if (!fileInput.files.length) {
-                alert('Select images first.');
+                alert('กรุณาเลือกรูปภาพก่อน');
                 return;
             }
 
@@ -1918,7 +2077,7 @@
             // Check file sizes
             for (const file of files) {
                 if (file.size > max) {
-                    alert(`Image ${file.name} exceeds max size of ${Math.round(max / 1024)} KB.`);
+                    alert(`รูปภาพ ${file.name} มีขนาดเกิน ${Math.round(max / 1024)} KB`);
                     return;
                 }
             }
@@ -1967,10 +2126,17 @@
             div.draggable = true;
             div.style.width = '200px';
 
+            // Get current count for order badge
+            const container = document.getElementById('voucherImagesContainer');
+            const currentCount = container ? container.querySelectorAll('.voucher-image-item').length + 1 : 1;
+
             div.innerHTML = `
+            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                <span class="badge bg-primary image-order-badge">${currentCount}</span>
+            </div>
             <div class="mb-2">
                 <input type="text" class="form-control form-control-sm image-title-input" 
-                       placeholder="Image Title (Optional)"
+                       placeholder="ชื่อรูป (ไม่จำเป็น)"
                        value="${title}"
                        onchange="updateImageTitle(this, '${imageId}')">
             </div>
@@ -1983,6 +2149,9 @@
             </div>
             <div class="text-center small mt-1">
                 <i class="fas fa-grip-vertical text-muted"></i>
+                <div class="text-muted" style="font-size: 0.7rem;">
+                    <i class="fas fa-arrows-alt"></i> ลากเพื่อเรียงลำดับ
+                </div>
             </div>
         `;
 
@@ -1990,7 +2159,7 @@
         }
 
         function deleteVoucherImage(btn, imageId) {
-            if (!confirm('Delete voucher image?')) return;
+            if (!confirm('ลบรูปภาพ Voucher นี้?')) return;
 
             fetch(window.location.pathname + '/delete-image', {
                 method: 'POST',
@@ -2009,7 +2178,7 @@
             });
         }
 
-        // Initialize sortable for images
+        // Initialize sortable for images with improved visual feedback
         function initImageSortable() {
             const container = document.getElementById('voucherImagesContainer');
             if (!container) return;
@@ -2017,41 +2186,115 @@
             let draggedElement = null;
 
             container.addEventListener('dragstart', function (e) {
-                if (e.target.closest('.voucher-image-item')) {
-                    draggedElement = e.target.closest('.voucher-image-item');
+                const item = e.target.closest('.voucher-image-item');
+                if (item) {
+                    draggedElement = item;
                     e.dataTransfer.effectAllowed = 'move';
-                    draggedElement.style.opacity = '0.5';
+                    item.classList.add('dragging');
+
+                    // Show visual feedback
+                    setTimeout(() => {
+                        item.style.opacity = '0.5';
+                    }, 0);
                 }
             });
 
             container.addEventListener('dragover', function (e) {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
+
+                const afterElement = getDragAfterElement(container, e.clientX);
+                const targetItem = e.target.closest('.voucher-image-item');
+
+                // Remove previous drag-over highlights
+                container.querySelectorAll('.drag-over').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
+
+                // Highlight the target
+                if (targetItem && targetItem !== draggedElement) {
+                    targetItem.classList.add('drag-over');
+                }
             });
 
             container.addEventListener('dragenter', function (e) {
                 e.preventDefault();
             });
 
+            container.addEventListener('dragleave', function (e) {
+                const item = e.target.closest('.voucher-image-item');
+                if (item) {
+                    item.classList.remove('drag-over');
+                }
+            });
+
             container.addEventListener('drop', function (e) {
                 e.preventDefault();
+
+                // Remove all drag-over highlights
+                container.querySelectorAll('.drag-over').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
+
                 const targetItem = e.target.closest('.voucher-image-item');
                 if (targetItem && draggedElement && targetItem !== draggedElement) {
                     const rect = targetItem.getBoundingClientRect();
                     const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? targetItem.nextSibling : targetItem;
                     container.insertBefore(draggedElement, nextSibling);
 
-                    // Save new order
+                    // Save new order immediately
                     saveImageOrder();
+
+                    // Show success feedback
+                    showToast('Image order updated!', 'success');
                 }
             });
 
             container.addEventListener('dragend', function (e) {
                 if (draggedElement) {
+                    draggedElement.classList.remove('dragging');
                     draggedElement.style.opacity = '';
                     draggedElement = null;
                 }
+
+                // Clean up any remaining highlights
+                container.querySelectorAll('.drag-over').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
             });
+        }
+
+        // Helper function to determine the element after which to insert
+        function getDragAfterElement(container, x) {
+            const draggableElements = [...container.querySelectorAll('.voucher-image-item:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = x - box.left - box.width / 2;
+
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Toast notification helper
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px; animation: slideInRight 0.3s ease;';
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                ${message}
+            `;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
         }
 
         function saveImageOrder() {
@@ -2060,16 +2303,37 @@
                 item.getAttribute('data-image-id')
             );
 
+            // Update order badges
+            updateOrderBadges();
+
+            console.log('💾 Saving image order:', imageIds);
+
             fetch(window.location.pathname + '/reorder-images', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_order: imageIds })
             }).then(r => r.json()).then(data => {
-                if (!data.success) {
-                    console.warn('Failed to save image order:', data.error);
+                if (data.success) {
+                    console.log('✅ Image order saved successfully');
+                } else {
+                    console.warn('⚠️ Failed to save image order:', data.error);
+                    showToast('Failed to save image order', 'error');
                 }
             }).catch(e => {
-                console.error('Error saving image order:', e);
+                console.error('❌ Error saving image order:', e);
+                showToast('Error saving image order', 'error');
+            });
+        }
+
+        // Update order badges after reordering
+        function updateOrderBadges() {
+            const container = document.getElementById('voucherImagesContainer');
+            const items = container.querySelectorAll('.voucher-image-item');
+            items.forEach((item, index) => {
+                const badge = item.querySelector('.image-order-badge');
+                if (badge) {
+                    badge.textContent = index + 1;
+                }
             });
         }
 
@@ -2704,7 +2968,270 @@
             console.log('📋 Loading files and links...');
             loadFiles();
             loadLinks();
+            loadVoucherAlbums(); // Load voucher library albums
         });
+
+        // Load voucher albums from library
+        function loadVoucherAlbums() {
+            console.log('🔄 Loading voucher albums...');
+            fetch('/voucher-library/api/list')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('📦 Voucher albums data received:', data);
+                    const select = document.getElementById('voucherAlbumsSelect');
+                    if (!select) {
+                        console.warn('⚠️ voucherAlbumsSelect not found');
+                        return;
+                    }
+
+                    select.innerHTML = ''; // Clear existing options
+
+                    if (data.success && data.albums && data.albums.length > 0) {
+                        console.log('✅ Found', data.albums.length, 'albums');
+                        data.albums.forEach(album => {
+                            const option = document.createElement('option');
+                            option.value = album.id;
+                            option.textContent = `${album.title} (${album.file_size_mb} MB)`;
+                            option.dataset.imagePath = album.image_path;
+                            select.appendChild(option);
+                        });
+
+                        // Pre-select albums if booking has selected albums
+                        const selectedIds = {{ booking.get_voucher_album_ids() | tojson if booking else '[]'
+                    }
+                };
+            console.log('🔍 Selected album IDs from booking:', selectedIds);
+
+            if (selectedIds && selectedIds.length > 0) {
+                Array.from(select.options).forEach(option => {
+                    if (selectedIds.includes(parseInt(option.value))) {
+                        option.selected = true;
+                    }
+                });
+                console.log('📌 Pre-selecting albums:', selectedIds);
+                updateAlbumPreview();
+            }
+        } else {
+            console.log('ℹ️ No albums available');
+            const option = document.createElement('option');
+            option.textContent = 'No albums available - Upload in Voucher Library';
+            option.disabled = true;
+            select.appendChild(option);
+        }
+    })
+                .catch (error => {
+        console.error('Error loading voucher albums:', error);
+    });
+        }
+
+    // Update preview when selection changes
+    document.addEventListener('DOMContentLoaded', function () {
+        const select = document.getElementById('voucherAlbumsSelect');
+        if (select) {
+            console.log('✅ Adding change listener to voucher albums select');
+            select.addEventListener('change', function () {
+                console.log('🔄 Selection changed!');
+                updateAlbumPreview();
+            });
+        } else {
+            console.warn('⚠️ voucherAlbumsSelect not found');
+        }
+    });
+
+    function updateAlbumPreview() {
+        const select = document.getElementById('voucherAlbumsSelect');
+        const preview = document.getElementById('selectedAlbumsPreview');
+
+        console.log('🎨 updateAlbumPreview called');
+
+        if (!select || !preview) {
+            console.warn('⚠️ Select or preview not found', { select, preview });
+            return;
+        }
+
+        const selectedOptions = Array.from(select.selectedOptions);
+        console.log('📋 Selected options:', selectedOptions.length, selectedOptions);
+
+        if (selectedOptions.length > 0) {
+            preview.style.display = 'flex';
+            preview.innerHTML = '';
+            console.log('🧹 Cleared preview, creating items...');
+
+            selectedOptions.forEach((option, index) => {
+                const imagePath = option.dataset.imagePath;
+                const albumId = option.value;
+                console.log(`🖼️ Creating preview ${index + 1}:`, option.textContent, 'albumId:', albumId, 'imagePath:', imagePath);
+
+                if (imagePath) {
+                    const div = document.createElement('div');
+                    div.className = 'voucher-library-item position-relative border rounded p-2';
+                    div.setAttribute('data-album-id', albumId);
+                    div.draggable = true;
+                    div.style.width = '180px';
+
+                    const badgeHtml = `<div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                            <span class="badge bg-success library-order-badge">${index + 1}</span>
+                        </div>`;
+
+                    const imageHtml = `<img src="/static/${imagePath.replace('static/', '')}" 
+                             style="width:100%;height:120px;object-fit:cover;border-radius:4px;" 
+                             alt="${option.textContent}">`;
+
+                    const textHtml = `<div class="text-center small text-truncate mt-2" style="font-size:0.75rem;">
+                            ${option.textContent}
+                        </div>
+                        <div class="text-center text-muted" style="font-size: 0.65rem;">
+                            <i class="fas fa-arrows-alt"></i> ลากเพื่อเรียงลำดับ
+                        </div>`;
+
+                    div.innerHTML = badgeHtml + imageHtml + textHtml;
+                    preview.appendChild(div);
+                    console.log(`✅ Added item ${index + 1} to preview`);
+                } else {
+                    console.warn(`⚠️ No imagePath for option ${index + 1}`);
+                }
+            });
+
+            console.log(`✅ Preview created with ${preview.children.length} items, initializing sortable...`);
+            // Initialize drag and drop for library items
+            initLibraryImageSortable();
+        } else {
+            preview.style.display = 'none';
+            preview.innerHTML = '';
+            console.log('ℹ️ No options selected, hiding preview');
+        }
+    }
+
+    // Initialize sortable for library images
+    function initLibraryImageSortable() {
+        const container = document.getElementById('selectedAlbumsPreview');
+        if (!container) {
+            console.warn('⚠️ Library preview container not found');
+            return;
+        }
+
+        console.log('🔧 Initializing library image sortable...');
+        console.log('📦 Container has', container.children.length, 'items');
+
+        // Check if already initialized
+        if (container.dataset.sortableInit === 'true') {
+            console.log('ℹ️ Sortable already initialized, skipping');
+            return;
+        }
+        container.dataset.sortableInit = 'true';
+
+        let draggedElement = null;
+
+        container.addEventListener('dragstart', function (e) {
+            const item = e.target.closest('.voucher-library-item');
+            if (item) {
+                console.log('🎯 Drag started for library image');
+                draggedElement = item;
+                e.dataTransfer.effectAllowed = 'move';
+                item.classList.add('dragging');
+                setTimeout(() => {
+                    item.style.opacity = '0.5';
+                }, 0);
+            }
+        });
+
+        container.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+
+            const targetItem = e.target.closest('.voucher-library-item');
+
+            container.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+
+            if (targetItem && targetItem !== draggedElement) {
+                targetItem.classList.add('drag-over');
+            }
+        });
+
+        container.addEventListener('dragenter', function (e) {
+            e.preventDefault();
+        });
+
+        container.addEventListener('dragleave', function (e) {
+            const item = e.target.closest('.voucher-library-item');
+            if (item) {
+                item.classList.remove('drag-over');
+            }
+        });
+
+        container.addEventListener('drop', function (e) {
+            e.preventDefault();
+
+            console.log('📦 Drop event on library image');
+
+            container.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+
+            const targetItem = e.target.closest('.voucher-library-item');
+            if (targetItem && draggedElement && targetItem !== draggedElement) {
+                const rect = targetItem.getBoundingClientRect();
+                const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? targetItem.nextSibling : targetItem;
+                container.insertBefore(draggedElement, nextSibling);
+
+                // Update order badges and select element
+                updateLibraryOrderBadgesAndSelect();
+
+                if (typeof showToast === 'function') {
+                    showToast('เรียงลำดับรูปภาพแล้ว!', 'success');
+                }
+                console.log('✅ Library image order updated');
+            }
+        });
+
+        container.addEventListener('dragend', function (e) {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement.style.opacity = '';
+                draggedElement = null;
+            }
+
+            container.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+        });
+
+        console.log('✅ Library sortable initialized with', container.children.length, 'draggable items');
+    }    // Update order badges and reorder select element
+    function updateLibraryOrderBadgesAndSelect() {
+        const container = document.getElementById('selectedAlbumsPreview');
+        const select = document.getElementById('voucherAlbumsSelect');
+        if (!container || !select) return;
+
+        const items = container.querySelectorAll('.voucher-library-item');
+        const newOrder = [];
+
+        items.forEach((item, index) => {
+            const badge = item.querySelector('.library-order-badge');
+            if (badge) {
+                badge.textContent = index + 1;
+            }
+
+            const albumId = item.getAttribute('data-album-id');
+            if (albumId) {
+                newOrder.push(albumId);
+            }
+        });
+
+        // Reorder select element options to match visual order
+        Array.from(select.options).forEach(option => {
+            option.selected = false;
+        });
+
+        newOrder.forEach(albumId => {
+            const option = select.querySelector(`option[value="${albumId}"]`);
+            if (option) {
+                option.selected = true;
+            }
+        });
+    }
 
 </script>
 {% endblock %}
