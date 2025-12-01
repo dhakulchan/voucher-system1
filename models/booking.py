@@ -83,6 +83,7 @@ class Booking(db.Model):
     daily_services = db.Column(db.Text)  # JSON string of daily services (reused for voucher rows)
     voucher_image_path = db.Column(db.String(255))  # relative path to uploaded voucher image
     voucher_images = db.Column(db.Text)  # JSON string of multiple voucher images
+    voucher_album_ids = db.Column(db.Text)  # JSON string of selected voucher album IDs from library
     
     # Admin and Management Fields
     admin_notes = db.Column(db.Text)  # Admin notes - visible to admin users only
@@ -532,6 +533,94 @@ class Booking(db.Model):
         images = self.get_voucher_images()
         images = [img for img in images if img.get('id') != image_id]
         self.set_voucher_images(images)
+    
+    def get_voucher_album_ids(self):
+        """Get list of selected voucher album IDs"""
+        if self.voucher_album_ids:
+            try:
+                return json.loads(self.voucher_album_ids)
+            except:
+                return []
+        return []
+    
+    def set_voucher_album_ids(self, album_ids):
+        """Set voucher album IDs"""
+        if isinstance(album_ids, list):
+            self.voucher_album_ids = json.dumps(album_ids)
+        elif isinstance(album_ids, str):
+            self.voucher_album_ids = album_ids
+        else:
+            self.voucher_album_ids = json.dumps([])
+    
+    def get_voucher_library_images(self):
+        """Get voucher library images from selected album IDs"""
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        album_ids = self.get_voucher_album_ids()
+        logger.info(f"🔍 Booking {self.id}: voucher_album_ids = {album_ids}")
+        
+        if not album_ids:
+            logger.warning(f"⚠️ Booking {self.id}: No album IDs selected")
+            return []
+        
+        try:
+            from models.voucher_album import VoucherAlbum
+            import os
+            
+            # Fetch albums by IDs and create a dict for quick lookup
+            albums = VoucherAlbum.query.filter(VoucherAlbum.id.in_(album_ids)).all()
+            logger.info(f"📚 Found {len(albums)} albums in database for IDs: {album_ids}")
+            
+            # Create a dictionary mapping album_id -> album object
+            album_dict = {album.id: album for album in albums}
+            
+            # Process albums in the order specified by album_ids (to maintain user's sort order)
+            processed_images = []
+            for album_id in album_ids:
+                album = album_dict.get(album_id)
+                if not album:
+                    logger.warning(f"  ⚠️ Album ID {album_id} not found in database")
+                    continue
+                    
+                logger.info(f"  Processing album {album.id}: {album.title} - path: {album.image_path}")
+                if album.image_path:
+                    # Remove 'static/' prefix if it exists in the path
+                    image_path = album.image_path
+                    if image_path.startswith('static/'):
+                        image_path = image_path[7:]  # Remove 'static/' prefix
+                    
+                    # Try different path combinations for production/development
+                    possible_paths = [
+                        os.path.join('/home/ubuntu/voucher-ro_v1.0/static', image_path),  # Production
+                        os.path.join('/opt/bitnami/apache/htdocs/static', image_path),   # Bitnami
+                        os.path.join(os.getcwd(), 'static', image_path)                   # Development
+                    ]
+                    
+                    found = False
+                    for abs_path in possible_paths:
+                        if os.path.exists(abs_path):
+                            file_url = f"file://{abs_path}"
+                            processed_images.append({
+                                'url': file_url,
+                                'title': album.title,
+                                'remarks': album.remarks,
+                                'id': album.id
+                            })
+                            logger.info(f"  ✅ Found image at: {abs_path}")
+                            found = True
+                            break
+                    
+                    if not found:
+                        logger.warning(f"  ⚠️ Image file not found for album {album.id}. Tried: {possible_paths}")
+            
+            logger.info(f"✅ Returning {len(processed_images)} processed library images")
+            return processed_images
+        except Exception as e:
+            logger.error(f"❌ Error getting voucher library images: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return []
 
     def to_dict(self):
         return {
@@ -668,7 +757,7 @@ class Booking(db.Model):
     
     def can_generate_voucher(self):
         """Check if can generate voucher"""
-        return self.status == self.STATUS_PAID
+        return self.status in [self.STATUS_PAID, 'vouchered']
     
     def confirm_booking(self):
         """Confirm booking - Step 1"""

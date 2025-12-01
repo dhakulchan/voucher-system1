@@ -23,10 +23,49 @@ class TourVoucherWeasyPrintV2:
         template_dir = os.path.join(os.getcwd(), 'templates')
         self.jinja_env = Environment(loader=FileSystemLoader(template_dir))
         
+        # Register custom filters
+        self.jinja_env.filters['nl2br'] = self._nl2br_filter
+    
+    def _nl2br_filter(self, text):
+        """Convert newlines to <br> tags for HTML"""
+        if text is None:
+            return ''
+        import re
+        text = str(text).replace('\r\n', '\n').replace('\r', '\n')
+        return re.sub(r'\n', '<br>\n', text)
+        
     def _ensure_output_dir(self):
-        """Ensure output directory exists"""
-        output_dir = os.path.join(os.getcwd(), 'static', 'generated')
-        os.makedirs(output_dir, exist_ok=True)
+        """Ensure output directory exists - support both dev and production"""
+        # Priority order: check writable paths first
+        possible_paths = [
+            '/home/ubuntu/voucher-ro_v1.0/static/generated',  # Production (home)
+            '/opt/bitnami/apache/htdocs/static/generated',     # Production (Bitnami)
+            os.path.join(os.getcwd(), 'static', 'generated')   # Development
+        ]
+        
+        output_dir = None
+        for path in possible_paths:
+            try:
+                # Try to create directory
+                os.makedirs(path, exist_ok=True)
+                # Test if we can write to it
+                test_file = os.path.join(path, '.write_test')
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+                # If we got here, this path is writable
+                output_dir = path
+                os.chmod(path, 0o755)  # Ensure proper permissions
+                break
+            except (PermissionError, OSError):
+                # This path is not writable, try next
+                continue
+        
+        if not output_dir:
+            # Fallback to current directory
+            output_dir = os.path.join(os.getcwd(), 'static', 'generated')
+            os.makedirs(output_dir, exist_ok=True)
+        
         return output_dir
         
     def generate_tour_voucher_v2(self, booking) -> str:
@@ -130,13 +169,15 @@ class TourVoucherWeasyPrintV2:
                         return "Customer"
                 
                 def get_voucher_images(self):
-                    """Get voucher images as list with file:// URLs for WeasyPrint"""
+                    """Get voucher images as list with file:// URLs for WeasyPrint (includes uploaded + library images)"""
                     try:
+                        processed_images = []
+                        
+                        # 1. Get uploaded voucher images first
                         if hasattr(self._booking, 'get_voucher_images'):
                             images = self._booking.get_voucher_images()
                             if images:
                                 # Convert Flask URLs to absolute file:// URLs for WeasyPrint
-                                processed_images = []
                                 for image in images:
                                     if isinstance(image, dict):
                                         # Handle different data structures
@@ -216,16 +257,24 @@ class TourVoucherWeasyPrintV2:
                                                     'original': image
                                                 })
                                 
-                                self.logger.info(f"✅ Found {len(processed_images)} voucher images")
-                                return processed_images
+                        self.logger.info(f"✅ Found {len(processed_images)} uploaded voucher images")
                         
-                        # Try direct attribute access
+                        # 2. Get Voucher Library images (appended after uploaded images)
+                        if hasattr(self._booking, 'get_voucher_library_images'):
+                            library_images = self._booking.get_voucher_library_images()
+                            if library_images:
+                                self.logger.info(f"📚 Found {len(library_images)} library images")
+                                processed_images.extend(library_images)
+                        
+                        self.logger.info(f"✅ Total {len(processed_images)} voucher images (uploaded + library)")
+                        return processed_images
+                        
+                        # Try direct attribute access (fallback)
                         if hasattr(self._booking, 'voucher_images') and self._booking.voucher_images:
                             import json
                             images = json.loads(self._booking.voucher_images)
                             if images:
                                 # Process same as above but for direct access
-                                processed_images = []
                                 for image in images:
                                     if isinstance(image, dict) and 'url' in image:
                                         image_url = image['url']
@@ -242,12 +291,41 @@ class TourVoucherWeasyPrintV2:
                                                 })
                                 
                                 self.logger.info(f"✅ Found {len(processed_images)} voucher images via direct access")
-                                return processed_images
                         
-                        return []
+                        # Also add library images in fallback mode
+                        if hasattr(self._booking, 'get_voucher_library_images'):
+                            library_images = self._booking.get_voucher_library_images()
+                            if library_images:
+                                self.logger.info(f"📚 Found {len(library_images)} library images (fallback)")
+                                processed_images.extend(library_images)
+                        
+                        return processed_images
                         
                     except Exception as e:
                         self.logger.error(f"❌ Error getting voucher images: {e}")
+                        return []
+                
+                def get_voucher_library_images(self):
+                    """Get voucher library images from selected album IDs"""
+                    try:
+                        self.logger.info(f"🔍 Checking for voucher library images...")
+                        if hasattr(self._booking, 'get_voucher_library_images'):
+                            self.logger.info(f"✅ Booking has get_voucher_library_images method")
+                            images = self._booking.get_voucher_library_images()
+                            self.logger.info(f"📸 Retrieved {len(images) if images else 0} library images")
+                            if images:
+                                for idx, img in enumerate(images):
+                                    self.logger.info(f"  Image {idx+1}: {img.get('title', 'No title')} - {img.get('url', 'No URL')}")
+                                return images
+                            else:
+                                self.logger.warning(f"⚠️ No library images found")
+                        else:
+                            self.logger.warning(f"⚠️ Booking doesn't have get_voucher_library_images method")
+                        return []
+                    except Exception as e:
+                        self.logger.error(f"❌ Error getting voucher library images: {e}")
+                        import traceback
+                        self.logger.error(f"Traceback: {traceback.format_exc()}")
                         return []
                 
                 def get_guest_list(self):
@@ -345,7 +423,8 @@ class TourVoucherWeasyPrintV2:
                 'config': {
                     'COMPANY_LICENSE': '11/12345',
                     'TAT_LICENSE': 'TAT-123456'
-                }
+                },
+                'is_completed': False  # ✅ ปิดการแสดงหน้า Thank You สำหรับทุก status
             }
             
             # Load and render template
@@ -418,6 +497,7 @@ class TourVoucherWeasyPrintV2:
                 'booking': booking,
                 'qr_code_path': qr_code_path,
                 'now': datetime.now(),
+                'is_completed': False,  # ✅ ปิดการแสดงหน้า Thank You สำหรับทุก status
                 'config': {
                     'COMPANY_LICENSE': '11/12345',
                     'TAT_LICENSE': 'TAT-123456'
