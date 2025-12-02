@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลิงก์หมดอายุ - Dhakulchan Travel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        .message-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .icon-warning {
+            font-size: 80px;
+            color: #f39c12;
+            margin-bottom: 20px;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        h1 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .message-text {
+            color: #555;
+            font-size: 18px;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+
+        .contact-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin: 30px 0;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .contact-item i {
+            color: #667eea;
+            margin-right: 10px;
+            width: 25px;
+        }
+
+        .redirect-info {
+            color: #888;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="message-card">
+        <i class="fas fa-exclamation-triangle icon-warning"></i>
+        <h1>ลิงก์หมดอายุแล้ว</h1>
+        <p class="message-text">
+            ขออภัยค่ะ<br>
+            กรุณาติดต่อทีมงานตระกูลเฉินฯ
+        </p>
+
+        <div class="contact-info">
+            <div class="contact-item">
+                <i class="fas fa-phone"></i>
+                <span><strong>โทร:</strong> +662 2744216</span>
+            </div>
+            <div class="contact-item">
+                <i class="fas fa-phone-square"></i>
+                <span><strong>โทร (HK):</strong> +852 23921155</span>
+            </div>
+            <div class="contact-item">
+                <i class="fab fa-line"></i>
+                <span><strong>Line OA:</strong> @dhakulchan</span>
+            </div>
+        </div>
+
+        <p class="message-text" style="margin-top: 20px;">
+            ขอบคุณค่ะ
+        </p>
+
+        <div class="redirect-info">
+            <p>กำลังพาคุณไปยังเว็บไซต์หลัก<span class="spinner"></span></p>
+            <small>หากไม่ถูกนำไปอัตโนมัติ กรุณา<a href="https://www.dhakulchan.net" style="color: #667eea;">
+                    คลิกที่นี่</a></small>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer
+        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; width: 100%; position: fixed; bottom: 0; left: 0; padding: 1rem 0; box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2); z-index: 10;">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="text-center">
+                        <p
+                            style="margin: 0; font-size: 0.85rem; font-weight: 500; letter-spacing: 0.5px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);">
+                            <strong>© 2025 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.0</strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Redirect after 5 seconds
+        setTimeout(function () {
+            window.location.href = 'https://www.dhakulchan.net';
+        }, 5000);
+    </script>
+</body>
+
+</html>
