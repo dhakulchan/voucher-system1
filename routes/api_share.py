@@ -84,7 +84,7 @@ def get_public_booking_info(booking_id):
     
     # สร้าง secure public URL - Force HTTPS in production
     base_url = request.url_root.rstrip('/')
-    if base_url.startswith('http://') and 'service.dhakulchan.net' in base_url:
+    if base_url.startswith('http://') and 'booking.dhakulchan.net' in base_url:
         base_url = base_url.replace('http://', 'https://')
     public_url = booking.get_secure_share_url(base_url)
     

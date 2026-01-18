@@ -7,12 +7,12 @@ timeout = 300
 keepalive = 30
 max_requests = 1000
 max_requests_jitter = 100
-user = "ubuntu"
-group = "www-data"
+user = "admin"
+group = "admin"
 
 # Logging
-accesslog = "/var/log/voucher-system/access.log"
-errorlog = "/var/log/voucher-system/error.log"
+accesslog = "/var/log/booking-system/access.log"
+errorlog = "/var/log/booking-system/error.log"
 loglevel = "info"
 
 # Security
@@ -33,5 +33,5 @@ max_requests = 1000
 max_worker_age = 3600
 
 # SSL (if terminating SSL at application level)
-# keyfile = "/etc/letsencrypt/live/service.dhakulchan.net/privkey.pem"
-# certfile = "/etc/letsencrypt/live/service.dhakulchan.net/fullchain.pem"
+# keyfile = "/etc/letsencrypt/live/booking.dhakulchan.net/privkey.pem"
+# certfile = "/etc/letsencrypt/live/booking.dhakulchan.net/fullchain.pem"

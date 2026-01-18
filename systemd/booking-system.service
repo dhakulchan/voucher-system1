@@ -1,0 +1,41 @@
+[Unit]
+Description=Booking Management System - Gunicorn WSGI Server
+Documentation=https://github.com/dhakulchan/voucher-system1
+After=network.target mariadb.service
+Wants=mariadb.service
+
+[Service]
+Type=notify
+User=admin
+Group=admin
+WorkingDirectory=/var/www/booking
+Environment="PATH=/var/www/booking/venv/bin"
+Environment="TZ=Asia/Bangkok"
+Environment="FLASK_ENV=production"
+Environment="PYTHONUNBUFFERED=1"
+
+ExecStart=/var/www/booking/venv/bin/gunicorn \
+    --config /var/www/booking/deploy/gunicorn.conf.py \
+    --bind 127.0.0.1:5000 \
+    --workers 3 \
+    --timeout 300 \
+    --access-logfile /var/log/booking-system/access.log \
+    --error-logfile /var/log/booking-system/error.log \
+    --log-level info \
+    run:app
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=always
+RestartSec=10
+
+# Security
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/www/booking /var/log/booking-system /tmp
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,97 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                AWS LIGHTSAIL PRODUCTION SERVER INFORMATION                 ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+📍 SERVER DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Instance Name:     booking-dhakulchan-prod
+Region:            Singapore (ap-southeast-1)
+Availability Zone: ap-southeast-1a (Zone A)
+Public IP:         52.76.162.188
+Private IP:        172.26.4.148 (internal)
+Domain:            booking.dhakulchan.net
+OS:                Debian 12.12
+Instance Plan:     8 GB RAM, 2 vCPUs, 160 GB SSD ($40/month)
+
+🔐 SSH ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Username:          admin
+SSH Key Path:      ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem
+SSH Command:       ssh -i ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem admin@52.76.162.188
+
+🌐 WEB ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Main Application:  https://booking.dhakulchan.net
+Calendar:          https://booking.dhakulchan.net/booking/calendar
+Login:             https://booking.dhakulchan.net/login
+Admin Panel:       https://booking.dhakulchan.net/admin
+Direct IP Access:  http://52.76.162.188 (before DNS setup)
+
+🗃️ DATABASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Type:              MariaDB 10.11
+Database Name:     voucher_enhanced
+User:              voucher_user
+Password:          VoucherSecure2026!
+Host:              localhost
+Port:              3306
+
+📁 APPLICATION PATHS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+App Directory:     /var/www/booking
+Virtual Env:       /var/www/booking/venv
+Logs:              /var/log/booking-system/
+Static Files:      /var/www/booking/static
+Uploads:           /var/www/booking/static/uploads
+Config:            /var/www/booking/.env
+
+🔒 SSL CERTIFICATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Provider:          Let's Encrypt (Certbot)
+Certificate:       /etc/letsencrypt/live/booking.dhakulchan.net/fullchain.pem
+Private Key:       /etc/letsencrypt/live/booking.dhakulchan.net/privkey.pem
+Auto Renewal:      Daily check at 02:00 AM Bangkok time
+
+⚙️ SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Application:       booking-system.service (Gunicorn)
+Web Server:        nginx
+Database:          mariadb
+Python:            3.11.x
+Timezone:          Asia/Bangkok (UTC+7)
+
+🛠️ QUICK COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SSH Connect:       ssh -i ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem admin@52.76.162.188
+Service Status:    sudo systemctl status booking-system nginx mariadb
+Restart App:       sudo systemctl restart booking-system
+Reload Nginx:      sudo systemctl reload nginx
+View Logs:         sudo journalctl -u booking-system -f
+Database Access:   sudo mysql -u root -p
+Check SSL:         sudo certbot certificates
+Deploy Updates:    ./deploy_lightsail.sh
+
+📊 MONITORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+AWS Console:       https://lightsail.aws.amazon.com/ls/webapp/ap-southeast-1/instances/booking-dhakulchan-prod
+Metrics:           CPU, Network, Disk usage available in AWS Console
+Snapshots:         Automatic daily snapshots enabled
+Cost:              ~$42/month (instance + snapshots)
+
+🔄 DEPLOYMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Repository:        https://github.com/dhakulchan/voucher-system1
+Branch:            main
+Deploy Script:     ./deploy_lightsail.sh
+Backup Script:     ./backup_production.sh
+
+📝 NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Calendar Cancelled Status Color: #9e9e9e (Grey)
+- Default Admin User: admin@dhakulchan.net
+- Timezone: Asia/Bangkok (UTC+7)
+- Session Timeout: 12 hours
+- Max Upload Size: 100MB
+
+Created: January 18, 2026
+Last Updated: January 18, 2026

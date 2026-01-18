@@ -102,9 +102,9 @@ class Config:
     
     # Public URL Configuration
     # For development, you can set PUBLIC_BASE_URL=http://localhost:5001 in environment
-    # For production, it should be https://service.dhakulchan.net
-    PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL') or 'https://service.dhakulchan.net'
-    FORCE_HTTPS_DOMAINS = ['service.dhakulchan.net', 'dhakulchan.net']
+    # For production, it should be https://booking.dhakulchan.net
+    PUBLIC_BASE_URL = os.environ.get('PUBLIC_BASE_URL') or 'https://booking.dhakulchan.net'
+    FORCE_HTTPS_DOMAINS = ['booking.dhakulchan.net', 'dhakulchan.net']
     
     # Development mode detection
     DEVELOPMENT_MODE = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('DEBUG') == 'True'
