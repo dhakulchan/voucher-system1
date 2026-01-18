@@ -92,3 +92,7 @@ scripts/
 *.lock
 *.wsgi
 *.conf
+static/queue_media/*.mp4
+static/queue_media/*.mov
+*.mp4
+*.mov
