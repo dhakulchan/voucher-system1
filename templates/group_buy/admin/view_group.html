@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+
+{% block title %}กลุ่ม {{ group.group_code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="fas fa-users"></i> กลุ่ม: {{ group.group_code }}</h1>
+            <p class="text-muted">{{ group.group_name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if group.status == 'active' %}
+            <form method="POST" action="{{ url_for('group_buy_admin.manual_group_success', group_id=group.id) }}"
+                style="display: inline;">
+                <button type="submit" class="btn btn-success"
+                    onclick="return confirm('ยืนยันให้กลุ่มนี้สำเร็จ แม้จะยังไม่ครบคน?')">
+                    <i class="fas fa-check"></i> บังคับให้สำเร็จ
+                </button>
+            </form>
+            <form method="POST" action="{{ url_for('group_buy_admin.cancel_group', group_id=group.id) }}"
+                style="display: inline;">
+                <button type="submit" class="btn btn-danger" onclick="return confirm('ยืนยันยกเลิกกลุ่มนี้?')">
+                    <i class="fas fa-times"></i> ยกเลิกกลุ่ม
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Group Details -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">รายละเอียดกลุ่ม</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>รหัสกลุ่ม:</strong> <code>{{ group.group_code }}</code>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ชื่อกลุ่ม:</strong> {{ group.group_name or '-' }}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>สถานะ:</strong>
+                            {% if group.status == 'success' %}
+                            <span class="badge bg-success">สำเร็จ</span>
+                            {% elif group.status == 'active' %}
+                            <span class="badge bg-info">กำลังรอ</span>
+                            {% elif group.status == 'failed' %}
+                            <span class="badge bg-danger">ล้มเหลว</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>แคมเปญ:</strong><br>
+                            <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=group.campaign_id) }}">
+                                {{ group.campaign.name }}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>หัวหน้ากลุ่ม:</strong><br>
+                            {{ group.leader_name }}<br>
+                            <small class="text-muted">{{ group.leader_email }}<br>{{ group.leader_phone }}</small>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>จำนวนสมาชิก:</strong> {{ group.current_participants }}/{{
+                            group.required_participants }}
+                            <div class="progress mt-2">
+                                <div class="progress-bar bg-success" style="width: {{ group.progress_percentage }}%">
+                                    {{ "{:.0f}".format(group.progress_percentage) }}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>สถานะ:</strong><br>
+                            {% if group.is_full %}
+                            <span class="text-success"><i class="fas fa-check-circle"></i> ครบจำนวนแล้ว</span>
+                            {% elif group.is_expired %}
+                            <span class="text-danger"><i class="fas fa-clock"></i> หมดเวลาแล้ว</span>
+                            {% else %}
+                            <span class="text-info"><i class="fas fa-hourglass-half"></i> {{
+                                group.time_remaining_formatted
+                                }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>ที่นั่งคงเหลือ:</strong>
+                            {% set total_confirmed_pax = group.campaign.groups|selectattr('status', 'equalto',
+                            'success')|map(attribute='current_participants')|sum %}
+                            {% set remaining_seats = (group.campaign.max_pax or 0) - total_confirmed_pax %}
+                            <span class="badge bg-primary">{{ remaining_seats }} ที่นั่ง(seats)</span>
+                            <br>
+                            <small class="text-muted">
+                                ({{ group.campaign.max_pax or 0 }} - {{ total_confirmed_pax }} = {{ remaining_seats }})
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>เวลาสร้าง:</strong> {{ group.created_at.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>หมดอายุ:</strong> {{ group.expires_at.strftime('%d/%m/%Y %H:%M') }}
+                        </div>
+                    </div>
+
+                    {% if group.master_booking_id %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Master Booking:</strong>
+                            <a href="{{ url_for('booking.edit', id=group.master_booking_id) }}">
+                                #{{ group.master_booking_id }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Participants -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">สมาชิกในกลุ่ม ({{ participants|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>ชื่อ</th>
+                                    <th>ติดต่อ</th>
+                                    <th>จำนวนคน</th>
+                                    <th>ราคา</th>
+                                    <th>วิธีชำระเงิน</th>
+                                    <th>สถานะการชำระ</th>
+                                    <th>Booking</th>
+                                    <th>เวลาเข้าร่วม</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in participants %}
+                                <tr>
+                                    <td>
+                                        {{ p.join_order }}
+                                        {% if p.is_leader %}
+                                        <span class="badge bg-warning">Leader</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ p.participant_name }}</td>
+                                    <td class="small">
+                                        {{ p.participant_email }}<br>
+                                        {{ p.participant_phone }}
+                                    </td>
+                                    <td>{{ p.pax_count }}</td>
+                                    <td>฿{{ "{:,.2f}".format(p.payment_amount) }}</td>
+                                    <td>
+                                        {% if p.payment and p.payment.payment_method %}
+                                        {% if p.payment.payment_method == 'stripe' %}
+                                        <span class="badge bg-primary"><i class="fab fa-stripe"></i> Stripe</span>
+                                        {% elif p.payment.payment_method == 'bank' %}
+                                        <span class="badge bg-info"><i class="fas fa-university"></i> โอนเงิน</span>
+                                        {% elif p.payment.payment_method == 'qr' %}
+                                        <span class="badge bg-success"><i class="fas fa-qrcode"></i> QR Code</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ p.payment.payment_method }}</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.status == 'cancelled' %}
+                                        <span class="badge bg-dark">ยกเลิกแล้ว</span>
+                                        {% elif p.payment_status == 'paid' %}
+                                        <span class="badge bg-success">ชำระเงินสำเร็จ</span>
+                                        {% elif p.payment_status == 'authorized' %}
+                                        <span class="badge bg-info">อนุมัติแล้ว</span>
+                                        {% elif p.payment_status == 'pending' %}
+                                        <span class="badge bg-warning">รอดำเนินการ</span>
+                                        {% elif p.payment_status == 'refunded' %}
+                                        <span class="badge bg-secondary">คืนเงินแล้ว</span>
+                                        {% elif p.payment_status == 'failed' %}
+                                        <span class="badge bg-danger">ล้มเหลว</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ p.payment_status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.booking_id %}
+                                        <a href="{{ url_for('booking.edit', id=p.booking_id) }}"
+                                            class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-file-alt"></i> #{{ p.booking_id }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">ยังไม่สร้าง</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">{{ p.created_at.strftime('%d/%m/%Y %H:%M') if p.created_at else
+                                        '-'
+                                        }}</td>
+                                    <td>
+                                        {% if p.status == 'cancelled' %}
+                                        <span class="text-muted"><i class="fas fa-ban"></i> ยกเลิกแล้ว</span>
+                                        {% elif p.payment_status == 'pending' %}
+                                        <form method="POST"
+                                            action="{{ url_for('group_buy_admin.send_payment_link', participant_id=p.id) }}"
+                                            style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-primary"
+                                                title="ส่งลิงก์ชำระเงิน"
+                                                onclick="return confirm('ส่งลิงก์ชำระเงินไปที่ {{ p.participant_email }}?')">
+                                                <i class="fas fa-paper-plane"></i> ส่งลิงก์
+                                            </button>
+                                        </form>
+                                        <button type="button" class="btn btn-sm btn-success"
+                                            title="ทำเครื่องหมายว่าชำระเงินแล้ว" data-bs-toggle="modal"
+                                            data-bs-target="#paymentModal{{ p.id }}" data-participant-id="{{ p.id }}"
+                                            data-participant-name="{{ p.participant_name }}">
+                                            <i class="fas fa-check-circle"></i> ชำระแล้ว
+                                        </button>
+                                        {% if p.payment and p.payment.slip_image %}
+                                        <button type="button" class="btn btn-sm btn-info ms-1" data-bs-toggle="modal"
+                                            data-bs-target="#slipModal{{ p.id }}" title="ดูสลิปการโอนเงิน">
+                                            <i class="fas fa-image"></i> สลิป
+                                        </button>
+                                        {% endif %}
+                                        <form method="POST"
+                                            action="{{ url_for('group_buy_admin.cancel_participant', participant_id=p.id) }}"
+                                            style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="ยกเลิกการจอง"
+                                                onclick="return confirm('ยืนยันยกเลิกการจอง {{ p.participant_name }}?')">
+                                                <i class="fas fa-times-circle"></i> ยกเลิก
+                                            </button>
+                                        </form>
+                                        {% elif p.payment_status == 'paid' %}
+                                        <span class="text-success"><i class="fas fa-check-circle"></i> เรียบร้อย</span>
+                                        {% if p.payment and p.payment.slip_image %}
+                                        <button type="button" class="btn btn-sm btn-info ms-1" data-bs-toggle="modal"
+                                            data-bs-target="#slipModal{{ p.id }}" title="ดูสลิปการโอนเงิน">
+                                            <i class="fas fa-image"></i> สลิป
+                                        </button>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modals -->
+    {% for p in participants %}
+    <div class="modal fade" id="paymentModal{{ p.id }}" tabindex="-1" aria-labelledby="paymentModalLabel{{ p.id }}"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="paymentModalLabel{{ p.id }}">
+                        <i class="fas fa-money-bill-wave"></i> บันทึกการชำระเงิน
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" action="{{ url_for('group_buy_admin.mark_participant_paid', participant_id=p.id) }}"
+                    enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <strong>ผู้จอง:</strong> {{ p.participant_name }}<br>
+                            <strong>จำนวนเงิน:</strong> ฿{{ "{:,.2f}".format(p.payment_amount) }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-credit-card"></i> วิธีการชำระเงิน</label>
+                            <select name="payment_method" class="form-select" required>
+                                <option value="">-- เลือกวิธีการชำระเงิน --</option>
+                                <option value="bank">โอนเงินผ่านธนาคาร</option>
+                                <option value="qr">QR Code / PromptPay</option>
+                                <option value="stripe">บัตรเครดิต/เดบิต (Stripe)</option>
+                                <option value="cash">เงินสด</option>
+                                <option value="other">อื่นๆ</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-calendar"></i> วันที่ชำระเงิน</label>
+                            <input type="datetime-local" name="payment_date" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-sticky-note"></i> หมายเหตุ /
+                                เลขที่อ้างอิง</label>
+                            <textarea name="payment_reference" class="form-control" rows="2"
+                                placeholder="เช่น เลขที่ใบเสร็จ, หมายเหตุเพิ่มเติม"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><i class="fas fa-file-image"></i> หลักฐานการโอนเงิน
+                                (ถ้ามี)</label>
+                            <input type="file" name="slip_image" class="form-control" accept="image/*,.pdf">
+                            <small class="text-muted">รองรับ: JPG, PNG, PDF (ขนาดไม่เกิน 5MB)</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> ยกเลิก
+                        </button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> บันทึกการชำระเงิน
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Share Link -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Share Link</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">ลิงก์สำหรับเชิญเพื่อน:</p>
+                    <div class="input-group mb-2">
+                        <input type="text" class="form-control" value="{{ group.share_url }}" readonly id="shareUrl">
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('shareUrl').value); alert('คัดลอกแล้ว!')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <p class="small text-muted mb-0">Token: <code>{{ group.share_token }}</code></p>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">สรุป</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>จำนวนสมาชิก:</strong> {{ group.current_participants }}</p>
+                    <p><strong>ราคาต่อคน:</strong> ฿{{ "{:,.2f}".format(group.campaign.group_price) }}</p>
+                    <p><strong>ยอดรวม:</strong> ฿{{ "{:,.2f}".format(group.campaign.group_price *
+                        group.current_participants)
+                        }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slip Image Modals -->
+{% for p in participants %}
+{% if p.payment and p.payment.slip_image %}
+<div class="modal fade" id="slipModal{{ p.id }}" tabindex="-1" aria-labelledby="slipModalLabel{{ p.id }}"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="slipModalLabel{{ p.id }}">
+                    <i class="fas fa-receipt"></i> สลิปการโอนเงิน - {{ p.participant_name }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <p class="mb-2"><strong>ชื่อผู้ชำระ:</strong> {{ p.participant_name }}</p>
+                    <p class="mb-2"><strong>จำนวนเงิน:</strong> ฿{{ "{:,.2f}".format(p.payment_amount) }}</p>
+                    {% if p.payment.transfer_date %}
+                    <p class="mb-2"><strong>วันที่โอน:</strong> {{ p.payment.transfer_date }}</p>
+                    {% endif %}
+                    {% if p.payment.bank_account_id %}
+                    <p class="mb-2"><strong>โอนเข้าบัญชี:</strong>
+                        {% set bank_account = p.payment.bank_account_id %}
+                        บัญชี #{{ bank_account }}
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="border rounded p-2 bg-light">
+                    {% set slip_path = p.payment.slip_image.replace('static/', '') if
+                    p.payment.slip_image.startswith('static/') else p.payment.slip_image %}
+                    <img src="{{ url_for('static', filename=slip_path) }}" alt="Payment Slip" class="img-fluid"
+                        style="max-height: 600px; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                </div>
+                <p class="text-muted small mt-2">
+                    <i class="fas fa-info-circle"></i> คลิกที่รูปเพื่อดูขนาดเต็ม
+                </p>
+            </div>
+            <div class="modal-footer">
+                {% set slip_path = p.payment.slip_image.replace('static/', '') if
+                p.payment.slip_image.startswith('static/') else p.payment.slip_image %}
+                <a href="{{ url_for('static', filename=slip_path) }}" target="_blank" class="btn btn-primary">
+                    class="btn btn-primary">
+                    <i class="fas fa-external-link-alt"></i> เปิดในหน้าต่างใหม่
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+{% endblock %}

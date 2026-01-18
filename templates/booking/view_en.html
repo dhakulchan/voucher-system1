@@ -4,7 +4,8 @@
 
 {% block extra_head %}
 <!-- Cache buster for JavaScript updates -->
-<meta name="js-version" content="v2.1.{{ range(1000, 9999) | random }}">
+<meta name="js-version" content="v2.2.{{ range(1000, 9999) | random }}">
+<meta name="template-version" content="v2.2-mark-paid-permission-{{ range(1000, 9999) | random }}">
 <style>
     /* Products & Calculation Table Styling */
     .products-calculation-table {
@@ -459,6 +460,33 @@
     .text-purple {
         color: #6f42c1 !important;
     }
+
+    /* Service Detail Content Styling */
+    .service-detail-content {
+        white-space: pre-wrap !important;
+        word-wrap: break-word;
+        overflow-wrap: anywhere;
+        line-height: 1.3;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+        display: block;
+    }
+
+    .service-detail-content br {
+        display: block !important;
+        content: "";
+        margin: 0;
+    }
+
+    /* Handle long words and text - Browser compatibility */
+    .service-detail-content {
+        -webkit-hyphens: auto;
+        -moz-hyphens: auto;
+        -ms-hyphens: auto;
+        hyphens: auto;
+    }
 </style>
 {% endblock %}
 
@@ -489,9 +517,9 @@
             {% else %}
             <span class="text-muted small">Voucher available after invoice is created and paid</span>
             {% endif %}
-            {% elif booking.status not in ['draft', 'pending', 'confirmed', 'quoted', 'cancelled'] %}
+            {% elif booking.status == 'vouchered' %}
             <a href="{{ url_for('voucher.view', id=booking.id) }}" class="btn btn-outline-primary">
-                <i class="fas fa-ticket-alt me-2"></i>Generate Voucher
+                <i class="fas fa-ticket-alt me-2"></i>Create/Edit Voucher
             </a>
             {% endif %}
             <a href="{{ url_for('booking.edit', id=booking.id) }}" class="btn btn-warning">
@@ -508,7 +536,11 @@
     </div>
 
     <!-- Enhanced Workflow Progress Component -->
-    {% include 'booking/workflow_progress.html' %}
+    <div data-booking-total-amount="{{ booking.total_amount if booking.total_amount else '' }}"
+        data-booking-type="{{ booking.booking_type if booking.booking_type else 'tour' }}"
+        data-quote-number="{{ booking.quote_number if booking.quote_number else '' }}">
+        {% include 'booking/workflow_progress.html' %}
+    </div>
 
     <!-- Enhanced Booking Actions Section with Status-Based Document Generation -->
     <div class="row mb-4">
@@ -532,7 +564,7 @@
                         {% if booking.status in ['pending', 'confirmed', 'paid'] %}
                         ClassicPDFGenerator • Public PDF Route
                         {% elif booking.status == 'quoted' %}
-                        Jinja2(3.1.4) + WeasyPrint(62.3) • quote_template_final_v2.html
+                        Route public.download_booking_png & public.download_booking_pdf: classic_pdf_generator_quote.py
                         {% elif booking.status in ['vouchered', 'completed'] %}
                         Jinja2(3.1.4) + WeasyPrint(62.3) • tour_voucher_template_v2_sample.html
                         {% else %}
@@ -552,7 +584,7 @@
                                 class="btn btn-primary" target="_blank">
                                 <i class="fas fa-file-pdf me-2"></i>Download PDF
                             </a>
-                            <a href="{{ url_for('booking.generate_quote_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                            <a href="{{ url_for('booking.generate_quote_png_backend', booking_id=booking.id) }}?v={{ timestamp() }}"
                                 class="btn btn-info" target="_blank">
                                 <i class="fas fa-image me-2"></i>Download PNG
                             </a>
@@ -561,7 +593,7 @@
                                 class="btn btn-primary" target="_blank">
                                 <i class="fas fa-file-pdf me-2"></i>Download PDF
                             </a>
-                            <a href="{{ url_for('booking.generate_quote_png', booking_id=booking.id) }}?v={{ timestamp() }}"
+                            <a href="{{ url_for('booking.generate_quote_png_backend', booking_id=booking.id) }}?v={{ timestamp() }}"
                                 class="btn btn-info" target="_blank">
                                 <i class="fas fa-image me-2"></i>Download PNG
                             </a>
@@ -623,7 +655,7 @@
                                     </button>
                                     <button class="btn btn-primary"
                                         onclick="copyEnhancedMessage(getCurrentBookingId())">
-                                        <i class="fas fa-copy me-2"></i>Copy Message
+                                        <i class="fas fa-copy me-2"></i>Copy Link-Message
                                     </button>
                                     <button class="btn btn-info" onclick="openPublicSharePage(getCurrentBookingId())">
                                         <i class="fas fa-external-link-alt me-2"></i>Open Public Share Page
@@ -662,7 +694,7 @@
                             {% else %}
                             <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}"
                                 class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-envelope me-2"></i>Email Booking PDF
+                                <i class="fas fa-envelope me-2"></i>Email Service Proposal
                             </a>
                             {% endif %}
                         </div>
@@ -694,9 +726,9 @@
             <i class="fas fa-file-pdf me-2"></i>Booking PDF
         </a>
 
-        <!-- Email Booking PDF Button -->
+        <!-- Email Service Proposal Button -->
         <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
-            <i class="fas fa-envelope me-2"></i>Email Booking PDF
+            <i class="fas fa-envelope me-2"></i>Email Service Proposal
         </a>
         <!-- Booking PNG with Share Options -->
         <div class="btn-group" role="group">
@@ -883,19 +915,6 @@
                 {% endif %}
 
                 <!-- Time Management -->
-                {% if booking.time_limit %}
-                <div class="row mb-3">
-                    <div class="col-sm-4">
-                        <strong><i class="fas fa-clock me-1 text-warning"></i>Time Limit:</strong>
-                    </div>
-                    <div class="col-sm-8">
-                        <span class="badge bg-warning text-dark">
-                            {{ booking.time_limit.strftime('%d/%m/%Y %H:%M') }}
-                        </span>
-                        <small class="text-muted d-block">Booking confirmation deadline</small>
-                    </div>
-                </div>
-                {% endif %}
                 {% if booking.due_date %}
                 <div class="row mb-3">
                     <div class="col-sm-4">
@@ -906,6 +925,19 @@
                             {{ booking.due_date.strftime('%d/%m/%Y') }}
                         </span>
                         <small class="text-muted d-block">Payment or action due date</small>
+                    </div>
+                </div>
+                {% endif %}
+                {% if booking.time_limit %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong><i class="fas fa-clock me-1 text-warning"></i>Time Limit:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-warning text-dark">
+                            {{ booking.time_limit.strftime('%d/%m/%Y %H:%M') }}
+                        </span>
+                        <small class="text-muted d-block">Booking confirmation deadline</small>
                     </div>
                 </div>
                 {% endif %}
@@ -955,6 +987,8 @@
 <div class="row">
     <!-- Admin & Management Section -->
     <div class="col-lg-6 mb-4">
+        <!-- Admin & Management Section -->
+        {% if session.get('user_role') in ['admin', 'manager', 'Administrator', 'Manager'] %}
         <div class="card admin-management-card shadow-sm border-0">
             <div class="card-header"
                 style="background: linear-gradient(135deg, #fff3cd 0%, #fef9e7 100%); border-bottom: 1px solid #faebcc;">
@@ -1022,6 +1056,8 @@
                 </div>
             </div>
         </div>
+        {% endif %}
+        <!-- End Admin & Management Section -->
     </div>
 
     <!-- Operation Notes -->
@@ -1043,11 +1079,9 @@
                     </div>
                     {% else %}
                     <div class="text-muted d-flex align-items-center justify-content-center h-100">
-                        <div class="text-center operation-placeholder">
+                        <div class="text-center">
                             <i class="fas fa-clipboard-check mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                            <div>Internal</div>
-                            <div>OPPPPPPPPPPPPPP</div>
-                            <div>P</div>
+                            <div>N/A</div>
                         </div>
                     </div>
                     {% endif %}
@@ -1097,8 +1131,14 @@
                     <i class="fas fa-file-alt me-2"></i>Service Detail / Itinerary
                 </h5>
             </div>
-            <div class="card-body">
-                <p class="mb-0">{{ booking.description|replace('\n', '<br>')|replace('</p>', '</p><br>')|safe }}</p>
+            <div class="card-body" style="padding: 0.25rem 1rem;">
+                <div class="service-detail-content">
+                    {% if booking.description %}
+                    {{ booking.description|nl2br|safe }}
+                    {% else %}
+                    <em class="text-muted">No service details provided</em>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -1114,15 +1154,15 @@
                 </h5>
             </div>
             <div class="card-body">
-                {% set clean_flight_info = booking.flight_info|replace('\n', '<br>')|replace('</p>', '</p>
-                <br>')|safe %} {% set guest_text = booking.get_guest_list_for_edit() %}
-                {% if guest_text.startswith('[') and guest_text.endswith(']') %}
-                {# Handle JSON format - remove brackets and quotes #}
-                {% set clean_text = guest_text.strip('[]"') %}
-                <div class="mb-0">{{ clean_text|replace('\n', '<br>')|safe }}</div>
+                {% set guest_text = booking.get_guest_list_for_edit() %}
+                {% if guest_text %}
+                <div class="mb-0 guest-list-display">
+                    {{ guest_text|decode_guest_list|safe }}
+                </div>
                 {% else %}
-                {# Normal text format #}
-                <div class="mb-0">{{ guest_text|replace('\n', '<br>')|safe }}</div>
+                <div class="text-muted mb-0">
+                    <i class="fas fa-info-circle me-2"></i>No guest list available
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -1132,7 +1172,7 @@
     <!-- Flight Information and Internal Note -->
     <div class="row mb-4">
         {% if booking.flight_info and booking.flight_info.strip() %}
-        <div class="col-lg-6 mb-3">
+        <div class="col-12 mb-3">
             <div class="card h-100">
                 <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">
@@ -1174,7 +1214,7 @@
 
     <!-- Payment Information -->
     <div class="row mb-4">
-        <div class="col-lg-8">
+        <div class="col-12">
             <div class="card payment-card">
                 <div class="card-header payment-card-header">
                     <h5 class="card-title mb-0">
@@ -1183,11 +1223,11 @@
                 </div>
                 <div class="card-body">
                     <!-- Products & Calculation Section -->
-                    {% if booking.get_products() %}
                     <div class="mb-4">
                         <h6 class="products-section-header">
                             <i class="fas fa-calculator me-2"></i>Products & Calculation
                         </h6>
+                        {% if booking.get_products() and booking.get_products()|length > 0 %}
                         <div class="table-responsive">
                             <table class="table products-calculation-table">
                                 <thead>
@@ -1253,8 +1293,14 @@
                                 </tfoot>
                             </table>
                         </div>
+                        {% else %}
+                        <!-- No detailed products, show simple total -->
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <small>Package booking - detailed product breakdown not available</small>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
 
                     <!-- Grand Total Summary -->
                     <div class="grand-total-section">
@@ -1273,168 +1319,17 @@
                             </div>
                         </div>
 
-                        {% if booking.get_products() %}
                         <div class="row mt-3">
                             <div class="col-12">
                                 <small class="text-muted">
                                     <i class="fas fa-info-circle me-1"></i>
+                                    {% if booking.get_products() %}
                                     Product breakdown shows {{ booking.get_products()|length }} item(s) with detailed
                                     pricing
+                                    {% else %}
+                                    Package booking - contact us for detailed pricing breakdown
+                                    {% endif %}
                                 </small>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card h-100">
-                <div class="card-header bg-info text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-file-alt me-2"></i>Actions & Documents
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <!-- Actions Section -->
-                    <div class="mb-4">
-                        <h6 class="text-info mb-3">
-                            <i class="fas fa-cogs me-2"></i>Quick Actions
-                        </h6>
-                        <div class="d-flex align-items-center justify-content-center">
-                            {% if booking.status in ['quoted', 'paid', 'vouchered'] and booking.quotes %}
-                            <!-- Show View Quote button only for quoted, paid, or vouchered status -->
-                            <a href="{{ url_for('booking.generate_quote_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
-                                class="btn btn-outline-info">
-                                <i class="fas fa-eye me-2"></i>View Quote
-                            </a>
-                            {% elif booking.status in ['pending', 'confirmed'] %}
-                            <!-- For pending and confirmed status, show no buttons - clean interface -->
-                            <div class="text-muted small text-center">
-                                {% if booking.status == 'pending' %}
-                                <i class="fas fa-hourglass-half me-2"></i>Pending booking confirmation
-                                {% else %}
-                                <i class="fas fa-check-circle me-2"></i>Booking confirmed - awaiting next step
-                                {% endif %}
-                            </div>
-                            {% elif booking.status == 'draft' %}
-                            <!-- For draft status, show info message -->
-                            <div class="text-muted small">
-                                <i class="fas fa-edit me-2"></i>Complete booking details first
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Quote & Invoice Information -->
-                    <div class="border-top pt-3">
-                        <h6 class="text-secondary mb-3">
-                            <i class="fas fa-file-invoice me-2"></i>Document Numbers
-                        </h6>
-                        <div class="row">
-                            <div class="col-12 mb-3">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <strong class="text-muted">Quote Number:</strong>
-                                    <div>
-                                        <!-- Show quote number only for appropriate statuses -->
-                                        {% if booking.status in ['quoted', 'paid', 'vouchered'] and booking.quotes %}
-                                        {% set latest_quote = booking.quotes[-1] %}
-                                        {% if latest_quote.share_token and latest_quote.is_public %}
-                                        <!-- Use public route with direct URL -->
-                                        <a href="/quote/public/{{ latest_quote.share_token }}"
-                                            class="badge bg-success text-decoration-none"
-                                            title="Click to view quote details">
-                                            {{ latest_quote.quote_number }} <i class="fas fa-eye ms-1"></i>
-                                        </a>
-                                        {% else %}
-                                        <!-- Show quote number but disable link (no login) -->
-                                        <span class="badge bg-secondary" title="Login required to view quote details">
-                                            {{ latest_quote.quote_number }} <i class="fas fa-lock ms-1"></i>
-                                        </span>
-                                        {% endif %}
-                                        {% elif booking.status in ['pending', 'confirmed'] %}
-                                        <!-- For pending/confirmed status, show appropriate message -->
-                                        <span class="text-muted">
-                                            {% if booking.status == 'pending' %}
-                                            Pending confirmation
-                                            {% else %}
-                                            Ready for quote
-                                            {% endif %}
-                                        </span>
-                                        {% if booking.quotes %}
-                                        <!-- Debug: Show data inconsistency warning for admin -->
-                                        <small class="text-warning d-block">
-                                            <i class="fas fa-exclamation-triangle me-1"></i>
-                                            Data inconsistency: Has quotes but status is {{ booking.status }}
-                                        </small>
-                                        {% endif %}
-                                        {% else %}
-                                        <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <strong class="text-muted">Bank Received:</strong>
-                                    <div>
-                                        {% if booking.bank_received %}
-                                        <span class="text-dark">{{ booking.bank_received }}</span>
-                                        {% else %}
-                                        <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <strong class="text-muted">Received Date:</strong>
-                                    <div>
-                                        {% if booking.received_date %}
-                                        <span class="text-dark">{{ booking.received_date.strftime('%d/%m/%Y') if
-                                            booking.received_date.strftime else booking.received_date }}</span>
-                                        {% else %}
-                                        <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <strong class="text-muted">Received Amount:</strong>
-                                    <div>
-                                        {% if booking.received_amount %}
-                                        <span class="text-dark">{{ "{:,.2f}".format(booking.received_amount|float) }}
-                                            THB</span>
-                                        {% else %}
-                                        <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <strong class="text-muted">Product Type:</strong>
-                                    <div>
-                                        {% if booking.product_type %}
-                                        <span class="text-dark">{{ booking.product_type }}</span>
-                                        {% else %}
-                                        <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <strong class="text-muted">Notes:</strong>
-                                    <div>
-                                        {% if booking.notes %}
-                                        <span class="text-dark">{{ booking.notes }}</span>
-                                        {% else %}
-                                        <span class="text-muted">N/A</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1444,65 +1339,6 @@
     </div>
 
     <!-- Invoice Ninja Integration Removed -->
-
-    <!-- Status Change Actions -->
-    {% if booking.status != 'cancelled' %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-warning">
-                <div class="card-header bg-warning text-dark">
-                    <h5 class="card-title mb-0">
-                        <i class="fas fa-cogs me-2"></i>Status Management
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="btn-group" role="group">
-                        {% if booking.status == 'pending' %}
-                        <form method="POST" action="{{ url_for('booking.update_status', id=booking.id) }}"
-                            class="d-inline">
-                            <input type="hidden" name="status" value="confirmed">
-                            <button type="submit" class="btn btn-success me-2">
-                                <i class="fas fa-check me-2"></i>Confirm Booking
-                            </button>
-                        </form>
-                        {% endif %}
-
-                        {% if booking.status == 'quoted' %}
-                        <form method="POST" action="{{ url_for('booking.mark_as_paid', booking_id=booking.id) }}"
-                            class="d-inline">
-                            <button type="submit" class="btn btn-success me-2"
-                                onclick="return confirm('Are you sure you want to mark this booking as paid? This will auto-sync data to invoices.')">
-                                <i class="fas fa-credit-card me-2"></i>Make as Paid
-                            </button>
-                        </form>
-                        {% endif %}
-
-                        {% if booking.status in ['paid', 'vouchered'] %}
-                        <form method="POST" action="{{ url_for('booking.mark_as_completed', booking_id=booking.id) }}"
-                            class="d-inline">
-                            <button type="submit" class="btn btn-primary me-2"
-                                onclick="return confirm('Are you sure you want to mark this booking as completed?')">
-                                <i class="fas fa-flag-checkered me-2"></i>Mark as Completed
-                            </button>
-                        </form>
-                        {% endif %}
-
-                        {% if booking.status in ['pending', 'confirmed'] %}
-                        <form method="POST" action="{{ url_for('booking.update_status', id=booking.id) }}"
-                            class="d-inline">
-                            <input type="hidden" name="status" value="cancelled">
-                            <button type="submit" class="btn btn-danger me-2"
-                                onclick="return confirm('Are you sure you want to cancel this booking?')">
-                                <i class="fas fa-times me-2"></i>Cancel Booking
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     <!-- Activity Logs Workflow Section -->
     <div class="row mt-4">
@@ -1576,35 +1412,71 @@
 </div>
 
 <!-- Enhanced Booking JavaScript -->
-<script src="{{ url_for('static', filename='js/enhanced-booking-safe.js') }}?v=20251015"></script>
+<script src="{{ url_for('static', filename='js/enhanced-booking-safe.js') }}?v=20251204"></script>
 <script>
+    // Set token from server-side template (always up-to-date from DB)
+    window.serverBookingToken = '{{ booking.current_share_token if booking.current_share_token else "" }}';
+    console.log('🔐 Server token loaded:', window.serverBookingToken ? window.serverBookingToken.substring(0, 20) + '...' : 'NONE');
+
     // Core function for generating enhanced messages and secure URLs
     async function generateEnhancedMessage(bookingId) {
         try {
             console.log('🔧 Generating enhanced message for booking:', bookingId);
-            const response = await fetch(`/api/share/booking/${bookingId}/url`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                credentials: 'include'  // Include cookies for authentication
-            });
 
-            console.log('📡 Generate message response:', response.status, response.statusText);
+            // Use cached token if available (after reset)
+            let data;
+            if (window.currentBookingToken) {
+                console.log('✅ Using cached token from reset:', window.currentBookingToken);
+                const baseUrl = 'http://localhost:5001/public/booking';
+                const token = window.currentBookingToken;
+                data = {
+                    success: true,
+                    booking_reference: '{{ booking.booking_reference }}',
+                    secure_url: `${baseUrl}/${token}`,
+                    png_url: `${baseUrl}/${token}/png`,
+                    pdf_url: `${baseUrl}/${token}/pdf`
+                };
+            } else if (window.serverBookingToken) {
+                console.log('✅ Using server-side token from template:', window.serverBookingToken.substring(0, 20) + '...');
+                const baseUrl = 'http://localhost:5001/public/booking';
+                const token = window.serverBookingToken;
+                data = {
+                    success: true,
+                    booking_reference: '{{ booking.booking_reference }}',
+                    secure_url: `${baseUrl}/${token}`,
+                    png_url: `${baseUrl}/${token}/png`,
+                    pdf_url: `${baseUrl}/${token}/pdf`
+                };
+            } else {
+                // Add timestamp to prevent cache
+                const timestamp = new Date().getTime();
+                const response = await fetch(`/api/share/booking/${bookingId}/url?_=${timestamp}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    },
+                    credentials: 'include',  // Include cookies for authentication
+                    cache: 'no-store'  // Force no cache
+                });
 
-            if (!response.ok) {
-                if (response.status === 401) {
-                    throw new Error('Please login to access this feature');
-                } else if (response.status === 404) {
-                    throw new Error('Booking not found');
-                } else {
-                    const errorText = await response.text();
-                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                console.log('📡 Generate message response:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        throw new Error('Please login to access this feature');
+                    } else if (response.status === 404) {
+                        throw new Error('Booking not found');
+                    } else {
+                        const errorText = await response.text();
+                        throw new Error(`Server error: ${response.status} - ${errorText}`);
+                    }
                 }
-            }
 
-            const data = await response.json();
-            console.log('📝 Generated data:', data);
+                data = await response.json();
+                console.log('📝 Generated data:', data);
+            }
 
             if (data.success) {
                 // สร้าง message ภาษาไทยตามสถานะ booking
@@ -1649,13 +1521,29 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
                     // Default message for other statuses
                     message = `สวัสดีค่ะ
 บริษัท ตระกูลเฉินฯ แจ้งรายละเอียดบริการหรือรายการทัวร์ หมายเลขอ้างอิง ${data.booking_reference}
+
 กรุณาคลิกดูรายละเอียดตามด้านล่างค่ะ
 
 📋 Service Proposal: ${data.secure_url}
 
-🖼️ Download PNG: ${data.png_url || `${data.secure_url}/png`}
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
 
-📄 Download PDF: ${data.pdf_url || `${data.secure_url}/pdf`}
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
 
 ติดต่อสอบถามข้อมูลเพิ่มเติม:
 📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
@@ -1715,9 +1603,27 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
             const data = await response.json();
 
             if (data.success) {
-                showToast('✅ Share token reset successfully!', 'success');
-                // Reload page to show new token
-                setTimeout(() => location.reload(), 1000);
+                showToast('✅ Share token reset! New version: ' + data.tokens.token_version, 'success');
+
+                // Update UI immediately with new token URLs
+                const newToken = data.tokens.base64_token;
+                const baseUrl = 'http://localhost:5001/public/booking';
+
+                // Update all token displays in the page
+                document.querySelectorAll('a[href*="/public/booking/"]').forEach(link => {
+                    if (link.href.includes('/png')) {
+                        link.href = `${baseUrl}/${newToken}/png`;
+                    } else if (link.href.includes('/pdf')) {
+                        link.href = `${baseUrl}/${newToken}/pdf`;
+                    } else {
+                        link.href = `${baseUrl}/${newToken}`;
+                    }
+                });
+
+                // Update Copy Message button to use new token
+                window.currentBookingToken = newToken;
+
+                showToast('✅ UI updated with new token!', 'success');
             } else {
                 showToast('❌ Failed to reset share token', 'error');
             }
@@ -1768,7 +1674,9 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
         try {
             showToast('🔄 Generating secure share page...', 'info');
             const { data } = await generateEnhancedMessage(bookingId);
-            window.open(data.secure_url, '_blank');
+            // Fix double slash in URL
+            const cleanUrl = data.secure_url.replace(/([^:]\/)\/+/g, '$1');
+            window.open(cleanUrl, '_blank');
             showToast('🌐 Opening public share page...', 'success');
         } catch (error) {
             showToast('❌ Error opening share page: ' + error.message, 'error');
@@ -1992,5 +1900,39 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
         }, 3000);
     }
 </script>
+
+<!-- Cancel Booking Modal -->
+<div class="modal fade" id="cancelBookingModal" tabindex="-1" aria-labelledby="cancelBookingModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="cancelBookingModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Cancel Booking
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Are you sure you want to cancel this booking?</p>
+                <p class="text-muted small mb-0">
+                    <i class="fas fa-info-circle me-1"></i>
+                    This action cannot be undone. The booking will be marked as cancelled.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Close
+                </button>
+                <form method="POST" action="{{ url_for('booking.cancel_booking', booking_id=booking.id) }}"
+                    style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-check me-2"></i>Yes, Cancel Booking
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

@@ -84,6 +84,7 @@
                                 <tr>
                                     <th>User</th>
                                     <th>Role</th>
+                                    <th>2FA Status</th>
                                     <th>Created</th>
                                     <th>Last Updated</th>
                                     <th>Actions</th>
@@ -116,6 +117,17 @@
                                         </span>
                                     </td>
                                     <td>
+                                        {% if user.is_2fa_enabled %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-shield-alt"></i> Enabled
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-shield-alt"></i> Disabled
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
                                         <small>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else
                                             'N/A' }}</small>
                                     </td>
@@ -140,6 +152,13 @@
                                                 <i class="fas fa-key"></i> Password
                                             </button>
                                             {% endif %}
+
+                                            <!-- 2FA Management -->
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-{% if user.is_2fa_enabled %}success{% else %}secondary{% endif %}"
+                                                data-bs-toggle="modal" data-bs-target="#twoFactorModal{{ user.id }}">
+                                                <i class="fas fa-shield-alt"></i> 2FA
+                                            </button>
 
                                             <!-- Delete User -->
                                             {% if current_user.role == 'Administrator' %}
@@ -185,6 +204,10 @@
                             <option value="operation" {% if user.role=='Operation' %}selected{% endif %}>Operation User
                             </option>
                             <option value="manager" {% if user.role=='Manager' %}selected{% endif %}>Manager</option>
+                            <option value="internship" {% if user.role=='Internship' %}selected{% endif %}>Internship
+                            </option>
+                            <option value="freelance" {% if user.role=='Freelance' %}selected{% endif %}>Freelance
+                            </option>
                             {% if current_user.role == 'Administrator' %}
                             <option value="admin" {% if user.role=='Administrator' %}selected{% endif %}>Administrator
                             </option>
@@ -264,6 +287,61 @@
     </div>
 </div>
 {% endif %}
+
+<!-- 2FA Management Modal -->
+<div class="modal fade" id="twoFactorModal{{ user.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-shield-alt"></i> 2FA Management - {{ user.username }}
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert {% if user.is_2fa_enabled %}alert-success{% else %}alert-secondary{% endif %}">
+                    <strong>Current Status:</strong>
+                    {% if user.is_2fa_enabled %}
+                    <span class="badge bg-success">Enabled</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Disabled</span>
+                    {% endif %}
+                </div>
+
+                <h6 class="mb-3">What is Two-Factor Authentication?</h6>
+                <p class="small">Two-Factor Authentication (2FA) adds an extra layer of security by requiring a
+                    verification code from an authenticator app in addition to the password.</p>
+
+                {% if user.is_2fa_enabled %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> This user has 2FA enabled. You can force disable it if needed
+                    (e.g., if they lost their device).
+                </div>
+                <form method="POST" action="{{ url_for('user_mgmt.toggle_2fa', user_id=user.id) }}">
+                    <input type="hidden" name="enable" value="false">
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="fas fa-ban"></i> Force Disable 2FA
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Requiring 2FA will force this user to set up Google Authenticator
+                    on their next login.
+                </div>
+                <form method="POST" action="{{ url_for('user_mgmt.toggle_2fa', user_id=user.id) }}">
+                    <input type="hidden" name="enable" value="true">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-check"></i> Require 2FA for this User
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endif %}
 {% endfor %}

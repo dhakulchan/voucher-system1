@@ -105,7 +105,7 @@ def get_mariadb_cursor():
         conn = mysql.connector.connect(
             host='localhost',
             user='voucher_user',
-            password='voucher_password123!',
+            password='voucher_secure_2024',
             database='voucher_enhanced',
             charset='utf8mb4',
             collation='utf8mb4_unicode_ci'

@@ -31,6 +31,8 @@ class EmailService:
                 logger.info("SIMULATED EMAIL SEND:")
                 logger.info(f"From: {msg['From']}")
                 logger.info(f"To: {msg['To']}")
+                if msg.get('Cc'):
+                    logger.info(f"Cc: {msg['Cc']}")
                 logger.info(f"Subject: {msg['Subject']}")
                 logger.info("Email would be sent if SMTP credentials were configured.")
                 return
@@ -42,22 +44,63 @@ class EmailService:
                 server.starttls(context=context)
                 server.login(self.username, self.password)
                 
-                # Send email
+                # Send email - handle CC recipients
+                recipients = [msg['To']]
+                if msg.get('Cc'):
+                    cc_recipients = msg['Cc'].split(',')
+                    recipients.extend([r.strip() for r in cc_recipients])
+                
                 text = msg.as_string()
-                server.sendmail(msg['From'], msg['To'], text)
+                server.sendmail(msg['From'], recipients, text)
             
             logger.info("Email sent successfully to %s", msg['To'])
+            if msg.get('Cc'):
+                logger.info("CC: %s", msg['Cc'])
             
         except Exception as e:
             logger.error("SMTP Error: %s", e, exc_info=True)
             raise Exception(f"SMTP sending failed: {str(e)}")
+    
+    def send_email(self, to_email, subject, body, cc_email=None, attachments=None):
+        """Generic email sending with HTML support and optional CC"""
+        try:
+            # Create message
+            msg = MIMEMultipart()
+            # Set From with display name format
+            msg['From'] = f"DonotReply <{self.company_email}>"
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            
+            if cc_email:
+                msg['Cc'] = cc_email
+            
+            # Attach HTML body
+            msg.attach(MIMEText(body, 'html'))
+            
+            # Attach files if provided
+            if attachments:
+                for attachment_path in attachments:
+                    if os.path.exists(attachment_path):
+                        with open(attachment_path, 'rb') as f:
+                            attachment = MIMEApplication(f.read())
+                            attachment.add_header('Content-Disposition', 'attachment', 
+                                                filename=os.path.basename(attachment_path))
+                            msg.attach(attachment)
+            
+            # Send email
+            self._send_email(msg)
+            return True
+            
+        except Exception as e:
+            logger.error("Error sending email: %s", e, exc_info=True)
+            raise Exception(f"Email sending failed: {str(e)}")
     
     def send_voucher_email(self, recipient_email, subject, message, pdf_path, booking):
         """Send tour voucher email with PDF attachment"""
         try:
             # Create message
             msg = MIMEMultipart()
-            msg['From'] = self.company_email
+            msg['From'] = f"DonotReply <{self.company_email}>"
             msg['To'] = recipient_email
             msg['Subject'] = subject
             
@@ -109,7 +152,7 @@ Phone: {Config.COMPANY_PHONE}
             
             # Create message
             msg = MIMEMultipart()
-            msg['From'] = self.company_email
+            msg['From'] = f"DonotReply <{self.company_email}>"
             msg['To'] = recipient_email
             msg['Subject'] = subject
             
@@ -197,7 +240,7 @@ Address: {Config.COMPANY_ADDRESS}
             
             # Create message
             msg = MIMEMultipart()
-            msg['From'] = self.company_email
+            msg['From'] = f"DonotReply <{self.company_email}>"
             msg['To'] = recipient_email
             msg['Subject'] = subject
             
@@ -236,7 +279,7 @@ Phone: {Config.COMPANY_PHONE}
             
             for admin_email in admin_emails:
                 msg = MIMEMultipart()
-                msg['From'] = self.company_email
+                msg['From'] = f"DonotReply <{self.company_email}>"
                 msg['To'] = admin_email
                 msg['Subject'] = f"[ADMIN] {subject}"
                 
@@ -377,3 +420,169 @@ Important: This voucher is required for your tour. Please arrive 15 minutes befo
         except Exception as e:
             logger.error(f"Failed to send voucher PDF email: {str(e)}")
             raise Exception(f"Failed to send voucher PDF email: {str(e)}")
+
+    def send_time_limit_alert(self, booking):
+        """Send Time Limit alert to internal team - ถึงกำหนดวันดำเนินการแล้ว"""
+        try:
+            recipient_email = "support@dhakulchan.com"
+            subject = f"⚠️ TIME LIMIT ALERT - {booking.booking_reference}"
+            
+            # Create message
+            msg = MIMEMultipart()
+            msg['From'] = f"DonotReply <{self.company_email}>"
+            msg['To'] = recipient_email
+            msg['Subject'] = subject
+            
+            # Get creator info
+            from models.user import User
+            creator = User.query.get(booking.created_by) if booking.created_by else None
+            creator_name = creator.username if creator else 'Unknown'
+            creator_role = creator.role if creator else 'N/A'
+            
+            # Email body
+            body = f"""
+⚠️ TIME LIMIT ALERT ⚠️
+
+ถึงกำหนดวันดำเนินการแล้ว (Time limit approaching - operation date)
+
+BOOKING DETAILS:
+================
+Booking Reference: {booking.booking_reference}
+Customer Name: {booking.customer.name if booking.customer else 'N/A'}
+Customer Email: {booking.customer.email if booking.customer else 'N/A'}
+Customer Phone: {booking.customer.phone if booking.customer else 'N/A'}
+
+Booking Type: {booking.booking_type or 'N/A'}
+Status: {booking.status.upper()}
+Total Amount: {booking.currency or 'THB'} {float(booking.total_amount or 0):,.2f}
+
+TIME INFORMATION:
+=================
+Time Limit: {booking.time_limit.strftime('%Y-%m-%d %H:%M') if booking.time_limit else 'N/A'} ⚠️ APPROACHING!
+Due Date: {booking.due_date.strftime('%Y-%m-%d') if booking.due_date else 'N/A'}
+Created Date: {booking.created_at.strftime('%Y-%m-%d %H:%M') if booking.created_at else 'N/A'}
+
+TRAVEL DETAILS:
+===============
+Traveling From: {booking.traveling_period_start.strftime('%Y-%m-%d') if booking.traveling_period_start else (booking.arrival_date.strftime('%Y-%m-%d') if booking.arrival_date else 'N/A')}
+Traveling To: {booking.traveling_period_end.strftime('%Y-%m-%d') if booking.traveling_period_end else (booking.departure_date.strftime('%Y-%m-%d') if booking.departure_date else 'N/A')}
+Total Passengers: {booking.total_pax or 0} (Adults: {booking.adults or 0}, Children: {booking.children or 0}, Infants: {booking.infants or 0})
+
+Created By: {creator_name} ({creator_role})
+
+ACTION REQUIRED:
+================
+เตือนให้เตรียมเอกสาร/วอชเชอร์/ดำเนินการจัดทัวร์ - Please take immediate action:
+1. Verify all booking arrangements are confirmed
+2. Check payment status (should be completed by now)
+3. Prepare vouchers and documents
+4. Contact customer for final confirmation
+5. Update operation status
+
+View Booking: http://localhost:5001/booking/view/{booking.id}
+Edit Booking: http://localhost:5001/booking/edit/{booking.id}
+
+--
+This is an automated alert from {self.company_name} Booking System
+            """
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            # Send email
+            if not self.smtp_configured:
+                logger.warning("SIMULATED TIME LIMIT ALERT EMAIL:")
+                logger.warning(f"To: {recipient_email}")
+                logger.warning(f"Subject: {subject}")
+                logger.warning(f"Booking: {booking.booking_reference}")
+                return True
+            
+            self._send_email(msg)
+            logger.info(f"Time Limit alert sent for booking {booking.booking_reference}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending time limit alert: {e}", exc_info=True)
+            return False
+
+    def send_due_date_alert(self, booking):
+        """Send Due Date alert to internal team - ครบ/เลยเวลายืนยัน/ชำระเงินแล้ว"""
+        try:
+            recipient_email = "support@dhakulchan.com"
+            subject = f"⚠️ DUE DATE ALERT - {booking.booking_reference}"
+            
+            # Create message
+            msg = MIMEMultipart()
+            msg['From'] = f"DonotReply <{self.company_email}>"
+            msg['To'] = recipient_email
+            msg['Subject'] = subject
+            
+            # Get creator info
+            from models.user import User
+            creator = User.query.get(booking.created_by) if booking.created_by else None
+            creator_name = creator.username if creator else 'Unknown'
+            creator_role = creator.role if creator else 'N/A'
+            
+            # Email body
+            body = f"""
+⚠️ DUE DATE ALERT ⚠️
+
+ครบ/เลยเวลายืนยัน/ชำระเงินแล้ว (Payment due date has been reached)
+
+BOOKING DETAILS:
+================
+Booking Reference: {booking.booking_reference}
+Customer Name: {booking.customer.name if booking.customer else 'N/A'}
+Customer Email: {booking.customer.email if booking.customer else 'N/A'}
+Customer Phone: {booking.customer.phone if booking.customer else 'N/A'}
+
+Booking Type: {booking.booking_type or 'N/A'}
+Status: {booking.status.upper()}
+Total Amount: {booking.currency or 'THB'} {float(booking.total_amount or 0):,.2f}
+
+TIME INFORMATION:
+=================
+Due Date: {booking.due_date.strftime('%Y-%m-%d') if booking.due_date else 'N/A'} ⚠️ REACHED!
+Time Limit: {booking.time_limit.strftime('%Y-%m-%d %H:%M') if booking.time_limit else 'N/A'}
+Created Date: {booking.created_at.strftime('%Y-%m-%d %H:%M') if booking.created_at else 'N/A'}
+
+TRAVEL DETAILS:
+===============
+Traveling From: {booking.traveling_period_start.strftime('%Y-%m-%d') if booking.traveling_period_start else (booking.arrival_date.strftime('%Y-%m-%d') if booking.arrival_date else 'N/A')}
+Traveling To: {booking.traveling_period_end.strftime('%Y-%m-%d') if booking.traveling_period_end else (booking.departure_date.strftime('%Y-%m-%d') if booking.departure_date else 'N/A')}
+Total Passengers: {booking.total_pax or 0} (Adults: {booking.adults or 0}, Children: {booking.children or 0}, Infants: {booking.infants or 0})
+
+Created By: {creator_name} ({creator_role})
+
+ACTION REQUIRED:
+================
+ลูกค้ายังไม่ชำระเงิน และครบ/เลยเวลาแล้ว - Please follow up immediately:
+1. Confirm payment status
+2. Update booking status if payment received
+3. Consider extending due date if needed
+4. Cancel booking if no response
+
+View Booking: http://localhost:5001/booking/view/{booking.id}
+Edit Booking: http://localhost:5001/booking/edit/{booking.id}
+
+--
+This is an automated alert from {self.company_name} Booking System
+            """
+            
+            msg.attach(MIMEText(body, 'plain'))
+            
+            # Send email
+            if not self.smtp_configured:
+                logger.warning("SIMULATED DUE DATE ALERT EMAIL:")
+                logger.warning(f"To: {recipient_email}")
+                logger.warning(f"Subject: {subject}")
+                logger.warning(f"Booking: {booking.booking_reference}")
+                return True
+            
+            self._send_email(msg)
+            logger.info(f"Due Date alert sent for booking {booking.booking_reference}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error sending due date alert: {e}", exc_info=True)
+            return False
+

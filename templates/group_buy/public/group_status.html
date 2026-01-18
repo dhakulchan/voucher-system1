@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% block title %}สถานะกลุ่ม {{ group.group_code }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Back Button -->
+            <div class="mb-4">
+                <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                    class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>กลับไปยังรายละเอียดแคมเปญ
+                </a>
+            </div>
+
+            <!-- Status Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header 
+                    {% if group.status == 'success' %}bg-success text-white
+                    {% elif group.status == 'failed' %}bg-danger text-white
+                    {% else %}bg-info text-white{% endif %}">
+                    <h4 class="mb-0">
+                        {% if group.status == 'success' %}
+                        <i class="fas fa-check-circle"></i> กลุ่มสำเร็จ!
+                        {% elif group.status == 'failed' %}
+                        <i class="fas fa-times-circle"></i> กลุ่มไม่สำเร็จ
+                        {% else %}
+                        <i class="fas fa-hourglass-half"></i> กำลังรวมกลุ่ม
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h2>{{ group.group_name }}</h2>
+                        <p class="text-muted mb-0">รหัสกลุ่ม: <code>{{ group.group_code }}</code></p>
+                    </div>
+
+                    {% if group.status == 'success' %}
+                    <div class="alert alert-success">
+                        <h5><i class="fas fa-party-horn"></i> ยินดีด้วย!</h5>
+                        <p class="mb-0">กลุ่มของคุณครบจำนวนแล้ว ทางเราจะติดต่อกลับเร็วๆ นี้</p>
+                    </div>
+                    {% elif group.status == 'failed' %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-sad-tear"></i> เสียใจด้วย</h5>
+                        <p class="mb-0">กลุ่มไม่ครบจำนวนภายในเวลาที่กำหนด กรุณาลองสร้างกลุ่มใหม่อีกครั้ง</p>
+                    </div>
+                    {% else %}
+                    <!-- Active Group Progress -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><strong>ความคืบหน้า</strong></span>
+                            <span class="badge bg-primary fs-6">{{ group.current_participants }}/{{
+                                group.required_participants }} คน</span>
+                        </div>
+                        <div class="progress" style="height: 40px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                style="width: {{ group.progress_percentage }}%">
+                                <strong style="font-size: 1.2rem;">{{ "{:.0f}".format(group.progress_percentage)
+                                    }}%</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if group.is_full %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check"></i> <strong>ครบจำนวนแล้ว!</strong> กำลังดำเนินการสร้าง booking...
+                    </div>
+                    {% elif group.is_expired %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-clock"></i> กลุ่มนี้หมดเวลาแล้ว กำลังประมวลผล...
+                    </div>
+                    {% else %}
+                    <div class="text-center mb-4">
+                        <p class="text-muted mb-1">เวลาที่เหลือ</p>
+                        <h3 class="text-primary" id="timeRemaining">{{ group.time_remaining_formatted }}</h3>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <p class="mb-2"><strong>ต้องการ {{ group.required_participants - group.current_participants }}
+                                คนอีก</strong></p>
+                        <p class="mb-0 small">แชร์ลิงก์ด้านล่างให้เพื่อนเพื่อเข้าร่วมกลุ่ม</p>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+
+                    <!-- Campaign Info -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-2">แคมเปญ</h6>
+                                    <p class="mb-0"><strong>{{ campaign.name }}</strong></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="text-muted mb-2">ราคาต่อคน</h6>
+                                    <h4 class="text-success mb-0">฿{{ "{:,.2f}".format(campaign.group_price) }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if group.status == 'active' and not group.is_full and not group.is_expired %}
+                    <!-- Share Link -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="mb-3"><i class="fas fa-share-alt"></i> แชร์ลิงก์ให้เพื่อน</h6>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" value="{{ group.share_url }}" readonly
+                                    id="shareUrl">
+                                <button class="btn btn-primary" type="button" onclick="copyToClipboard()">
+                                    <i class="fas fa-copy"></i> คัดลอก
+                                </button>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <a href="https://line.me/R/msg/text/?{{ group.share_url | urlencode }}" target="_blank"
+                                    class="btn btn-success">
+                                    <i class="fab fa-line"></i> แชร์ทาง LINE
+                                </a>
+                                <a href="https://www.facebook.com/sharer/sharer.php?u={{ group.share_url | urlencode }}"
+                                    target="_blank" class="btn btn-primary">
+                                    <i class="fab fa-facebook"></i> แชร์ทาง Facebook
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Members List -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> สมาชิกในกลุ่ม ({{ participants|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        {% for p in participants %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong>{{ p.participant_name }}</strong>
+                                {% if p.is_leader %}
+                                <span class="badge bg-warning text-dark">หัวหน้ากลุ่ม</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ p.pax_count }} คน</small>
+                            </div>
+                            <div>
+                                <span class="badge bg-secondary">#{{ p.join_order }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard() {
+        const input = document.getElementById('shareUrl');
+        input.select();
+        document.execCommand('copy');
+        alert('คัดลอกลิงก์แล้ว!');
+    }
+
+    // Auto refresh status every 30 seconds
+    {% if group.status == 'active' and not group.is_full and not group.is_expired %}
+    setInterval(function () {
+        fetch('/group-buy/api/group/{{ group.group_code }}/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'active' || data.is_full || data.is_expired) {
+                    location.reload();
+                }
+            });
+    }, 30000);
+    {% endif %}
+
+    // Real-time Countdown Timer
+    {% if not group.is_full and not group.is_expired %}
+    (function () {
+        const expiresAt = new Date('{{ group.expires_at.strftime("%Y-%m-%dT%H:%M:%S") }}').getTime();
+        const countdownEl = document.getElementById('timeRemaining');
+
+        if (!countdownEl) return;
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = expiresAt - now;
+
+            if (distance < 0) {
+                countdownEl.textContent = 'หมดเวลาแล้ว';
+                countdownEl.style.color = 'red';
+                setTimeout(() => location.reload(), 2000);
+                return;
+            }
+
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownEl.textContent = `${hours} ชม. ${minutes} นาที ${seconds} วินาที`;
+
+            if (hours < 1) {
+                countdownEl.style.color = 'red';
+            } else if (hours < 3) {
+                countdownEl.style.color = 'orange';
+            }
+        }
+
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    })();
+    {% endif %}
+</script>
+{% endblock %}

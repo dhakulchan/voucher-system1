@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}เข้าร่วมกลุ่ม - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Back Button -->
+            <div class="mb-3">
+                <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                    class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> ย้อนกลับ
+                </a>
+            </div>
+
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-plus"></i> เข้าร่วมกลุ่ม</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Group Info -->
+                    <div class="alert alert-info">
+                        <h5>{{ group.group_name }}</h5>
+                        <p class="mb-2"><strong>แคมเปญ:</strong> {{ campaign.name }}</p>
+                        <p class="mb-0">
+                            <strong>หัวหน้ากลุ่ม:</strong> {{ group.leader_name }}<br>
+                            <strong>รหัสกลุ่ม:</strong> <code>{{ group.group_code }}</code>
+                        </p>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-users"></i> ความคืบหน้า</span>
+                            <span class="badge bg-primary">{{ group.current_participants }}/{{
+                                group.required_participants }} คน</span>
+                        </div>
+                        <div class="progress" style="height: 30px;">
+                            <div class="progress-bar bg-success progress-bar-striped progress-bar-animated"
+                                style="width: {{ group.progress_percentage }}%">
+                                {{ "{:.0f}".format(group.progress_percentage) }}%
+                            </div>
+                        </div>
+                        <p class="text-center mt-2 text-muted">
+                            <i class="fas fa-clock"></i> เวลาที่เหลือ: <strong id="countdown-timer">{{
+                                group.time_remaining_formatted
+                                }}</strong>
+                        </p>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body text-center">
+                                    <p class="text-muted mb-1">ราคาปกติ</p>
+                                    <h4 class="text-muted text-decoration-line-through">฿{{
+                                        "{:,.2f}".format(campaign.regular_price) }}</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <p class="mb-1">ราคากลุ่ม</p>
+                                    <h3 class="mb-0">฿{{ "{:,.2f}".format(campaign.group_price) }}</h3>
+                                    <small>ประหยัด {{ "{:.0f}".format(campaign.discount_percentage) }}%</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Join Form -->
+                    <form method="POST" action="{{ url_for('public_group_buy.submit_join', token=group.share_token) }}">
+                        <h5 class="mb-3">ข้อมูลของคุณ</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">อีเมล <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">เบอร์โทรศัพท์ <span class="text-danger">*</span></label>
+                            <input type="tel" name="phone" class="form-control" required>
+                        </div>
+
+                        <!-- รหัสผู้จองพิเศษ (Optional) -->
+                        <div class="mb-3">
+                            <label for="special_code" class="form-label">
+                                <i class="fas fa-key me-2"></i>รหัสผู้จองพิเศษ (ถ้ามี)
+                            </label>
+                            <input type="text" class="form-control" id="special_code" name="special_code"
+                                placeholder="ป้อนรหัสพิเศษของคุณ (ถ้ามี)" style="text-transform: uppercase;">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                หากคุณมีรหัสผู้จองพิเศษ คุณสามารถเข้าร่วมได้หลายครั้งด้วยอีเมลเดียวกัน
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">จำนวนคน</label>
+                            <input type="number" name="pax_count" class="form-control" value="1" min="1" required>
+                            <small class="text-muted">จำนวนคนที่จะเดินทาง</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">คำขอพิเศษ (ไม่บังคับ)</label>
+                            <textarea name="special_requests" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-info-circle"></i> สิ่งที่ต้องทราบ</h6>
+                            <ul class="mb-0 small">
+                                <li>หากกลุ่มไม่ครบจำนวนภายในเวลาที่กำหนด กลุ่มจะถูกยกเลิก</li>
+                                <li>เมื่อกลุ่มสำเร็จ คุณจะได้รับการติดต่อกลับ</li>
+                                <li>ราคาที่แสดงเป็นราคาต่อคน</li>
+                            </ul>
+                        </div>
+
+                        <!-- Cloudflare Turnstile -->
+                        <div class="mb-3">
+                            <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="light"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-check"></i> เข้าร่วมกลุ่ม
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
+<script>
+    // Real-time Countdown Timer
+    (function () {
+        const expiresAt = new Date('{{ group.expires_at.strftime("%Y-%m-%dT%H:%M:%S") }}').getTime();
+        const countdownEl = document.getElementById('countdown-timer');
+
+        function updateCountdown() {
+            const now = new Date().getTime();
+            const distance = expiresAt - now;
+
+            if (distance < 0) {
+                countdownEl.textContent = 'หมดเวลาแล้ว';
+                countdownEl.style.color = 'red';
+                // Reload page to show expired state
+                setTimeout(() => location.reload(), 2000);
+                return;
+            }
+
+            const hours = Math.floor(distance / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            countdownEl.textContent = `${hours} ชม. ${minutes} นาที ${seconds} วินาที`;
+
+            // Change color based on time remaining
+            if (hours < 1) {
+                countdownEl.style.color = 'red';
+            } else if (hours < 3) {
+                countdownEl.style.color = 'orange';
+            }
+        }
+
+        // Update immediately
+        updateCountdown();
+
+        // Update every second
+        setInterval(updateCountdown, 1000);
+    })();
+</script>
+
+{% endblock %}

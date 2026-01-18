@@ -1,0 +1,43 @@
+THAI FONT FIX - FINAL DEPLOYMENT
+================================
+
+🎯 PROBLEM: Thai fonts still showing as Arial in PDF
+✅ SOLUTION: Simplified template using Tahoma (universal Thai support)
+
+📁 FILES TO UPLOAD:
+- quote_template_system_fonts.html (primary)
+- quote_template_final_thai_fix.html (alternative)
+- quote_template_emergency_thai.html (backup)
+
+🚀 DEPLOYMENT STEPS:
+
+1. Upload files to server:
+   scp *.html ubuntu@52.220.243.237:/tmp/
+
+2. SSH to server:
+   ssh ubuntu@52.220.243.237
+
+3. Deploy templates:
+   sudo cp /tmp/quote_template_*.html /var/www/html/templates/pdf/
+   sudo chown www-data:www-data /var/www/html/templates/pdf/quote_template_*.html
+   sudo chmod 644 /var/www/html/templates/pdf/quote_template_*.html
+
+4. Restart services:
+   sudo systemctl restart gunicorn
+   sudo systemctl restart nginx
+
+5. Test:
+   https://service.dhakulchan.net/booking/3/quote-pdf
+
+🔧 KEY CHANGES:
+- Uses Tahoma font (better Thai support than Arial)
+- Simplified CSS structure
+- Removed complex font fallbacks
+- WeasyPrint optimized
+
+✅ EXPECTED RESULT:
+Thai text will render clearly with Tahoma font
+which has excellent Thai character support.
+
+If still not working, check server has Tahoma installed:
+fc-list | grep -i tahoma

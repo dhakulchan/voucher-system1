@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สถานะการชำระเงิน - {{ campaign.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .status-card {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .status-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .status-pending {
+            color: #ffc107;
+        }
+
+        .status-paid {
+            color: #28a745;
+        }
+
+        .status-refunded {
+            color: #6c757d;
+        }
+
+        .status-failed {
+            color: #dc3545;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="status-card">
+            <div class="card shadow-sm">
+                <div class="card-body p-5 text-center">
+                    {% if payment.payment_status == 'pending' %}
+                    <i class="fas fa-clock status-icon status-pending"></i>
+                    <h2 class="text-warning mb-3">รอดำเนินการ</h2>
+                    <p class="text-muted">เราได้รับข้อมูลการชำระเงินของคุณแล้ว<br>กำลังรอเจ้าหน้าที่ตรวจสอบ</p>
+
+                    {% elif payment.payment_status == 'paid' %}
+                    <i class="fas fa-check-circle status-icon status-paid"></i>
+                    <h2 class="text-success mb-3">ชำระเงินสำเร็จ</h2>
+                    <p class="text-muted">ขอบคุณที่ไว้วางใจเรา<br>เจ้าหน้าที่จะติดต่อกลับเร็วๆ นี้</p>
+
+                    {% elif payment.payment_status == 'refunded' %}
+                    <i class="fas fa-undo status-icon status-refunded"></i>
+                    <h2 class="text-secondary mb-3">คืนเงินแล้ว</h2>
+                    <p class="text-muted">ยอดเงินได้ถูกคืนให้แล้ว</p>
+
+                    {% else %}
+                    <i class="fas fa-times-circle status-icon status-failed"></i>
+                    <h2 class="text-danger mb-3">ล้มเหลว</h2>
+                    <p class="text-muted">เกิดข้อผิดพลาดในการชำระเงิน</p>
+                    {% endif %}
+
+                    <div class="alert alert-light text-start mt-4">
+                        <div class="info-row">
+                            <span class="text-muted">หมายเลขการชำระเงิน</span>
+                            <strong>#{{ payment.id }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">แคมเปญ</span>
+                            <strong>{{ campaign.name }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">ชื่อผู้ชำระ</span>
+                            <strong>{{ payment.customer_name }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">ช่องทางชำระเงิน</span>
+                            <span class="badge bg-info">{{ payment.method_label }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">จำนวนเงิน</span>
+                            <strong class="text-success">฿{{ "{:,.2f}".format(payment.amount) }}</strong>
+                        </div>
+                        {% if payment.fee_amount > 0 %}
+                        <div class="info-row">
+                            <span class="text-muted">ค่าธรรมเนียม</span>
+                            <strong>฿{{ "{:,.2f}".format(payment.fee_amount) }}</strong>
+                        </div>
+                        {% endif %}
+                        <div class="info-row">
+                            <span class="text-muted">ยอดรวม</span>
+                            <strong class="fs-5 text-primary">฿{{ "{:,.2f}".format(payment.total_amount) }}</strong>
+                        </div>
+                        <div class="info-row">
+                            <span class="text-muted">วันที่</span>
+                            <strong>{{ payment.created_at.strftime('%d/%m/%Y %H:%M') }}</strong>
+                        </div>
+                    </div>
+
+                    {% if payment.bank_slip_image %}
+                    <div class="mt-3">
+                        <p class="text-muted mb-2">สลิปการโอนเงิน</p>
+                        <img src="/{{ payment.bank_slip_image }}" alt="สลิป" class="img-thumbnail"
+                            style="max-width: 300px;">
+                    </div>
+                    {% endif %}
+
+                    {% if payment.admin_notes %}
+                    <div class="alert alert-info mt-3">
+                        <strong>หมายเหตุจากเจ้าหน้าที่:</strong><br>
+                        {{ payment.admin_notes }}
+                    </div>
+                    {% endif %}
+
+                    {% if payment.refund_reason %}
+                    <div class="alert alert-warning mt-3">
+                        <strong>เหตุผลในการคืนเงิน:</strong><br>
+                        {{ payment.refund_reason }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-4">
+                        <a href="{{ url_for('group_buy_public.campaign_detail', campaign_id=campaign.id) }}"
+                            class="btn btn-primary">
+                            <i class="fas fa-arrow-left me-2"></i>กลับไปดูแคมเปญ
+                        </a>
+                    </div>
+
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            หากมีข้อสงสัย กรุณาติดต่อ<br>
+                            <i class="fas fa-envelope me-2"></i>support@example.com<br>
+                            <i class="fas fa-phone me-2"></i>02-XXX-XXXX
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

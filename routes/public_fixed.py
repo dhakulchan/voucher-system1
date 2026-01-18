@@ -41,6 +41,93 @@ def view_booking_public(booking_id):
                          png_url=png_url,
                          config=Config)
 
+@public_bp.route('/booking/<path:token>/quote-png')
+def download_booking_quote_png(token):
+    """Download Quote PNG for booking with token verification - DHAKUL CHAN format"""
+    
+    logger = logging.getLogger(__name__)
+    logger.info(f"📸 QUOTE PNG ROUTE CALLED: token={token[:20]}...")
+    
+    # ตรวจสอบ token และ get booking
+    booking = Booking.verify_share_token(token)
+    if not booking:
+        logger.error(f"❌ QUOTE PNG: Invalid token")
+        abort(404)
+    
+    logger.info(f"✅ QUOTE PNG: Booking {booking.id} status='{booking.status}' - Using DHAKUL CHAN format")
+
+    try:
+        import glob
+        import os
+        from services.pdf_image import pdf_to_long_png_bytes
+        
+        # Look for existing PDF files for this booking (DHAKUL CHAN format)
+        booking_ref = booking.booking_reference or f'BK{booking.id}'
+        pdf_patterns = [
+            f'static/generated/classic_quote_{booking_ref}_*.pdf',
+            f'static/generated/classic_service_proposal_{booking_ref}_*.pdf',
+            f'static/generated/*{booking_ref}*.pdf'
+        ]
+        
+        pdf_file_path = None
+        for pattern in pdf_patterns:
+            matches = glob.glob(pattern)
+            if matches:
+                pdf_file_path = max(matches)  # Get latest file
+                logger.info(f"📄 Found DHAKUL CHAN PDF: {pdf_file_path}")
+                break
+        
+        if not pdf_file_path:
+            logger.info(f"📄 No existing PDF found, generating new DHAKUL CHAN Quote...")
+            # Generate new PDF using ClassicPDFGenerator
+            from services.classic_pdf_generator_quote import ClassicPDFGenerator
+            pdf_service = ClassicPDFGenerator()
+            
+            try:
+                # Generate PDF file
+                pdf_filename = pdf_service.generate_quote_pdf(booking)
+                if pdf_filename:
+                    pdf_file_path = os.path.join(pdf_service.output_dir, pdf_filename)
+                    logger.info(f"📄 Generated new DHAKUL CHAN PDF: {pdf_file_path}")
+                else:
+                    logger.error("❌ PDF generation failed")
+                    return "Error generating PDF for PNG conversion", 500
+            except Exception as gen_error:
+                logger.error(f"❌ PDF generation error: {gen_error}")
+                return "Error generating PDF for PNG conversion", 500
+        
+        # Read PDF and convert to PNG
+        if pdf_file_path and os.path.exists(pdf_file_path):
+            with open(pdf_file_path, 'rb') as f:
+                pdf_bytes = f.read()
+                
+            logger.info(f"📊 PDF size: {len(pdf_bytes)} bytes")
+            
+            # Convert to PNG
+            png_bytes = pdf_to_long_png_bytes(pdf_bytes)
+            
+            if not png_bytes:
+                logger.error(f"❌ PNG conversion failed")
+                return "PNG conversion failed", 500
+                
+            logger.info(f"✅ PNG generated: {len(png_bytes)} bytes")
+            
+            # Return PNG with proper headers
+            from flask import Response
+            response = Response(png_bytes, mimetype='image/png')
+            response.headers['Cache-Control'] = 'public, max-age=3600'  # 1 hour cache
+            response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_ref}.png"'
+            return response
+        else:
+            logger.error(f"❌ PDF file not found: {pdf_file_path}")
+            return "PDF file not found for PNG conversion", 404
+            
+    except Exception as e:
+        logger.error(f"❌ Quote PNG error: {e}")
+        import traceback
+        logger.error(f"📋 Traceback: {traceback.format_exc()}")
+        return f"Error generating quote PNG: {str(e)}", 500
+
 @public_bp.route('/booking/<path:token>/pdf')
 def download_booking_pdf(token):
     """Download PDF for booking with token verification - Status-based PDF generation"""
@@ -169,18 +256,68 @@ def download_booking_png(token):
             pdf_bytes = pdf_service.generate_pdf(booking)
             
         elif booking.status == 'quoted':
-            # Quote PDF
-            logger.info(f"Generating Quote PNG for booking {booking.id}")
-            from services.quote_pdf_generator import QuotePDFGenerator
-            pdf_service = QuotePDFGenerator()
-            pdf_bytes = pdf_service.generate_pdf(booking)
+            # Quote PDF - Use ClassicPDFGenerator for DHAKUL CHAN format
+            logger.info(f"🎯 Generating DHAKUL CHAN Quote PNG for booking {booking.id}")
+            
+            # Look for existing PDF first
+            import glob
+            booking_ref = booking.booking_reference or f'BK{booking.id}'
+            pdf_patterns = [
+                f'static/generated/classic_quote_{booking_ref}_*.pdf',
+                f'static/generated/classic_service_proposal_{booking_ref}_*.pdf',
+                f'static/generated/*{booking_ref}*.pdf'
+            ]
+            
+            pdf_file_path = None
+            for pattern in pdf_patterns:
+                matches = glob.glob(pattern)
+                if matches:
+                    pdf_file_path = max(matches)  # Get latest file
+                    logger.info(f"📄 Found existing DHAKUL CHAN PDF: {pdf_file_path}")
+                    break
+            
+            if pdf_file_path and os.path.exists(pdf_file_path):
+                with open(pdf_file_path, 'rb') as f:
+                    pdf_bytes = f.read()
+                logger.info(f"📊 Using existing PDF: {len(pdf_bytes)} bytes")
+            else:
+                # Generate new PDF using ClassicPDFGenerator
+                logger.info(f"📄 Generating new DHAKUL CHAN Quote PDF...")
+                from services.classic_pdf_generator_quote import ClassicPDFGenerator
+                pdf_service = ClassicPDFGenerator()
+                
+                try:
+                    pdf_filename = pdf_service.generate_quote_pdf(booking)
+                    if pdf_filename:
+                        pdf_path = os.path.join(pdf_service.output_dir, pdf_filename)
+                        if os.path.exists(pdf_path):
+                            with open(pdf_path, 'rb') as f:
+                                pdf_bytes = f.read()
+                        else:
+                            logger.error(f"PDF file not found: {pdf_path}")
+                    else:
+                        logger.error("PDF generation failed")
+                except Exception as gen_error:
+                    logger.error(f"PDF generation error: {gen_error}")
+                    pdf_bytes = None
             
         elif booking.status == 'paid':
-            # Quote / Provisional Receipt PDF
-            logger.info(f"Generating Quote/Provisional Receipt PNG for booking {booking.id}")
-            from services.quote_pdf_generator import QuotePDFGenerator
-            pdf_service = QuotePDFGenerator()
-            pdf_bytes = pdf_service.generate_pdf(booking)
+            # Quote / Provisional Receipt PDF - Use ClassicPDFGenerator for DHAKUL CHAN format
+            logger.info(f"🎯 Generating DHAKUL CHAN Quote/Receipt PNG for booking {booking.id}")
+            from services.classic_pdf_generator_quote import ClassicPDFGenerator
+            pdf_service = ClassicPDFGenerator()
+            
+            # Generate PDF and read bytes
+            pdf_filename = pdf_service.generate_quote_pdf(booking)
+            if pdf_filename:
+                pdf_path = os.path.join(pdf_service.output_dir, pdf_filename)
+                if os.path.exists(pdf_path):
+                    with open(pdf_path, 'rb') as f:
+                        pdf_bytes = f.read()
+                else:
+                    logger.error(f"PDF file not found: {pdf_path}")
+            else:
+                logger.error("PDF generation failed")
             
         elif booking.status == 'vouchered':
             # Tour Voucher PDF
@@ -261,7 +398,9 @@ def view_booking_secure(token):
     if not booking:
         abort(404)
     
-    return render_template('public/booking_view_secure.html', 
+    from datetime import datetime
+    return render_template('public/enhanced_booking_view.html', 
                          booking=booking,
                          token=token,
-                         config=Config)
+                         config=Config,
+                         now=datetime.now)

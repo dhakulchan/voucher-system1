@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เลือกวิธีชำระเงิน - {{ campaign.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-container img {
+            max-height: 100px;
+            width: auto;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .page-title {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 40px;
+        }
+
+        .payment-methods-container {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+
+        .payment-method-wrapper {
+            flex: 0 0 auto;
+            max-width: 280px;
+            width: 100%;
+        }
+
+        .payment-method {
+            border: 3px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 40px 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .payment-method::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+            background: linear-gradient(90deg, transparent, transparent);
+            transition: all 0.3s ease;
+        }
+
+        .payment-method:hover {
+            border-color: #1e3c72;
+            box-shadow: 0 8px 24px rgba(30, 60, 114, 0.25);
+            transform: translateY(-8px);
+        }
+
+        .payment-method.stripe:hover::before {
+            background: linear-gradient(90deg, #635bff, #8b83ff);
+        }
+
+        .payment-method.bank:hover::before {
+            background: linear-gradient(90deg, #00897b, #00acc1);
+        }
+
+        .payment-method.qr:hover::before {
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+        }
+
+        .payment-method i {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .payment-method:hover i {
+            transform: scale(1.1);
+        }
+
+        .payment-method.stripe i {
+            color: #635bff;
+        }
+
+        .payment-method.bank i {
+            color: #00897b;
+        }
+
+        .payment-method.qr i {
+            color: #f7971e;
+        }
+
+        .payment-method h5 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .payment-method .description {
+            color: #6c757d;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .payment-method .badge {
+            font-size: 0.85rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+
+        .campaign-info {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 35px;
+            border-radius: 16px;
+            margin-bottom: 40px;
+            box-shadow: 0 8px 16px rgba(30, 60, 114, 0.3);
+        }
+
+        .campaign-info h3 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .campaign-info .price-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .campaign-info .price-label {
+            opacity: 0.9;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .campaign-info .price-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+
+        .back-button {
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: translateX(-5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .payment-method-wrapper {
+                max-width: 100%;
+            }
+
+            .campaign-info .price-section {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <div class="main-content">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <!-- Logo -->
+                    <div class="logo-container">
+                        <img src="{{ url_for('static', filename='images/dcts-logo-vou.png') }}"
+                            alt="Dhakul Chan Nice Holidays" onerror="this.style.display='none'">
+                    </div>
+
+                    <!-- Campaign Info -->
+                    <div class="campaign-info">
+                        <h3>{{ campaign.name }}</h3>
+                        <div class="price-section">
+                            <div>
+                                <div class="price-label">จำนวน</div>
+                                <div class="price-value">{{ pax_count }} คน</div>
+                            </div>
+                            {% if campaign.travel_date_from and campaign.travel_date_to %}
+                            <div class="text-end">
+                                <div class="price-label">วันเดินทาง</div>
+                                <div class="fs-5">{{ campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                                    campaign.travel_date_to.strftime('%d/%m/%Y') }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- แสดงราคา -->
+                        <div class="mt-4"
+                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px); border-radius: 12px; padding: 20px; border: 1px solid rgba(255, 255, 255, 0.2);">
+                            {% if deposit_per_person %}
+                            <!-- กรณีมีมัดจำ -->
+                            <div class="d-flex align-items-center mb-3 pb-3"
+                                style="border-bottom: 1px solid rgba(255, 255, 255, 0.2);">
+                                <div class="me-3" style="font-size: 2rem;">💰</div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size: 0.9rem; opacity: 0.9;">ราคากลุ่มต่อคน</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="font-size: 1.5rem; font-weight: 700;">{{
+                                            "{:,.0f}".format(price_per_person) }}</span>
+                                        <span style="font-size: 1rem;">บาท</span>
+                                        <span class="badge bg-success" style="font-size: 0.75rem;">จ่ายเต็ม</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3" style="font-size: 2rem;">💵</div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size: 0.9rem; opacity: 0.9;">จ่ายเงินมัดจำต่อคน</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="font-size: 1.5rem; font-weight: 700; color: #ffd700;">{{
+                                            "{:,.0f}".format(deposit_per_person) }}</span>
+                                        <span style="font-size: 1rem;">บาท</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- กรณีไม่มีมัดจำ จ่ายเต็มเลย -->
+                            <div class="d-flex align-items-center">
+                                <div class="me-3" style="font-size: 2rem;">💰</div>
+                                <div class="flex-grow-1">
+                                    <div style="font-size: 0.9rem; opacity: 0.9;">ราคากลุ่มต่อคน</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="font-size: 1.5rem; font-weight: 700;">{{
+                                            "{:,.0f}".format(price_per_person) }}</span>
+                                        <span style="font-size: 1rem;">บาท</span>
+                                        <span class="badge bg-success" style="font-size: 0.75rem;">จ่ายเต็ม</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h2 class="page-title">เลือกวิธีการชำระเงิน</h2>
+
+                    <div class="payment-methods-container">
+                        {% if campaign.payment_stripe_enabled %}
+                        <div class="payment-method-wrapper">
+                            <a href="{{ url_for('group_buy_payment.stripe_payment', campaign_id=campaign.id) }}"
+                                class="text-decoration-none">
+                                <div class="payment-method stripe">
+                                    <i class="fab fa-stripe"></i>
+                                    <h5>บัตรเครดิต/เดบิต</h5>
+                                    <p class="description">ชำระออนไลน์ด้วย Stripe</p>
+                                    {% if campaign.payment_stripe_fee_value > 0 %}
+                                    <span class="badge bg-warning text-dark">
+                                        {{ campaign.payment_stripe_fee_label or 'ค่าธรรมเนียม' }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if campaign.payment_bank_enabled %}
+                        <div class="payment-method-wrapper">
+                            <a href="{{ url_for('group_buy_payment.bank_transfer', campaign_id=campaign.id) }}"
+                                class="text-decoration-none">
+                                <div class="payment-method bank">
+                                    <i class="fas fa-university"></i>
+                                    <h5>โอนเงินผ่านธนาคาร</h5>
+                                    <p class="description">โอนผ่านแอปธนาคาร</p>
+                                    <span class="badge bg-success">ไม่มีค่าธรรมเนียม</span>
+                                </div>
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        {% if campaign.payment_qr_enabled %}
+                        <div class="payment-method-wrapper">
+                            <a href="{{ url_for('group_buy_payment.qr_payment', campaign_id=campaign.id) }}"
+                                class="text-decoration-none">
+                                <div class="payment-method qr">
+                                    <i class="fas fa-qrcode"></i>
+                                    <h5>สแกน QR Code</h5>
+                                    <p class="description">สแกนจ่ายผ่าน PromptPay</p>
+                                    <span class="badge bg-success">ไม่มีค่าธรรมเนียม</span>
+                                </div>
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                            class="btn btn-outline-secondary back-button">
+                            <i class="fas fa-arrow-left me-2"></i>กลับไปดูรายละเอียด
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1</p>
+        </div>
+    </footer>
+</body>
+
+</html>

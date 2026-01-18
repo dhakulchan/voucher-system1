@@ -63,6 +63,66 @@ class SimpleBooking:
             except:
                 pass
         return []
+    
+    def get_guest_list(self):
+        """Return guest list for template compatibility"""
+        guest_list = getattr(self, 'guest_list', '')
+        return guest_list if guest_list else ''
+    
+    def get_guest_list_for_edit(self):
+        """Return guest list formatted for editing"""
+        import html
+        import re
+        
+        guest_list = getattr(self, 'guest_list', '')
+        if guest_list:
+            try:
+                # Try to parse as JSON first
+                parsed_list = json.loads(guest_list)
+                if isinstance(parsed_list, list):
+                    # Process each guest item to clean HTML
+                    formatted_guests = []
+                    for guest in parsed_list:
+                        if isinstance(guest, dict):
+                            # Format dict as readable string
+                            guest_str = f"{guest.get('name', 'Unknown')}"
+                            if guest.get('nationality'):
+                                guest_str += f" ({guest.get('nationality')})"
+                            if guest.get('type'):
+                                guest_str += f" - {guest.get('type')}"
+                            if guest.get('special_needs'):
+                                guest_str += f" - Special needs: {guest.get('special_needs')}"
+                            formatted_guests.append(guest_str)
+                        else:
+                            # Clean HTML from string
+                            guest_str = str(guest)
+                            
+                            # Decode HTML entities first
+                            guest_str = html.unescape(guest_str)
+                            
+                            # Convert <br> tags to newlines before removing HTML
+                            guest_str = re.sub(r'<br\s*/?>', '\n', guest_str, flags=re.IGNORECASE)
+                            
+                            # Remove all other HTML tags
+                            guest_str = re.sub(r'<[^>]+>', '', guest_str)
+                            
+                            # Clean up extra whitespace and empty lines
+                            lines = [line.strip() for line in guest_str.split('\n') if line.strip()]
+                            
+                            if lines:
+                                formatted_guests.extend(lines)
+                    
+                    return '\n'.join(formatted_guests)
+                else:
+                    return str(guest_list)
+            except Exception as e:
+                # If JSON parsing fails, return as-is
+                return str(guest_list)
+        return ''
+    
+    def get_activity_logs(self):
+        """Return activity logs for view template compatibility"""
+        return getattr(self, 'activity_logs', [])
 
 class ActivityLogDisplay:
     def __init__(self, log_data):
@@ -89,7 +149,7 @@ def view_booking_46():
             booking_data = dict(zip(column_names, booking_row))
             
             cursor.execute("""
-                SELECT al.*, u.username, u.full_name
+                SELECT al.*, u.username
                 FROM activity_logs al
                 LEFT JOIN users u ON al.user_id = u.id
                 WHERE al.description LIKE %s

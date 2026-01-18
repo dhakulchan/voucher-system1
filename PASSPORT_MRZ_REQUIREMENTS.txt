@@ -1,0 +1,29 @@
+# Passport MRZ OCR System Dependencies
+# Install with: pip install -r PASSPORT_MRZ_REQUIREMENTS.txt
+
+# OpenCV for image preprocessing (deskewing, thresholding, denoising)
+opencv-python==4.9.0.80
+
+# Tesseract OCR Python wrapper
+pytesseract==0.3.10
+
+# MRZ parsing library with checksum validation
+passporteye==2.2.0
+mrz==0.6.2
+
+# PDF to image conversion
+pdf2image==1.17.0
+
+# Image manipulation (already in main requirements but listed for clarity)
+Pillow>=10.0.0
+
+# Note: System requirements (must be installed separately):
+# 1. Tesseract OCR engine (not Python package)
+#    - macOS: brew install tesseract
+#    - Ubuntu: apt-get install tesseract-ocr
+#    - Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
+#
+# 2. Poppler (for PDF processing via pdf2image)
+#    - macOS: brew install poppler
+#    - Ubuntu: apt-get install poppler-utils
+#    - Windows: Download from https://github.com/oschwartz10612/poppler-windows/releases/

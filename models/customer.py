@@ -27,6 +27,17 @@ class Customer(db.Model):
     nationality = db.Column(db.String(120))
     notes = db.Column(db.Text)
 
+    # Company/Organization fields
+    customer_type = db.Column(db.String(50), default='Visitor-Individual')  # Visitor-Individual, Corporate-Company, Travel Agent
+    company_name = db.Column(db.String(255))
+    company_address = db.Column(db.Text)
+    company_tel = db.Column(db.String(50))
+    company_taxid = db.Column(db.String(50))
+    company_contact = db.Column(db.String(255))
+    
+    # User tracking
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+
     # Relationships
     bookings = db.relationship('Booking', backref='customer', lazy=True)
 
@@ -58,6 +69,12 @@ class Customer(db.Model):
             'address': self.address,
             'nationality': self.nationality,
             'notes': self.notes,
+            'customer_type': self.customer_type,
+            'company_name': self.company_name,
+            'company_address': self.company_address,
+            'company_tel': self.company_tel,
+            'company_taxid': self.company_taxid,
+            'company_contact': self.company_contact,
             'invoice_ninja_client_id': self.invoice_ninja_client_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

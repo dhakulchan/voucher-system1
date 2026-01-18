@@ -60,6 +60,22 @@ def index():
             cursor.execute("SELECT COUNT(*) FROM bookings")  
             total_bookings = cursor.fetchone()[0]
             
+            # Bookings by status
+            cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = 'draft'")
+            draft_bookings = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = 'pending'")
+            pending_bookings = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = 'confirmed'")
+            confirmed_bookings = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = 'cancelled'")
+            cancelled_bookings = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = 'vouchered'")
+            vouchered_bookings = cursor.fetchone()[0]
+            
             # Recent bookings with customer names
             cursor.execute("""
                 SELECT b.id, b.booking_reference, b.status, b.total_amount, b.currency, b.created_at, c.name as customer_name
@@ -95,6 +111,11 @@ def index():
         # Return minimal dashboard if database fails
         total_customers = 0
         total_bookings = 0
+        draft_bookings = 0
+        pending_bookings = 0
+        confirmed_bookings = 0
+        cancelled_bookings = 0
+        vouchered_bookings = 0
         recent_bookings = []
         monthly_revenue = 0
         booking_types = []
@@ -110,6 +131,11 @@ def index():
         return render_template(template_name,
                              total_customers=total_customers,
                              total_bookings=total_bookings,
+                             draft_bookings=draft_bookings,
+                             pending_bookings=pending_bookings,
+                             confirmed_bookings=confirmed_bookings,
+                             cancelled_bookings=cancelled_bookings,
+                             vouchered_bookings=vouchered_bookings,
                              recent_bookings=recent_bookings,
                              monthly_revenue=monthly_revenue,
                              booking_types=booking_types)
@@ -119,6 +145,11 @@ def index():
         return render_template('dashboard/index_th.html',
                              total_customers=total_customers,
                              total_bookings=total_bookings,
+                             draft_bookings=draft_bookings,
+                             pending_bookings=pending_bookings,
+                             confirmed_bookings=confirmed_bookings,
+                             cancelled_bookings=cancelled_bookings,
+                             vouchered_bookings=vouchered_bookings,
                              recent_bookings=recent_bookings,
                              monthly_revenue=monthly_revenue,
                              booking_types=booking_types)

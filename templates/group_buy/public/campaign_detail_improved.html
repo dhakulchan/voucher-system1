@@ -1,0 +1,881 @@
+{% extends "base.html" %}
+
+{% block title %}{{ campaign.name }} - จองกลุ่ม ลดสูงสุด {{ "{:.0f}".format(campaign.discount_percentage) }}%{% endblock
+%}
+
+{% block content %}
+<!-- Mobile Sticky CTA -->
+<div class="mobile-sticky-cta d-lg-none">
+    <div class="container-fluid px-3 py-3 shadow-lg"
+        style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-top: 3px solid rgba(255,255,255,0.3);">
+        <div class="row align-items-center g-2">
+            <div class="col-5">
+                <div class="mobile-price">
+                    <small class="text-white-50 d-block" style="font-size: 0.7rem; line-height: 1.3;">ราคาปกติ <del>฿{{
+                            "{:,.0f}".format(campaign.regular_price) }}</del></small>
+                    <strong class="text-white d-block"
+                        style="font-size: 1.3rem; line-height: 1.2; text-shadow: 2px 2px 6px rgba(0,0,0,0.3); font-weight: 800;">฿{{
+                        "{:,.0f}".format(campaign.group_price) }}</strong>
+                </div>
+            </div>
+            <div class="col-7">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                        class="btn fw-bold py-2 pulse-btn shadow"
+                        style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border: none; color: #fff; font-size: 0.95rem; border-radius: 12px;">
+                        <i class="fas fa-bolt me-1"></i> สร้างกลุ่มใหม่ - จองแบบกลุ่ม
+                    </a>
+                    {% if campaign.payment_stripe_enabled or campaign.payment_bank_enabled or
+                    campaign.payment_qr_enabled %}
+                    <a href="{{ url_for('group_buy_payment.select_method', campaign_id=campaign.id) }}"
+                        class="btn btn-light fw-bold py-2 shadow-sm"
+                        style="font-size: 0.85rem; border-radius: 12px; color: #059669;">
+                        <i class="fas fa-credit-card me-1"></i> ชำระเงิน
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="campaign-detail-page" style="background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);">
+    <div class="container py-4 py-md-5 pb-md-4" style="padding-bottom: 100px !important;">
+
+        <!-- Hero Section -->
+        <div class="hero-section mb-4 mb-md-5">
+            <div class="row g-4 g-lg-5">
+
+                <!-- Image Column -->
+                <div class="col-lg-7">
+                    {% if campaign.product_image %}
+                    <div class="product-image-container position-relative overflow-hidden mb-4"
+                        style="border-radius: 24px; box-shadow: 0 20px 60px rgba(14, 165, 233, 0.25);">
+                        {% if campaign.image_title %}
+                        {% set position = campaign.image_title_position or 'left' %}
+                        <div class="image-title-badge position-absolute top-0 m-4 
+                            {% if position == 'center' %}start-50 translate-middle-x text-center
+                            {% elif position == 'right' %}end-0 text-end
+                            {% else %}start-0 text-start{% endif %}" style="z-index: 2; white-space: nowrap;">
+                            <span class="badge px-4 py-3 shadow-lg"
+                                style="background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%); border: none; color: #fff; font-size: 1rem; border-radius: 12px; font-weight: 700;">
+                                <i class="fas fa-star me-1"></i> {{ campaign.image_title }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        <img src="{{ url_for('static', filename=campaign.product_image.replace('static/', '')) }}"
+                            alt="{{ campaign.name }}" class="img-fluid w-100 product-main-image"
+                            style="min-height: 450px; height: 100%; object-fit: cover;">
+                    </div>
+                    {% endif %}
+
+                    <!-- Trust Section -->
+                    <div class="trust-section">
+                        <div class="card border-0 shadow-lg hover-lift"
+                            style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px; overflow: hidden;">
+                            <div class="card-body p-4">
+                                <h5 class="mb-4 fw-bold text-white" style="font-size: 1.2rem;">
+                                    <i class="fas fa-shield-check me-2"></i>ทำไมต้องเลือกเรา?
+                                </h5>
+                                <div class="row g-4">
+                                    <div class="col-6">
+                                        <div class="trust-item p-3 rounded-3"
+                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                            <div class="trust-icon-circle mb-3 mx-auto"
+                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-lock fs-3 text-white"></i>
+                                            </div>
+                                            <strong class="d-block mb-2 text-white text-center"
+                                                style="font-size: 1rem;">ชำระเงินปลอดภัย</strong>
+                                            <small class="text-white-50 d-block text-center"
+                                                style="font-size: 0.85rem;">รองรับหลายช่องทาง</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="trust-item p-3 rounded-3"
+                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                            <div class="trust-icon-circle mb-3 mx-auto"
+                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-undo fs-3 text-white"></i>
+                                            </div>
+                                            <strong class="d-block mb-2 text-white text-center"
+                                                style="font-size: 1rem;">คืนเงิน 100%</strong>
+                                            <small class="text-white-50 d-block text-center"
+                                                style="font-size: 0.85rem;">หากกลุ่มไม่สำเร็จ</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="trust-item p-3 rounded-3"
+                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                            <div class="trust-icon-circle mb-3 mx-auto"
+                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-headset fs-3 text-white"></i>
+                                            </div>
+                                            <strong class="d-block mb-2 text-white text-center"
+                                                style="font-size: 1rem;">บริการ 24 ชม.</strong>
+                                            <small class="text-white-50 d-block text-center"
+                                                style="font-size: 0.85rem;">ทีมงานพร้อมดูแล Line: @DHAKULCHAN</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="trust-item p-3 rounded-3"
+                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                            <div class="trust-icon-circle mb-3 mx-auto"
+                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-certificate fs-3 text-white"></i>
+                                            </div>
+                                            <strong class="d-block mb-2 text-white text-center"
+                                                style="font-size: 1rem;">บริษัทฯท่องเที่ยวชั่นนำ</strong>
+                                            <small class="text-white-50 d-block text-center"
+                                                style="font-size: 0.85rem;">TAT License: 11/03589</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price & Info Column -->
+                <div class="col-lg-5">
+                    <div class="hero-content bg-white shadow-lg h-100" style="border-radius: 24px; padding: 2rem;">
+
+                        <h1 class="fw-bold mb-4"
+                            style="font-size: 1.6rem; line-height: 1.4; color: #1a202c; font-weight: 800;">
+                            {{ campaign.name }}
+                        </h1>
+
+                        {% if campaign.travel_date_from and campaign.travel_date_to %}
+                        <div class="travel-info mb-4 p-4 hover-lift"
+                            style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 16px; box-shadow: 0 10px 30px rgba(14, 165, 233, 0.3);">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-circle me-3"
+                                    style="width: 50px; height: 50px; background: rgba(255, 255, 255, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-calendar-alt text-white fs-4"></i>
+                                </div>
+                                <div>
+                                    <small class="text-white-50 d-block"
+                                        style="font-size: 0.8rem; font-weight: 600;">วันเดินทาง</small>
+                                    <strong class="text-white" style="font-size: 1.1rem; font-weight: 700;">{{
+                                        campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                                        campaign.travel_date_to.strftime('%d/%m/%Y') }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Discount Badge -->
+                        <div class="text-center text-lg-start mb-4">
+                            <div class="discount-badge-wrapper d-inline-block position-relative">
+                                <span class="badge px-5 py-3 fs-3 pulse-badge shadow-lg"
+                                    style="background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); border: none; color: #fff; border-radius: 16px; font-weight: 800;">
+                                    <i class="fas fa-fire-alt me-2"></i>ลดสูงสุด {{
+                                    "{:.0f}".format(campaign.discount_percentage) }}%
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Price Display -->
+                        <div class="price-section mb-4 p-4 hover-lift"
+                            style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 20px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);">
+                            <div class="mb-3">
+                                <small class="text-muted d-block mb-2"
+                                    style="font-size: 0.9rem; font-weight: 600;">ราคาปกติ</small>
+                                <h4 class="text-muted mb-0"
+                                    style="text-decoration: line-through; opacity: 0.7; font-size: 1.5rem; font-weight: 600;">
+                                    ฿{{ "{:,.0f}".format(campaign.regular_price) }}
+                                </h4>
+                            </div>
+                            <div class="border-top border-2 pt-3 mt-3"
+                                style="border-color: rgba(0, 0, 0, 0.1) !important;">
+                                <small class="fw-bold d-block mb-2"
+                                    style="color: #d84315; font-size: 1rem; font-weight: 700;">ราคากลุ่ม
+                                    (จองตอนนี้)</small>
+                                <h1 class="fw-bold mb-0"
+                                    style="font-size: 3rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
+                                    ฿{{ "{:,.0f}".format(campaign.group_price) }}
+                                </h1>
+                                {% if campaign.allow_partial_payment %}
+                                <div class="mt-3"
+                                    style="background: rgba(245, 158, 11, 0.1); padding: 12px; border-radius: 8px; border-left: 4px solid #f59e0b;">
+                                    <small class="d-block" style="color: #d97706; font-weight: 600;">
+                                        <i class="fas fa-coins me-1"></i>
+                                        {% if campaign.partial_payment_type == 'fixed' %}
+                                        จ่ายเงินมัดจำ: <strong>{{ "{:,.0f}".format(campaign.partial_payment_value) }}
+                                            บาท/ต่อคน</strong>
+                                        {% elif campaign.partial_payment_type == 'percentage' %}
+                                        จ่ายเงินมัดจำ: <strong>{{ "{:,.0f}".format(campaign.group_price *
+                                            campaign.partial_payment_value / 100) }} บาท/ต่อคน</strong> ({{
+                                        "{:.0f}".format(campaign.partial_payment_value) }}%)
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- CTA Desktop -->
+                        <div class="d-none d-lg-block mb-4">
+                            <div class="d-grid gap-3">
+                                <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                    class="btn btn-lg fw-bold py-4 pulse-btn shadow-lg"
+                                    style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border: none; color: #fff; font-size: 1.2rem; border-radius: 16px; font-weight: 800;">
+                                    <i class="fas fa-bolt me-2"></i>สร้างกลุ่มใหม่ - จองแบบกลุ่ม
+                                </a>
+
+                                {% if campaign.payment_stripe_enabled or campaign.payment_bank_enabled or
+                                campaign.payment_qr_enabled %}
+                                <a href="{{ url_for('group_buy_payment.select_method', campaign_id=campaign.id) }}"
+                                    class="btn btn-lg fw-bold py-4 shadow-lg"
+                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #fff; font-size: 1.1rem; border-radius: 16px; font-weight: 700;">
+                                    <i class="fas fa-credit-card me-2"></i>ชำระเงินเลย
+                                </a>
+                                {% endif %}
+                            </div>
+                            <p class="text-center text-muted small mb-0 mt-3" style="font-size: 0.9rem;">
+                                <i class="fas fa-shield-alt me-2"></i> คืนเงินเต็มจำนวนหากกลุ่มไม่สำเร็จภายใน 3 วัน
+                            </p>
+                        </div>
+
+                        <!-- Group Rules -->
+                        <div class="rules-box p-4 hover-lift"
+                            style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none; border-radius: 16px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
+                            <div class="d-flex align-items-start">
+                                <div class="icon-circle-small me-3 flex-shrink-0"
+                                    style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-info-circle fs-4" style="color: #5e35b1;"></i>
+                                </div>
+                                <div>
+                                    <strong class="d-block mb-3"
+                                        style="font-size: 1.1rem; color: #4527a0; font-weight: 700;">เงื่อนไขการรวมกลุ่ม</strong>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
+                                                class="fas fa-check-circle me-2"
+                                                style="color: #7e57c2;"></i>ต้องมีสมาชิกอย่างน้อย
+                                            <strong>{{ campaign.min_participants }} คน</strong>
+                                        </li>
+                                        <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
+                                                class="fas fa-plane-departure me-2"
+                                                style="color: #7e57c2;"></i>ยืนยันเดินทางขั้นต่ำ
+                                            <strong>10 ท่าน</strong>
+                                        </li>
+                                        <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
+                                                class="fas fa-info-circle me-2"
+                                                style="color: #7e57c2;"></i>บริษัทขอสงวนสิทธิ์ในการเปลี่ยนแปลง
+                                        </li>
+                                        <li style="font-size: 1rem; color: #5e35b1;"><i class="fas fa-check-circle me-2"
+                                                style="color: #7e57c2;"></i>จองภายในเวลา <strong>{{
+                                                campaign.duration_hours }} ชั่วโมง</strong></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Countdown Timer -->
+        {% if campaign.campaign_end_date %}
+        <div class="countdown-timer mb-4">
+            <div class="card border-0 shadow-lg hover-lift"
+                style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 20px; overflow: hidden;">
+                <div class="card-body p-4">
+                    <div class="row align-items-center g-3">
+                        <div class="col-md-8">
+                            <h5 class="mb-3 text-white fw-bold" style="font-size: 1.3rem;">
+                                <i class="fas fa-hourglass-half me-2"></i>โปรโมชันสิ้นสุดใน
+                            </h5>
+                            <div id="campaign-countdown" class="fs-2 fw-bold text-white"
+                                data-end-date="{{ campaign.campaign_end_date.isoformat() }}"
+                                style="text-shadow: 2px 2px 6px rgba(0,0,0,0.2); font-weight: 900;">
+                                กำลังคำนวณ...
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <small class="text-white-50 d-block mb-1"
+                                style="font-size: 0.9rem; font-weight: 600;">สิ้นสุดวันที่</small>
+                            <strong class="text-white" style="font-size: 1.2rem;">{{
+                                campaign.campaign_end_date.strftime('%d/%m/%Y') }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+
+            <!-- Main Content -->
+            <div class="col-lg-8">
+
+                <!-- Available Groups -->
+                <div class="groups-section mb-4">
+                    <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                        <div class="card-header text-white py-4"
+                            style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border: none;">
+                            <h4 class="mb-0 fw-bold" style="font-size: 1.4rem;">
+                                <i class="fas fa-users me-2"></i>กลุ่มที่เปิดรับสมาชิกเพิ่ม
+                            </h4>
+                        </div>
+                        <div class="card-body p-4">
+                            {% if active_groups %}
+                            {% for group in active_groups %}
+                            {% if group.current_participants < group.required_participants %} <div
+                                class="group-card rounded-4 p-4 mb-3 border-0 hover-lift"
+                                style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
+                                <div class="row g-3 align-items-center">
+                                    <div class="col-md-8">
+                                        <!-- Group Header -->
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <h6 class="fw-bold mb-2" style="font-size: 1.2rem; color: #1a202c;">{{
+                                                    group.group_name }}</h6>
+                                                <small class="text-muted"
+                                                    style="font-size: 0.9rem; font-weight: 600;">รหัส: {{
+                                                    group.group_code }}</small>
+                                            </div>
+                                            {% set remaining = group.required_participants - group.current_participants
+                                            %}
+                                            {% if remaining == 1 %}
+                                            <span class="badge fs-6 pulse-badge shadow"
+                                                style="background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">
+                                                <i class="fas fa-fire-alt me-1"></i> เหลือ 1 กลุ่ม!
+                                            </span>
+                                            {% elif remaining == 2 %}
+                                            <span class="badge fs-6 shadow"
+                                                style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">เกือบเต็ม</span>
+                                            {% else %}
+                                            <span class="badge fs-6 shadow"
+                                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">กลุ่มใหม่</span>
+                                            {% endif %}
+                                        </div>
+
+                                        <!-- Progress -->
+                                        <div class="mb-3">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <small class="fw-bold" style="font-size: 1rem; color: #1a202c;">มีสมาชิก
+                                                    {{ group.current_participants }}/{{
+                                                    group.required_participants }} คน</small>
+                                                <small class="fw-bold" style="font-size: 1rem; color: #10b981;">{{
+                                                    group.progress_percentage
+                                                    }}%</small>
+                                            </div>
+                                            <div class="progress"
+                                                style="height: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.5);">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                    style="width: {{ group.progress_percentage }}%; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); border-radius: 12px;">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Time Remaining -->
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-clock me-2" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                            <small style="color: #6b7280; font-size: 0.95rem; font-weight: 600;">
+                                                เวลาที่เหลือ: <strong style="color: #1a202c;">{{
+                                                    group.time_remaining_formatted }}</strong>
+                                            </small>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-4 text-end">
+                                        {% if group.current_participants < group.required_participants %} <a
+                                            href="{{ url_for('public_group_buy.join_group', token=group.share_token) }}"
+                                            class="btn w-100 fw-bold py-3 shadow-lg hover-scale"
+                                            style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700;">
+                                            <i class="fas fa-user-plus me-2"></i>เข้าร่วม
+                                            </a>
+                                            {% else %}
+                                            <div class="alert alert-success mb-0" style="border-radius: 14px;">
+                                                <i class="fas fa-check-circle me-2"></i>
+                                                <strong>เต็มแล้ว</strong>
+                                            </div>
+                                            {% endif %}
+                                    </div>
+                                </div>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        <div class="empty-state text-center py-5">
+                            <div class="mb-4">
+                                <i class="fas fa-users-slash fa-5x text-muted opacity-50"></i>
+                            </div>
+                            <h5 class="text-dark mb-3 fw-bold" style="font-size: 1.3rem;">
+                                ยังไม่มีกลุ่มที่เปิดรับสมาชิกเพิ่ม</h5>
+                            <p class="text-muted mb-4" style="font-size: 1.05rem;">
+                                เป็นคนแรกที่สร้างกลุ่มและรับราคาพิเศษ!</p>
+                            <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                class="btn btn-lg px-5 py-3 shadow-lg"
+                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-weight: 700;">
+                                <i class="fas fa-plus-circle me-2"></i>สร้างกลุ่มใหม่
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Gallery -->
+            {% if campaign.album_images %}
+            <div class="gallery-section mb-4">
+                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-header bg-white border-bottom py-4">
+                        <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                            <i class="fas fa-images me-2" style="color: #0ea5e9;"></i>ภาพประกอบเพิ่มเติม
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            {% set album_list = campaign.album_images|from_json %}
+                            {% for item in album_list %}
+                            <div class="col-6 col-md-4">
+                                <div class="gallery-item">
+                                    {% if item is mapping %}
+                                    <a href="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                        data-lightbox="gallery" data-title="{{ item.title or '' }}"
+                                        class="d-block position-relative overflow-hidden shadow-lg"
+                                        style="border-radius: 16px;">
+                                        <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                            class="img-fluid w-100 hover-zoom"
+                                            style="height: 200px; object-fit: cover;">
+                                        <div class="gallery-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                            style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);">
+                                            <i class="fas fa-search-plus text-white fs-1"></i>
+                                        </div>
+                                    </a>
+                                    {% if item.title %}
+                                    <p class="text-center mt-3 mb-0 fw-bold"
+                                        style="color: #6b7280; font-size: 0.95rem;">{{ item.title }}</p>
+                                    {% endif %}
+                                    {% else %}
+                                    <a href="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                        data-lightbox="gallery"
+                                        class="d-block position-relative overflow-hidden shadow-lg"
+                                        style="border-radius: 16px;">
+                                        <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                            class="img-fluid w-100 hover-zoom"
+                                            style="height: 200px; object-fit: cover;">
+                                        <div class="gallery-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                            style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);">
+                                            <i class="fas fa-search-plus text-white fs-1"></i>
+                                        </div>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Product Details -->
+            {% if campaign.product_details %}
+            <div class="details-section mb-4">
+                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-header bg-white border-bottom py-4">
+                        <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                            <i class="fas fa-plane me-2" style="color: #0ea5e9;"></i>รายละเอียดการเดินทาง
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="product-details"
+                            style="white-space: pre-line; line-height: 2; font-size: 1.05rem; color: #4b5563;">
+                            {{ campaign.product_details }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Description -->
+            {% if campaign.description %}
+            <div class="description-section mb-4">
+                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-header bg-white border-bottom py-4">
+                        <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                            <i class="fas fa-info-circle me-2" style="color: #0ea5e9;"></i>รายละเอียดเพิ่มเติม
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div style="white-space: pre-line; line-height: 2; font-size: 1.05rem; color: #4b5563;">
+                            {{ campaign.description }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Terms -->
+            {% if campaign.terms_conditions %}
+            <div class="terms-section mb-4">
+                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-header bg-white border-bottom py-4">
+                        <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                            <i class="fas fa-file-contract me-2" style="color: #0ea5e9;"></i>เงื่อนไขและข้อตกลง
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="terms-content"
+                            style="max-height: 450px; overflow-y: auto; white-space: pre-line; line-height: 2; font-size: 1rem; color: #6b7280;">
+                            {{ campaign.terms_conditions }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <div class="sidebar-sticky">
+                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-4" style="font-size: 1.3rem; color: #1a202c;">ข้อมูลสำคัญ</h6>
+
+                        <!-- Available Seats -->
+                        <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-bg me-3"
+                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-layer-group text-white fs-4"></i>
+                                    </div>
+                                    <span
+                                        style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">จำนวนกลุ่มคงเหลือ</span>
+                                </div>
+                                <strong class="fs-3"
+                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
+                                    {% if campaign.total_slots %}
+                                    {{ campaign.inventory_remaining }}
+                                    {% else %}
+                                    <i class="fas fa-infinity"></i>
+                                    {% endif %}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <!-- Remaining Seats -->
+                        {% if campaign.max_pax %}
+                        <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-bg me-3"
+                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-users text-white fs-4"></i>
+                                    </div>
+                                    <span
+                                        style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">ที่นั่งที่เหลือ</span>
+                                </div>
+                                <strong class="fs-3"
+                                    style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
+                                    {% set total_confirmed_pax = campaign.groups|selectattr('status', 'equalto',
+                                    'success')|sum(attribute='total_pax_count') %}
+                                    {% set remaining_seats = campaign.max_pax - total_confirmed_pax %}
+                                    {{ remaining_seats }}
+                                </strong>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Min Participants -->
+                        <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-bg me-3"
+                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-users text-white fs-4"></i>
+                                    </div>
+                                    <span style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">ขั้นต่ำ</span>
+                                </div>
+                                <strong class="fs-3" style="color: #1a202c; font-weight: 800;">{{
+                                    campaign.min_participants }} กลุ่ม/คณะ</strong>
+                            </div>
+                        </div>
+
+                        <!-- Duration -->
+                        <div class="info-item mb-4 hover-lift" style="transition: all 0.3s ease;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-bg me-3"
+                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-hourglass-half text-white fs-4"></i>
+                                    </div>
+                                    <span
+                                        style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">เวลารวมกลุ่ม</span>
+                                </div>
+                                <strong class="fs-3" style="color: #1a202c; font-weight: 800;">{{
+                                    campaign.duration_hours }} ชม.</strong>
+                            </div>
+                        </div>
+
+                        <!-- Desktop CTA Repeat -->
+                        <div class="d-none d-lg-block mt-4 pt-4 border-top">
+                            <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                class="btn btn-lg w-100 fw-bold py-4 mb-3 pulse-btn shadow-lg"
+                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 800;">
+                                <i class="fas fa-bolt me-2"></i>สร้างกลุ่มใหม่ - จองแบบกลุ่ม
+                            </a>
+                            <p class="text-center text-muted small mb-0" style="font-size: 0.95rem; font-weight: 600;">
+                                <i class="fas fa-shield-alt me-2"></i> รับประกันคืนเงิน 100%
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<!-- Lightbox CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+
+<style>
+    /* Mobile Sticky CTA */
+    .mobile-sticky-cta {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1030;
+    }
+
+    /* Pulse Animations */
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(240, 147, 251, 0.6);
+        }
+
+        50% {
+            transform: scale(1.03);
+            box-shadow: 0 0 0 12px rgba(240, 147, 251, 0);
+        }
+    }
+
+    .pulse-btn {
+        animation: pulse 2.5s infinite;
+    }
+
+    @keyframes pulse-badge {
+
+        0%,
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        50% {
+            transform: scale(1.06);
+            opacity: 0.92;
+        }
+    }
+
+    .pulse-badge {
+        animation: pulse-badge 2s infinite;
+    }
+
+    /* Hover Effects */
+    .hover-lift {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(14, 165, 233, 0.3) !important;
+    }
+
+    .hover-scale {
+        transition: all 0.3s ease;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.05);
+    }
+
+    .hover-zoom {
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hover-zoom:hover {
+        transform: scale(1.12);
+    }
+
+    /* Gallery Overlay */
+    .gallery-overlay {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+    }
+
+    .gallery-item:hover .gallery-overlay {
+        opacity: 1;
+    }
+
+    /* Sticky Sidebar */
+    @media (min-width: 992px) {
+        .sidebar-sticky {
+            position: sticky;
+            top: 20px;
+        }
+    }
+
+    /* Typography Improvements */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: 'Sarabun', 'Helvetica Neue', sans-serif;
+    }
+
+    /* Card Improvements */
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card-header {
+        border-bottom: 2px solid rgba(0, 0, 0, 0.06);
+    }
+
+    /* Progress Bar */
+    .progress {
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Spacing & Layout */
+    .info-item {
+        font-size: 1rem;
+    }
+
+    .info-item:hover .icon-bg {
+        transform: scale(1.1) rotate(5deg);
+        transition: all 0.3s ease;
+    }
+
+    /* Mobile Optimization */
+    @media (max-width: 991.98px) {
+        .container {
+            padding-bottom: 100px !important;
+        }
+
+        h1 {
+            font-size: 1.6rem !important;
+        }
+
+        .fs-3 {
+            font-size: 1.6rem !important;
+        }
+
+        .gallery-item img {
+            height: 160px !important;
+        }
+    }
+
+    /* Empty State */
+    .empty-state {
+        background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+        border-radius: 20px;
+        padding: 3rem 2rem;
+    }
+
+    /* Trust Icons */
+    .trust-icon-circle {
+        transition: all 0.3s ease;
+    }
+
+    .trust-item:hover .trust-icon-circle {
+        transform: scale(1.1) rotate(-5deg);
+    }
+
+    /* Smooth Scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Custom Scrollbar */
+    .terms-content::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .terms-content::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .terms-content::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        border-radius: 10px;
+    }
+
+    .terms-content::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #0284c7 0%, #0891b2 100%);
+        border-radius: 10px;
+    }
+
+    /* Gradient Text */
+    .gradient-text {
+        background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Lightbox JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script>
+    // Lightbox Configuration
+    lightbox.option({
+        'resizeDuration': 200,
+        'wrapAround': true,
+        'albumLabel': 'ภาพที่ %1 จาก %2'
+    });
+
+    // Campaign Countdown Timer
+    function updateCountdown() {
+        const countdownElement = document.getElementById('campaign-countdown');
+        if (!countdownElement) return;
+
+        const endDate = new Date(countdownElement.dataset.endDate);
+        const now = new Date();
+        const diff = endDate - now;
+
+        if (diff <= 0) {
+            countdownElement.innerHTML = '<span class="text-danger">โปรโมชันสิ้นสุดแล้ว</span>';
+            return;
+        }
+
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let countdownHTML = '';
+        if (days > 0) {
+            countdownHTML = `<span class="me-3">${days} <small>วัน</small></span> <span class="me-3">${hours} <small>ชม.</small></span> <span>${minutes} <small>นาที</small></span>`;
+        } else if (hours > 0) {
+            countdownHTML = `<span class="me-3">${hours} <small>ชม.</small></span> <span class="me-3">${minutes} <small>นาที</small></span> <span>${seconds} <small>วิ</small></span>`;
+        } else {
+            countdownHTML = `<span class="me-3 text-danger">${minutes} <small>นาที</small></span> <span class="text-danger">${seconds} <small>วินาที</small></span>`;
+        }
+
+        countdownElement.innerHTML = countdownHTML;
+    }
+
+    // Update countdown every second
+    if (document.getElementById('campaign-countdown')) {
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    }
+</script>
+{% endblock %}

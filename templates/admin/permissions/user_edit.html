@@ -1,0 +1,470 @@
+{% extends "base.html" %}
+
+{% block title %}Edit User Permissions - {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">
+            <i class="fas fa-user-edit me-2"></i>Edit User Permissions: <strong>{{ user.username }}</strong>
+        </h1>
+        <a href="{{ url_for('permissions.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Back
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Note:</strong> User-specific permissions will override role-based permissions.
+                Leave unchecked to use default role permissions.
+            </div>
+
+            <form id="userPermissionForm" method="POST"
+                action="{{ url_for('permissions.update_user', user_id=user.id) }}">
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">User Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Username</label>
+                                <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Email</label>
+                                <input type="text" class="form-control" value="{{ user.email }}" disabled>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Role</label>
+                                <input type="text" class="form-control" value="{{ user.role }}" disabled>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="notes" class="form-control" rows="2"
+                                placeholder="กรอกหมายเหตุเกี่ยวกับสิทธิ์พิเศษนี้...">{% if user_perms %}{{ user_perms.notes }}{% endif %}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                {% if user_perms %}
+                <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-star me-2"></i>
+                        This user has <strong>custom permissions</strong> that override the default role permissions.
+                    </div>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="resetPermissions()">
+                        <i class="fas fa-undo me-1"></i>Reset to Role Defaults
+                    </button>
+                </div>
+                {% else %}
+                <div class="alert alert-secondary d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="fas fa-info-circle me-2"></i>
+                        Currently using <strong>default role permissions</strong> for {{ user.role }}.
+                    </div>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="loadDefaultPermissions()">
+                        <i class="fas fa-sync-alt me-1"></i>Load Default Permissions
+                    </button>
+                </div>
+                {% endif %}
+
+                <!-- Sidebar Menus -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-bars me-2"></i>Sidebar Menus</h5>
+                        <button type="button" class="btn btn-sm btn-light"
+                            onclick="selectAllInSection('sidebar_menus')">
+                            <i class="fas fa-check-double me-1"></i>Select All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% set available_menus = [
+                            ('dashboard', 'Dashboard', 'tachometer-alt'),
+                            ('queue_management', 'Queue Management', 'list-ol'),
+                            ('bookings', 'Bookings', 'calendar-check'),
+                            ('customers', 'Customers', 'users'),
+                            ('quotes', 'Quotes', 'file-alt'),
+                            ('vouchers', 'Vouchers', 'ticket-alt'),
+                            ('suppliers', 'Suppliers', 'truck-loading'),
+                            ('invoices', 'Invoices', 'file-invoice'),
+                            ('reports', 'Reports', 'chart-bar'),
+                            ('task_list', 'Task List', 'tasks'),
+                            ('user_management', 'User Management', 'users-cog'),
+                            ('system_settings', 'System Settings', 'cog')
+                            ] %}
+                            {% for menu_id, menu_name, menu_icon in available_menus %}
+                            <div class="col-md-4 col-sm-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input sidebar-menu-checkbox" type="checkbox"
+                                        name="sidebar_menus[]" value="{{ menu_id }}" id="menu_{{ menu_id }}" {% if
+                                        menu_id in current_perms.get('sidebar_menus', []) %}checked{% endif %}>
+                                    <label class="form-check-label" for="menu_{{ menu_id }}">
+                                        <i class="fas fa-{{ menu_icon }} me-1"></i>{{ menu_name }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookings Permissions -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Bookings</h5>
+                        <button type="button" class="btn btn-sm btn-light" onclick="selectAllInSection('bookings')">
+                            <i class="fas fa-check-double me-1"></i>Select All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% set bookings_perms = current_perms.get('bookings', {}) %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input bookings-checkbox" type="checkbox"
+                                        name="bookings_view_all" value="true" id="bookings_view_all" {% if
+                                        bookings_perms.get('view_all') %}checked{% endif %}>
+                                    <label class="form-check-label" for="bookings_view_all">View All</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input bookings-checkbox" type="checkbox"
+                                        name="bookings_view_own" value="true" id="bookings_view_own" {% if
+                                        bookings_perms.get('view_own') %}checked{% endif %}>
+                                    <label class="form-check-label" for="bookings_view_own">View Own</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input bookings-checkbox" type="checkbox"
+                                        name="bookings_create" value="true" id="bookings_create" {% if
+                                        bookings_perms.get('create') %}checked{% endif %}>
+                                    <label class="form-check-label" for="bookings_create">Create</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input bookings-checkbox" type="checkbox"
+                                        name="bookings_edit_all" value="true" id="bookings_edit_all" {% if
+                                        bookings_perms.get('edit_all') %}checked{% endif %}>
+                                    <label class="form-check-label" for="bookings_edit_all">Edit All</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input bookings-checkbox" type="checkbox"
+                                        name="bookings_edit_own" value="true" id="bookings_edit_own" {% if
+                                        bookings_perms.get('edit_own') %}checked{% endif %}>
+                                    <label class="form-check-label" for="bookings_edit_own">Edit Own</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input bookings-checkbox" type="checkbox"
+                                        name="bookings_delete" value="true" id="bookings_delete" {% if
+                                        bookings_perms.get('delete') %}checked{% endif %}>
+                                    <label class="form-check-label" for="bookings_delete">Delete</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Customers Permissions -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Customers</h5>
+                        <button type="button" class="btn btn-sm btn-light" onclick="selectAllInSection('customers')">
+                            <i class="fas fa-check-double me-1"></i>Select All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% set customers_perms = current_perms.get('customers', {}) %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input customers-checkbox" type="checkbox"
+                                        name="customers_view_all" value="true" id="customers_view_all" {% if
+                                        customers_perms.get('view_all') %}checked{% endif %}>
+                                    <label class="form-check-label" for="customers_view_all">View All</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input customers-checkbox" type="checkbox"
+                                        name="customers_view_own" value="true" id="customers_view_own" {% if
+                                        customers_perms.get('view_own') %}checked{% endif %}>
+                                    <label class="form-check-label" for="customers_view_own">View Own</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input customers-checkbox" type="checkbox"
+                                        name="customers_create" value="true" id="customers_create" {% if
+                                        customers_perms.get('create') %}checked{% endif %}>
+                                    <label class="form-check-label" for="customers_create">Create</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input customers-checkbox" type="checkbox"
+                                        name="customers_edit_all" value="true" id="customers_edit_all" {% if
+                                        customers_perms.get('edit_all') %}checked{% endif %}>
+                                    <label class="form-check-label" for="customers_edit_all">Edit All</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input customers-checkbox" type="checkbox"
+                                        name="customers_edit_own" value="true" id="customers_edit_own" {% if
+                                        customers_perms.get('edit_own') %}checked{% endif %}>
+                                    <label class="form-check-label" for="customers_edit_own">Edit Own</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input customers-checkbox" type="checkbox"
+                                        name="customers_delete" value="true" id="customers_delete" {% if
+                                        customers_perms.get('delete') %}checked{% endif %}>
+                                    <label class="form-check-label" for="customers_delete">Delete</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Module Permissions (Compact View) -->
+                {% set modules = [
+                ('quotes', 'Quotes', 'file-alt', 'warning'),
+                ('vouchers', 'Vouchers', 'ticket-alt', 'success'),
+                ('suppliers', 'Suppliers', 'truck-loading', 'secondary'),
+                ('invoices', 'Invoices', 'file-invoice', 'primary'),
+                ('reports', 'Reports', 'chart-bar', 'info')
+                ] %}
+
+                {% for module_id, module_name, module_icon, module_color in modules %}
+                <div class="card shadow mb-4">
+                    <div
+                        class="card-header bg-{{ module_color }} text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-{{ module_icon }} me-2"></i>{{ module_name }}</h5>
+                        <button type="button" class="btn btn-sm btn-light"
+                            onclick="selectAllInSection('{{ module_id }}')">
+                            <i class="fas fa-check-double me-1"></i>Select All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            {% set module_perms = current_perms.get(module_id, {}) %}
+                            {% if module_id in ['quotes', 'vouchers', 'suppliers', 'invoices'] %}
+                            {% for action in ['view', 'create', 'edit', 'delete'] %}
+                            <div class="col-md-3 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input {{ module_id }}-checkbox" type="checkbox"
+                                        name="{{ module_id }}_{{ action }}" value="true"
+                                        id="{{ module_id }}_{{ action }}" {% if module_perms.get(action) %}checked{%
+                                        endif %}>
+                                    <label class="form-check-label" for="{{ module_id }}_{{ action }}">{{
+                                        action|capitalize }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% elif module_id == 'reports' %}
+                            <div class="col-md-3 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input reports-checkbox" type="checkbox" name="reports_view"
+                                        value="true" id="reports_view" {% if module_perms.get('view') %}checked{% endif
+                                        %}>
+                                    <label class="form-check-label" for="reports_view">View</label>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input reports-checkbox" type="checkbox"
+                                        name="reports_export" value="true" id="reports_export" {% if
+                                        module_perms.get('export') %}checked{% endif %}>
+                                    <label class="form-check-label" for="reports_export">Export</label>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                <!-- User Management & System -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-users-cog me-2"></i>User Management & System</h5>
+                        <button type="button" class="btn btn-sm btn-light" onclick="selectAllInSection('advanced')">
+                            <i class="fas fa-check-double me-1"></i>Select All
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-3">User Management</h6>
+                        <div class="row mb-3">
+                            {% set users_perms = current_perms.get('users', {}) %}
+                            {% for action in ['view', 'create', 'edit', 'delete', 'manage_roles', 'manage_permissions']
+                            %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input advanced-checkbox" type="checkbox"
+                                        name="users_{{ action }}" value="true" id="users_{{ action }}" {% if
+                                        users_perms.get(action) %}checked{% endif %}>
+                                    <label class="form-check-label" for="users_{{ action }}">{{ action|replace('_', '
+                                        ')|title }}</label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <h6 class="mb-3 mt-4">Financial</h6>
+                        <div class="row mb-3">
+                            {% set financial_perms = current_perms.get('financial', {}) %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input advanced-checkbox" type="checkbox"
+                                        name="financial_view" value="true" id="financial_view" {% if
+                                        financial_perms.get('view') %}checked{% endif %}>
+                                    <label class="form-check-label" for="financial_view">View</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input advanced-checkbox" type="checkbox"
+                                        name="financial_edit" value="true" id="financial_edit" {% if
+                                        financial_perms.get('edit') %}checked{% endif %}>
+                                    <label class="form-check-label" for="financial_edit">Edit</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3 mt-4">Admin Notes</h6>
+                        <div class="row mb-3">
+                            {% set admin_notes_perms = current_perms.get('admin_notes', {}) %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input advanced-checkbox" type="checkbox"
+                                        name="admin_notes_view" value="true" id="admin_notes_view" {% if
+                                        admin_notes_perms.get('view') %}checked{% endif %}>
+                                    <label class="form-check-label" for="admin_notes_view">View</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input advanced-checkbox" type="checkbox"
+                                        name="admin_notes_edit" value="true" id="admin_notes_edit" {% if
+                                        admin_notes_perms.get('edit') %}checked{% endif %}>
+                                    <label class="form-check-label" for="admin_notes_edit">Edit</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mb-3 mt-4">System Configuration</h6>
+                        <div class="row">
+                            {% set system_perms = current_perms.get('system', {}) %}
+                            <div class="col-md-4 mb-2">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input advanced-checkbox" type="checkbox"
+                                        name="system_configure" value="true" id="system_configure" {% if
+                                        system_perms.get('configure') %}checked{% endif %}>
+                                    <label class="form-check-label" for="system_configure">Configure</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-4">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>Save Custom Permissions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('userPermissionForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('User permissions updated successfully!');
+                    window.location.href = '{{ url_for("permissions.index") }}';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+    });
+
+    function resetPermissions() {
+        if (!confirm('คุณต้องการรีเซ็ตสิทธิ์ของผู้ใช้นี้เป็นค่าเริ่มต้นของ Role หรือไม่?')) {
+            return;
+        }
+
+        fetch('{{ url_for("permissions.reset_user_permissions", user_id=user.id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{{ url_for("permissions.index") }}';
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+    }
+
+    function loadDefaultPermissions() {
+        if (!confirm('โหลดสิทธิ์เริ่มต้นจาก Role {{ user.role }} หรือไม่?')) {
+            return;
+        }
+        // Simply reload the page to show default permissions
+        window.location.reload();
+    }
+
+    function selectAllInSection(section) {
+        let checkboxClass;
+
+        if (section === 'sidebar_menus') {
+            checkboxClass = '.sidebar-menu-checkbox';
+        } else if (section === 'advanced') {
+            checkboxClass = '.advanced-checkbox';
+        } else {
+            checkboxClass = '.' + section + '-checkbox';
+        }
+
+        const checkboxes = document.querySelectorAll(checkboxClass);
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+
+        // Toggle: if all are checked, uncheck all; otherwise check all
+        checkboxes.forEach(cb => {
+            cb.checked = !allChecked;
+        });
+    }
+</script>
+
+{% endblock %}

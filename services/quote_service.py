@@ -29,57 +29,67 @@ class QuoteService:
             tax_amount = self._calculate_tax(subtotal)
             total_amount = subtotal + tax_amount
             
-            # Generate unique quote number starting from QT2509008 (updated)
-            # Use raw SQL to avoid SQLAlchemy cache issues
-            min_number = 2509008
-            max_attempts = 10  # Prevent infinite loop
-            
-            for attempt in range(max_attempts):
-                try:
-                    # Find the highest existing quote number using raw SQL
-                    result = db.session.execute(
-                        db.text("SELECT quote_number FROM quotes WHERE quote_number LIKE 'QT%' ORDER BY CAST(SUBSTR(quote_number, 3) AS INTEGER) DESC LIMIT 1")
-                    ).fetchone()
+            # Generate unique quote number using app_settings
+            try:
+                # Get next_quote_number from app_settings
+                result = db.session.execute(
+                    db.text("SELECT setting_value FROM app_settings WHERE setting_key = 'next_quote_number'")
+                ).fetchone()
+                
+                if result and result[0]:
+                    current_value = str(result[0]).strip()
                     
-                    if result and result.quote_number.startswith('QT'):
-                        try:
-                            # Extract numeric part from quote number
-                            numeric_part = result.quote_number[2:]  # Remove 'QT' prefix
-                            last_number = int(numeric_part)
-                            # Use the higher value between last_number+1 and min_number
-                            new_number = max(last_number + 1, min_number)
-                        except (ValueError, IndexError):
-                            # If parsing fails, start from QT5449112
-                            new_number = min_number
-                    else:
-                        # No existing quote, start from QT5449112
-                        new_number = min_number
+                    # Remove QT prefix if exists
+                    if current_value.startswith('QT'):
+                        current_value = current_value[2:]
                     
-                    quote_number = f"QT{new_number}"
-                    
-                    # Check if this quote number already exists
-                    exists_check = db.session.execute(
-                        db.text("SELECT COUNT(*) as count FROM quotes WHERE quote_number = :quote_number"),
-                        {"quote_number": quote_number}
-                    ).fetchone()
-                    
-                    if exists_check.count == 0:
-                        # Quote number is unique, break the loop
-                        break
-                    else:
-                        # Quote number exists, increment and try again
-                        min_number = new_number + 1
-                        self.logger.warning(f"Quote number {quote_number} exists, trying next number")
+                    try:
+                        next_number = int(current_value)
+                        quote_number = f'QT{next_number}'
                         
-                except Exception as e:
-                    self.logger.error(f"Error generating quote number (attempt {attempt + 1}): {e}")
-                    if attempt == max_attempts - 1:
-                        # Last attempt, use timestamp-based fallback
-                        import time
-                        timestamp = int(time.time())
-                        quote_number = f"QT{timestamp}"
-                        break
-                    continue
+                        # Verify uniqueness
+                        exists_check = db.session.execute(
+                            db.text("SELECT COUNT(*) as count FROM quotes WHERE quote_number = :quote_number"),
+                            {"quote_number": quote_number}
+                        ).fetchone()
+                        
+                        if exists_check.count > 0:
+                            # If exists, increment until we find unique
+                            max_attempts = 100
+                            for attempt in range(max_attempts):
+                                next_number += 1
+                                quote_number = f'QT{next_number}'
+                                exists_check = db.session.execute(
+                                    db.text("SELECT COUNT(*) as count FROM quotes WHERE quote_number = :quote_number"),
+                                    {"quote_number": quote_number}
+                                ).fetchone()
+                                if exists_check.count == 0:
+                                    break
+                        
+                        # Update app_settings with next number
+                        db.session.execute(
+                            db.text("UPDATE app_settings SET setting_value = :next_value, updated_at = NOW() WHERE setting_key = 'next_quote_number'"),
+                            {"next_value": str(next_number + 1)}
+                        )
+                    except ValueError:
+                        # Fallback to default
+                        quote_number = 'QT2601001'
+                        db.session.execute(
+                            db.text("UPDATE app_settings SET setting_value = '2601002', updated_at = NOW() WHERE setting_key = 'next_quote_number'")
+                        )
+                else:
+                    # Initialize if not exists
+                    quote_number = 'QT2601001'
+                    db.session.execute(
+                        db.text("INSERT INTO app_settings (setting_key, setting_value, updated_at) VALUES ('next_quote_number', '2601002', NOW()) ON DUPLICATE KEY UPDATE setting_value = '2601002', updated_at = NOW()")
+                    )
+                    
+            except Exception as e:
+                self.logger.error(f"Error generating quote number from app_settings: {e}")
+                # Fallback to timestamp
+                import time
+                timestamp = int(time.time()) % 10000000
+                quote_number = f"QT{timestamp}"
             
             self.logger.info(f"Generated unique quote number: {quote_number}")
             
@@ -130,6 +140,9 @@ class QuoteService:
                 'Tour package quote'
             )
             
+            self.logger.info(f"💾 About to INSERT quote with quote_number: {quote_number}")
+            self.logger.info(f"💾 First 3 params: quote_number={params[0]}, booking_id={params[1]}, quote_date={params[2]}")
+            
             # Use raw MariaDB connection with UNIQUE constraint handling
             import mysql.connector
             
@@ -150,6 +163,14 @@ class QuoteService:
                 quote_id = cursor.lastrowid
                 conn.commit()
                 self.logger.info(f"✅ Quote {quote_number} created successfully with ID {quote_id}")
+                
+                # Verify what was actually saved
+                cursor.execute("SELECT quote_number FROM quotes WHERE id = %s", (quote_id,))
+                saved_quote = cursor.fetchone()
+                if saved_quote:
+                    self.logger.info(f"🔍 Verification: Saved quote_number in DB = {saved_quote[0]}")
+                    if saved_quote[0] != quote_number:
+                        self.logger.error(f"❌ MISMATCH! Expected {quote_number} but DB has {saved_quote[0]}")
                 
             except IntegrityError as e:
                 conn.rollback()
@@ -179,8 +200,8 @@ class QuoteService:
             
             self.logger.info(f"✅ Quote {quote_number} created with ID {quote_id} for booking {booking.id}")
             
-            # Return quote_id instead of MockQuote object
-            return quote_id
+            # Return both quote_id and quote_number as tuple
+            return (quote_id, quote_number)
             
         except Exception as e:
             self.logger.error(f"❌ Error creating quote from booking {booking.id}: {str(e)}")

@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Counter {{ counter_id }} - Queue System{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Counter Number Badge - Fixed Position -->
+    <div class="position-fixed top-0 end-0 m-4" style="z-index: 1050;">
+        <div class="badge bg-warning text-dark p-3 shadow-lg"
+            style="font-size: 24px; border: 3px solid #ffc107; border-radius: 15px;">
+            <i class="fas fa-desktop me-2"></i>
+            <strong>Counter: {{ counter_id }}</strong>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-desktop me-2"></i>
+                        Counter {{ counter_id }} - Queue Management
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Current Serving -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-user-check me-2"></i>
+                                        Currently Serving
+                                    </h5>
+                                </div>
+                                <div class="card-body text-center" id="currentServingCard">
+                                    <div id="noCustomer">
+                                        <p class="text-muted">No customer being served</p>
+                                        <button class="btn btn-primary btn-lg" onclick="callNextCustomer()">
+                                            <i class="fas fa-phone me-2"></i>
+                                            Call Next Customer
+                                        </button>
+                                    </div>
+                                    <div id="servingCustomer" style="display: none;">
+                                        <h2 class="text-primary mb-3" id="servingQueueNumber">-</h2>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Name:</strong> <span id="servingName">-</span></p>
+                                                <p><strong>Phone:</strong> <span id="servingPhone">-</span></p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p><strong>Service:</strong> <span id="servingService">-</span></p>
+                                                <p><strong>Waiting Time:</strong> <span id="servingWaitTime">-</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <button class="btn btn-primary btn-lg me-2" onclick="applyToBooking()">
+                                                <i class="fas fa-calendar-plus me-2"></i>
+                                                Apply to Booking
+                                            </button>
+                                            <button class="btn btn-success btn-lg me-2" onclick="completeCustomer()">
+                                                <i class="fas fa-check me-2"></i>
+                                                Complete
+                                            </button>
+                                            <button class="btn btn-warning btn-lg" onclick="callNextCustomer()">
+                                                <i class="fas fa-forward me-2"></i>
+                                                Next Customer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Waiting Queue -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header bg-warning">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-users me-2"></i>
+                                        Waiting Queue (<span id="waitingCount">0</span>)
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Queue #</th>
+                                                    <th>Name</th>
+                                                    <th>Service</th>
+                                                    <th>Time</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="waitingQueueBody">
+                                                <tr>
+                                                    <td colspan="5" class="text-center text-muted">No waiting customers
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const counterId = '{{ counter_id }}';
+    let currentServingQueue = null;
+
+    async function callNextCustomer() {
+        try {
+            const response = await fetch('/queue/api/next', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    counter: counterId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                currentServingQueue = data.queue;
+                showServingCustomer(data.queue);
+                // Play sound when calling customer
+                playCallSound();
+                await updateWaitingQueue();
+            } else {
+                alert(data.message || 'No waiting customers');
+            }
+        } catch (error) {
+            console.error('Error calling next customer:', error);
+            alert('Error calling next customer');
+        }
+    }
+
+    async function completeCustomer() {
+        if (!currentServingQueue) return;
+
+        try {
+            const response = await fetch(`/queue/api/queue/${currentServingQueue.id}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                currentServingQueue = null;
+                document.getElementById('noCustomer').style.display = 'block';
+                document.getElementById('servingCustomer').style.display = 'none';
+                await updateWaitingQueue();
+            }
+        } catch (error) {
+            console.error('Error completing customer:', error);
+            alert('Error completing customer');
+        }
+    }
+
+    function showServingCustomer(queue) {
+        document.getElementById('noCustomer').style.display = 'none';
+        document.getElementById('servingCustomer').style.display = 'block';
+
+        document.getElementById('servingQueueNumber').textContent = queue.queue_number;
+        document.getElementById('servingName').textContent = queue.customer_name;
+        document.getElementById('servingPhone').textContent = queue.customer_phone;
+        document.getElementById('servingService').textContent = queue.service_type;
+        document.getElementById('servingWaitTime').textContent =
+            queue.waiting_time_minutes ? `${queue.waiting_time_minutes} minutes` : 'Just now';
+    }
+
+    async function updateWaitingQueue() {
+        try {
+            const response = await fetch('/queue/api/queues');
+            const data = await response.json();
+
+            if (data.success) {
+                const waiting = data.queues.filter(q => q.status === 'waiting');
+                document.getElementById('waitingCount').textContent = waiting.length;
+
+                const tbody = document.getElementById('waitingQueueBody');
+                if (waiting.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No waiting customers</td></tr>';
+                } else {
+                    tbody.innerHTML = waiting.map(q => {
+                        // Format time as Thai locale (already converted in backend)
+                        const timePart = q.created_at ? q.created_at.split(' ')[1] : '';
+                        return `
+                        <tr>
+                            <td><strong>${q.queue_number}</strong></td>
+                            <td>${q.customer_name}</td>
+                            <td>${q.service_type}</td>
+                            <td>${timePart}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="callSpecificQueue(${q.id})">
+                                    <i class="fas fa-phone"></i> Call
+                                </button>
+                            </td>
+                        </tr>
+                    `}).join('');
+                }
+            }
+        } catch (error) {
+            console.error('Error updating waiting queue:', error);
+        }
+    }
+
+    async function callSpecificQueue(queueId) {
+        try {
+            const response = await fetch(`/queue/api/queue/${queueId}/call`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    counter: counterId
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                currentServingQueue = data.queue;
+                showServingCustomer(data.queue);
+                // Play sound when calling customer
+                playCallSound();
+                await updateWaitingQueue();
+            }
+        } catch (error) {
+            console.error('Error calling specific queue:', error);
+            alert('Error calling queue');
+        }
+    }
+
+    async function applyToBooking() {
+        if (!currentServingQueue) {
+            alert('No customer is currently being served');
+            return;
+        }
+
+        if (!confirm(`Apply customer ${currentServingQueue.customer_name} to create a new booking?`)) {
+            return;
+        }
+
+        // Open booking create page with queue data in new tab
+        const queueId = currentServingQueue.id;
+        window.open(`/booking/create?queue_id=${queueId}`, '_blank');
+    }
+
+    function playCallSound() {
+        // Staff counter notification sound - short confirmation beep
+        try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+            // Play a quick confirmation tone
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Pleasant confirmation tone (C5)
+            oscillator.frequency.value = 523.25;
+            oscillator.type = 'sine';
+
+            const startTime = audioContext.currentTime;
+            gainNode.gain.setValueAtTime(0, startTime);
+            gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.2);
+
+            oscillator.start(startTime);
+            oscillator.stop(startTime + 0.2);
+        } catch (e) {
+            console.log('Audio not supported:', e);
+        }
+    }
+
+    // Update every 10 seconds
+    setInterval(updateWaitingQueue, 10000);
+    updateWaitingQueue();
+</script>
+{% endblock %}

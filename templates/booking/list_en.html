@@ -204,7 +204,7 @@
                             <td>
                                 {% if booking.total_amount %}
                                 <span class="badge bg-success">
-                                    {{ booking.currency }} {{ "{:,.2f}".format(booking.total_amount or 0) }}
+                                    {{ booking.currency or 'THB' }} {{ "{:,.2f}".format(booking.total_amount or 0) }}
                                 </span>
                                 {% else %}
                                 <span class="text-muted">Not set</span>

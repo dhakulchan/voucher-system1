@@ -2997,9 +2997,7 @@
                         });
 
                         // Pre-select albums if booking has selected albums
-                        const selectedIds = {{ booking.get_voucher_album_ids() | tojson if booking else '[]'
-                    }
-                };
+                        const selectedIds = {{ booking.get_voucher_album_ids() | tojson if booking else '[]' }};
             console.log('🔍 Selected album IDs from booking:', selectedIds);
 
             if (selectedIds && selectedIds.length > 0) {

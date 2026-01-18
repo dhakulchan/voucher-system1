@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}สร้างกลุ่ม - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus-circle"></i> สร้างกลุ่มใหม่</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5 class="mb-3">{{ campaign.name }}</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-2">
+                                <i class="fas fa-users text-primary"></i>
+                                <strong>ต้องมี:</strong> {{ campaign.min_participants }}-{{ campaign.max_participants }}
+                                คน
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <i class="fas fa-clock text-warning"></i>
+                                <strong>เวลา:</strong> {{ campaign.duration_hours }} ชั่วโมง
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <i class="fas fa-tag text-success"></i>
+                                <strong>ราคา:</strong> ฿{{ "{:,.0f}".format(campaign.group_price) }}/คน
+                            </div>
+                        </div>
+                        <div class="mt-2 p-2 bg-white rounded">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>หมายเหตุ:</strong> ต้องมีผู้เข้าร่วมครบตามจำนวนขั้นต่ำภายในเวลาที่กำหนด
+                            </small>
+                        </div>
+                    </div>
+
+                    <form method="POST">
+                        <h5 class="mb-3">ข้อมูลหัวหน้ากลุ่ม</h5>
+
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อ-นามสกุล <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">อีเมล <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" required>
+                            <small class="text-muted">สำหรับรับการแจ้งเตือนและลิงก์กลุ่ม</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">เบอร์โทรศัพท์ <span class="text-danger">*</span></label>
+                            <input type="tel" name="phone" class="form-control" required>
+                        </div>
+
+                        <!-- รหัสผู้จองพิเศษ (Optional) -->
+                        <div class="mb-3">
+                            <label for="special_code" class="form-label">
+                                <i class="fas fa-key me-2"></i>รหัสผู้จองพิเศษ (ถ้ามี)
+                            </label>
+                            <input type="text" class="form-control" id="special_code" name="special_code"
+                                placeholder="ป้อนรหัสพิเศษของคุณ (ถ้ามี)" style="text-transform: uppercase;">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                หากคุณมีรหัสผู้จองพิเศษ คุณสามารถจองได้หลายครั้งด้วยอีเมลเดียวกัน
+                            </small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อกลุ่ม (ไม่บังคับ)</label>
+                            <input type="text" name="group_name" class="form-control"
+                                placeholder="เช่น กรุ๊ปเที่ยวเกาหลี">
+                            <small class="text-muted">หากไม่ระบุ จะใช้ชื่อแคมเปญเป็นค่าเริ่มต้น</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">จำนวนคน <span class="text-danger">*</span></label>
+                            <input type="number" name="pax_count" class="form-control" value="1" min="1"
+                                max="{{ campaign.max_participants or 10 }}" required>
+                            <small class="text-muted">จำนวนผู้เดินทาง (รวมคุณด้วย)</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-exclamation-triangle"></i> หมายเหตุ</h6>
+                            <ul class="mb-0 small">
+                                <li>คุณจะได้รับลิงก์สำหรับแชร์ให้เพื่อนเข้าร่วมกลุ่ม</li>
+                                <li>ต้องครบ {{ campaign.min_participants }} คนภายใน {{ campaign.duration_hours }} ชม.
+                                    จึงจะได้รับส่วนลด</li>
+                                <li>หากไม่ครบจำนวนตามกำหนด กลุ่มจะถูกยกเลิกอัตโนมัติ</li>
+                            </ul>
+                        </div>
+
+                        <!-- Cloudflare Turnstile -->
+                        <div class="mb-3">
+                            <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="light"></div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-check"></i> สร้างกลุ่ม
+                        </button>
+
+                        <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                            class="btn btn-secondary w-100 mt-2">
+                            <i class="fas fa-arrow-left"></i> กลับ
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endblock %}

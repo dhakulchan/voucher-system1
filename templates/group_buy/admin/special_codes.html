@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}จัดการรหัสผู้จองพิเศษ - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('group_buy_admin.campaigns') }}">แคมเปญ</a></li>
+                    <li class="breadcrumb-item"><a
+                            href="{{ url_for('group_buy_admin.view_campaign', campaign_id=campaign.id) }}">{{
+                            campaign.name }}</a></li>
+                    <li class="breadcrumb-item active">รหัสผู้จองพิเศษ</li>
+                </ol>
+            </nav>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <h2>
+                    <i class="fas fa-key me-2"></i>รหัสผู้จองพิเศษ
+                </h2>
+                <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=campaign.id) }}"
+                    class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>กลับ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- คำอธิบาย -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>รหัสผู้จองพิเศษคืออะไร?</h5>
+                <p class="mb-2">
+                    รหัสผู้จองพิเศษเป็นรหัสที่คุณกำหนดเอง เพื่อให้ผู้จองบางคนสามารถ<strong>จองซ้ำได้หลายครั้ง</strong>
+                    แม้ว่าจะใช้อีเมลเดียวกัน เหมาะสำหรับ:
+                </p>
+                <ul class="mb-0">
+                    <li><strong>Travel Agent</strong> - ที่จองแทนกลุ่มลูกค้าหลายกลุ่ม</li>
+                    <li><strong>ผู้ประสานงาน</strong> - ที่รับจองให้เพื่อนหรือกลุ่ม</li>
+                    <li><strong>Corporate Booker</strong> - พนักงานบริษัทที่จองให้พนักงานคนอื่น</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ฟอร์มเพิ่มรหัส -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plus-circle me-2"></i>เพิ่มรหัสใหม่
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="addCodeForm">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="code" class="form-label">รหัส *</label>
+                                <input type="text" class="form-control" id="code" name="code" required
+                                    placeholder="เช่น AGENT001" style="text-transform: uppercase;">
+                                <small class="text-muted">ตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="name" class="form-label">ชื่อผู้จอง</label>
+                                <input type="text" class="form-control" id="name" name="name"
+                                    placeholder="เช่น บริษัททัวร์ ABC">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="note" class="form-label">หมายเหตุ</label>
+                                <input type="text" class="form-control" id="note" name="note"
+                                    placeholder="เช่น Travel Agent VIP">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>เพิ่มรหัส
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- รายการรหัส -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>รายการรหัสพิเศษ
+                        <span class="badge bg-primary">{{ codes|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if codes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="20%">รหัส</th>
+                                    <th width="25%">ชื่อผู้จอง</th>
+                                    <th width="30%">หมายเหตุ</th>
+                                    <th width="15%">สร้างเมื่อ</th>
+                                    <th width="10%" class="text-center">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="codesTableBody">
+                                {% for code_data in codes %}
+                                <tr data-code="{{ code_data.code }}">
+                                    <td>
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fas fa-key me-1"></i>{{ code_data.code }}
+                                        </span>
+                                    </td>
+                                    <td>{{ code_data.name or '-' }}</td>
+                                    <td>{{ code_data.note or '-' }}</td>
+                                    <td>
+                                        {% if code_data.created_at %}
+                                        {{ code_data.created_at[:10] }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-danger"
+                                            onclick="removeCode('{{ code_data.code }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">ยังไม่มีรหัสพิเศษ กรุณาเพิ่มรหัสใหม่</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // เพิ่มรหัส
+    document.getElementById('addCodeForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        try {
+            const response = await fetch('{{ url_for("group_buy_admin.add_special_code", campaign_id=campaign.id) }}', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('✅ เพิ่มรหัสสำเร็จ!');
+                location.reload();
+            } else {
+                alert('❌ ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ เกิดข้อผิดพลาด กรุณาลองใหม่');
+        }
+    });
+
+    // ลบรหัส
+    async function removeCode(code) {
+        if (!confirm(`ต้องการลบรหัส ${code} หรือไม่?`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('code', code);
+
+        try {
+            const response = await fetch('{{ url_for("group_buy_admin.remove_special_code", campaign_id=campaign.id) }}', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // ลบแถวออกจากตาราง
+                document.querySelector(`tr[data-code="${code}"]`).remove();
+
+                // ตรวจสอบว่ามีรหัสเหลืออยู่หรือไม่
+                const remainingRows = document.querySelectorAll('#codesTableBody tr').length;
+                if (remainingRows === 0) {
+                    location.reload(); // Reload to show "no codes" message
+                }
+
+                alert('✅ ลบรหัสสำเร็จ!');
+            } else {
+                alert('❌ ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('❌ เกิดข้อผิดพลาด กรุณาลองใหม่');
+        }
+    }
+</script>
+{% endblock %}

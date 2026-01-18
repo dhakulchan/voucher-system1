@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}รายการแคมเปญ Group Buy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="fas fa-bullhorn"></i> รายการแคมเปญ Group Buy</h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('group_buy_admin.create_campaign') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> สร้างแคมเปญใหม่
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>ชื่อแคมเปญ</th>
+                            <th>ประเภท</th>
+                            <th>ราคาปกติ</th>
+                            <th>ราคากลุ่ม</th>
+                            <th>ส่วนลด</th>
+                            <th>จำนวนคน</th>
+                            <th>ระยะเวลา</th>
+                            <th>Inventory</th>
+                            <th>สถานะ</th>
+                            <th>วันที่เริ่ม-สิ้นสุด</th>
+                            <th>การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for campaign in campaigns %}
+                        <tr>
+                            <td>{{ campaign.id }}</td>
+                            <td>
+                                <strong>{{ campaign.name }}</strong>
+                                {% if campaign.featured %}
+                                <span class="badge bg-warning"><i class="fas fa-star"></i> Featured</span>
+                                {% endif %}
+                                {% if not campaign.is_public %}
+                                <span class="badge bg-secondary">Private</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-info">{{ campaign.product_type }}</span></td>
+                            <td class="text-muted text-decoration-line-through">฿{{
+                                "{:,.2f}".format(campaign.regular_price) }}</td>
+                            <td><strong class="text-success">฿{{ "{:,.2f}".format(campaign.group_price) }}</strong></td>
+                            <td><span class="badge bg-danger">-{{ "{:.0f}".format(campaign.discount_percentage)
+                                    }}%</span></td>
+                            <td>{{ campaign.min_participants }} - {{ campaign.max_participants or '∞' }}</td>
+                            <td>{{ campaign.duration_hours }} ชม.</td>
+                            <td>
+                                {% if campaign.total_slots %}
+                                {{ (campaign.total_slots - (campaign.available_slots or 0)) }}/{{ campaign.total_slots
+                                }}
+                                <small class="text-muted">(เหลือ {{ campaign.available_slots or 0 }})</small>
+                                {% else %}
+                                <span class="text-muted">ไม่จำกัด</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if campaign.status == 'active' and campaign.is_active and campaign.is_active_now %}
+                                <span class="badge bg-success"><i class="fas fa-check-circle"></i> กำลังทำงาน</span>
+                                {% elif campaign.status == 'draft' %}
+                                <span class="badge bg-secondary">ร่าง</span>
+                                {% elif not campaign.is_active %}
+                                <span class="badge bg-secondary"><i class="fas fa-times-circle"></i> ปิด</span>
+                                {% else %}
+                                <span class="badge bg-warning">รอเริ่ม/สิ้นสุดแล้ว</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                {{ campaign.campaign_start_date.strftime('%d/%m/%Y') }}<br>
+                                - {{ campaign.campaign_end_date.strftime('%d/%m/%Y') }}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=campaign.id) }}"
+                                        class="btn btn-sm btn-primary" title="ดูรายละเอียด">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('group_buy_admin.edit_campaign', campaign_id=campaign.id) }}"
+                                        class="btn btn-sm btn-warning" title="แก้ไข">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST"
+                                        action="{{ url_for('group_buy_admin.toggle_campaign_status', campaign_id=campaign.id) }}"
+                                        style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-secondary"
+                                            title="{{ 'ปิดใช้งาน' if campaign.is_active else 'เปิดใช้งาน' }}">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

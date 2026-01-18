@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Thai Invoice #{{ invoice.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-file-invoice me-2"></i>Thai Invoice #{{ invoice.id }}</h2>
+                <div>
+                    <a href="{{ url_for('account_report.thai_invoice_list') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>กลับ (Back)
+                    </a>
+                    <a href="{{ url_for('account_report.thai_invoice_edit', invoice_id=invoice.id) }}"
+                        class="btn btn-warning me-2">
+                        <i class="fas fa-edit me-1"></i>แก้ไข (Edit)
+                    </a>
+                    <button type="button" class="btn btn-danger" onclick="deleteInvoice()">
+                        <i class="fas fa-trash me-1"></i>ลบ (Delete)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Header Image -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-body text-center" style="background-color: #f8f9fa;">
+                    <img src="{{ url_for('static', filename='header-thai-invoice.png') }}" alt="Thai Invoice Header"
+                        class="img-fluid" style="max-width: 100%; height: auto;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>ข้อมูลลูกค้า (Customer Information)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 40%;">ชื่อลูกค้า (Name):</th>
+                            <td>{{ invoice.cust_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>บริษัท (Company):</th>
+                            <td>{{ invoice.company_name or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>ที่อยู่ (Address):</th>
+                            <td>{{ invoice.company_address or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>โทรศัพท์ (Tel):</th>
+                            <td>{{ invoice.company_tel or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>เลขผู้เสียภาษี (Tax ID):</th>
+                            <td>{{ invoice.company_taxid or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>ผู้ติดต่อ (Contact):</th>
+                            <td>{{ invoice.company_contact or '-' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Travel Details -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-plane me-2"></i>รายละเอียดการเดินทาง (Travel Details)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th style="width: 40%;">จำนวนผู้เดินทาง (Pax):</th>
+                            <td>{{ invoice.total_pax }} ท่าน</td>
+                        </tr>
+                        <tr>
+                            <th>วันที่มา (Arrival):</th>
+                            <td>{{ invoice.arrival_date.strftime('%d/%m/%Y') if invoice.arrival_date else '-' }}</td>
+                        </tr>
+                        <tr>
+                            <th>วันที่กลับ (Departure):</th>
+                            <td>{{ invoice.departure_date.strftime('%d/%m/%Y') if invoice.departure_date else '-' }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>ระยะเวลา (Duration):</th>
+                            <td>
+                                {% if invoice.arrival_date and invoice.departure_date %}
+                                {{ (invoice.departure_date - invoice.arrival_date).days }} วัน
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guest List -->
+        {% if invoice.guest_list %}
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-users me-2"></i>รายชื่อผู้เดินทาง (Guest List)</h5>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ invoice.guest_list }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Flight Info -->
+        {% if invoice.flight_info %}
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-plane-departure me-2"></i>ข้อมูลเที่ยวบิน (Flight Information)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <pre class="mb-0" style="white-space: pre-wrap;">{{ invoice.flight_info }}</pre>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Financial Details -->
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-baht-sign me-2"></i>รายละเอียดทางการเงิน (Financial Details)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>รายการ (Description)</th>
+                                    <th class="text-end" style="width: 200px;">จำนวนเงิน (THB)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>ค่าตั๋วเครื่องบิน (Air Ticket Cost)</td>
+                                    <td class="text-end">{{ "{:,.2f}".format(invoice.air_ticket_cost) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>ค่าพาหนะ (Transportation Fee)</td>
+                                    <td class="text-end">{{ "{:,.2f}".format(invoice.transportation_fee) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>ค่าใช้จ่ายล่วงหน้า (Advance Expense)</td>
+                                    <td class="text-end">{{ "{:,.2f}".format(invoice.advance_expense) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>ค่าทัวร์ (Tour Fee)</td>
+                                    <td class="text-end">{{ "{:,.2f}".format(invoice.tour_fee) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>ภาษีมูลค่าเพิ่ม (VAT)</td>
+                                    <td class="text-end">{{ "{:,.2f}".format(invoice.vat) }}</td>
+                                </tr>
+                                <tr>
+                                    <td>ภาษีหัก ณ ที่จ่าย (Withholding Tax)</td>
+                                    <td class="text-end text-danger">({{ "{:,.2f}".format(invoice.withholding_tax) }})
+                                    </td>
+                                </tr>
+                                <tr class="table-success">
+                                    <th>รวมค่าทัวร์ทั้งหมด (Total Tour Fee)</th>
+                                    <th class="text-end">{{ "{:,.2f}".format(invoice.total_tour_fee) }} บาท</th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function deleteInvoice() {
+        if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบ Invoice นี้? (Are you sure you want to delete this invoice?)')) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("account_report.thai_invoice_delete", invoice_id=invoice.id) }}';
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

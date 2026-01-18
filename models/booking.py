@@ -121,6 +121,15 @@ class Booking(db.Model):
     
     # Security - ใช้แบบง่ายๆ ก่อน โดยไม่เพิ่ม column ใหม่
     # share_token = db.Column(db.String(64), unique=True, nullable=True)  # Secure sharing token
+    share_token_version = db.Column(db.Integer, default=1, nullable=False)  # Token version for invalidation
+    
+    # Operation Status - สถานะการดำเนินงาน
+    operation_status = db.Column(db.String(50), default='No', nullable=False)  # No/Yes/Cancel
+    
+    # Operation Status Constants
+    OPERATION_NO = 'No'
+    OPERATION_YES = 'Yes'
+    OPERATION_CANCEL = 'Cancel'
     
     def __repr__(self):
         return f'<Booking {self.booking_reference}>'

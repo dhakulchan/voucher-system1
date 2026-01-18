@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ชำระเงินสำเร็จ - {{ campaign.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .success-container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .success-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .success-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            animation: checkmark 0.6s ease-out 0.3s both;
+        }
+
+        @keyframes checkmark {
+            0% {
+                transform: scale(0);
+            }
+
+            50% {
+                transform: scale(1.2);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .success-icon i {
+            font-size: 2.5rem;
+            color: #28a745;
+        }
+
+        .success-header h2 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .success-body {
+            padding: 30px;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h5 {
+            color: #1e3c72;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: right;
+        }
+
+        .amount-highlight {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .amount-highlight .label {
+            font-size: 0.9rem;
+            color: #2e7d32;
+            margin-bottom: 8px;
+        }
+
+        .amount-highlight .amount {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #1b5e20;
+        }
+
+        .alert-info-custom {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .alert-info-custom i {
+            color: #2196f3;
+            margin-right: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn-primary-custom {
+            flex: 1;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(30, 60, 114, 0.3);
+            color: white;
+        }
+
+        .btn-secondary-custom {
+            flex: 1;
+            padding: 14px 30px;
+            background: white;
+            color: #1e3c72;
+            border: 2px solid #1e3c72;
+            border-radius: 8px;
+            font-weight: 600;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        .btn-secondary-custom:hover {
+            background: #1e3c72;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            margin-top: auto;
+        }
+
+        .footer p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 576px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .success-header {
+                padding: 30px 20px;
+            }
+
+            .success-body {
+                padding: 20px;
+            }
+        }
+    </style>
+    <script>
+        // Auto redirect after 10 seconds
+        setTimeout(function () {
+            window.location.href = "{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}";
+        }, 10000);
+    </script>
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="success-container">
+            <div class="success-card">
+                <div class="success-header">
+                    <div class="success-icon">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <h2>ชำระเงินสำเร็จ!</h2>
+                    <p class="mb-0">ขอบคุณสำหรับการจอง Group Buy</p>
+                </div>
+
+                <div class="success-body">
+                    <div class="alert-info-custom">
+                        <i class="fas fa-envelope"></i>
+                        <strong>ส่งอีเมล์ยืนยันแล้ว!</strong> เราได้ส่งรายละเอียดการจองไปยัง
+                        <strong>{{ payment.customer_email }}</strong>
+                    </div>
+
+                    <div class="info-section">
+                        <h5><i class="fas fa-shopping-bag"></i> รายละเอียดการจอง</h5>
+                        <div class="info-row">
+                            <span class="info-label">แคมเปญ</span>
+                            <span class="info-value">{{ campaign.name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">ประเภท</span>
+                            <span class="info-value">{{ campaign.product_type }}</span>
+                        </div>
+                        {% if campaign.travel_date_from and campaign.travel_date_to %}
+                        <div class="info-row">
+                            <span class="info-label">วันเดินทาง</span>
+                            <span class="info-value">
+                                {{ campaign.travel_date_from.strftime('%d/%m/%Y') }} -
+                                {{ campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="info-section">
+                        <h5><i class="fas fa-user"></i> ข้อมูลผู้จอง</h5>
+                        <div class="info-row">
+                            <span class="info-label">ชื่อ</span>
+                            <span class="info-value">{{ payment.customer_name }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">อีเมล</span>
+                            <span class="info-value">{{ payment.customer_email }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">เบอร์โทร</span>
+                            <span class="info-value">{{ payment.customer_phone }}</span>
+                        </div>
+                    </div>
+
+                    <div class="amount-highlight">
+                        <div class="label">ยอดชำระทั้งหมด</div>
+                        <div class="amount">฿{{ "{:,.2f}".format(payment.total_amount) }}</div>
+                    </div>
+
+                    <div class="info-section">
+                        <h5><i class="fas fa-credit-card"></i> การชำระเงิน</h5>
+                        <div class="info-row">
+                            <span class="info-label">วิธีชำระเงิน</span>
+                            <span class="info-value">{{ payment.payment_method.upper() }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">สถานะ</span>
+                            <span class="info-value">
+                                <span class="badge bg-success">{{ payment.payment_status }}</span>
+                            </span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">วันที่ชำระ</span>
+                            <span class="info-value">{{ payment.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                            class="btn-primary-custom">
+                            <i class="fas fa-eye me-2"></i>ดูรายละเอียดแคมเปญ
+                        </a>
+                        <a href="{{ url_for('public_group_buy.index') }}" class="btn-secondary-custom">
+                            <i class="fas fa-list me-2"></i>ดูแคมเปญอื่น
+                        </a>
+                    </div>
+
+                    <p class="text-center text-muted mt-3 mb-0" style="font-size: 0.9rem;">
+                        <i class="fas fa-clock me-1"></i>
+                        จะเปลี่ยนหน้าอัตโนมัติใน 10 วินาที...
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <p>© 2025 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1</p>
+        </div>
+    </footer>
+</body>
+
+</html>

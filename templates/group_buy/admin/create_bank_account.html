@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}เพิ่มบัญชีธนาคาร - Group Buy System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-university me-2"></i>เพิ่มบัญชีธนาคาร</h2>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="bank_name" class="form-label">ธนาคาร <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="bank_name" name="bank_name" required>
+                            <small class="text-muted">เช่น ธนาคารกสิกรไทย, ธนาคารกรุงเทพ</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="account_number" class="form-label">เลขที่บัญชี <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="account_number" name="account_number" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="account_name" class="form-label">ชื่อบัญชี <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="account_name" name="account_name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="bank_logo" class="form-label">โลโก้ธนาคาร</label>
+                    <input type="file" class="form-control" id="bank_logo" name="bank_logo" accept="image/*">
+                    <small class="text-muted">รองรับไฟล์ JPG, PNG, GIF (แนะนำขนาด 200x200px)</small>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="display_order" class="form-label">ลำดับการแสดงผล</label>
+                            <input type="number" class="form-control" id="display_order" name="display_order" value="0"
+                                min="0">
+                            <small class="text-muted">เลขน้อยแสดงก่อน</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check form-switch mt-4">
+                                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    เปิดใช้งาน
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>บันทึก
+                    </button>
+                    <a href="{{ url_for('group_buy_payment_admin.bank_accounts') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>ยกเลิก
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

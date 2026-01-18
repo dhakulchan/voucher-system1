@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Queue - {{ queue.queue_number }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .track-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .company-header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+
+        .company-header {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .company-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+
+        .queue-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+
+        .status-waiting {
+            background: #ffc107;
+            color: #000;
+        }
+
+        .status-serving {
+            background: #4CAF50;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-completed {
+            background: #2196F3;
+            color: white;
+        }
+
+        .queue-number-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin: 20px 0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            padding: 0 10px;
+        }
+
+        /* Responsive font size for long queue numbers */
+        @media (max-width: 576px) {
+            .queue-number-display {
+                font-size: 42px;
+            }
+        }
+
+        .info-row {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .queue-position {
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .counter-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        .alert-custom {
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .refresh-indicator {
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            margin: 10px 0;
+        }
+
+        .footer-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            margin-top: 30px;
+            padding: 15px 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sound-enable-btn {
+            background: linear-gradient(135deg, #FF6B6B 0%, #EE5A6F 100%);
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            margin: 20px auto;
+            display: block;
+            width: 90%;
+            max-width: 400px;
+            animation: pulse-button 2s infinite;
+            position: relative;
+            z-index: 1000;
+            -webkit-tap-highlight-color: rgba(255, 107, 107, 0.3);
+            touch-action: manipulation;
+        }
+
+        .sound-enable-btn:active {
+            transform: scale(0.95);
+        }
+
+        @keyframes pulse-button {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 12px 35px rgba(255, 107, 107, 0.6);
+            }
+        }
+
+        .sound-enable-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .sound-enabled {
+            background: #4CAF50 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="track-container">
+        <!-- Company Header -->
+        <div class="company-header">
+            <h1 class="company-name">
+                <i class="fas fa-building me-2"></i>DHAKUL CHAN NICE HOLIDAYS
+            </h1>
+        </div>
+
+        <!-- Header -->
+        <div class="queue-card">
+            <div class="text-center">
+                <h4><i class="fas fa-ticket-alt me-2"></i>หมายเลขคิวของคุณ</h4>
+                <div class="queue-number-display" id="queueNumber">{{ queue.queue_number }}</div>
+                <span class="status-badge status-{{ queue.status }}" id="statusBadge">
+                    <i class="fas fa-circle me-2"></i>
+                    <span id="statusText">{{ queue.status|title }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Queue Position -->
+        <div class="queue-card" id="positionCard"
+            style="display: {% if queue.status == 'waiting' %}block{% else %}none{% endif %};">
+            <h5 class="text-center mb-3">
+                <i class="fas fa-users me-2"></i>ลำดับคิวของคุณ
+            </h5>
+            <div class="queue-position" id="queuePosition">-</div>
+            <p class="text-center text-muted">มีอีก <span id="waitingBefore">-</span> คนก่อนถึงคุณ</p>
+        </div>
+
+        <!-- Counter Information (when serving) -->
+        <div class="queue-card" id="counterCard"
+            style="display: {% if queue.status == 'serving' %}block{% else %}none{% endif %};">
+            <div class="counter-display">
+                <i class="fas fa-concierge-bell fa-2x mb-2"></i>
+                <div>กรุณาไปที่เคาน์เตอร์</div>
+                <div style="font-size: 48px; margin-top: 10px;" id="counterNumber">{{ queue.counter or '-' }}</div>
+            </div>
+        </div>
+
+        <!-- Customer Information -->
+        <div class="queue-card">
+            <h5 class="mb-3"><i class="fas fa-user me-2"></i>ข้อมูลของคุณ</h5>
+            <div class="info-row">
+                <span class="info-label">ชื่อ:</span>
+                <span class="info-value">{{ queue.customer_name }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">เบอร์โทร:</span>
+                <span class="info-value">{{ queue.customer_phone }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">ประเภทบริการ:</span>
+                <span class="info-value">{{ queue.service_type|title }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">เวลาที่ออกคิว:</span>
+                <span class="info-value">{{ queue.created_at.strftime('%H:%M') }}</span>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div class="alert alert-info alert-custom" id="waitingAlert"
+            style="display: {% if queue.status == 'waiting' %}block{% else %}none{% endif %};">
+            <i class="fas fa-clock me-2"></i>
+            <strong>กรุณารออยู่ที่บริเวณหน้าร้าน</strong><br>
+            ระบบจะแจ้งเตือนเมื่อเกือบถึงคิวของคุณ
+        </div>
+
+        <div class="alert alert-success alert-custom" id="servingAlert"
+            style="display: {% if queue.status == 'serving' %}block{% else %}none{% endif %};">
+            <i class="fas fa-bell me-2"></i>
+            <strong>ถึงคิวของคุณแล้ว!</strong><br>
+            กรุณาไปที่เคาน์เตอร์เพื่อรับบริการ
+        </div>
+
+        <div class="alert alert-primary alert-custom" id="completedAlert"
+            style="display: {% if queue.status == 'completed' %}block{% else %}none{% endif %};">
+            <i class="fas fa-check-circle me-2"></i>
+            <strong>เสร็จสิ้น</strong><br>
+            ขอบคุณที่ใช้บริการ
+        </div>
+
+        <!-- Auto Refresh Indicator -->
+        <div class="text-center">
+            <button class="sound-enable-btn" id="enableSoundBtn" onclick="enableSoundManually()">
+                <i class="fas fa-bell me-2"></i>กดเพื่อเปิดเสียงแจ้งเตือน
+            </button>
+        </div>
+
+        <div class="refresh-indicator">
+            <i class="fas fa-sync-alt fa-spin me-2"></i>
+            อัปเดตอัตโนมัติทุก 5 วินาที
+        </div>
+
+        <div class="footer-text">
+            © 2025 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1
+        </div>
+    </div>
+
+    <!-- Hidden audio elements -->
+    <audio id="notificationAudio" preload="auto">
+        <source
+            src="data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAADhAC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7v////////////////////////////////////////////////////////////////AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAA4Tx+dJGAAAAAAD/+xBkAAADwAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV"
+            type="audio/mpeg">
+    </audio>
+
+    <script>
+        const queueId = {{ queue.id }};
+        let currentStatus = '{{ queue.status }}';
+        let soundReady = false; // ต้องให้ user กดก่อนเพื่อ unlock audio บน iOS
+        let audioElement = null;
+        let audioContext = null;
+
+        // Auto-show button on page load
+        window.addEventListener('DOMContentLoaded', function () {
+            audioElement = document.getElementById('notificationAudio');
+            console.log('📱 Page loaded - waiting for user interaction to enable sound');
+        });
+
+        function enableSoundManually() {
+            console.log('🔔 User clicked - Enabling sound for iOS...');
+
+            // Mark as ready
+            soundReady = true;
+
+            // Get audio element
+            audioElement = document.getElementById('notificationAudio');
+
+            // Update button
+            const btn = document.getElementById('enableSoundBtn');
+            btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>เสียงพร้อมใช้งาน';
+            btn.style.background = 'linear-gradient(135deg, #51CF66 0%, #38B249 100%)';
+            btn.style.animation = 'none';
+
+            // CRITICAL: Initialize Web Audio API context (for iOS)
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!audioContext && AudioContext) {
+                    audioContext = new AudioContext();
+                    console.log('✅ AudioContext created:', audioContext.state);
+                }
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        console.log('✅ AudioContext resumed');
+                    });
+                }
+            } catch (e) {
+                console.log('AudioContext error:', e);
+            }
+
+            // Play and pause audio to unlock it on iOS (MUST happen during user gesture)
+            if (audioElement) {
+                audioElement.load();
+                audioElement.volume = 1.0;
+                audioElement.muted = false;
+
+                const playPromise = audioElement.play();
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('✅ Audio unlocked successfully on iOS');
+                        // Pause after brief play to unlock
+                        setTimeout(() => {
+                            audioElement.pause();
+                            audioElement.currentTime = 0;
+                        }, 200);
+                    }).catch(error => {
+                        console.log('⚠️ Audio play error:', error);
+                    });
+                }
+            }
+
+            // Test speech synthesis (works well on iOS)
+            testSpeech();
+
+            console.log('✅ Sound system fully enabled!');
+
+            // Hide button after 3 seconds
+            setTimeout(() => {
+                btn.style.display = 'none';
+            }, 3000);
+        } function testSpeech() {
+            try {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = new SpeechSynthesisUtterance('เสียงพร้อมแล้ว');
+                    utterance.lang = 'th-TH';
+                    utterance.volume = 0.5;
+                    utterance.rate = 1.0;
+                    window.speechSynthesis.speak(utterance);
+                    console.log('✅ Test speech played');
+                }
+            } catch (e) {
+                console.log('Speech error:', e);
+            }
+        }
+
+
+        async function updateQueueStatus() {
+            try {
+                const response = await fetch(`/queue/api/queue/${queueId}/status`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const queue = data.queue;
+
+                    // Update status badge
+                    const statusBadge = document.getElementById('statusBadge');
+                    statusBadge.className = 'status-badge status-' + queue.status;
+                    document.getElementById('statusText').textContent = queue.status.toUpperCase();
+
+                    // Show/hide cards based on status
+                    if (queue.status === 'waiting') {
+                        document.getElementById('positionCard').style.display = 'block';
+                        document.getElementById('counterCard').style.display = 'none';
+                        document.getElementById('waitingAlert').style.display = 'block';
+                        document.getElementById('servingAlert').style.display = 'none';
+                        document.getElementById('completedAlert').style.display = 'none';
+
+                        // Update position
+                        document.getElementById('queuePosition').textContent = '#' + data.position;
+                        document.getElementById('waitingBefore').textContent = data.waiting_before;
+
+                        // Vibrate when almost ready (2 people before)
+                        if (data.waiting_before <= 2 && currentStatus !== 'almost') {
+                            if (navigator.vibrate) {
+                                navigator.vibrate([200, 100, 200]);
+                            }
+                            currentStatus = 'almost';
+                        }
+                    } else if (queue.status === 'serving') {
+                        document.getElementById('positionCard').style.display = 'none';
+                        document.getElementById('counterCard').style.display = 'block';
+                        document.getElementById('waitingAlert').style.display = 'none';
+                        document.getElementById('servingAlert').style.display = 'block';
+                        document.getElementById('completedAlert').style.display = 'none';
+
+                        document.getElementById('counterNumber').textContent = queue.counter || '-';
+
+                        // Alert when called
+                        if (currentStatus !== 'serving') {
+                            console.log('🔔 Queue is now serving!');
+
+                            // Vibrate phone
+                            if (navigator.vibrate) {
+                                navigator.vibrate([1000, 500, 1000, 500, 1000]);
+                            }
+
+                            // Play notification sounds
+                            playAllNotifications();
+
+                            currentStatus = 'serving';
+                        }
+                    } else if (queue.status === 'completed') {
+                        document.getElementById('positionCard').style.display = 'none';
+                        document.getElementById('counterCard').style.display = 'none';
+                        document.getElementById('waitingAlert').style.display = 'none';
+                        document.getElementById('servingAlert').style.display = 'none';
+                        document.getElementById('completedAlert').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+
+        function playAllNotifications() {
+            console.log('🔔 Playing all notifications, soundReady:', soundReady);
+
+            // Method 1: Speech Synthesis (works best on iOS)
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance('ถึงคิวของคุณแล้ว กรุณาไปที่เคาน์เตอร์เพื่อรับบริการ');
+                utterance.lang = 'th-TH';
+                utterance.rate = 1.0;
+                utterance.pitch = 1.2;
+                utterance.volume = 1.0;
+                window.speechSynthesis.speak(utterance);
+                console.log('✅ Speech played');
+            }
+
+            // Method 2: HTML5 Audio (if enabled)
+            if (soundReady && audioElement) {
+                audioElement.currentTime = 0;
+                audioElement.volume = 1.0;
+                audioElement.play().then(() => {
+                    console.log('✅ Audio element played');
+                }).catch(e => {
+                    console.log('Audio play failed:', e);
+                });
+            }
+
+            // Method 3: Alert sound (iOS fallback)
+            playIOSBeep();
+        }
+
+        function playIOSBeep() {
+            // Create multiple beeps for iOS
+            const beeps = 3;
+            for (let i = 0; i < beeps; i++) {
+                setTimeout(() => {
+                    const snd = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIGmi78OScTgwLUKXi8LZjHAU7k9jyz3osBCR2yO/fkUALFF+16+ypVhQKR6Hf8r1sIgUrgs7y2Yk2CBlpu/DknU4MC1Ck4vC2YxwGO5TY8s96LAQkdsju35FADBRftevtqVYUCkeh3/K9bCIFK4LO8tmJNggZabvw5J1ODAtQpOLwtmMcBjuU2PLPeiwEJHbI7t+RQAwUX7Xr7alWFApHod/yvWwiBSuCzvLZiTYIGWm78OSdTgwLUKTi8LZjHAY7lNjyz3osBCR2yO7fkUAMFF+16+2pVhQKR6Hf8r1sIgUrgs7y2Yk2CBlpu/DknU4MC1Ck4vC2YxwGO5TY8s96LAQkdsju35FADBRftevtqVYUCkeh3/K9bCIFK4LO8tmJNggZabvw5J1ODAtQpOLwtmMcBjuU2PLPeiwEJHbI7t+RQAwUX7Xr7alWFApHod/yvWwiBSuCzvLZiTYIGWm78OSdTgwLUKTi8LZjHAY7lNjyz3osBCR2yO7fkUAMFF+16+2pVhQKR6Hf8r1sIgUrgs7y2Yk2CBlpu/DknU4MC1Ck4vC2Yx==");
+                    snd.volume = 1.0;
+                    snd.play().catch(() => { });
+                }, i * 500);
+            }
+            console.log('✅ iOS beeps initiated');
+        }
+
+        // Update every 5 seconds
+        setInterval(updateQueueStatus, 5000);
+        updateQueueStatus();
+    </script>
+</body>
+
+</html>

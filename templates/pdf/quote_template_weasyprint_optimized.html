@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quote - {{ booking.booking_reference }}</title>
+    <style>
+        /* WeasyPrint specific font loading for Thai fonts */
+        @font-face {
+            font-family: 'ThaiFont';
+            src: local('Garuda'), local('Laksaman'), local('Waree'), local('Norasi');
+            font-weight: normal;
+        }
+
+        @font-face {
+            font-family: 'ThaiFont';
+            src: local('Garuda Bold'), local('Laksaman Bold'), local('Waree Bold');
+            font-weight: bold;
+        }
+
+        @page {
+            size: A4;
+            margin-top: 3.0cm;
+            margin-bottom: 2.0cm;
+            margin-left: 1.5cm;
+            margin-right: 1.5cm;
+
+            @top-center {
+                content: element(header-content);
+                margin-top: 0.30cm;
+            }
+
+            @bottom-center {
+                content: "Dhakul Chan Nice Holidays Group - System V 1.0 Page. " counter(page) " of " counter(pages);
+                font-family: ThaiFont, Garuda, Arial, sans-serif;
+                font-size: 9px;
+                color: #555;
+                margin-bottom: 0.30cm;
+                padding: 3px 0;
+                text-align: center;
+                font-weight: 500;
+            }
+        }
+
+        /* Base font configuration optimized for WeasyPrint */
+        body {
+            font-family: ThaiFont, Garuda, Laksaman, Waree, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #000000;
+            background: #ffffff;
+            font-weight: 400;
+        }
+
+        /* Explicit Thai text styling */
+        .thai-text,
+        .thai-content,
+        th.thai-text,
+        td.thai-text,
+        td.thai-content {
+            font-family: ThaiFont, Garuda, Laksaman, Waree, Arial, sans-serif !important;
+            font-weight: 500 !important;
+            line-height: 1.9 !important;
+        }
+
+        /* English text styling */
+        .english-text,
+        .english-content {
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-weight: 500 !important;
+            line-height: 1.7 !important;
+        }
+
+        .booking-info {
+            margin: 5px 0;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 15px 0;
+            font-family: ThaiFont, Garuda, Arial, sans-serif;
+        }
+
+        .info-table td {
+            padding: 12px 16px;
+            border: 1.5px solid #cccccc;
+            vertical-align: top;
+            line-height: 1.8;
+            font-family: ThaiFont, Garuda, Arial, sans-serif;
+            color: #000000;
+            font-weight: 500;
+        }
+
+        .info-table .label {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            width: 35%;
+            color: #000000;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .info-table .value {
+            background-color: #ffffff;
+            font-weight: 500;
+            color: #000000;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .program-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+            font-family: ThaiFont, Garuda, Arial, sans-serif;
+        }
+
+        .program-table th {
+            background-color: #2c5aa0;
+            color: #ffffff;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #1e4084;
+            font-size: 14px;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .program-table td {
+            padding: 14px 12px;
+            border: 1px solid #dddddd;
+            vertical-align: top;
+            line-height: 1.8;
+            color: #000000;
+            font-weight: 500;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .program-table .day-header {
+            background-color: #e3f2fd;
+            font-weight: 600;
+            color: #1565c0;
+        }
+
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+            font-family: ThaiFont, Garuda, Arial, sans-serif;
+        }
+
+        .price-table th {
+            background-color: #2c5aa0;
+            color: #ffffff;
+            padding: 16px 12px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #1e4084;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .price-table td {
+            padding: 16px 12px;
+            border: 1px solid #dddddd;
+            text-align: center;
+            color: #000000;
+            font-weight: 600;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .price-amount {
+            text-align: right !important;
+            font-family: Arial, ThaiFont, Garuda, sans-serif;
+            font-weight: 700;
+            color: #000000;
+            font-size: 14px;
+        }
+
+        .quote-label {
+            font-family: ThaiFont, Garuda, Arial, sans-serif;
+            font-weight: 700;
+        }
+
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            font-family: ThaiFont, Garuda, Arial, sans-serif;
+        }
+
+        .header-content {
+            position: running(header-content);
+            width: 100%;
+            padding: 5px 0;
+            margin-bottom: 5px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-logo {
+            width: 600px;
+            height: 300px;
+            object-fit: contain;
+            display: block;
+            margin: 0;
+        }
+
+        .header-text {
+            text-align: right;
+            flex: 1;
+            padding-left: 20px;
+        }
+
+        .quote-text {
+            font-size: 48px;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin: 0;
+            letter-spacing: 2px;
+            font-family: Arial, sans-serif;
+        }
+
+        .quote-number {
+            font-size: 20px;
+            font-weight: 600;
+            color: #666666;
+            margin: 8px 0 0 0;
+            font-family: Arial, sans-serif;
+            letter-spacing: 1px;
+        }
+
+        .terms-section {
+            margin-top: 25px;
+            page-break-inside: avoid;
+        }
+
+        .terms-title {
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 11px;
+            color: #000;
+            text-decoration: underline;
+            display: block !important;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+        }
+
+        .terms-content {
+            text-align: left;
+            font-size: 9px;
+            color: #000;
+            display: block !important;
+            line-height: 1.4;
+            margin-top: 2px;
+            font-family: ThaiFont, Garuda, Arial, sans-serif !important;
+            font-weight: 500;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .font-weight-bold {
+            font-weight: 700;
+        }
+
+        .font-weight-medium {
+            font-weight: 600;
+        }
+
+        .page-break-before {
+            page-break-before: always;
+            margin-top: 80px;
+        }
+
+        .no-page-break {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header (will appear on every page) -->
+    <div class="header-content">
+        <img src="data:image/jpeg;base64,{{ company_logo_base64 }}" alt="Company Logo" class="header-logo">
+        <div class="header-text">
+            <h1 class="quote-text">QUOTE</h1>
+            <p class="quote-number">{{ quote_number or 'Q-' + (booking.booking_reference or 'DRAFT') }}</p>
+        </div>
+    </div>
+
+    <!-- Booking Information -->
+    <div class="booking-info no-page-break">
+        <table class="info-table">
+            <tr>
+                <td class="label thai-text">ชื่อลูกค้า / Customer Name:</td>
+                <td class="value thai-content">{{ booking.customer_name or 'ไม่ระบุ' }}</td>
+            </tr>
+            <tr>
+                <td class="label thai-text">อีเมล / Email:</td>
+                <td class="value english-content">{{ booking.customer_email or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td class="label thai-text">เบอร์โทร / Phone:</td>
+                <td class="value english-content">{{ booking.customer_phone or 'N/A' }}</td>
+            </tr>
+            <tr>
+                <td class="label thai-text">จำนวนผู้โดยสาร / Passengers:</td>
+                <td class="value english-content">{{ booking.total_guests or 0 }} คน</td>
+            </tr>
+            <tr>
+                <td class="label thai-text">วันที่เดินทาง / Travel Date:</td>
+                <td class="value thai-content">{{ booking.tour_date if booking.tour_date else 'ไม่ระบุ' }}</td>
+            </tr>
+            <tr>
+                <td class="label thai-text">โปรแกรมทัวร์ / Tour Program:</td>
+                <td class="value thai-content">{{ booking.tour_name or 'ไม่ระบุโปรแกรม' }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Tour Program Details -->
+    {% if booking.tour_programs and booking.tour_programs|length > 0 %}
+    <div class="no-page-break">
+        <table class="program-table">
+            <thead>
+                <tr>
+                    <th class="thai-text" style="width: 15%;">วัน / Day</th>
+                    <th class="thai-text" style="width: 85%;">กิจกรรม / Activities</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for program in booking.tour_programs %}
+                <tr>
+                    <td class="day-header thai-content">วันที่ {{ loop.index }}</td>
+                    <td class="thai-content">{{ program.description or 'ไม่ระบุรายละเอียด' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Price Breakdown -->
+    <div class="no-page-break">
+        <table class="price-table">
+            <thead>
+                <tr>
+                    <th class="thai-text">รายการ / Description</th>
+                    <th class="thai-text">จำนวน / Qty</th>
+                    <th class="thai-text">ราคาต่อหน่วย / Unit Price</th>
+                    <th class="thai-text">รวม / Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if quote and quote.quote_items %}
+                {% for item in quote.quote_items %}
+                <tr>
+                    <td class="text-left thai-content">{{ item.description or 'รายการทัวร์' }}</td>
+                    <td class="english-content">{{ item.quantity or 1 }}</td>
+                    <td class="price-amount">{{ '{:,.0f}'.format(item.unit_price or 0) }}</td>
+                    <td class="price-amount">{{ '{:,.0f}'.format((item.unit_price or 0) * (item.quantity or 1)) }}</td>
+                </tr>
+                {% endfor %}
+                {% else %}
+                <tr>
+                    <td class="text-left thai-content">{{ booking.tour_name or 'แพ็คเกจทัวร์' }}</td>
+                    <td class="english-content">{{ booking.total_guests or 1 }}</td>
+                    <td class="price-amount">{{ '{:,.0f}'.format(booking.total_price_per_person or 0) }}</td>
+                    <td class="price-amount">{{ '{:,.0f}'.format(booking.total_price or 0) }}</td>
+                </tr>
+                {% endif %}
+                <tr style="background-color: #f8f9fa;">
+                    <td colspan="3" class="font-weight-bold thai-text">รวมทั้งสิ้น / Grand Total:</td>
+                    <td class="price-amount font-weight-bold">฿ {{ '{:,.0f}'.format(quote.total_amount if quote else
+                        booking.total_price or 0) }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="terms-section">
+        <div class="terms-title thai-text">ข้อกำหนดและเงื่อนไข / Terms & Conditions</div>
+        <div class="terms-content thai-content">
+            o การจองจะสมบูรณ์เมื่อได้รับเงินมัดจำแล้วเท่านั้น / Booking is confirmed only upon receipt of deposit<br>
+            o เงินมัดจำ 50% ของราคาทัวร์ทั้งหมด / Deposit required: 50% of total tour price<br>
+            o ชำระเงินส่วนที่เหลือก่อนวันเดินทาง 7 วัน / Final payment due 7 days before departure<br>
+            o การยกเลิกก่อนเดินทาง 15 วัน หักค่าใช้จ่าย 25% / Cancellation 15+ days: 25% charge<br>
+            o การยกเลิกก่อนเดินทาง 7-14 วัน หักค่าใช้จ่าย 50% / Cancellation 7-14 days: 50% charge<br>
+            o การยกเลิกก่อนเดินทางน้อยกว่า 7 วัน หักค่าใช้จ่าย 100% / Cancellation <7 days: 100% charge<br>
+                o ราคาไม่รวมค่าทิปไกด์และคนขับรถ / Price excludes guide and driver tips<br>
+                o บริษัทฯ ขอสงวนสิทธิ์ในการเปลี่ยนแปลงรายการโดยไม่แจ้งให้ทราบล่วงหน้า / Company reserves the right to
+                modify itinerary without prior notice
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p class="thai-content">ขอบคุณที่ไว้วางใจในบริการของเรา / Thank you for choosing our services</p>
+    </div>
+</body>
+
+</html>

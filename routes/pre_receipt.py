@@ -6,6 +6,9 @@ import os
 import random
 import base64
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Create pre-receipt blueprint
 pre_receipt_bp = Blueprint('pre_receipt', __name__, url_prefix='/pre-receipt')
@@ -65,112 +68,113 @@ def view(booking_id):
 @pre_receipt_bp.route('/download/<int:booking_id>/<format>')
 @login_required
 def generate_receipt(booking_id, format):
-    """Generate pre-receipt PDF or PNG"""
-    def safe_float(value, default=0.0):
-        """Safely convert value to float"""
-        try:
-            if value is None:
-                return default
-            return float(value)
-        except (ValueError, TypeError):
-            return default
-    
-    def safe_int(value, default=1):
-        """Safely convert value to int"""
-        try:
-            if value is None:
-                return default
-            return int(value)
-        except (ValueError, TypeError):
-            return default
-    
+    """Generate Quote/Provisional Receipt PDF or PNG using ClassicPDFGenerator"""
     try:
         booking = Booking.query.get_or_404(booking_id)
         
-        # Check if booking is eligible for pre-receipt
+        # Check if booking is eligible for Quote/Provisional Receipt
         if booking.status not in ['paid', 'vouchered', 'completed']:
-            flash('This booking is not eligible for pre-receipt generation', 'warning')
+            flash('This booking is not eligible for Quote/Provisional Receipt generation', 'warning')
             return redirect(url_for('pre_receipt.list'))
         
-        # Generate random receipt number if not exists
-        if not hasattr(booking, 'receipt_number') or not booking.receipt_number:
-            current_date = datetime.now().strftime('%y%m%d')
-            random_num = str(random.randint(1000, 9999))
-            receipt_number = "PR{}{}".format(current_date, random_num)
-        else:
-            receipt_number = booking.receipt_number
-            
-        # Get real booking items/products if available (safer version)
-        booking_items = []
+        # ใช้ ClassicPDFGenerator สำหรับ Quote/Provisional Receipt
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        from services.universal_booking_extractor import UniversalBookingExtractor
         
-        # Try to get items from booking products/services with safe attribute access
-        try:
-            if hasattr(booking, 'products') and booking.products:
-                # Check if products is iterable and not a string
-                if hasattr(booking.products, '__iter__') and not isinstance(booking.products, str):
-                    for idx, product in enumerate(booking.products, 1):
-                        # Use getattr for safe attribute access with safe numeric conversion
-                        quantity = safe_int(getattr(product, 'quantity', 1))
-                        price = safe_float(getattr(product, 'price', 0))
-                        booking_items.append({
-                            'no': idx,
-                            'name': getattr(product, 'name', 'Tour Package'),
-                            'quantity': quantity,
-                            'price': price,
-                            'amount': quantity * price,
-                            'is_negative': getattr(product, 'is_negative', False)
-                        })
-        except Exception as e:
-            print(f"Warning: Error processing booking products: {e}")
+        # ดึงข้อมูล booking ด้วย UniversalBookingExtractor
+        booking_data = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking_data:
+            flash('Booking data not found', 'error')
+            return redirect(url_for('pre_receipt.list'))
         
-        # If no products, create fallback item from booking info
-        if not booking_items:
-            total_amount = safe_float(getattr(booking, 'total_amount', 0))
-            total_pax = safe_int(getattr(booking, 'total_pax', 1))
-            booking_items = [
-                {
-                    'no': 1,
-                    'name': 'Tour Package - {}'.format(getattr(booking, 'booking_type', 'Package Tour')),
-                    'quantity': total_pax,
-                    'price': total_amount / max(total_pax, 1),
-                    'amount': total_amount,
-                    'is_negative': False
-                }
-            ]
-
-        # Prepare data for template with safe conversions
-        receipt_data = {
-            'booking': booking,
-            'receipt_number': receipt_number,
-            'receipt_date': datetime.now().strftime('%d/%m/%Y'),
-            'company_name': 'DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.',
-            'company_address': '710, 716, 704, 706 Prachautthit Road, Samsennok, Huai Kwang, Bangkok 10310',
-            'company_phone': '+662 2744218 | +662 0266525',
-            'company_email': 'info@dhakulchan.net',
-            'total_amount': safe_float(getattr(booking, 'total_amount', 0)),
-            'items': booking_items,
-            'quote': getattr(booking, 'quote', None),
-            'quote_number': getattr(booking, 'quote_number', 'QT{}'.format(booking.id)),
-            'customer': getattr(booking, 'customer', None),
-            'customer_name': getattr(booking, 'customer_name', 'N/A'),
-            'customer_phone': getattr(booking, 'customer_phone', ''),
-            'generation_date': datetime.now().strftime('%d/%m/%Y'),
-            'created_by': 'admin',
-            'due_date': datetime.now().strftime('%d/%m/%Y'),
-            'time_limit': datetime.now().strftime('%d/%m/%Y'),
-            'name_list': getattr(booking, 'guest_list', ''),
-            'guest_list_data': getattr(booking, 'guest_list', ''),
-            'flight_info': getattr(booking, 'flight_info', ''),
-            'voucher_title': 'PRE-RECEIPT'
+        # เตรียม booking data สำหรับ ClassicPDFGenerator
+        # Debug: Check flight_info value
+        flight_info_raw = getattr(booking_data, 'flight_info', None)
+        logger.info(f"🔍 DEBUG pre_receipt.py - Booking {booking_id} flight_info_raw: type={type(flight_info_raw)}, value={repr(flight_info_raw)}")
+        
+        classic_booking_data = {
+            'booking_id': booking_data.booking_reference,
+            'guest_name': booking_data.customer.name if booking_data.customer else 'Unknown Guest',
+            'guest_email': booking_data.customer.email if booking_data.customer else '',
+            'guest_phone': booking_data.customer.phone if booking_data.customer else '',
+            'adults': booking_data.adults or 0,
+            'children': booking_data.children or 0,
+            'infants': getattr(booking_data, 'infants', 0) or 0,
+            'total_guests': (booking_data.adults or 0) + (booking_data.children or 0) + (getattr(booking_data, 'infants', 0) or 0),
+            'arrival_date': booking_data.arrival_date if hasattr(booking_data, 'arrival_date') else None,
+            'departure_date': booking_data.departure_date if hasattr(booking_data, 'departure_date') else None,
+            'total_amount': getattr(booking_data, 'total_amount', 0) or 0,
+            'status': booking_data.status,
+            'created_date': booking_data.created_at.strftime('%d.%b.%Y') if booking_data.created_at else 'N/A',
+            'traveling_period': f"{booking_data.arrival_date.strftime('%d %b %Y') if hasattr(booking_data, 'arrival_date') and booking_data.arrival_date else 'N/A'} - {booking_data.departure_date.strftime('%d %b %Y') if hasattr(booking_data, 'departure_date') and booking_data.departure_date else 'N/A'}",
+            'service_detail': booking_data.description if hasattr(booking_data, 'description') else '',
+            'flight_info': flight_info_raw or '',  # Changed: Use 'or' to convert None to ''
+            'guest_list': booking_data.guest_list if hasattr(booking_data, 'guest_list') else '',
+            'quote_number': getattr(booking_data, 'quote_number', None) or f'QT{booking_data.id}',
+            'party_name': getattr(booking_data, 'party_name', booking_data.customer.name if booking_data.customer else 'N/A')
         }
+        logger.info(f"🔍 DEBUG pre_receipt.py - classic_booking_data['flight_info']: {repr(classic_booking_data['flight_info'])}")
         
-        # Render HTML template
-        html_content = render_template('pdf/quote_template_final_v2_pre-receipt.html', **receipt_data)
+        # Parse products data
+        generator = ClassicPDFGenerator()
+        products = generator._parse_products_data(getattr(booking_data, 'products', '[]'))
         
         if format.lower() == 'pdf':
-            return generate_pdf_response(html_content, 'pre-receipt-booking-{}.pdf'.format(booking_id))
+            # Generate PDF using ClassicPDFGenerator
+            pdf_path = generator.generate_pdf(classic_booking_data, products)
+            
+            # Send PDF file
+            from flask import send_file
+            return send_file(pdf_path, as_attachment=True, 
+                           download_name=f'Quote-Provisional-Receipt-{booking_data.booking_reference}.pdf')
+            
         elif format.lower() == 'png':
-            return generate_png_response(html_content, 'pre-receipt-booking-{}.png'.format(booking_id))
+            # Generate PDF to buffer and convert to PNG
+            from io import BytesIO
+            pdf_buffer = BytesIO()
+            
+            # Generate PDF to buffer using ClassicPDFGenerator method
+            success = generator.generate_quote_pdf_to_buffer(classic_booking_data, pdf_buffer)
+            if not success:
+                # Fallback: use existing PDF file
+                import os
+                import glob
+                
+                pdf_patterns = [
+                    f'static/generated/classic_quote_{booking_data.booking_reference}_*.pdf',
+                    f'static/generated/*{booking_data.booking_reference}*.pdf'
+                ]
+                
+                pdf_file_path = None
+                for pattern in pdf_patterns:
+                    matches = glob.glob(pattern)
+                    if matches:
+                        pdf_file_path = max(matches)  # Get latest file
+                        break
+                
+                if pdf_file_path and os.path.exists(pdf_file_path):
+                    with open(pdf_file_path, 'rb') as f:
+                        pdf_bytes = f.read()
+                    pdf_buffer = BytesIO(pdf_bytes)
+                else:
+                    flash('Failed to generate PNG - no PDF available', 'error')
+                    return redirect(url_for('pre_receipt.view', booking_id=booking_id))
+            
+            # Convert PDF to PNG
+            from services.pdf_image import pdf_to_long_png_bytes
+            pdf_buffer.seek(0)
+            png_bytes = pdf_to_long_png_bytes(pdf_buffer.getvalue(), zoom=2.0, page_spacing=30)
+            
+            if not png_bytes:
+                flash('Failed to generate PNG', 'error')
+                return redirect(url_for('pre_receipt.view', booking_id=booking_id))
+            
+            # Return PNG response
+            from flask import Response
+            response = Response(png_bytes, mimetype='image/png')
+            response.headers['Content-Disposition'] = f'attachment; filename="Quote-Provisional-Receipt-{booking_data.booking_reference}.png"'
+            return response
+            
         else:
             flash('Invalid format. Please use PDF or PNG.', 'error')
             return redirect(url_for('pre_receipt.view', booking_id=booking_id))
@@ -345,95 +349,108 @@ def test_quote_template(booking_id):
 @pre_receipt_bp.route('/quote-pdf/<int:booking_id>/<format>')
 @login_required
 def generate_quote_pdf(booking_id, format):
-    """Generate Quote PDF/PNG using the fixed template"""
+    """Generate Quote PDF/PNG using ClassicPDFGenerator - Enhanced Version"""
     try:
         booking = Booking.query.get_or_404(booking_id)
         
-        # Check if booking is eligible for pre-receipt
-        if booking.status not in ['paid', 'vouchered', 'completed']:
-            flash('This booking is not eligible for quote generation', 'warning')
+        # Check if booking is eligible for Quote generation
+        if booking.status not in ['paid', 'vouchered', 'completed', 'quoted', 'pending', 'confirmed']:
+            flash('This booking is not eligible for Quote generation', 'warning')
             return redirect(url_for('pre_receipt.list'))
         
-        # Generate random receipt number if not exists
-        if not hasattr(booking, 'receipt_number') or not booking.receipt_number:
-            current_date = datetime.now().strftime('%y%m%d')
-            random_num = str(random.randint(1000, 9999))
-            receipt_number = "QT{}{}".format(current_date, random_num)
-        else:
-            receipt_number = getattr(booking, 'quote_number', 'QT{}'.format(booking.id))
-            
-        # Get real booking items/products if available
-        quote_items = []
+        # Use ClassicPDFGenerator for Quote documents
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        from services.universal_booking_extractor import UniversalBookingExtractor
         
-        # Try to get items from booking products/services
-        if hasattr(booking, 'products') and booking.products:
-            for idx, product in enumerate(booking.products, 1):
-                quote_items.append({
-                    'no': idx,
-                    'name': product.name or 'Tour Package',
-                    'quantity': product.quantity or 1,
-                    'price': product.price or 0,
-                    'amount': (product.quantity or 1) * (product.price or 0),
-                    'is_negative': False
-                })
-        elif hasattr(booking, 'quote') and booking.quote and hasattr(booking.quote, 'items'):
-            # Try to get items from quote relationship
-            for idx, item in enumerate(booking.quote.items, 1):
-                quote_items.append({
-                    'no': idx,
-                    'name': item.name or 'Tour Package',
-                    'quantity': item.quantity or 1,
-                    'price': item.price or 0,
-                    'amount': (item.quantity or 1) * (item.price or 0),
-                    'is_negative': getattr(item, 'is_negative', False)
-                })
+        # Get booking data using UniversalBookingExtractor
+        booking_data = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking_data:
+            flash('Booking data not found', 'error')
+            return redirect(url_for('pre_receipt.list'))
         
-        # If no quote items, create item from booking info
-        if not quote_items:
-            quote_items = [
-                {
-                    'no': 1,
-                    'name': 'Tour Package - {}'.format(booking.booking_type or 'Package Tour'),
-                    'quantity': booking.total_pax or 1,
-                    'price': booking.total_amount or 0,
-                    'amount': booking.total_amount or 0,
-                    'is_negative': False
-                }
-            ]
-        
-        # Prepare data for template
-        quote_data = {
-            'booking': booking,
-            'receipt_number': receipt_number,
-            'receipt_date': datetime.now().strftime('%d/%m/%Y'),
-            'company_name': 'DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.',
-            'company_address': '710, 716, 704, 706 Prachautthit Road, Samsennok, Huai Kwang, Bangkok 10310',
-            'company_phone': '+662 2744218 | +662 0266525',
-            'company_email': 'info@dhakulchan.net',
-            'total_amount': booking.total_amount or 0,
-            'items': quote_items,
-            'quote': getattr(booking, 'quote', None),
-            'quote_number': getattr(booking, 'quote_number', 'QT{}'.format(booking.id)),
-            'customer': getattr(booking, 'customer', None),
-            'customer_name': booking.customer_name or 'N/A',
-            'customer_phone': getattr(booking, 'customer_phone', ''),
-            'generation_date': datetime.now().strftime('%d/%m/%Y'),
-            'created_by': 'admin',
-            'due_date': datetime.now().strftime('%d/%m/%Y'),
-            'time_limit': datetime.now().strftime('%d/%m/%Y'),
-            'name_list': getattr(booking, 'guest_list', ''),
-            'guest_list_data': getattr(booking, 'guest_list', ''),
-            'flight_info': getattr(booking, 'flight_info', ''),
-            'voucher_title': 'QUOTE'
+        # Prepare booking data for ClassicPDFGenerator
+        classic_booking_data = {
+            'booking_id': booking_data.booking_reference,
+            'guest_name': booking_data.customer.name if booking_data.customer else 'Unknown Guest',
+            'guest_email': booking_data.customer.email if booking_data.customer else '',
+            'guest_phone': booking_data.customer.phone if booking_data.customer else '',
+            'adults': booking_data.adults or 0,
+            'children': booking_data.children or 0,
+            'infants': getattr(booking_data, 'infants', 0) or 0,
+            'total_guests': (booking_data.adults or 0) + (booking_data.children or 0) + (getattr(booking_data, 'infants', 0) or 0),
+            'arrival_date': booking_data.arrival_date if hasattr(booking_data, 'arrival_date') else None,
+            'departure_date': booking_data.departure_date if hasattr(booking_data, 'departure_date') else None,
+            'total_amount': getattr(booking_data, 'total_amount', 0) or 0,
+            'status': booking_data.status,  # Important: status determines document title and terms
+            'created_date': booking_data.created_at.strftime('%d.%b.%Y') if booking_data.created_at else 'N/A',
+            'traveling_period': f"{booking_data.arrival_date.strftime('%d %b %Y') if hasattr(booking_data, 'arrival_date') and booking_data.arrival_date else 'N/A'} - {booking_data.departure_date.strftime('%d %b %Y') if hasattr(booking_data, 'departure_date') and booking_data.departure_date else 'N/A'}",
+            'service_detail': booking_data.description if hasattr(booking_data, 'description') else '',
+            'flight_info': booking_data.flight_info if hasattr(booking_data, 'flight_info') else '',
+            'guest_list': booking_data.guest_list if hasattr(booking_data, 'guest_list') else '',
+            'quote_number': getattr(booking_data, 'quote_number', None) or f'QT{booking_data.id}',
+            'party_name': getattr(booking_data, 'party_name', booking_data.customer.name if booking_data.customer else 'N/A')
         }
         
-        # Render HTML template
-        html_content = render_template('pdf/quote_template_final_v2_pre-receipt.html', **quote_data)
+        # Parse products data
+        generator = ClassicPDFGenerator()
+        products = generator._parse_products_data(getattr(booking_data, 'products', '[]'))
         
         if format.lower() == 'pdf':
-            return generate_pdf_response(html_content, 'quote-booking-{}.pdf'.format(booking_id))
+            # Generate PDF using ClassicPDFGenerator
+            pdf_path = generator.generate_pdf(classic_booking_data, products)
+            
+            # Send PDF file
+            from flask import send_file
+            return send_file(pdf_path, as_attachment=True, 
+                           download_name=f'Quote-{booking_data.booking_reference}.pdf')
+            
         elif format.lower() == 'png':
-            return generate_png_response(html_content, 'quote-booking-{}.png'.format(booking_id))
+            # Generate PNG using ClassicPDFGenerator + PDF conversion
+            from io import BytesIO
+            pdf_buffer = BytesIO()
+            
+            # Generate PDF to buffer
+            success = generator.generate_quote_pdf_to_buffer(classic_booking_data, pdf_buffer)
+            if not success:
+                # Fallback: use existing PDF file
+                import os
+                import glob
+                
+                pdf_patterns = [
+                    f'static/generated/classic_quote_{booking_data.booking_reference}_*.pdf',
+                    f'static/generated/*{booking_data.booking_reference}*.pdf'
+                ]
+                
+                pdf_file_path = None
+                for pattern in pdf_patterns:
+                    matches = glob.glob(pattern)
+                    if matches:
+                        pdf_file_path = max(matches)
+                        break
+                
+                if pdf_file_path and os.path.exists(pdf_file_path):
+                    with open(pdf_file_path, 'rb') as f:
+                        pdf_bytes = f.read()
+                    pdf_buffer = BytesIO(pdf_bytes)
+                else:
+                    flash('Failed to generate PNG - no PDF available', 'error')
+                    return redirect(url_for('pre_receipt.view', booking_id=booking_id))
+            
+            # Convert PDF to PNG
+            from services.pdf_image import pdf_to_long_png_bytes
+            pdf_buffer.seek(0)
+            png_bytes = pdf_to_long_png_bytes(pdf_buffer.getvalue(), zoom=2.0, page_spacing=30)
+            
+            if not png_bytes:
+                flash('Failed to generate PNG', 'error')
+                return redirect(url_for('pre_receipt.view', booking_id=booking_id))
+            
+            # Return PNG response
+            from flask import Response
+            response = Response(png_bytes, mimetype='image/png')
+            response.headers['Content-Disposition'] = f'attachment; filename="Quote-{booking_data.booking_reference}.png"'
+            return response
+            
         else:
             flash('Invalid format. Please use PDF or PNG.', 'error')
             return redirect(url_for('pre_receipt.view', booking_id=booking_id))

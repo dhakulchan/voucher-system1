@@ -22,9 +22,9 @@ t('tour_voucher_system') if current_language == 'en' else 'ระบบจัด
     </div>
 
     <!-- Search -->
-    <div class="row mb-4">
+    <div class="row mb-5">
         <div class="col-lg-12">
-            <div class="card">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-search me-2"></i>{{ t('search_customers') }}
@@ -39,8 +39,9 @@ t('tour_voucher_system') if current_language == 'en' else 'ระบบจัด
                                     placeholder="{{ t('name_email_phone_placeholder') if current_language == 'en' else 'พิมพ์ชื่อ, อีเมล หรือเบอร์โทรศัพท์...' }}"
                                     value="{{ search or '' }}" autocomplete="off">
                                 <div id="search-results"
-                                    class="position-absolute w-100 bg-white border border-top-0 rounded-bottom shadow-sm"
-                                    style="z-index: 1000; max-height: 300px; overflow-y: auto; display: none;"></div>
+                                    class="position-absolute w-100 bg-white border rounded-bottom shadow-lg"
+                                    style="z-index: 9999; max-height: 400px; overflow-y: auto; display: none; top: 100%; left: 0;">
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -57,216 +58,223 @@ t('tour_voucher_system') if current_language == 'en' else 'ระบบจัด
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Customers Table -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-list me-2"></i>{{ t('customers') }}{{ ' รายการ' if current_language == 'th' else '
-                    List' }}
-                </h5>
-                <span class="badge bg-secondary thai-number">{{ customers|length }}</span>
-            </div>
-            <div class="card-body">
-                {% if customers %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th>{{ t('full_name') if current_language == 'en' else 'ชื่อ-นามสกุล' }}</th>
-                                <th>{{ t('email') }}</th>
-                                <th>{{ t('phone') }}</th>
-                                <th>{{ t('nationality') if current_language == 'en' else 'สัญชาติ' }}</th>
-                                <th>{{ t('booking_count') if current_language == 'en' else 'จำนวนการจอง' }}</th>
-                                <th>{{ t('registration_date') if current_language == 'en' else 'วันที่สมัครสมาชิก' }}
-                                </th>
-                                <th>{{ t('actions') if current_language == 'en' else 'การดำเนินการ' }}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for customer in customers %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <div
-                                            class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
-                                            {{ (customer.first_name or customer.name or 'C')[0] }}
-                                        </div>
-                                        <div>
-                                            <strong>{{ customer.full_name }}</strong>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <a href="mailto:{{ customer.email }}" class="text-decoration-none">
-                                        {{ customer.email }}
-                                    </a>
-                                </td>
-                                <td>
-                                    <a href="tel:{{ customer.phone }}" class="text-decoration-none">
-                                        {{ customer.phone or '-' }}
-                                    </a>
-                                </td>
-                                <td>
-                                    {{ customer.nationality or '-' }}
-                                </td>
-                                <td class="text-center">
-                                    <span class="badge bg-info thai-number">{{ customer.bookings|length }}</span>
-                                </td>
-                                <td>
-                                    <span class="thai-number">{{ customer.created_at.strftime('%d/%m/%Y') }}</span>
-                                    <br>
-                                    <small class="text-muted">{{ customer.created_at.strftime('%H:%M') }}</small>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="{{ url_for('customer.view', id=customer.id) }}"
-                                            class="btn btn-sm btn-outline-primary"
-                                            title="{{ t('view_details') if current_language == 'en' else 'ดูรายละเอียด' }}">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="{{ url_for('customer.edit', id=customer.id) }}"
-                                            class="btn btn-sm btn-outline-warning" title="{{ t('edit') }}">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <a href="{{ url_for('booking.create', customer_id=customer.id) }}"
-                                            class="btn btn-sm btn-outline-success"
-                                            title="{{ t('create_new_booking') if current_language == 'en' else 'สร้างการจองใหม่' }}">
-                                            <i class="fas fa-plus"></i>
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <!-- Customers Table -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>{{ t('customers') }}{{ ' รายการ' if current_language == 'th'
+                        else '
+                        List' }}
+                    </h5>
+                    <span class="badge bg-secondary thai-number">{{ customers|length }}</span>
                 </div>
-                {% else %}
-                <div class="text-center py-5">
-                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
-                    <h4 class="text-muted">{{ t('no_customers_found') }}</h4>
-                    <p class="text-muted">{{ t('no_customers_message') }}</p>
-                    <a href="{{ url_for('customer.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>{{ t('add_first_customer') if current_language == 'en' else
-                        'เพิ่มลูกค้าคนแรก' }}
-                    </a>
+                <div class="card-body">
+                    {% if customers %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>{{ t('full_name') if current_language == 'en' else 'ชื่อ-นามสกุล' }}</th>
+                                    <th>{{ t('email') }}</th>
+                                    <th>{{ t('phone') }}</th>
+                                    <th>{{ t('nationality') if current_language == 'en' else 'สัญชาติ' }}</th>
+                                    <th>{{ t('booking_count') if current_language == 'en' else 'จำนวนการจอง' }}</th>
+                                    <th>{{ t('registration_date') if current_language == 'en' else 'วันที่สมัครสมาชิก'
+                                        }}
+                                    </th>
+                                    <th>{{ t('actions') if current_language == 'en' else 'การดำเนินการ' }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for customer in customers %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div
+                                                class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
+                                                {{ (customer.first_name or customer.name or 'C')[0] }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ customer.full_name }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ customer.email }}" class="text-decoration-none">
+                                            {{ customer.email }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="tel:{{ customer.phone }}" class="text-decoration-none">
+                                            {{ customer.phone or '-' }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {{ customer.nationality or '-' }}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info thai-number">{{ customer.bookings|length }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="thai-number">{{ customer.created_at.strftime('%d/%m/%Y') }}</span>
+                                        <br>
+                                        <small class="text-muted">{{ customer.created_at.strftime('%H:%M') }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{{ url_for('customer.view', id=customer.id) }}"
+                                                class="btn btn-sm btn-outline-primary"
+                                                title="{{ t('view_details') if current_language == 'en' else 'ดูรายละเอียด' }}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('customer.edit', id=customer.id) }}"
+                                                class="btn btn-sm btn-outline-warning" title="{{ t('edit') }}">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{{ url_for('booking.create', customer_id=customer.id) }}"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="{{ t('create_new_booking') if current_language == 'en' else 'สร้างการจองใหม่' }}">
+                                                <i class="fas fa-plus"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">{{ t('no_customers_found') }}</h4>
+                        <p class="text-muted">{{ t('no_customers_message') }}</p>
+                        <a href="{{ url_for('customer.create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>{{ t('add_first_customer') if current_language == 'en' else
+                            'เพิ่มลูกค้าคนแรก' }}
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
-                {% endif %}
             </div>
         </div>
+    </div>
 
-        <!-- Modal creation removed: now dedicated page -->
-        <style>
-            .avatar-sm {
-                width: 40px;
-                height: 40px;
-                font-size: 16px;
-                font-weight: bold;
-            }
+    <!-- Modal creation removed: now dedicated page -->
+    <style>
+        .avatar-sm {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+            font-weight: bold;
+        }
 
-            .search-result-item {
-                padding: 12px 15px;
-                border-bottom: 1px solid #eee;
-                cursor: pointer;
-                transition: all 0.2s ease;
-            }
+        .search-result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
 
-            .search-result-item:hover {
-                background-color: #f8f9fa;
-                transform: translateX(2px);
-            }
+        .search-result-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(2px);
+        }
 
-            .search-result-item:last-child {
-                border-bottom: none;
-            }
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
 
-            .search-result-item .customer-name {
-                font-weight: 500;
-                color: #212529;
-                margin-bottom: 2px;
-            }
+        .search-result-item .customer-name {
+            font-weight: 500;
+            color: #212529;
+            margin-bottom: 2px;
+        }
 
-            .search-result-item .customer-details {
-                font-size: 0.875rem;
-                color: #6c757d;
-                line-height: 1.2;
-            }
+        .search-result-item .customer-details {
+            font-size: 0.875rem;
+            color: #6c757d;
+            line-height: 1.2;
+        }
 
-            .search-result-item .customer-details i {
-                color: #adb5bd;
-                width: 12px;
-            }
+        .search-result-item .customer-details i {
+            color: #adb5bd;
+            width: 12px;
+        }
 
-            #search-results {
-                border-color: #dee2e6;
-                margin-top: 1px;
-            }
-        </style>
+        #search-results {
+            border-color: #dee2e6;
+            margin-top: 1px;
+        }
+    </style>
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const searchInput = document.getElementById('customer-search');
-                const searchResults = document.getElementById('search-results');
-                const clearBtn = document.getElementById('clear-search');
-                let searchTimeout;
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('customer-search');
+            const searchResults = document.getElementById('search-results');
+            const clearBtn = document.getElementById('clear-search');
+            let searchTimeout;
 
-                // Search functionality
-                searchInput.addEventListener('input', function () {
-                    clearTimeout(searchTimeout);
-                    const query = this.value.trim();
+            // Search functionality
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
 
-                    if (query.length < 2) {
-                        hideResults();
-                        return;
-                    }
-
-                    searchTimeout = setTimeout(() => {
-                        // Show loading state
-                        searchResults.innerHTML = '<div class="search-result-item text-muted"><i class="fas fa-spinner fa-spin me-2"></i>{{ "Searching..." if current_language == "en" else "กำลังค้นหา..." }}</div>';
-                        searchResults.style.display = 'block';
-
-                        fetch(`{{ url_for('customer.api_search') }}?q=${encodeURIComponent(query)}`)
-                            .then(response => {
-                                if (!response.ok) { throw new Error(`HTTP ${response.status}`); }
-                                return response.json();
-                            })
-                            .then(data => { displayResults(data); })
-                            .catch(error => {
-                                searchResults.innerHTML = '<div class="search-result-item text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{{ "Search error" if current_language == "en" else "เกิดข้อผิดพลาดในการค้นหา" }}</div>';
-                            });
-                    }, 300);
-                });
-
-                // Clear search
-                clearBtn.addEventListener('click', function () {
-                    searchInput.value = '';
+                if (query.length < 2) {
                     hideResults();
-                    window.location.href = '{{ url_for("customer.list") }}';
-                });
+                    return;
+                }
 
-                // Hide results when clicking outside
-                document.addEventListener('click', function (event) {
-                    if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) { hideResults(); }
-                });
+                searchTimeout = setTimeout(() => {
+                    // Show loading state
+                    searchResults.innerHTML = '<div class="search-result-item text-muted"><i class="fas fa-spinner fa-spin me-2"></i>{{ "Searching..." if current_language == "en" else "กำลังค้นหา..." }}</div>';
+                    searchResults.style.display = 'block';
 
-                // Show results on focus
-                searchInput.addEventListener('focus', function () {
-                    if (this.value.trim().length >= 2) {
-                        const query = this.value.trim();
-                        fetch(`{{ url_for('customer.api_search') }}?q=${encodeURIComponent(query)}`)
-                            .then(response => response.json())
-                            .then(data => { displayResults(data); })
-                            .catch(() => { });
-                    }
-                });
+                    fetch(`{{ url_for('customer.api_search') }}?q=${encodeURIComponent(query)}`)
+                        .then(response => {
+                            if (!response.ok) { throw new Error(`HTTP ${response.status}`); }
+                            return response.json();
+                        })
+                        .then(data => { displayResults(data); })
+                        .catch(error => {
+                            searchResults.innerHTML = '<div class="search-result-item text-danger"><i class="fas fa-exclamation-triangle me-2"></i>{{ "Search error" if current_language == "en" else "เกิดข้อผิดพลาดในการค้นหา" }}</div>';
+                        });
+                }, 300);
+            });
 
-                function displayResults(customers) {
-                    if (!customers.length) {
-                        searchResults.innerHTML = '<div class="search-result-item text-muted"><i class="fas fa-search me-2"></i>{{ "No customers found" if current_language == "en" else "ไม่พบลูกค้า" }}</div>';
-                    } else {
-                        const html = customers.map(c => {
-                            const avatar = (c.name || 'C').charAt(0).toUpperCase();
-                            const body = `
+            // Clear search
+            clearBtn.addEventListener('click', function () {
+                searchInput.value = '';
+                hideResults();
+                window.location.href = '{{ url_for("booking.customers") }}';
+            });
+
+            // Hide results when clicking outside
+            document.addEventListener('click', function (event) {
+                if (!searchInput.contains(event.target) && !searchResults.contains(event.target)) { hideResults(); }
+            });
+
+            // Show results on focus
+            searchInput.addEventListener('focus', function () {
+                if (this.value.trim().length >= 2) {
+                    const query = this.value.trim();
+                    fetch(`{{ url_for('customer.api_search') }}?q=${encodeURIComponent(query)}`)
+                        .then(response => response.json())
+                        .then(data => { displayResults(data); })
+                        .catch(() => { });
+                }
+            });
+
+            function displayResults(customers) {
+                if (!customers.length) {
+                    searchResults.innerHTML = '<div class="search-result-item text-muted"><i class="fas fa-search me-2"></i>{{ "No customers found" if current_language == "en" else "ไม่พบลูกค้า" }}</div>';
+                } else {
+                    const html = customers.map(c => {
+                        const avatar = (c.name || 'C').charAt(0).toUpperCase();
+                        const body = `
                         <div class="d-flex align-items-center">
                             <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">${avatar}</div>
                             <div class="flex-grow-1">
@@ -280,27 +288,27 @@ t('tour_voucher_system') if current_language == 'en' else 'ระบบจัด
                                 ${c.is_remote ? `<button class="btn btn-sm btn-outline-primary" onclick="importClient('${c.id}')"><i class="fas fa-download me-1"></i>นำเข้า</button>` : '<i class="fas fa-arrow-right"></i>'}
                             </div>
                         </div>`;
-                            return `<div class="search-result-item" ${c.is_remote ? '' : `onclick="selectCustomer(${c.id})"`}>${body}</div>`;
-                        }).join('');
-                        searchResults.innerHTML = html;
-                    }
-                    searchResults.style.display = 'block';
+                        return `<div class="search-result-item" ${c.is_remote ? '' : `onclick="selectCustomer(${c.id})"`}>${body}</div>`;
+                    }).join('');
+                    searchResults.innerHTML = html;
                 }
+                searchResults.style.display = 'block';
+            }
 
-                function hideResults() { searchResults.style.display = 'none'; }
-                function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+            function hideResults() { searchResults.style.display = 'none'; }
+            function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-                window.selectCustomer = function (customerId) { window.location.href = `{{ url_for('customer.view', id=0) }}`.replace('0', customerId); };
-                window.importClient = function (clientId) {
-                    fetch("{{ url_for('customer.api_import_invoice_ninja_client') }}", {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ client_id: clientId })
-                    }).then(r => r.json()).then(d => {
-                        if (d.ok) { window.location.href = `{{ url_for('customer.view', id=0) }}`.replace('0', d.id); }
-                    }).catch(() => { });
-                }
-            });
-        </script>
-    </div>
-    {% endblock %}
+            window.selectCustomer = function (customerId) { window.location.href = `{{ url_for('customer.view', id=0) }}`.replace('0', customerId); };
+            window.importClient = function (clientId) {
+                fetch("{{ url_for('customer.api_import_invoice_ninja_client') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ client_id: clientId })
+                }).then(r => r.json()).then(d => {
+                    if (d.ok) { window.location.href = `{{ url_for('customer.view', id=0) }}`.replace('0', d.id); }
+                }).catch(() => { });
+            }
+        });
+    </script>
+</div>
+{% endblock %}

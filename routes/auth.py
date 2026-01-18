@@ -16,7 +16,32 @@ def login():
         user = User.query.filter_by(username=username).first()
         
         if user and user.check_password(password):
+            # Check if 2FA is enabled
+            if user.is_2fa_enabled:
+                # Check if user has completed 2FA setup
+                if not user.totp_secret:
+                    # First time setup - redirect to setup page
+                    session['pending_2fa_user_id'] = user.id
+                    session['pending_2fa_remember'] = remember
+                    session['pending_2fa_next'] = request.args.get('next')
+                    flash('2FA is required for your account. Please complete the setup below.', 'info')
+                    return redirect(url_for('two_factor.setup'))
+                else:
+                    # Already setup - go to verify page
+                    session['pending_2fa_user_id'] = user.id
+                    session['pending_2fa_remember'] = remember
+                    session['pending_2fa_next'] = request.args.get('next')
+                    flash('Please enter your 2FA verification code', 'info')
+                    return redirect(url_for('two_factor.verify'))
+            
+            # Normal login without 2FA
             login_user(user, remember=remember)
+            
+            # Set session variables for role-based access control
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['user_role'] = user.role
+            
             next_page = request.args.get('next')
             flash('Login successful!', 'success')
             return redirect(next_page or url_for('dashboard.index'))
@@ -29,6 +54,10 @@ def login():
 @login_required
 def logout():
     logout_user()
+    # Clear session variables
+    session.pop('user_id', None)
+    session.pop('username', None)
+    session.pop('user_role', None)
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))
 

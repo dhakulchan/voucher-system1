@@ -1,15 +1,23 @@
 import os
 from datetime import timedelta
+from dotenv import load_dotenv
+import pytz
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Config:
     # Basic Flask Configuration
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
+    # Timezone Configuration
+    TIMEZONE = pytz.timezone('Asia/Bangkok')  # Thai timezone (UTC+7)
+    
     # Database Configuration
     DATABASE_URL = os.environ.get('DATABASE_URL')
     if not DATABASE_URL:
-        # Use MariaDB for local development - Changed to voucher_db
-        SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://voucher_user:voucher_secure_2024@localhost:3306/voucher_db?charset=utf8mb4'
+        # Use MariaDB for local development - Changed to voucher_enhanced
+        SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://voucher_user:voucher_secure_2024@localhost:3306/voucher_enhanced?charset=utf8mb4'
     else:
         SQLALCHEMY_DATABASE_URI = DATABASE_URL
     
@@ -34,7 +42,16 @@ class Config:
     # Session Configuration
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
     
-    # Email Configuration
+    # Flask-Mail Configuration
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', '1', 'yes']
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', '1', 'yes']
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or os.environ.get('SMTP_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or os.environ.get('SMTP_PASSWORD')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or ('Dhakul Chan', 'noreply@dhakulchan.com')
+    
+    # Email Configuration (Legacy - keep for backward compatibility)
     SMTP_SERVER = os.environ.get('SMTP_SERVER') or 'smtp.gmail.com'
     SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
     SMTP_USERNAME = os.environ.get('SMTP_USERNAME')
@@ -47,7 +64,7 @@ class Config:
     COMPANY_ADDRESS_EN = os.environ.get('COMPANY_ADDRESS_EN') or '710, 716, 704, 706 Prachautid Road, Samsennok, Huai Kwang, Bangkok 10310'
     COMPANY_PHONE = os.environ.get('COMPANY_PHONE') or '+662 2744216'
     COMPANY_MOBILE = os.environ.get('COMPANY_MOBILE') or '+662 2744216'
-    COMPANY_EMAIL = os.environ.get('COMPANY_EMAIL') or 'support@dhakulchan.com'
+    COMPANY_EMAIL = os.environ.get('COMPANY_EMAIL') or 'DonotReply@dhakulchan.net'
     COMPANY_WEBSITE = os.environ.get('COMPANY_WEBSITE') or 'www.dhakulchan.net'
     COMPANY_LINE_OA = os.environ.get('COMPANY_LINE_OA') or '@dhakulchan'
     COMPANY_TAX_ID = os.environ.get('COMPANY_TAX_ID') or '0105567890123'
@@ -66,6 +83,12 @@ class Config:
     # TinyMCE API Key
     TINYMCE_API_KEY = os.environ.get('TINYMCE_API_KEY') or ''
     
+    # LINE Messaging API Configuration
+    # วิธีหา Channel Access Token: https://developers.line.biz/console/ > เลือก Channel > Messaging API tab > Channel access token (Issue)
+    # Token จริงจะยาวมากกว่า 100 ตัวอักษร เช่น: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN') or 'lBahv9fhRIYrrHVAa6tBqYF8qpL9FynTLHbxi6K5P7PZB9Q61Cz1/Bdy/4bw8w5yUglyCIslTDCcoxD66dFH43OHp1WK4gUzgYVdLoHwZYZT6oH0mR19dx9/XdTYgU2TVwXxkNfCTCJpJxniLqw3wwdB04t89/1O/w1cDnyilFU='
+    LINE_GROUP_ID = os.environ.get('LINE_GROUP_ID') or 'Ucf92dd2c16ef10ad2849d9b0ff85f630'
+    
     # Localization
     DEFAULT_LANGUAGE = os.environ.get('DEFAULT_LANGUAGE') or 'en'
     CURRENCY_SYMBOL = os.environ.get('CURRENCY_SYMBOL') or '฿'
@@ -75,7 +98,7 @@ class Config:
     
     # File Upload Configuration
     UPLOAD_FOLDER = 'static/uploads'
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file size for multiple images
     
     # Public URL Configuration
     # For development, you can set PUBLIC_BASE_URL=http://localhost:5001 in environment
@@ -85,6 +108,14 @@ class Config:
     
     # Development mode detection
     DEVELOPMENT_MODE = os.environ.get('FLASK_ENV') == 'development' or os.environ.get('DEBUG') == 'True'
+    
+    # Cloudflare Turnstile Configuration
+    TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY') or '0x4AAAAAAAzvKq_OuZqNKMAG'
+    TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY') or '0x4AAAAAAAzvKyIGP5BsRam65wZ_nTBD51u'
+
+    # Stripe Payment Configuration
+    STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY') or 'pk_test_your_key_here'
+    STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY') or 'sk_test_your_key_here'
 
     # PDF Configuration
     PDF_LOGO_TARGET_HEIGHT = float(os.environ.get('PDF_LOGO_TARGET_HEIGHT', '55'))  # points

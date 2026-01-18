@@ -1,0 +1,162 @@
+================================================================================
+✅ DOMAIN & SSL CONFIGURATION UPDATE - COMPLETE
+================================================================================
+Date: November 22, 2025
+Server: service.dhakulchan.net (52.220.243.237)
+
+================================================================================
+📋 CHANGES SUMMARY
+================================================================================
+
+✅ 1. DOMAIN NAME VERIFIED
+   Old: server.dhakulchan.net
+   New: service.dhakulchan.net ✓ (Already configured in Nginx)
+   Status: ACTIVE
+
+✅ 2. SSL CERTIFICATE CONFIGURED
+   Domain: service.dhakulchan.net
+   Certificate Type: Let's Encrypt (RSA)
+   Validity: 79 days (Expires: February 09, 2026)
+   Certificate Path: /etc/letsencrypt/live/service.dhakulchan.net/fullchain.pem
+   Private Key Path: /etc/letsencrypt/live/service.dhakulchan.net/privkey.pem
+
+✅ 3. SSL AUTO-RENEWAL (88 DAYS) CONFIGURED
+   Renewal Window: 88 days before expiry ✓
+   Configuration File: /etc/letsencrypt/renewal/service.dhakulchan.net.conf
+   Setting: renew_before_expiry = 88 days ✓
+
+✅ 4. CRON JOB CONFIGURED
+   Schedule: Daily at 02:00 ✓
+   Command: /usr/bin/certbot renew --quiet --deploy-hook /etc/letsencrypt/renewal-hooks/deploy/reload-services.sh
+   Logs: /var/log/certbot-cron.log
+
+✅ 5. DEPLOYMENT HOOK CREATED
+   Location: /etc/letsencrypt/renewal-hooks/deploy/reload-services.sh
+   Permissions: Executable ✓
+   Actions on Renewal:
+     • Reload Nginx
+     • Restart Gunicorn
+     • Log to /var/log/certbot-renewal.log
+     • System log via logger
+
+✅ 6. NGINX CONFIGURATION
+   Server Name: service.dhakulchan.net ✓
+   SSL Certificate: /etc/letsencrypt/live/service.dhakulchan.net/fullchain.pem ✓
+   SSL Key: /etc/letsencrypt/live/service.dhakulchan.net/privkey.pem ✓
+   Status: Active and serving HTTPS
+
+✅ 7. DOCUMENTATION UPDATED
+   Files Updated:
+     • deploy_production_full.sh
+     • deploy_production_simple.sh
+     • verify_deployment.sh
+     • PRODUCTION_DEPLOYMENT_SUMMARY.txt
+     • SERVER_QUICK_REFERENCE.txt
+     • deploy/.env.production
+     • deploy/gunicorn.conf.py
+
+================================================================================
+🔗 NEW ACCESS URLS
+================================================================================
+
+Main Application:
+  https://service.dhakulchan.net
+
+Adminer Database Management:
+  https://service.dhakulchan.net/adminer/
+  
+  Login Credentials:
+    Server: localhost
+    Username: voucher_user
+    Password: VoucherPass2024!
+    Database: voucher_system
+
+SSH Access:
+  ssh -i ~/.ssh/LightsailDefaultKey-ap-southeast-1.pem ubuntu@52.220.243.237
+
+================================================================================
+🔐 SSL AUTO-RENEWAL DETAILS
+================================================================================
+
+Current Configuration:
+  • Certificate Validity: 79 days remaining (as of Nov 22, 2025)
+  • Renewal Trigger: Will auto-renew when 88 days remain before expiry
+  • Next Possible Renewal: Immediately available (79 < 88)
+  • Automatic Check: Daily at 02:00 via cron
+
+Renewal Process:
+  1. Cron job runs daily: 0 2 * * *
+  2. Certbot checks if renewal needed (within 88-day window)
+  3. If needed, obtains new certificate from Let's Encrypt
+  4. Deployment hook executes automatically:
+     - Reloads Nginx configuration
+     - Restarts Gunicorn application server
+     - Logs renewal to /var/log/certbot-renewal.log
+  5. Services continue without interruption
+
+Manual Commands:
+  • Check certificate: sudo certbot certificates
+  • Test renewal: sudo certbot renew --dry-run
+  • Force renewal: sudo certbot renew --force-renewal
+  • View logs: sudo tail -f /var/log/certbot-cron.log
+
+================================================================================
+📊 VERIFICATION COMMANDS
+================================================================================
+
+Check SSL Certificate:
+  sudo certbot certificates
+
+View Renewal Configuration:
+  sudo cat /etc/letsencrypt/renewal/service.dhakulchan.net.conf | grep renew_before_expiry
+
+Check Cron Job:
+  sudo crontab -l | grep certbot
+
+Test Deployment Hook:
+  sudo /etc/letsencrypt/renewal-hooks/deploy/reload-services.sh
+
+View Renewal Logs:
+  sudo tail -f /var/log/certbot-renewal.log
+  sudo tail -f /var/log/certbot-cron.log
+
+Test HTTPS Access:
+  curl -I https://service.dhakulchan.net
+  curl -I https://service.dhakulchan.net/adminer/
+
+Check Nginx Configuration:
+  sudo nginx -T | grep -E 'server_name|ssl_certificate'
+
+================================================================================
+✅ CHECKLIST - ALL COMPLETE
+================================================================================
+
+[✅] Domain configured: service.dhakulchan.net
+[✅] SSL certificate verified and active
+[✅] SSL auto-renewal set to 88 days
+[✅] Deployment hook created and executable
+[✅] Cron job scheduled for daily checks
+[✅] Nginx serving HTTPS correctly
+[✅] Adminer accessible at new URL
+[✅] All documentation updated
+[✅] Configuration files updated
+[✅] Services running correctly
+
+================================================================================
+🎊 CONFIGURATION COMPLETE!
+================================================================================
+
+The production server is now fully configured with:
+
+✅ Domain: service.dhakulchan.net
+✅ SSL Certificate: Valid for 79 days
+✅ Auto-Renewal: 88-day window (daily checks at 02:00)
+✅ Adminer: https://service.dhakulchan.net/adminer/
+
+All services are operational and will automatically renew SSL certificates
+88 days before expiry without manual intervention.
+
+Last Updated: November 22, 2025
+Status: OPERATIONAL ✓
+
+================================================================================

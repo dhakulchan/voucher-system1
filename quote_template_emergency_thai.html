@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Force Thai fonts using multiple fallback methods */
+        @font-face {
+            font-family: 'ThaiBase';
+            src: local('Garuda'),
+                 local('Laksaman'), 
+                 local('Waree'),
+                 local('Norasi'),
+                 local('TH SarabunPSK'),
+                 local('Tahoma');
+            font-display: swap;
+        }
+        
+        * {
+            font-family: 'ThaiBase', 'Garuda', 'Laksaman', 'Waree', 'Tahoma', Arial, sans-serif !important;
+        }
+        
+        body, html {
+            font-family: 'ThaiBase', 'Garuda', 'Laksaman', 'Waree', 'Tahoma', Arial, sans-serif !important;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .thai-text, .thai-content, 
+        th, td, h1, h2, h3, p, div, span {
+            font-family: 'ThaiBase', 'Garuda', 'Laksaman', 'Waree', 'Tahoma', Arial, sans-serif !important;
+        }
+        
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .info-table td {
+            padding: 12px;
+            border: 1px solid #ccc;
+            font-family: 'ThaiBase', 'Garuda', 'Laksaman', 'Waree', 'Tahoma', Arial, sans-serif !important;
+        }
+        
+        .label {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            width: 40%;
+        }
+    </style>
+</head>
+<body>
+    <h1>ใบเสนอราคา / QUOTE</h1>
+    <p>เลขที่: {{ quote_number or 'Q-' + (booking.booking_reference or 'DRAFT') }}</p>
+    
+    <table class="info-table">
+        <tr>
+            <td class="label">ชื่อลูกค้า / Customer Name:</td>
+            <td>{{ booking.customer_name or 'ไม่ระบุ' }}</td>
+        </tr>
+        <tr>
+            <td class="label">อีเมล / Email:</td>
+            <td>{{ booking.customer_email or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td class="label">เบอร์โทร / Phone:</td>
+            <td>{{ booking.customer_phone or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td class="label">จำนวนผู้โดยสาร / Passengers:</td>
+            <td>{{ booking.total_guests or 0 }} คน</td>
+        </tr>
+        <tr>
+            <td class="label">วันที่เดินทาง / Travel Date:</td>
+            <td>{{ booking.tour_date if booking.tour_date else 'ไม่ระบุ' }}</td>
+        </tr>
+        <tr>
+            <td class="label">โปรแกรมทัวร์ / Tour Program:</td>
+            <td>{{ booking.tour_name or 'ไม่ระบุโปรแกรม' }}</td>
+        </tr>
+        <tr>
+            <td class="label">ราคารวม / Total Price:</td>
+            <td>฿ {{ '{:,.0f}'.format(quote.total_amount if quote else booking.total_price or 0) }}</td>
+        </tr>
+    </table>
+    
+    <div style="margin-top: 30px;">
+        <h3>ข้อกำหนดและเงื่อนไข / Terms & Conditions</h3>
+        <p>• การจองจะสมบูรณ์เมื่อได้รับเงินมัดจำแล้วเท่านั้น</p>
+        <p>• เงินมัดจำ 50% ของราคาทัวร์ทั้งหมด</p>
+        <p>• ชำระเงินส่วนที่เหลือก่อนวันเดินทาง 7 วัน</p>
+    </div>
+    
+    <div style="text-align: center; margin-top: 40px;">
+        <p>ขอบคุณที่ไว้วางใจในบริการของเรา<br>Thank you for choosing our services</p>
+    </div>
+</body>
+</html>

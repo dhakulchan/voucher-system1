@@ -36,12 +36,8 @@ def get_secure_share_url(booking_id):
         if not token:
             return jsonify({'success': False, 'error': 'Failed to generate secure token'}), 500
         
-        # กำหนด base URL
-        base_url = request.host_url.rstrip('/')
-        if 'localhost' in base_url or '127.0.0.1' in base_url:
-            public_url = f"{base_url}/public/booking/{token}"
-        else:
-            public_url = f"https://service.dhakulchan.net/public/booking/{token}"
+        # Use localhost for all environments
+        public_url = f"http://localhost:5001/public/booking/{token}"
         
         # ข้อมูลเอกสารตามสถานะ
         document_title = BookingEnhanced.get_document_title_for_status(booking.status)
@@ -96,11 +92,8 @@ def reset_booking_token(booking_id):
         if not new_token:
             return jsonify({'success': False, 'error': 'Failed to generate new token'}), 500
         
-        base_url = request.host_url.rstrip('/')
-        if 'localhost' in base_url or '127.0.0.1' in base_url:
-            public_url = f"{base_url}/public/booking/{new_token}"
-        else:
-            public_url = f"https://service.dhakulchan.net/public/booking/{new_token}"
+        # Use localhost for all environments
+        public_url = f"http://localhost:5001/public/booking/{new_token}"
         
         current_app.logger.info(f"Token reset for booking {booking_id} by user {current_user.id}")
         

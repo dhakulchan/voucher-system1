@@ -22,9 +22,49 @@ from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER, TA_JUSTIFY
 
 logger = logging.getLogger(__name__)
 
+def get_writable_output_dir(subdirs=''):
+    """Get the first writable output directory with write-test logic"""
+    base_paths = [
+        '/home/ubuntu/voucher-ro_v1.0/static/generated',
+        '/opt/bitnami/apache/htdocs/static/generated',
+        'static/generated'
+    ]
+    
+    for base_path in base_paths:
+        try:
+            full_path = os.path.join(base_path, subdirs) if subdirs else base_path
+            os.makedirs(full_path, exist_ok=True)
+            # Test write permission
+            test_file = os.path.join(full_path, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            return full_path
+        except (PermissionError, OSError):
+            continue
+    
+    # Fallback
+    fallback = os.path.join('static/generated', subdirs) if subdirs else 'static/generated'
+    os.makedirs(fallback, exist_ok=True)
+    return fallback
+
 class ClassicPDFGenerator:
     def __init__(self):
         """Initialize the Classic PDF Generator with Thai font support"""
+        # Company Information
+        self.company_info = {
+            'name_th': 'ธากุล จันทร์ ทราเวล เซอร์วิส (ประเทศไทย) จำกัด',
+            'name_en': 'DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.',
+            'address_th': '710, 716, 704, 706 ถนนประชาอุทิศ แขวงสามเสนนอก เขตห้วยขวาง กรุงเทพฯ 10310',
+            'address_en': '710, 716, 704, 706 Prachauthit Road, Samseenook, Huai Kwang, Bangkok 10310',
+            'tel': '+662 2744218',
+            'fax': '+662 0266525',
+            'website': 'www.dhakulchan.net',
+            'email': 'dhakulchan@gmail.com',
+            'license': 'T.A.T License 11/03659',
+            'line': '@dhakulchan',
+            'footer': 'Dhakul Chan Nice Holidays Group - System DCTS V1.0'
+        }
         self.setup_thai_fonts()
         self.styles = self.create_styles()
         logger.info("Classic PDF Generator initialized with Thai fonts")
@@ -675,8 +715,8 @@ class ClassicPDFGenerator:
         if not output_path or not os.path.dirname(output_path):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             booking_ref = booking_data.get('booking_id', 'UNK')
-            # Use adaptive path for development vs production
-            output_dir = "/opt/bitnami/apache/htdocs/static/generated" if os.path.exists("/opt/bitnami") else "static/generated"
+            # Use write-test logic for development vs production
+            output_dir = get_writable_output_dir()
             output_path = f"{output_dir}/classic_service_proposal_{booking_ref}_{timestamp}.pdf"
             
         # Ensure output directory exists
@@ -686,11 +726,11 @@ class ClassicPDFGenerator:
         
         logger.info(f"Generating classic service proposal for booking: {booking_data.get('guest_name', 'Unknown')}")
         
-        # Create custom PDF document with tighter top margin (0.5cm from header)
+        # Create custom PDF document with content at absolute top
         doc = BaseDocTemplate(
             output_path,
             pagesize=A4,
-            topMargin=25*mm,     # Standard top margin for classic header
+            topMargin=15*mm,     # Absolute minimum margin - content at maximum top position
             bottomMargin=5*mm,   # Footer space - changed to 0.5cm
             leftMargin=15*mm,
             rightMargin=15*mm
@@ -701,44 +741,65 @@ class ClassicPDFGenerator:
             """Draw header and footer on each page"""
             canvas.saveState()
             
-            # Header - Company Info and Logo (Classic Layout like Sample)
+            # Header - Company Info and Logo (Compact 15mm header)
             try:
-                # Try to load logo for header 
-                logo_path = "/opt/bitnami/apache/htdocs/dcts-logo-vou.png" if os.path.exists("/opt/bitnami") else "dcts-logo-vou.png"
-                if os.path.exists(logo_path):
+                # Try to load logo for header - check multiple paths
+                logo_paths = [
+                    "/opt/bitnami/apache/htdocs/dcts-logo-vou.png",
+                    "/home/ubuntu/voucher-ro_v1.0/static/images/dcts-logo-vou.png",
+                    "static/images/dcts-logo-vou.png",
+                    "dcts-logo-vou.png"
+                ]
+                
+                logo_path = None
+                for path in logo_paths:
+                    if os.path.exists(path):
+                        logo_path = path
+                        logger.info(f"✅ Logo found at: {path}")
+                        break
+                
+                if logo_path:
                     # Use ImageReader to preserve transparency
                     from reportlab.lib.utils import ImageReader
                     logo_reader = ImageReader(logo_path)
-                    # Logo position and size like sample
-                    canvas.drawImage(logo_reader, 15*mm, A4[1] - 25*mm, width=35*mm, height=18*mm, mask='auto')
+                    # Logo position - compact for 15mm header
+                    canvas.drawImage(logo_reader, 15*mm, A4[1] - 15*mm, width=28*mm, height=12*mm, mask='auto')
+                else:
+                    logger.warning("⚠️ Logo file not found in any expected location")
                 
-                # Company name - bold blue like sample
-                canvas.setFont('Helvetica-Bold', 12)
-                canvas.setFillColor(colors.Color(0/255, 123/255, 255/255))  # Blue like sample
-                canvas.drawString(55*mm, A4[1] - 12*mm, "DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.")
+                # Company name - compact font size for 15mm header
+                canvas.setFont('Helvetica-Bold', 8)
+                canvas.setFillColor(colors.Color(0/255, 123/255, 255/255))  # Blue
+                canvas.drawString(46*mm, A4[1] - 6*mm, self.company_info['name_en'])
                 
-                # Address and contact info - smaller text
-                canvas.setFont('Helvetica', 8)
+                # Address and contact info - compact spacing
+                canvas.setFont('Helvetica', 6)
                 canvas.setFillColor(colors.black)
-                canvas.drawString(55*mm, A4[1] - 16*mm, "710, 716, 704, 706 Prachauthit Road, Samseenook, Huai Kwang, Bangkok 10310")
-                canvas.drawString(55*mm, A4[1] - 20*mm, "Tel: +662 2744218 | +662 0266525 Fax: +662 0266525 Press 5 | Line: @dhakulchan")
-                canvas.drawString(55*mm, A4[1] - 24*mm, "Website: www.dhakulchan.net | T.A.T License 11/03659")
+                canvas.drawString(46*mm, A4[1] - 9*mm, self.company_info['address_en'])
+                canvas.drawString(46*mm, A4[1] - 11.5*mm, f"Tel: {self.company_info['tel']} | {self.company_info['fax']} Fax: {self.company_info['fax']} Press 5 | Line: {self.company_info['line']}")
                 
-                # Add "Quote / Provisional Receipt" on the right side like sample
-                canvas.setFont('Helvetica-Bold', 14)
-                canvas.setFillColor(colors.Color(0/255, 200/255, 83/255))  # Green like sample
-                text_width = canvas.stringWidth("Quote / Provisional Receipt", 'Helvetica-Bold', 14)
-                canvas.drawString(A4[0] - 15*mm - text_width, A4[1] - 15*mm, "Quote / Provisional Receipt")
+                # Website and license - compact
+                canvas.setFont('Helvetica', 6)
+                canvas.setFillColor(colors.Color(0/255, 123/255, 255/255))  # Blue
+                canvas.drawString(46*mm, A4[1] - 14*mm, f"Website: {self.company_info['website']} | {self.company_info['license']}")
+                
+                # Add "Quote / Provisional Receipt" aligned - compact
+                canvas.setFont('Helvetica-Bold', 11)
+                canvas.setFillColor(colors.Color(0/255, 200/255, 83/255))  # Green
+                text_width = canvas.stringWidth("Quote / Provisional Receipt", 'Helvetica-Bold', 11)
+                canvas.drawString(A4[0] - 15*mm - text_width, A4[1] - 7*mm, "Quote / Provisional Receipt")
                 
             except Exception as e:
-                logger.warning(f"Could not draw header: {str(e)}")
+                logger.error(f"❌ Error drawing header: {str(e)}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
             
             # Footer - Company name and page number
             canvas.setFont('Helvetica', 9)
             canvas.setFillColor(colors.Color(127/255, 140/255, 141/255))  # #7F8C8D
             
             # Left side - Company info (changed to 0.5cm from bottom)
-            footer_text = "Dhakul Chan Nice Holidays Group - System DCTS V1.0"
+            footer_text = self.company_info['footer']
             canvas.drawString(15*mm, 5*mm, footer_text)
             
             # Right side - Page number with total pages using template
@@ -759,9 +820,9 @@ class ClassicPDFGenerator:
             
             canvas.restoreState()
         
-        # Create frame for content (standard gap from header bottom)
-        # Header ends at A4[1] - 25*mm, content starts at A4[1] - 30*mm (0.5cm gap)
-        content_top = A4[1] - 30*mm  # 0.5cm below header
+        # Create frame for content - no gap, content starts immediately after header space
+        # Header is drawn separately, content frame starts below header area
+        content_top = A4[1] - 15*mm  # Content starts right after 15mm compact header
         frame = Frame(
             15*mm, 15*mm,  # x, y (bottom margin - adjusted for 0.5cm footer)
             A4[0] - 30*mm,  # width (page width - left/right margins)
@@ -780,11 +841,10 @@ class ClassicPDFGenerator:
         
         story = []
         
-        # Minimal spacing - content starts close to header (0.5cm gap)
-        story.append(Spacer(1, 2))  # Minimal top spacing
+        # Minimal spacing after header - content moved up 0.5cm closer to header
+        # story.append(Spacer(1, 0))  # No gap - content starts immediately
         
-        # Main content layout - very close to header
-        # No additional spacing needed as frame positioning handles the 0.5cm gap
+        # Main content layout starts immediately after header
         
         # Top row: Party Name + Document Title + Reference (modern styling)
         # Get actual party name from booking data (prioritize customer_name over guest_name)
@@ -847,7 +907,7 @@ class ClassicPDFGenerator:
             # No borders, no background
         ]))
         story.append(top_table)
-        story.append(Spacer(1, 4))  # Reduced spacing
+        story.append(Spacer(1, 3))  # Spacing between header and info section - reduced from 8 to 3
         
         # Bottom row with borders: Create Date | Traveling Period | Customer | PAX
         # Use customer_name from database instead of guest_name
@@ -877,20 +937,20 @@ class ClassicPDFGenerator:
         bottom_table.setStyle(TableStyle([
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),  # ลดจาก 6 เป็น 4
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),  # ลดจาก 10 เป็น 4
-            ('LEFTPADDING', (0, 0), (-1, -1), 6),  # ลดจาก 8 เป็น 6
-            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Further reduced for compactness
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Further reduced for compactness
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),  # Reduced from 6
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),  # Reduced from 8
             # Modern grid styling
             ('GRID', (0, 0), (-1, -1), 1.5, colors.HexColor('#BDC3C7')),
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#ECF0F1')),  # Header row background
             ('LINEBELOW', (0, 0), (-1, 0), 2, colors.HexColor('#3498DB')),  # Header underline
         ]))
         story.append(bottom_table)
-        story.append(Spacer(1, 18))
+        story.append(Spacer(1, 12))  # Spacing before service detail section
         
         # Service Detail / Itinerary Section
-        story.append(Paragraph("<font color='#2C3E50' size=12><b>Service Detail / Itinerary:</b></font>", self.styles['ModernSubtitle']))
+        story.append(Paragraph("<font color='#2C3E50' size=10><b>Service Detail / Itinerary:</b></font>", self.styles['ModernSubtitle']))
         service_detail = booking_data.get('description', '')
         logger.info(f"🔍 Service Detail Debug: type={type(service_detail)}, content='{service_detail[:100] if service_detail else 'None'}...', length={len(str(service_detail)) if service_detail else 0}")
         
@@ -907,10 +967,10 @@ class ClassicPDFGenerator:
             # Show dash if no valid service details
             story.append(Paragraph("—", self.styles['ModernEnglish']))
             logger.info("❌ No valid service detail - added dash")
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 2))  # Minimum spacing
         
         # Flight Information Section - Enhanced
-        story.append(Paragraph("<font color='#2C3E50' size=12><b>Flight Information:</b></font>", self.styles['ModernSubtitle']))
+        story.append(Paragraph("<font color='#2C3E50' size=10><b>Flight Information:</b></font>", self.styles['ModernSubtitle']))
         raw_flight_info = booking_data.get('flight_info', '')
         logger.info(f"🔍 Flight Info Debug: type={type(raw_flight_info)}, content='{raw_flight_info[:100] if raw_flight_info else 'None'}...', length={len(str(raw_flight_info)) if raw_flight_info else 0}")
         
@@ -937,11 +997,11 @@ class ClassicPDFGenerator:
             # No valid flight info - show dash
             story.append(Paragraph("—", self.styles['ModernEnglish']))
             logger.info("❌ No valid flight info - added dash")
-        story.append(Spacer(1, 6))
+        story.append(Spacer(1, 2))  # Minimum spacing
         
         # Payment Information Section (modern design)
-        story.append(Paragraph("<font color='#2C3E50' size=12><b>Payment Information:</b></font>", self.styles['ModernSubtitle']))
-        story.append(Spacer(1, 4))
+        story.append(Paragraph("<font color='#2C3E50' size=10><b>Payment Information:</b></font>", self.styles['ModernSubtitle']))
+        # No spacer - immediate content
         
         # Modern payment table with better styling
         payment_headers = [
@@ -1003,24 +1063,24 @@ class ClassicPDFGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#F8F9FA')),  # Very light grey instead of blue
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#2C3E50')),   # Dark text instead of white
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 9),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),  # Reduced from 9
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # No. column
             ('ALIGN', (2, 0), (-1, -1), 'CENTER'),  # Quantity, Price, Amount columns
             ('ALIGN', (1, 0), (1, -1), 'LEFT'),     # Products column
             ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('FONTSIZE', (0, 1), (-1, -1), 7),  # Reduced from 8
             # Clean border styling
             ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#BDC3C7')),
             ('LINEBELOW', (0, 0), (-1, 0), 1, colors.HexColor('#BDC3C7')),  # Subtle header line
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 4),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Reduced from 4
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Reduced from 4
+            ('LEFTPADDING', (0, 0), (-1, -1), 3),  # Reduced from 6
+            ('RIGHTPADDING', (0, 0), (-1, -1), 3),  # Reduced from 6
             # Remove alternating backgrounds for cleaner look
         ]))
         story.append(payment_table)
-        story.append(Spacer(1, 3))  # Minimal spacing
+        story.append(Spacer(1, 1))  # Absolute minimum spacing
         
         # Grand Total with modern styling - Calculate from products
         total_amount = 0.0
@@ -1036,12 +1096,39 @@ class ClassicPDFGenerator:
                                 booking_data.get('price', 0.0))))
         
         logger.info(f"🔍 Grand Total Debug: calculated={total_amount}, products_count={len(products) if products else 0}")
-        story.append(Paragraph(f"<font color='#27AE60' size=14><b>Grand Total: THB {total_amount:,.2f}</b></font>", self.styles['ModernEnglishBold']))
-        story.append(Spacer(1, 6))  # Reduced spacing
+        story.append(Paragraph(f"<font color='#27AE60' size=12><b>Grand Total: THB {total_amount:,.2f}</b></font>", self.styles['ModernEnglishBold']))  # Reduced from 14
+        story.append(Spacer(1, 1))  # No spacing
         
         # Name List / Rooming List section
-        story.append(Paragraph("<font color='#2C3E50' size=12><b>Name List / Rooming List:</b></font>", self.styles['ModernSubtitle']))
+        story.append(Paragraph("<font color='#2C3E50' size=10><b>Name List / Rooming List:</b></font>", self.styles['ModernSubtitle']))
         guest_list = booking_data.get('guest_list', '')
+        
+        # Decode Unicode escape sequences if present
+        def decode_unicode_string(text):
+            """Decode Unicode escape sequences in text"""
+            if not text or not isinstance(text, str):
+                return text
+            try:
+                # Handle Unicode escape sequences like \u0e17\u0e14\u0e2a\u0e2d\u0e1a
+                if '\\u' in text:
+                    # First try to decode as raw Unicode escapes
+                    try:
+                        decoded = text.encode().decode('unicode_escape')
+                        return decoded
+                    except:
+                        # If that fails, try manual replacement
+                        import re
+                        def replace_unicode(match):
+                            try:
+                                return chr(int(match.group(1), 16))
+                            except:
+                                return match.group(0)
+                        decoded = re.sub(r'\\u([0-9a-fA-F]{4})', replace_unicode, text)
+                        return decoded
+                return text
+            except Exception as e:
+                print(f'Unicode decode error: {e}')
+                return text
         
         # Debug: Print guest list data
         print(f"🔍 Guest List Debug:")
@@ -1050,29 +1137,45 @@ class ClassicPDFGenerator:
         print(f"  Length: {len(guest_list) if guest_list else 0}")
         
         if guest_list and guest_list.strip():
+            # First decode any Unicode escape sequences
+            decoded_guest_list = decode_unicode_string(guest_list)
+            print(f'🔍 Guest List Decoded: {repr(decoded_guest_list[:200])}...')
+            
             # Check if it's plain text with line breaks (from get_guest_list_for_edit)
-            if '\n' in guest_list and not guest_list.startswith('[') and not guest_list.startswith('{'):
-                # Handle plain text format (newline separated)
-                lines = [line.strip() for line in guest_list.split('\n') if line.strip()]
-                if lines:
-                    for i, line in enumerate(lines, 1):
-                        # Clean and format each line
-                        clean_line = str(line).strip()
-                        formatted_line = self.format_mixed_text(clean_line)
-                        # Remove numbering - just show the name
-                        guest_line = formatted_line
-                        
-                        # Create individual paragraph for each guest
-                        guest_style = ParagraphStyle(
-                            f'GuestLine{i}',
-                            parent=self.styles['ModernThai'],
-                            leading=14,
-                            spaceBefore=2,
-                            spaceAfter=2,
-                            alignment=TA_LEFT
-                        )
-                        guest_paragraph = Paragraph(guest_line, guest_style)
-                        story.append(guest_paragraph)
+            if ('\n' in decoded_guest_list and not decoded_guest_list.startswith('[') and not decoded_guest_list.startswith('{')) or (',' in decoded_guest_list and '"' in decoded_guest_list):
+                # Handle both newline separated and comma-separated formats
+                if ',' in decoded_guest_list and '"' in decoded_guest_list:
+                    # Handle comma-separated format with quotes
+                    import re
+                    # Extract names from quoted comma-separated format
+                    names = re.findall(r'"([^"]+)"', decoded_guest_list)
+                    if not names:
+                        # Try without quotes
+                        names = [name.strip() for name in decoded_guest_list.split(',') if name.strip()]
+                else:
+                    # Handle newline separated format
+                    names = [line.strip() for line in decoded_guest_list.split('\n') if line.strip()]
+                
+                if names:
+                    for i, name in enumerate(names, 1):
+                        # Clean and format each name
+                        clean_name = str(name).strip().strip('"\'')
+                        if clean_name and clean_name not in ['None', 'null', '']:
+                            # Create readable guest line with numbering
+                            guest_line = f"{i}. {clean_name}"
+                            formatted_line = self.format_mixed_text(guest_line)
+                            
+                            # Create individual paragraph for each guest
+                            guest_style = ParagraphStyle(
+                                f'GuestLine{i}',
+                                parent=self.styles['ModernThai'],
+                                leading=12,  # Compact line height
+                                spaceBefore=1,
+                                spaceAfter=1,
+                                alignment=TA_LEFT
+                            )
+                            guest_paragraph = Paragraph(formatted_line, guest_style)
+                            story.append(guest_paragraph)
                 else:
                     story.append(Paragraph("—", self.styles['ModernEnglish']))
             else:
@@ -1160,16 +1263,39 @@ class ClassicPDFGenerator:
                         else:
                             story.append(Paragraph("—", self.styles['ModernEnglish']))
                     else:
-                        # Plain text format
-                        guest_paragraph = self.create_preformatted_paragraph(str(guest_list))
-                        story.append(guest_paragraph)
+                        # Plain text format - decode and format
+                        decoded_text = decode_unicode_string(str(guest_list))
+                        # Split by common separators and create numbered list
+                        import re
+                        # Try multiple splitting patterns
+                        names = []
+                        if ',' in decoded_text:
+                            names = [name.strip().strip('"\',') for name in decoded_text.split(',')]
+                        elif ';' in decoded_text:
+                            names = [name.strip() for name in decoded_text.split(';')]
+                        elif '|' in decoded_text:
+                            names = [name.strip() for name in decoded_text.split('|')]
+                        else:
+                            names = [decoded_text.strip()]
+                        
+                        # Filter out empty names and create paragraphs
+                        valid_names = [name for name in names if name and name not in ['None', 'null', '']]
+                        if valid_names:
+                            for i, name in enumerate(valid_names, 1):
+                                guest_line = f"{i}. {name}"
+                                formatted_line = self.format_mixed_text(guest_line)
+                                guest_paragraph = Paragraph(formatted_line, self.styles['ModernThai'])
+                                story.append(guest_paragraph)
+                        else:
+                            guest_paragraph = self.create_preformatted_paragraph(decoded_text)
+                            story.append(guest_paragraph)
         else:
             story.append(Paragraph("—", self.styles['ModernEnglish']))
             logger.info("No guest list data - added dash")
-        story.append(Spacer(1, 6))  # Spacing before next section
+        story.append(Spacer(1, 2))  # Minimum spacing before next section
         
         # Special Requests section
-        story.append(Paragraph("<font color='#2C3E50' size=12><b>Special Requests:</b></font>", self.styles['ModernSubtitle']))
+        story.append(Paragraph("<font color='#2C3E50' size=10><b>Special Requests:</b></font>", self.styles['ModernSubtitle']))
         special_request = booking_data.get('special_request', '')
         logger.info(f"🔍 Special Request Debug: type={type(special_request)}, content='{special_request}', length={len(str(special_request)) if special_request else 0}")
         
@@ -1182,11 +1308,11 @@ class ClassicPDFGenerator:
             # If no special requests, display a dash or minimal placeholder
             story.append(Paragraph("—", self.styles['ModernEnglish']))
             logger.info("❌ No valid special request - added dash")
-        story.append(Spacer(1, 6))  # Reduced spacing
+        story.append(Spacer(1, 2))  # Absolute minimum spacing
         
         # Terms & Conditions with new content as per image
         terms_header = Table([
-            [Paragraph('<font color="#2C3E50" size="12"><b>Terms & Conditions:</b></font>', 
+            [Paragraph('<font color="#2C3E50" size="10"><b>Terms & Conditions:</b></font>',  # Reduced from 12
                       self.styles['ModernSubtitle'])]
         ], colWidths=[175*mm])  # Use full width for terms header
         
@@ -1194,14 +1320,14 @@ class ClassicPDFGenerator:
             ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#F8F9FA')),  # Very light background
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 3),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
-            ('LEFTPADDING', (0, 0), (-1, -1), 6),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 2),  # Reduced from 3
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),  # Reduced from 3
+            ('LEFTPADDING', (0, 0), (-1, -1), 4),  # Reduced from 6
+            ('RIGHTPADDING', (0, 0), (-1, -1), 4),  # Reduced from 6
         ]))
         
         story.append(terms_header)
-        story.append(Spacer(1, 4))
+        story.append(Spacer(1, 1))  # Reduced from 4
         
         # New Terms & Conditions content - ลบข้อ 7-9 ตามที่ร้องขอ
         new_terms = [
@@ -1221,7 +1347,7 @@ class ClassicPDFGenerator:
             story.append(term_paragraph)
             # No spacing between lines for maximum compactness
         
-        story.append(Spacer(1, 2))  # Minimal spacing for single-page optimization
+        # No final spacer - maximum content density
         
         # Remove footer - no footer content added
         # Footer section completely removed as requested
@@ -1234,7 +1360,7 @@ class ClassicPDFGenerator:
             doc = BaseDocTemplate(
                 output_path,
                 pagesize=A4,
-                topMargin=5*mm,      # Space for header - 0.5cm
+                topMargin=15*mm,     # Consistent with main template - absolute minimum for maximum top position
                 bottomMargin=20*mm,  # Space for footer
                 leftMargin=15*mm,
                 rightMargin=15*mm
@@ -1247,36 +1373,54 @@ class ClassicPDFGenerator:
                 
                 # Header - Company Info and Logo
                 try:
-                    # Logo path
-                    logo_path = "/opt/bitnami/apache/htdocs/dcts-logo-vou.png" if os.path.exists("/opt/bitnami") else "dcts-logo-vou.png"
-                    if os.path.exists(logo_path):
+                    # Logo path - check multiple locations
+                    logo_paths = [
+                        "/opt/bitnami/apache/htdocs/dcts-logo-vou.png",
+                        "/home/ubuntu/voucher-ro_v1.0/static/images/dcts-logo-vou.png",
+                        "static/images/dcts-logo-vou.png",
+                        "dcts-logo-vou.png"
+                    ]
+                    
+                    logo_path = None
+                    for path in logo_paths:
+                        if os.path.exists(path):
+                            logo_path = path
+                            logger.info(f"✅ Logo found at: {path}")
+                            break
+                    
+                    if logo_path:
                         from reportlab.lib.utils import ImageReader
                         logo_reader = ImageReader(logo_path)
-                        canvas.drawImage(logo_reader, 15*mm, A4[1] - 30*mm, width=35*mm, height=17*mm, mask='auto')
+                        canvas.drawImage(logo_reader, 15*mm, A4[1] - 23*mm, width=35*mm, height=17*mm, mask='auto')
+                    else:
+                        logger.warning("⚠️ Logo file not found in any expected location")
                     
-                    # Company info in header
-                    canvas.setFont('Helvetica-Bold', 11)
+                    # Company info in header - optimized font sizes
+                    canvas.setFont('Helvetica-Bold', 10)  # Reduced from 11
                     canvas.setFillColor(colors.Color(44/255, 62/255, 80/255))  # #2C3E50
-                    canvas.drawString(55*mm, A4[1] - 15*mm, "DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.")
+                    canvas.drawString(55*mm, A4[1] - 10*mm, self.company_info['name_en'])
                     
-                    canvas.setFont('Helvetica', 8)
+                    canvas.setFont('Helvetica', 7)  # Reduced from 8
                     canvas.setFillColor(colors.Color(127/255, 140/255, 141/255))  # #7F8C8D
-                    canvas.drawString(55*mm, A4[1] - 20*mm, "710, 716, 704, 706 Prachauthit Road, Samseenook, Huai Kwang, Bangkok 10310")
-                    canvas.drawString(55*mm, A4[1] - 24*mm, "Tel: +662 2744218 | +662 0266525 Fax: +662 0266525 Press 5 | Line: @dhakulchan")
+                    canvas.drawString(55*mm, A4[1] - 13*mm, self.company_info['address_en'])
+                    canvas.drawString(55*mm, A4[1] - 16*mm, f"Tel: {self.company_info['tel']} | {self.company_info['fax']} Fax: {self.company_info['fax']} Press 5 | Line: {self.company_info['line']}")
                     
-                    canvas.setFont('Helvetica', 8)
-                    canvas.setFillColor(colors.Color(52/255, 152/255, 219/255))  # #3498DB
-                    canvas.drawString(55*mm, A4[1] - 28*mm, "Website: www.dhakulchan.net | T.A.T License 11/03659")
+                    # Website and license - use blue color
+                    canvas.setFont('Helvetica', 7)
+                    canvas.setFillColor(colors.Color(52/255, 152/255, 219/255))  # #3498DB - Blue
+                    canvas.drawString(55*mm, A4[1] - 19*mm, f"Website: {self.company_info['website']} | {self.company_info['license']}")
                     
                 except Exception as e:
-                    logger.warning(f"Could not draw header: {str(e)}")
+                    logger.error(f"❌ Error drawing header in buffer method: {str(e)}")
+                    import traceback
+                    logger.error(f"Traceback: {traceback.format_exc()}")
                 
                 # Footer - Company name and page number
                 canvas.setFont('Helvetica', 9)
                 canvas.setFillColor(colors.Color(127/255, 140/255, 141/255))  # #7F8C8D
                 
                 # Left side - Company info
-                footer_text = "Dhakul Chan Nice Holidays Group - System DCTS V1.0"
+                footer_text = self.company_info['footer']
                 canvas.drawString(15*mm, 10*mm, footer_text)
                 
                 # Right side - Page number with total pages
@@ -1289,11 +1433,13 @@ class ClassicPDFGenerator:
                 
                 canvas.restoreState()
             
-            # Create frame for content
+            # Create frame for content - starts after header area with 0.5cm gap
+            # Header ends at A4[1] - 19*mm, add 5mm gap, content starts at A4[1] - 24mm
+            content_top = A4[1] - 29*mm  # Content area starts after header (24mm) + gap (5mm)
             content_frame = Frame(
                 15*mm, 20*mm,  # x, y (bottom margin for footer)
                 A4[0] - 30*mm,  # width (page width - left/right margins)
-                A4[1] - 25*mm,  # height (page height - top/bottom margins) - adjusted for 0.5cm top
+                content_top - 20*mm,  # height (from content top to footer space)
                 id='content_frame'
             )
             

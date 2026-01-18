@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Short Itinerary - DHAKULCHAN{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('short_itinerary_admin.list_itineraries') }}">Short
+                            Itineraries</a></li>
+                    <li class="breadcrumb-item active">Edit #{{ itinerary.id }}</li>
+                </ol>
+            </nav>
+            <h2><i class="fas fa-edit"></i> Edit Short Itinerary Template</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('short_itinerary_admin.edit_itinerary', id=itinerary.id) }}">
+
+                        <!-- Program Name -->
+                        <div class="mb-3">
+                            <label for="program_name" class="form-label">
+                                Program Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="program_name" name="program_name" required
+                                maxlength="255" value="{{ itinerary.program_name }}">
+                            <small class="text-muted">The main title of this itinerary template</small>
+                        </div>
+
+                        <!-- Tour Code -->
+                        <div class="mb-3">
+                            <label for="tour_code" class="form-label">Tour Code</label>
+                            <input type="text" class="form-control" id="tour_code" name="tour_code" maxlength="100"
+                                value="{{ itinerary.tour_code or '' }}">
+                            <small class="text-muted">Optional tour reference code</small>
+                        </div>
+
+                        <!-- Product Link -->
+                        <div class="mb-3">
+                            <label for="product_link" class="form-label">Product Link</label>
+                            <input type="url" class="form-control" id="product_link" name="product_link"
+                                value="{{ itinerary.product_link or '' }}" placeholder="https://example.com/product">
+                            <small class="text-muted">Optional product webpage URL</small>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description"
+                                rows="3">{{ itinerary.description or '' }}</textarea>
+                            <small class="text-muted">Optional details about this itinerary</small>
+                        </div>
+
+                        <!-- Pricing Section -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0"><i class="fas fa-dollar-sign"></i> Pricing Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="adult_twin_sharing" class="form-label">Adult Twin Sharing
+                                            (THB)</label>
+                                        <input type="number" class="form-control" id="adult_twin_sharing"
+                                            name="adult_twin_sharing" step="0.01" min="0"
+                                            value="{{ '%.2f'|format(itinerary.adult_twin_sharing or 0) }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="adult_single" class="form-label">Adult Single (THB)</label>
+                                        <input type="number" class="form-control" id="adult_single" name="adult_single"
+                                            step="0.01" min="0"
+                                            value="{{ '%.2f'|format(itinerary.adult_single or 0) }}">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="child_extra_bed" class="form-label">Child w/ Extra Bed (THB)</label>
+                                        <input type="number" class="form-control" id="child_extra_bed"
+                                            name="child_extra_bed" step="0.01" min="0"
+                                            value="{{ '%.2f'|format(itinerary.child_extra_bed or 0) }}">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="child_no_bed" class="form-label">Child No Bed (THB)</label>
+                                        <input type="number" class="form-control" id="child_no_bed" name="child_no_bed"
+                                            step="0.01" min="0"
+                                            value="{{ '%.2f'|format(itinerary.child_no_bed or 0) }}">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label for="infant" class="form-label">Infant (THB)</label>
+                                        <input type="number" class="form-control" id="infant" name="infant" step="0.01"
+                                            min="0" value="{{ '%.2f'|format(itinerary.infant or 0) }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes"
+                                rows="3">{{ itinerary.notes or '' }}</textarea>
+                            <small class="text-muted">Optional notes that will appear at the bottom of the formatted
+                                text</small>
+                        </div>
+
+                        <!-- Preview Card -->
+                        <div class="card bg-info bg-opacity-10 mb-3">
+                            <div class="card-body">
+                                <h6><i class="fas fa-eye"></i> Preview Format</h6>
+                                <pre class="mb-0" id="preview"
+                                    style="white-space: pre-wrap; font-family: monospace;"></pre>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('short_itinerary_admin.list_itineraries') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Metadata Card -->
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6 class="card-title"><i class="fas fa-info-circle"></i> Template Information</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <small class="text-muted">Template ID:</small><br>
+                            <strong>#{{ itinerary.id }}</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Created:</small><br>
+                            <strong>{{ itinerary.created_at.strftime('%d/%m/%Y %H:%M') if itinerary.created_at else '-'
+                                }}</strong>
+                        </div>
+                        <div class="col-md-4">
+                            <small class="text-muted">Last Updated:</small><br>
+                            <strong>{{ itinerary.updated_at.strftime('%d/%m/%Y %H:%M') if itinerary.updated_at else '-'
+                                }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Live preview
+    function updatePreview() {
+        const programName = document.getElementById('program_name').value || '[Program Name]';
+        const tourCode = document.getElementById('tour_code').value;
+        const description = document.getElementById('description').value;
+        const adultTwin = parseFloat(document.getElementById('adult_twin_sharing').value) || 0;
+        const adultSingle = parseFloat(document.getElementById('adult_single').value) || 0;
+        const childBed = parseFloat(document.getElementById('child_extra_bed').value) || 0;
+        const childNoBed = parseFloat(document.getElementById('child_no_bed').value) || 0;
+        const infant = parseFloat(document.getElementById('infant').value) || 0;
+        const notes = document.getElementById('notes').value;
+
+        // Program name with tour code
+        let preview = tourCode ? `${programName} (${tourCode})\n` : `${programName}\n`;
+
+        if (description) {
+            const descLines = description.split('\n');
+            descLines.forEach((line, idx) => {
+                if (idx === 0) {
+                    preview += `${line.trim()}\n`;
+                } else {
+                    preview += `${line}\n`;
+                }
+            });
+        }
+
+        // Build price list
+        const prices = [];
+        if (adultTwin > 0) prices.push(`Adult Twin: ${adultTwin.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB`);
+        if (adultSingle > 0) prices.push(`Adult Single: ${adultSingle.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB`);
+        if (childBed > 0) prices.push(`Child w/Bed: ${childBed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB`);
+        if (childNoBed > 0) prices.push(`Child No Bed: ${childNoBed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB`);
+        if (infant > 0) prices.push(`Infant: ${infant.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} THB`);
+
+        if (prices.length > 0) {
+            preview += `Price: ${prices.join(' | ')}\n`;
+        }
+
+        if (notes) {
+            preview += `Note: ${notes}\n`;
+        }
+
+        document.getElementById('preview').textContent = preview;
+    }
+
+    // Attach event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        const fields = ['program_name', 'tour_code', 'description', 'adult_twin_sharing', 'adult_single',
+            'child_extra_bed', 'child_no_bed', 'infant', 'notes'];
+
+        fields.forEach(field => {
+            document.getElementById(field).addEventListener('input', updatePreview);
+        });
+
+        updatePreview();
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Short Itinerary Management - DHAKULCHAN{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2><i class="fas fa-list"></i> Short Itinerary Templates</h2>
+            <p class="text-muted">Manage reusable itinerary templates for quick booking creation</p>
+        </div>
+        <div class="col-md-6 text-end">
+            {% if session.get('user_role') in ['Administrator', 'Manager', 'Operation'] %}
+            <a href="{{ url_for('short_itinerary_admin.create_itinerary') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Create New Template
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Search Box -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" action="{{ url_for('short_itinerary_admin.list_itineraries') }}" class="input-group">
+                <input type="text" name="search" class="form-control"
+                    placeholder="Search by program name or description..." value="{{ search }}">
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search %}
+                <a href="{{ url_for('short_itinerary_admin.list_itineraries') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear
+                </a>
+                {% endif %}
+            </form>
+        </div>
+        <div class="col-md-6 text-end">
+            <span class="text-muted">Total: {{ pagination.total }} templates</span>
+        </div>
+    </div>
+
+    <!-- Itinerary List -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if pagination.items %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 5%;">ID</th>
+                            <th style="width: 20%;">Program Name</th>
+                            <th style="width: 10%;">Tour Code</th>
+                            <th style="width: 10%;">Product Link</th>
+                            <th style="width: 20%;">Description</th>
+                            <th style="width: 10%;" class="text-end">Adult Twin</th>
+                            <th style="width: 10%;" class="text-end">Adult Single</th>
+                            <th style="width: 10%;" class="text-end">Child w/Bed</th>
+                            <th style="width: 10%;" class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in pagination.items %}
+                        <tr>
+                            <td>{{ item.id }}</td>
+                            <td>
+                                <strong>{{ item.program_name }}</strong>
+                                {% if item.notes %}
+                                <br><small class="text-muted">📝 {{ item.notes[:50] }}{% if item.notes|length > 50
+                                    %}...{% endif %}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.tour_code %}
+                                <span class="badge bg-info">{{ item.tour_code }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.product_link %}
+                                <a href="{{ item.product_link }}" target="_blank" class="btn btn-sm btn-outline-primary"
+                                    title="{{ item.product_link }}">
+                                    <i class="bi bi-link-45deg"></i> View
+                                </a>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if item.description %}
+                                <small style="white-space: pre-line;">{{ item.description[:100] }}{% if
+                                    item.description|length > 100 %}...{% endif %}</small>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if item.adult_twin_sharing > 0 %}
+                                {{ "{:,.2f}".format(item.adult_twin_sharing) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if item.adult_single > 0 %}
+                                {{ "{:,.2f}".format(item.adult_single) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if item.child_extra_bed > 0 %}
+                                {{ "{:,.2f}".format(item.child_extra_bed) }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if session.get('user_role') in ['Administrator', 'Manager', 'Operation'] %}
+                                <a href="{{ url_for('short_itinerary_admin.edit_itinerary', id=item.id) }}"
+                                    class="btn btn-sm btn-outline-primary" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="confirmDelete({{ item.id }}, '{{ item.program_name }}')" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                {% else %}
+                                <a href="#" class="btn btn-sm btn-outline-secondary disabled" title="View Only">
+                                    <i class="fas fa-eye"></i> View Only
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if pagination.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link"
+                                href="{{ url_for('short_itinerary_admin.list_itineraries', page=pagination.prev_num, search=search) }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for page_num in range(1, pagination.pages + 1) %}
+                        {% if page_num == pagination.page %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                        {% elif page_num <= 3 or page_num> pagination.pages - 3 or (page_num >= pagination.page - 1 and
+                            page_num <= pagination.page + 1) %} <li class="page-item">
+                                <a class="page-link"
+                                    href="{{ url_for('short_itinerary_admin.list_itineraries', page=page_num, search=search) }}">{{
+                                    page_num }}</a>
+                                </li>
+                                {% elif page_num == 4 or page_num == pagination.pages - 3 %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                {% endif %}
+                                {% endfor %}
+
+                                {% if pagination.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link"
+                                        href="{{ url_for('short_itinerary_admin.list_itineraries', page=pagination.next_num, search=search) }}">Next</a>
+                                </li>
+                                {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No itineraries found</h5>
+                {% if search %}
+                <p>No results for "{{ search }}"</p>
+                <a href="{{ url_for('short_itinerary_admin.list_itineraries') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times"></i> Clear Search
+                </a>
+                {% else %}
+                <p>Create your first itinerary template to get started</p>
+                {% if session.get('user_role') in ['Administrator', 'Manager', 'Operation'] %}
+                <a href="{{ url_for('short_itinerary_admin.create_itinerary') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Template
+                </a>
+                {% endif %}
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<form method="POST" id="deleteForm">
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Confirm Delete</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete this itinerary template?</p>
+                    <p class="fw-bold" id="deleteItemName"></p>
+                    <p class="text-danger"><small>This action cannot be undone.</small></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    function confirmDelete(id, name) {
+        document.getElementById('deleteForm').action = '{{ url_for("short_itinerary_admin.delete_itinerary", id=0) }}'.replace('0', id);
+        document.getElementById('deleteItemName').textContent = name;
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+</script>
+
+{% endblock %}

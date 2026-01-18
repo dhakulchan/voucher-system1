@@ -5,9 +5,9 @@ from datetime import datetime
 def generate_booking_reference():
     """Generate a unique booking reference"""
     today = datetime.now()
-    date_part = today.strftime('%Y%m%d')
+    date_part = today.strftime('%Y%m%d')[2:]  # Remove first 2 digits (20) from year
     random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    return f"BK{date_part}{random_part}"
+    return f"{date_part}{random_part}"
 
 def generate_invoice_reference():
     """Generate a unique invoice reference"""

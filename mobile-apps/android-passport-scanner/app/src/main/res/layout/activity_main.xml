@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="24dp"
+    tools:context=".ui.MainActivity">
+
+    <!-- Header -->
+    <ImageView
+        android:id="@+id/ivIcon"
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:src="@drawable/ic_passport"
+        android:contentDescription="@string/app_name"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="40dp" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Passport Scanner"
+        android:textSize="28sp"
+        android:textStyle="bold"
+        android:textColor="@android:color/black"
+        app:layout_constraintTop_toBottomOf="@id/ivIcon"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp" />
+
+    <TextView
+        android:id="@+id/tvSubtitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Scan QR code to start"
+        android:textSize="14sp"
+        android:textColor="@android:color/darker_gray"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="8dp" />
+
+    <!-- Status Card -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="2dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
+        android:layout_marginTop="32dp">
+
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:textSize="16sp"
+            android:text="Status message"
+            android:visibility="visible" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Progress Bar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/cardStatus"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="24dp" />
+
+    <!-- Buttons Container -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginBottom="40dp">
+
+        <!-- Scan QR Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnScanQr"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Scan QR Code"
+            android:textSize="16sp"
+            app:icon="@drawable/ic_qr_code"
+            app:iconGravity="start"
+            app:cornerRadius="12dp"
+            android:backgroundTint="@color/colorPrimary" />
+
+        <!-- Read Passport Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnReadPassport"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Read Passport NFC"
+            android:textSize="16sp"
+            android:visibility="gone"
+            app:icon="@drawable/ic_nfc"
+            app:iconGravity="start"
+            app:cornerRadius="12dp"
+            android:backgroundTint="@color/colorSuccess"
+            android:layout_marginTop="12dp" />
+
+        <!-- Cancel Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancel"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Cancel"
+            android:textSize="16sp"
+            android:visibility="gone"
+            app:cornerRadius="12dp"
+            android:backgroundTint="@color/colorGray"
+            android:textColor="@color/colorError"
+            android:layout_marginTop="12dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

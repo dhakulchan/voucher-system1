@@ -1,0 +1,71 @@
+================================================================================
+🚀 PRODUCTION SERVER - QUICK REFERENCE
+================================================================================
+
+🌐 SERVER ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SSH:        ssh -i ~/.ssh/LightsailDefaultKey-ap-southeast-1.pem ubuntu@52.220.243.237
+Web:        https://service.dhakulchan.net
+Adminer:    https://service.dhakulchan.net/adminer/
+IP:         52.220.243.237
+
+📊 DATABASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Type:       MariaDB 10.6.22
+Database:   voucher_system
+User:       voucher_user
+Password:   VoucherPass2024!
+Charset:    utf8mb4_unicode_ci
+
+🔧 CORE COMPONENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Template:   Jinja2 3.1.4          ✅
+PDF:        WeasyPrint 62.3       ✅
+DB Admin:   Adminer (latest)      ✅
+SSL:        Let's Encrypt (88d)   ✅
+
+⚙️  SERVICES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Gunicorn:   :8000 (localhost)     Active ✅
+Nginx:      :80, :443             Active ✅
+MariaDB:    :3306                 Active ✅
+
+🔐 SSL CERTIFICATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Domain:     service.dhakulchan.net
+Expires:    Feb 09, 2026 (79 days)
+Renewal:    Auto (88-day window)
+Cron:       Daily at 02:00
+
+📁 DIRECTORIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+App:        /var/www/html
+Venv:       /var/www/html/venv
+Backups:    /var/backups/voucher-system
+Logs:       /var/log/nginx/, journalctl -u gunicorn
+
+⚡ QUICK COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Restart:    sudo systemctl restart gunicorn nginx
+Status:     sudo systemctl status gunicorn nginx
+Logs:       sudo journalctl -u gunicorn -f
+Database:   sudo mysql -u root voucher_system
+SSL Check:  sudo certbot certificates
+Verify:     ./verify_deployment.sh
+
+🛠️ DEPLOYMENT SCRIPTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Deploy:     ./deploy_production_simple.sh
+Verify:     ./verify_deployment.sh
+Rollback:   ./rollback_deployment.sh
+
+💾 LATEST BACKUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Date:       Nov 22, 2025 18:25
+DB:         db_backup_20251122_182552.sql.gz
+App:        app_backup_20251122_182552.tar.gz
+Location:   /var/backups/voucher-system/
+
+✅ STATUS: ALL SYSTEMS OPERATIONAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Last Deployment: Nov 22, 2025 19:51 +07

@@ -127,7 +127,21 @@ class SimpleCustomer:
 class SafeDatetime:
     """Wrapper class to make string datetime values compatible with template datetime operations"""
     def __init__(self, datetime_str):
-        self.datetime_str = str(datetime_str) if datetime_str else ""
+        from datetime import timedelta
+        
+        # Handle timedelta objects (from TIME fields in MySQL)
+        if isinstance(datetime_str, timedelta):
+            # Convert timedelta to HH:MM:SS string format
+            total_seconds = int(datetime_str.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            self.datetime_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+            self._is_time_only = True
+        else:
+            self.datetime_str = str(datetime_str) if datetime_str else ""
+            self._is_time_only = False
+            
         self._parsed_datetime = None
         
     def __str__(self):
@@ -140,6 +154,10 @@ class SafeDatetime:
         """Handle .strftime() calls from templates"""
         if not self.datetime_str:
             return ""
+        
+        # If it's a time-only value, return it as-is for most formats
+        if self._is_time_only:
+            return self.datetime_str
         
         # Try to parse the datetime string if not already parsed
         if not self._parsed_datetime:
@@ -236,7 +254,7 @@ def view_booking_45():
             'quoted_at', 'invoiced_at', 'paid_at', 'vouchered_at', 
             'invoice_paid_date', 'date', 'datetime', 'timestamp',
             'arrival_date', 'departure_date', 'traveling_period_start',
-            'traveling_period_end', 'due_date'
+            'traveling_period_end', 'due_date', 'pickup_time', 'completed_at'
         ]
         
         print(f"📊 Original time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
@@ -247,14 +265,20 @@ def view_booking_45():
                 booking_data[field_name] = SafeDatetime(booking_data[field_name])
                 print(f"🔄 Converted {field_name}: {original_value} -> {booking_data[field_name]} (type: {type(booking_data[field_name])})")
         
-        # Second pass: catch any remaining fields that might contain datetime data
+        # Second pass: catch any remaining fields that might contain datetime data or timedelta objects
+        from datetime import timedelta
         for key, value in booking_data.items():
-            if value and isinstance(value, str):
-                # Check if it looks like a date/time string pattern
-                if any(x in key.lower() for x in ['date', 'time', 'created', 'updated', 'at']) and not isinstance(value, SafeDatetime):
+            if value and not isinstance(value, SafeDatetime):
+                # Check for timedelta objects (from TIME fields)
+                if isinstance(value, timedelta):
                     original_value = value
                     booking_data[key] = SafeDatetime(value)
-                    print(f"🔄 Second pass converted {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
+                    print(f"🔄 Second pass converted timedelta {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
+                # Check if it looks like a date/time string pattern
+                elif isinstance(value, str) and any(x in key.lower() for x in ['date', 'time', 'created', 'updated', 'at']):
+                    original_value = value
+                    booking_data[key] = SafeDatetime(value)
+                    print(f"🔄 Second pass converted string {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
         
         print(f"📊 Final time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
         
@@ -400,7 +424,9 @@ def edit_booking_45():
         datetime_field_names = [
             'time_limit', 'created_at', 'updated_at', 'confirmed_at', 
             'quoted_at', 'invoiced_at', 'paid_at', 'vouchered_at', 
-            'invoice_paid_date', 'date', 'datetime', 'timestamp'
+            'invoice_paid_date', 'date', 'datetime', 'timestamp',
+            'arrival_date', 'departure_date', 'traveling_period_start',
+            'traveling_period_end', 'due_date', 'pickup_time', 'completed_at'
         ]
         
         print(f"📊 Original time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
@@ -411,14 +437,20 @@ def edit_booking_45():
                 booking_data[field_name] = SafeDatetime(booking_data[field_name])
                 print(f"🔄 Converted {field_name}: {original_value} -> {booking_data[field_name]} (type: {type(booking_data[field_name])})")
         
-        # Second pass: catch any remaining fields that might contain datetime data
+        # Second pass: catch any remaining fields that might contain datetime data or timedelta objects
+        from datetime import timedelta
         for key, value in booking_data.items():
-            if value and isinstance(value, str):
-                # Check if it looks like a date/time string pattern
-                if any(x in key.lower() for x in ['date', 'time', 'created', 'updated', 'at']) and not isinstance(value, SafeDatetime):
+            if value and not isinstance(value, SafeDatetime):
+                # Check for timedelta objects (from TIME fields)
+                if isinstance(value, timedelta):
                     original_value = value
                     booking_data[key] = SafeDatetime(value)
-                    print(f"🔄 Second pass converted {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
+                    print(f"🔄 Second pass converted timedelta {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
+                # Check if it looks like a date/time string pattern
+                elif isinstance(value, str) and any(x in key.lower() for x in ['date', 'time', 'created', 'updated', 'at']):
+                    original_value = value
+                    booking_data[key] = SafeDatetime(value)
+                    print(f"🔄 Second pass converted string {key}: {original_value} -> {booking_data[key]} (type: {type(booking_data[key])})")
         
         print(f"📊 Final time_limit value: {booking_data.get('time_limit')} (type: {type(booking_data.get('time_limit'))})")
         

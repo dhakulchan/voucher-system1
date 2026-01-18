@@ -3,10 +3,28 @@
 {% block title %}Create Booking{% endblock %}
 
 {% block extra_head %}
-<!-- Simple Date Picker CSS (No CORS Issues) -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/simple-datepicker.css') }}">
+<!-- QR Code Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
+    /* Date input styling */
+    .flatpickr-calendar .flatpickr-prev-month,
+    .flatpickr-calendar .flatpickr-next-month {
+        position: relative;
+        height: 28px;
+        width: 28px;
+        padding: 0;
+        line-height: 28px;
+        text-align: center;
+    }
+
+    .flatpickr-calendar .flatpickr-prev-month svg,
+    .flatpickr-calendar .flatpickr-next-month svg {
+        width: 14px;
+        height: 14px;
+        vertical-align: middle;
+    }
+
     :root {
         --primary-color: #4f46e5;
         --secondary-color: #06b6d4;
@@ -196,6 +214,10 @@
         color: white;
         border-color: var(--primary-color);
         transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 45px;
     }
 
     .input-group-text:hover {
@@ -205,9 +227,10 @@
 
     .input-group-text i {
         pointer-events: none;
+        font-size: 1.1rem;
+        display: inline-block;
     }
 
-    /* Simple Date Picker styling is in separate CSS file */
     .calendar-icon {
         cursor: pointer;
     }
@@ -215,6 +238,193 @@
     .calendar-icon:hover {
         background-color: #f8f9fa;
     }
+
+    /* Simple Calendar Popup */
+    .calendar-popup {
+        position: absolute !important;
+        z-index: 9999 !important;
+        background: white !important;
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        padding: 10px !important;
+        min-width: 280px !important;
+        max-width: 320px !important;
+        display: none !important;
+    }
+
+    .calendar-popup.active {
+        display: block !important;
+    }
+
+    .calendar-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        margin-bottom: 10px !important;
+        padding: 5px !important;
+    }
+
+    .calendar-header button {
+        background: none !important;
+        border: none !important;
+        font-size: 18px !important;
+        cursor: pointer !important;
+        padding: 5px 10px !important;
+        border-radius: 4px !important;
+    }
+
+    .calendar-header button:hover {
+        background: #f0f0f0 !important;
+    }
+
+    .calendar-header span {
+        font-weight: 600 !important;
+        font-size: 14px !important;
+    }
+
+    .calendar-grid {
+        display: grid !important;
+        grid-template-columns: repeat(7, 1fr) !important;
+        gap: 2px !important;
+        width: 100% !important;
+    }
+
+    .calendar-day-header {
+        text-align: center !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        padding: 5px !important;
+        color: #666 !important;
+        background: #f8f9fa !important;
+        border-radius: 3px !important;
+    }
+
+    .calendar-day {
+        text-align: center !important;
+        padding: 8px !important;
+        cursor: pointer !important;
+        border-radius: 4px !important;
+        font-size: 13px !important;
+        transition: background-color 0.2s !important;
+    }
+
+    .calendar-day:hover {
+        background: #e9ecef !important;
+    }
+
+    .calendar-day.selected {
+        background: var(--primary-color) !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
+
+    .calendar-day.today {
+        border: 2px solid var(--primary-color) !important;
+        font-weight: 600 !important;
+    }
+
+    .calendar-day.other-month {
+        color: #ccc !important;
+    }
+
+    /* Passport Upload Modal Styles */
+    .upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 12px;
+        padding: 50px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: linear-gradient(145deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .upload-zone:hover {
+        border-color: var(--primary-color);
+        background: linear-gradient(145deg, #e7f1ff 0%, #cfe2ff 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+    }
+
+    .upload-zone.border-primary {
+        border-color: var(--primary-color) !important;
+        background: linear-gradient(145deg, #e7f1ff 0%, #cfe2ff 100%) !important;
+    }
+
+    .upload-zone i {
+        color: #6c757d;
+        transition: all 0.3s ease;
+    }
+
+    .upload-zone:hover i {
+        color: var(--primary-color);
+        transform: scale(1.1);
+    }
+
+    #uploadMethodTabs .nav-link {
+        color: #6c757d;
+        font-weight: 500;
+        border: none;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    #uploadMethodTabs .nav-link:hover {
+        color: var(--primary-color);
+        border-bottom-color: rgba(79, 70, 229, 0.3);
+    }
+
+    #uploadMethodTabs .nav-link.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+        background: transparent;
+    }
+</style>
+text-align: center !important;
+padding: 8px 4px !important;
+cursor: pointer !important;
+border-radius: 4px !important;
+font-size: 13px !important;
+min-height: 32px !important;
+display: flex !important;
+align-items: center !important;
+justify-content: center !important;
+}
+
+.calendar-day:hover:not(.disabled) {
+background: #e3f2fd !important;
+}
+
+.calendar-day.disabled {
+color: #ccc !important;
+cursor: not-allowed !important;
+background: #f5f5f5 !important;
+}
+
+.calendar-day.disabled:hover {
+background: #f5f5f5 !important;
+}
+
+.calendar-day.today {
+border: 2px solid #4f46e5 !important;
+font-weight: 600 !important;
+}
+
+.calendar-day.selected {
+background: #4f46e5 !important;
+color: white !important;
+font-weight: 600 !important;
+}
+
+.calendar-day.selected {
+background: #4f46e5;
+color: white;
+}
 </style>
 {% endblock %}
 
@@ -223,6 +433,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
             <i class="fas fa-plus me-2"></i>Create New Booking-Eng
+            {% if queue_data %}
+            <span class="badge bg-info ms-2">From Queue #{{ queue_data.queue_number }}</span>
+            {% endif %}
         </h1>
         <div>
             <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
@@ -230,6 +443,16 @@
             </a>
         </div>
     </div>
+
+    {% if queue_data %}
+    <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Queue Information:</strong> Creating booking for customer <strong>{{ queue_data.customer_name
+            }}</strong>
+        from Queue #{{ queue_data.queue_number }} (Service: {{ queue_data.service_type }})
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
 
     <form method="POST">
         <!-- Customer Selection -->
@@ -240,16 +463,40 @@
                 </h6>
             </div>
             <div class="card-body">
+                {% if queue_data %}
+                <div class="alert alert-warning mb-3" id="queueCustomerAlert">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Queue Customer:</strong> {{ queue_data.customer_name }} ({{
+                            queue_data.customer_phone }})
+                            {% if queue_data.customer_email %} - {{ queue_data.customer_email }}{% endif %}
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success" onclick="createCustomerFromQueue()">
+                            <i class="fas fa-user-plus me-1"></i>Create New Customer
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="mb-3">
                     <label for="customer_id" class="form-label">Customer *</label>
                     <select class="form-select" id="customer_id" name="customer_id" required>
                         <option value="">Select Customer</option>
                         {% for customer in customers %}
-                        <option value="{{ customer.id }}">{{ customer.name }} ({{ customer.email }})</option>
+                        <option value="{{ customer.id }}" data-phone="{{ customer.phone }}"
+                            data-name="{{ customer.name }}" {% if queue_data and
+                            (customer.phone==queue_data.customer_phone or customer.name==queue_data.customer_name)
+                            %}selected{% endif %}>
+                            {{ customer.name }} ({{ customer.email or customer.phone }})
+                        </option>
                         {% endfor %}
                     </select>
                     <div class="form-text">
                         Customer information cannot be changed after booking creation.
+                        {% if queue_data %}
+                        <br><span class="text-info">Queue customer phone: {{ queue_data.customer_phone }}</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -298,9 +545,10 @@
                     </label>
                     <div class="input-group">
                         <input type="text" class="form-control date-input" id="arrival_date" name="arrival_date"
-                            placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" data-date-picker>
-                        <span class="input-group-text">
-                            <i class="fas fa-calendar-alt"></i>
+                            placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" autocomplete="off">
+                        <span class="input-group-text calendar-icon" data-input="arrival_date"
+                            style="cursor: pointer; background-color: #4f46e5; color: white; border-color: #4f46e5; display: flex; align-items: center; justify-content: center; min-width: 50px; padding: 0.375rem 0.75rem;">
+                            <i class="fas fa-calendar-alt" style="font-size: 1.1rem; display: inline-block;"></i>
                         </span>
                     </div>
                     <div class="form-text">Deadline for payment or confirmation - Format: DD/MM/YYYY</div>
@@ -313,12 +561,13 @@
                     </label>
                     <div class="input-group">
                         <input type="text" class="form-control date-input" id="departure_date" name="departure_date"
-                            placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" data-date-picker>
-                        <span class="input-group-text">
-                            <i class="fas fa-calendar-alt"></i>
+                            placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" autocomplete="off">
+                        <span class="input-group-text calendar-icon" data-input="departure_date"
+                            style="cursor: pointer; background-color: #4f46e5; color: white; border-color: #4f46e5; display: flex; align-items: center; justify-content: center; min-width: 50px; padding: 0.375rem 0.75rem;">
+                            <i class="fas fa-calendar-alt" style="font-size: 1.1rem; display: inline-block;"></i>
                         </span>
                     </div>
-                    <div class="form-text">Format: DD/MM/YYYY</div>
+                    <div class="form-text">End date of travel - Format: DD/MM/YYYY</div>
                 </div>
             </div>
         </div>
@@ -368,12 +617,14 @@
                     <label for="time_limit" class="form-label">Time Limit</label>
                     <div class="input-group">
                         <input type="text" class="form-control datetime-input" id="time_limit" name="time_limit"
-                            placeholder="DD/MM/YYYY HH:MM" data-date-picker>
-                        <span class="input-group-text">
-                            <i class="fas fa-clock"></i>
+                            placeholder="DD/MM/YYYY HH:MM" autocomplete="off">
+                        <span class="input-group-text calendar-icon" data-input="time_limit"
+                            style="cursor: pointer; background-color: #4f46e5; color: white; border-color: #4f46e5; display: flex; align-items: center; justify-content: center; min-width: 50px; padding: 0.375rem 0.75rem;">
+                            <i class="fas fa-calendar-alt" style="font-size: 1.1rem; display: inline-block;"></i>
                         </span>
                     </div>
-                    <div class="form-text">Deadline for booking confirmation (Required) - Format: DD/MM/YYYY HH:MM</div>
+                    <div class="form-text">Deadline for booking confirmation (Required) - Format: DD/MM/YYYY HH:MM -
+                        Must be between today and Traveling to date</div>
                 </div>
             </div>
             <div class="col-md-6">
@@ -381,12 +632,14 @@
                     <label for="due_date" class="form-label">Due Date</label>
                     <div class="input-group">
                         <input type="text" class="form-control date-input" id="due_date" name="due_date"
-                            placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" data-date-picker>
-                        <span class="input-group-text">
-                            <i class="fas fa-calendar-alt"></i>
+                            placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" autocomplete="off">
+                        <span class="input-group-text calendar-icon" data-input="due_date"
+                            style="cursor: pointer; background-color: #4f46e5; color: white; border-color: #4f46e5; display: flex; align-items: center; justify-content: center; min-width: 50px; padding: 0.375rem 0.75rem;">
+                            <i class="fas fa-calendar-alt" style="font-size: 1.1rem; display: inline-block;"></i>
                         </span>
                     </div>
-                    <div class="form-text">Payment or action due date - Format: DD/MM/YYYY</div>
+                    <div class="form-text">Payment or action due date - Format: DD/MM/YYYY - Must be between today and
+                        Traveling to date</div>
                 </div>
             </div>
         </div>
@@ -420,6 +673,13 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label for="service_detail" class="form-label">Service</label>
+                    <div class="mb-2">
+                        <button type="button" class="btn btn-sm btn-outline-info" id="btnShortItine"
+                            data-bs-toggle="modal" data-bs-target="#shortItineraryModal">
+                            <i class="fas fa-list-ul"></i> Short Itine
+                        </button>
+                        <small class="text-muted ms-2">Select from templates</small>
+                    </div>
                     <textarea class="form-control" id="service_detail" name="service_detail" rows="6"
                         placeholder="Brief description of the booking..."></textarea>
                     <div class="form-text">Brief description or notes about this booking</div>
@@ -435,6 +695,13 @@
                 </h6>
             </div>
             <div class="card-body">
+                <div class="mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#passportUploadModal">
+                        <i class="fas fa-passport me-1"></i>Upload Passport (MRZ)
+                    </button>
+                    <small class="text-muted ms-2">Auto-extract passenger info from passport</small>
+                </div>
                 <div class="mb-3">
                     <label for="guest_list" class="form-label">Name List</label>
                     <textarea class="form-control" id="guest_list" name="guest_list" rows="8"
@@ -444,34 +711,20 @@
             </div>
         </div>
 
-        <!-- Flight Information and Actions row -->
+        <!-- Flight Information -->
         <div class="row mb-4">
-            <div class="col-lg-8">
+            <div class="col-12">
                 <div class="card h-100">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h6 class="mb-0"><i class="fas fa-plane me-2"></i>Flight Information</h6>
+                        <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal"
+                            data-bs-target="#flightTemplateModal">
+                            <i class="fas fa-list me-1"></i>Select from templates
+                        </button>
                     </div>
                     <div class="card-body">
                         <textarea class="form-control" id="flight_info" name="flight_info" rows="4"
                             placeholder="Flight details..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4">
-                <div class="card h-100" style="background-color: #17a2b8;">
-                    <div class="card-header text-white"
-                        style="background-color: #17a2b8; border-bottom: 1px solid rgba(255,255,255,0.2);">
-                        <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Actions & Documents</h6>
-                    </div>
-                    <div class="card-body text-white">
-                        <div class="mb-3">
-                            <h6 class="text-white"><i class="fas fa-bolt me-2"></i>Quick Actions</h6>
-                            <p class="small mb-0">Actions will be available here</p>
-                        </div>
-                        <div>
-                            <h6 class="text-white"><i class="fas fa-file me-2"></i>Document Numbers</h6>
-                            <p class="small mb-0">Document management features</p>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -605,37 +858,54 @@
         </div>
 
         <!-- Admin Notes -->
+        {% if session.get('user_role') in ['admin', 'manager', 'Administrator', 'Manager'] %}
         <div class="card mb-4">
-            <div class="card-header bg-danger text-white">
-                <h6 class="mb-0"><i class="fas fa-user-shield me-2"></i>Admin Notes</h6>
+            <div class="card-header bg-danger text-white" style="cursor: pointer;" data-bs-toggle="collapse"
+                data-bs-target="#adminNotesCollapse" aria-expanded="false" aria-controls="adminNotesCollapse">
+                <h6 class="mb-0">
+                    <i class="fas fa-user-shield me-2"></i>Admin Notes
+                    <i class="fas fa-chevron-down float-end"></i>
+                </h6>
             </div>
-            <div class="card-body">
-                <textarea class="form-control" id="admin_notes" name="admin_notes" rows="3"
-                    placeholder="Critical administrative information"></textarea>
-                <div class="form-text">Critical administrative information</div>
+            <div class="collapse" id="adminNotesCollapse">
+                <div class="card-body">
+                    <textarea class="form-control" id="admin_notes" name="admin_notes" rows="3"
+                        placeholder="Critical administrative information"></textarea>
+                    <div class="form-text">Critical administrative information</div>
+                </div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Manager Memos -->
+        {% if session.get('user_role') in ['admin', 'manager', 'Administrator', 'Manager'] %}
         <div class="card mb-4">
-            <div class="card-header" style="background-color: #17a2b8; color: white;">
-                <h6 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Manager Memos</h6>
+            <div class="card-header" style="background-color: #17a2b8; color: white; cursor: pointer;"
+                data-bs-toggle="collapse" data-bs-target="#managerMemosCollapse" aria-expanded="false"
+                aria-controls="managerMemosCollapse">
+                <h6 class="mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Manager Memos
+                    <i class="fas fa-chevron-down float-end"></i>
+                </h6>
             </div>
-            <div class="card-body">
-                <textarea class="form-control" id="manager_memos" name="manager_memos" rows="4"
-                    placeholder="Management instructions and notes"></textarea>
-                <div class="form-text">Management instructions and notes</div>
+            <div class="collapse" id="managerMemosCollapse">
+                <div class="card-body">
+                    <textarea class="form-control" id="manager_memos" name="manager_memos" rows="4"
+                        placeholder="Management instructions and notes"></textarea>
+                    <div class="form-text">Management instructions and notes</div>
+                </div>
             </div>
         </div>
+        {% endif %}
 
-        <!-- Internal Notes -->
+        <!-- Operation Notes -->
         <div class="card mb-4">
             <div class="card-header bg-secondary text-white">
-                <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Internal Notes</h6>
+                <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Operation Notes</h6>
             </div>
             <div class="card-body">
                 <textarea class="form-control" id="internal_note" name="internal_note" rows="3"
-                    placeholder="Internal notes (not visible to customer)"></textarea>
+                    placeholder="Staff only - operational details and reminders"></textarea>
                 <div class="form-text">Only staff can see this.</div>
             </div>
         </div>
@@ -650,6 +920,455 @@
             </button>
         </div>
     </form>
+</div>
+
+<!-- Passport Upload Modal -->
+<div class="modal fade" id="passportUploadModal" tabindex="-1" aria-labelledby="passportUploadModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="passportUploadModalLabel">
+                    <i class="fas fa-passport me-2"></i>Upload Passport (MRZ Extraction)
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Quality Guidance Alert -->
+                <div class="alert alert-warning border-warning">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-lightbulb fa-2x me-3 text-warning"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="alert-heading mb-2"><strong>📸 Best Results Tips:</strong></h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="small mb-0">
+                                        <li><strong>✅ Recommended:</strong>
+                                            <ul>
+                                                <li>📧 Email attachment (best quality)</li>
+                                                <li>📷 Direct camera capture below</li>
+                                                <li>☁️ Google Drive/Dropbox link</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="small mb-0">
+                                        <li><strong>⚠️ Lower Quality:</strong>
+                                            <ul>
+                                                <li>💬 Line messenger (compressed)</li>
+                                                <li>📱 Screenshots (low resolution)</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Method Tabs -->
+                <ul class="nav nav-tabs mb-3" id="uploadMethodTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera"
+                            type="button" role="tab" aria-controls="camera" aria-selected="true">
+                            <i class="fas fa-camera me-1"></i>Camera
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="file-tab" data-bs-toggle="tab" data-bs-target="#file" type="button"
+                            role="tab" aria-controls="file" aria-selected="false">
+                            <i class="fas fa-file-upload me-1"></i>File Upload
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="qrcode-tab" data-bs-toggle="tab" data-bs-target="#qrcode"
+                            type="button" role="tab" aria-controls="qrcode" aria-selected="false">
+                            <i class="fas fa-qrcode me-1"></i>QR + NFC
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="textscan-tab" data-bs-toggle="tab" data-bs-target="#textscan"
+                            type="button" role="tab" aria-controls="textscan" aria-selected="false">
+                            <i class="fas fa-text-width me-1"></i>📱 Text Scan
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#email"
+                            type="button" role="tab" aria-controls="email" aria-selected="false">
+                            <i class="fas fa-envelope me-1"></i>Email Guide
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="uploadMethodTabContent">
+                    <!-- Camera Tab -->
+                    <div class="tab-pane fade show active" id="camera" role="tabpanel" aria-labelledby="camera-tab">
+                        <div class="alert alert-success border-success">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>📱 Mobile Camera Tips:</strong>
+                            <ul class="small mb-0 mt-2">
+                                <li>💡 <strong>Use good lighting</strong> - avoid shadows on MRZ area</li>
+                                <li>🎯 <strong>Focus on the MRZ</strong> (2 lines at bottom of passport)</li>
+                                <li>📐 <strong>Take photo straight-on</strong>, not at an angle</li>
+                                <li>🔍 <strong>Get close enough</strong> so MRZ text is clearly visible</li>
+                                <li>📧 <strong>Best results:</strong> Send via Email/Drive instead of Line messenger
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- MRZ Visual Example -->
+                        <div class="card border-primary mb-3">
+                            <div class="card-body p-2">
+                                <h6 class="card-title text-center mb-2">
+                                    <i class="fas fa-camera me-1"></i>📸 <strong>PHOTOGRAPH ONLY THIS AREA:</strong>
+                                </h6>
+                                <div class="bg-dark text-white p-3 rounded text-center"
+                                    style="font-family: 'Courier New', monospace; font-size: 11px; line-height: 1.4;">
+                                    <div class="text-warning mb-1">↓ Bottom of Passport (2 Lines) ↓</div>
+                                    <div style="border: 2px solid #ffc107; padding: 5px; background: #000;">
+                                        P&lt;THASMITH&lt;&lt;JOHN&lt;DAVID&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br>
+                                        AB1234567&lt;9THA9001015M3012311&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;02
+                                    </div>
+                                    <div class="text-success mt-1 small">✅ Get as close as possible - Fill entire photo
+                                        with just these 2 lines!</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="cameraDropZone" class="upload-zone">
+                            <i class="fas fa-camera fa-3x mb-3 text-primary"></i>
+                            <h5>📸 Tap to Open Camera</h5>
+                            <p class="text-muted"><strong>Take photo of passport data page</strong></p>
+                            <p class="small text-primary"><strong>🎯 Focus on MRZ (2 lines at bottom)</strong></p>
+                            <input type="file" id="cameraFileInput" accept="image/jpeg,image/jpg,image/png,image/*"
+                                capture="environment" style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- File Upload Tab -->
+                    <div class="tab-pane fade" id="file" role="tabpanel" aria-labelledby="file-tab">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>File Upload:</strong> Select passport photos/PDFs from your device.
+                        </div>
+                        <div id="passportDropZone" class="upload-zone">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                            <h5>Drag & Drop Files or Click to Browse</h5>
+                            <p class="text-muted">Multiple files supported</p>
+                            <p class="small text-muted">JPG, PNG, PDF (Max 10MB each)</p>
+                            <input type="file" id="passportFileInput" multiple accept=".jpg,.jpeg,.png,.pdf"
+                                style="display: none;">
+                        </div>
+                    </div>
+
+                    <!-- QR Code + NFC Tab -->
+                    <div class="tab-pane fade" id="qrcode" role="tabpanel" aria-labelledby="qrcode-tab">
+                        <div class="alert alert-success border-success">
+                            <div class="d-flex align-items-start">
+                                <i class="fas fa-mobile-alt fa-2x me-3 text-success"></i>
+                                <div>
+                                    <strong>🏆 วิธีที่แม่นยำที่สุด!</strong><br>
+                                    <small>ใช้เทคโนโลยีอ่านชิป NFC ความแม่นยำ 99% - ใช้ได้กับ e-Passport
+                                        เท่านั้น</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-primary">
+                            <div class="card-body text-center">
+                                <h6 class="card-title mb-3">
+                                    <i class="fas fa-mobile-alt me-2 text-primary"></i>สแกนด้วย Mobile App
+                                </h6>
+
+                                <!-- QR Code Container -->
+                                <div id="qrCodeContainer" class="mb-3">
+                                    <div class="spinner-border text-primary" role="status" id="qrLoading">
+                                        <span class="visually-hidden">กำลังสร้าง QR Code...</span>
+                                    </div>
+                                    <div id="qrCodeDisplay" style="display: none;">
+                                        <div id="qrCanvas" class="mx-auto d-block"
+                                            style="max-width: 250px; border: 3px solid #4f46e5; border-radius: 8px; padding: 10px; background: white;">
+                                        </div>
+                                        <p class="mt-2 mb-1 text-muted small">Session ID: <code id="sessionId"></code>
+                                        </p>
+                                        <p class="text-muted small mb-0">ใช้ได้ <strong>5 นาที</strong></p>
+                                    </div>
+                                </div>
+
+                                <!-- Status Display -->
+                                <div id="nfcStatus" class="alert alert-light border" style="display: none;">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        <span id="nfcStatusText">กำลังรอ mobile app...</span>
+                                    </div>
+                                </div>
+
+                                <!-- Instructions -->
+                                <div class="alert alert-light border mt-3 text-start">
+                                    <strong><i class="fas fa-info-circle me-2"></i>วิธีใช้งาน:</strong>
+                                    <ol class="mb-0 mt-2 small">
+                                        <li>ดาวน์โหลด mobile app ของเรา (iOS/Android)</li>
+                                        <li>เปิด app แล้วกด "สแกน QR Code"</li>
+                                        <li>ชี้กล้องไปที่ QR code ด้านบน</li>
+                                        <li>แนบ passport ชิดกับด้านหลังมือถือ</li>
+                                        <li>ข้อมูลจะปรากฏที่นี่อัตโนมัติ</li>
+                                    </ol>
+                                    <div class="mt-2 pt-2 border-top">
+                                        <small class="text-muted">
+                                            <strong>สิ่งที่ต้องมี:</strong><br>
+                                            • e-Passport (มีสัญลักษณ์ชิป 📲)<br>
+                                            • มือถือที่รองรับ NFC<br>
+                                            • iOS 13+ หรือ Android 8+
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- App Download Links -->
+                                <div class="mt-3">
+                                    <small class="text-muted d-block mb-2">ดาวน์โหลด Mobile App:</small>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <a href="#" class="btn btn-sm btn-outline-dark" id="iosAppLink">
+                                            <i class="fab fa-apple me-1"></i>App Store
+                                        </a>
+                                        <a href="#" class="btn btn-sm btn-outline-success" id="androidAppLink">
+                                            <i class="fab fa-google-play me-1"></i>Google Play
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Email Guide Tab -->
+                    <div class="tab-pane fade" id="email" role="tabpanel" aria-labelledby="email-tab">
+                        <div class="alert alert-success">
+                            <i class="fas fa-star me-2"></i>
+                            <strong>Best Quality Method!</strong> Email provides uncompressed images.
+                        </div>
+                        <div class="card border-success">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-envelope-open-text me-2"></i>How to Send via
+                                    Email:</h6>
+                                <ol class="mb-3">
+                                    <li>Take clear photo of passport data page</li>
+                                    <li>Email to: <strong class="text-primary">bookings@yourdomain.com</strong></li>
+                                    <li>Subject: <code>Passport - Booking [Your Name]</code></li>
+                                    <li>We'll extract and add to your booking within 1 hour</li>
+                                </ol>
+                                <div class="alert alert-light border mb-0">
+                                    <small>
+                                        <strong>📋 Photo Tips:</strong><br>
+                                        • Good lighting, no shadows on MRZ<br>
+                                        • Straight angle (not tilted)<br>
+                                        • MRZ clearly visible (bottom 2 lines)<br>
+                                        • All text in focus
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Text Scan Tab (iPhone Live Text) -->
+                    <div class="tab-pane fade" id="textscan" role="tabpanel" aria-labelledby="textscan-tab">
+                        <div class="alert alert-info border-info">
+                            <i class="fas fa-mobile-alt me-2"></i>
+                            <strong>📱 iPhone/iPad Text Scanner (iOS 15+)</strong>
+                            <p class="mb-0 mt-2 small">ใช้ฟีเจอร์ <strong>Live Text</strong> ของ iPhone
+                                เพื่ออ่านข้อความจาก passport แล้ววางที่นี่</p>
+                        </div>
+
+                        <div class="card border-primary mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-clipboard me-2"></i>วิธีใช้งาน (iPhone/iPad):
+                                </h6>
+                                <ol class="mb-3">
+                                    <li>เปิดกล้องถ่ายรูป passport (หน้าที่มีข้อมูล)</li>
+                                    <li><strong>กดค้างที่รูป</strong> หรือกดไอคอน <i class="fas fa-text-slash"></i>
+                                        (Live Text)</li>
+                                    <li>เลือก <strong>"Copy All"</strong> หรือ "คัดลอกทั้งหมด"</li>
+                                    <li><strong>วางข้อความ</strong>ในช่องด้านล่าง</li>
+                                    <li>กด "Parse Data" → ระบบจะแยกข้อมูลอัตโนมัติ</li>
+                                </ol>
+
+                                <div class="alert alert-warning border-warning small mb-3">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    <strong>Tips:</strong> คัดลอกข้อความจากทั้งหน้า passport
+                                    ระบบจะหาข้อมูลที่ต้องการเองอัตโนมัติ
+                                </div>
+
+                                <!-- Text Input Area -->
+                                <div class="form-group mb-3">
+                                    <label class="form-label fw-bold">
+                                        <i class="fas fa-paste me-1"></i>วางข้อความจาก passport ที่นี่:
+                                    </label>
+                                    <textarea id="passportTextInput" class="form-control font-monospace" rows="8"
+                                        placeholder="วาง (Paste) ข้อความจาก passport ที่นี่...
+
+ตัวอย่าง:
+Type / Type
+P
+Code / Code
+THA
+Passport No. / No de passeport
+AD0744582
+Surname / Nom
+LANGDEE
+Given Names / Prénoms
+SOMSAK
+Nationality / Nationalité
+THAI
+Date of birth / Date de naissance
+09 AUG / AOUT 1997
+Sex / Sexe
+M
+Date of issue / Date de délivrance
+20 JAN / JANV 2020
+Date of expiry / Date d'expiration
+20 JAN / JANV 2028"></textarea>
+                                </div>
+
+                                <button type="button" class="btn btn-primary btn-lg w-100" id="parseTextBtn">
+                                    <i class="fas fa-magic me-2"></i>Parse Data (แยกข้อมูลอัตโนมัติ)
+                                </button>
+
+                                <!-- Parse Result Display -->
+                                <div id="parseResult" class="mt-3" style="display: none;">
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        <strong>พบข้อมูล!</strong> กรุณาตรวจสอบข้อมูลก่อนบันทึก
+                                    </div>
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div id="parsedDataDisplay"></div>
+                                            <button type="button" class="btn btn-success w-100 mt-3"
+                                                id="insertParsedDataBtn">
+                                                <i class="fas fa-check me-2"></i>ยืนยันและบันทึกข้อมูล
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Example Visual -->
+                        <div class="card border-secondary">
+                            <div class="card-header bg-light">
+                                <small class="text-muted"><i class="fas fa-info-circle me-1"></i>ตัวอย่างข้อความที่
+                                    iPhone Live Text จะอ่านได้</small>
+                            </div>
+                            <div class="card-body small font-monospace" style="font-size: 0.85rem;">
+                                <div class="text-muted">
+                                    Type: P<br>
+                                    Code: THA<br>
+                                    Passport No.: AD0744582<br>
+                                    Surname: LANGDEE<br>
+                                    Given Names: SOMSAK<br>
+                                    Nationality: THAI<br>
+                                    Date of birth: 09 AUG 1997<br>
+                                    Sex: M<br>
+                                    Date of expiry: 20 JAN 2028
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <span class="badge bg-secondary">
+                        <span id="selectedFileCount">0</span> file(s) selected
+                    </span>
+                </div>
+
+                <!-- Upload Status -->
+                <div id="uploadStatus" style="display: none;"></div>
+
+                <!-- MRZ Information -->
+                <div class="alert alert-light border mt-3">
+                    <small class="text-muted">
+                        <strong><i class="fas fa-info-circle me-1"></i>What is MRZ?</strong><br>
+                        MRZ (Machine Readable Zone) is the <strong>2 lines of text at the bottom</strong> of your
+                        passport data page.
+                        Contains encoded information: name, passport number, nationality, DOB, expiry date.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="uploadPassportBtn" disabled>
+                    <i class="fas fa-upload me-2"></i>Extract Data
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Passport Preview Modal -->
+<div class="modal fade" id="passportPreviewModal" tabindex="-1" aria-labelledby="passportPreviewModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="passportPreviewModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>Extracted Passport Data
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Review Before Insert:</strong> Please verify extracted data is correct. You can edit any
+                    field before inserting.
+                </div>
+
+                <form id="passportPreviewForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-user me-1"></i>Full Name</label>
+                            <input type="text" class="form-control" id="preview_full_name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><i class="fas fa-id-card me-1"></i>Passport Number</label>
+                            <input type="text" class="form-control" id="preview_passport_number">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-flag me-1"></i>Nationality</label>
+                            <input type="text" class="form-control" id="preview_nationality">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-birthday-cake me-1"></i>Date of Birth</label>
+                            <input type="text" class="form-control" id="preview_date_of_birth" placeholder="YYYY-MM-DD">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-calendar-times me-1"></i>Expiry Date</label>
+                            <input type="text" class="form-control" id="preview_expiry_date" placeholder="YYYY-MM-DD">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label"><i class="fas fa-venus-mars me-1"></i>Sex</label>
+                            <select class="form-select" id="preview_sex">
+                                <option value="">Select</option>
+                                <option value="M">Male (M)</option>
+                                <option value="F">Female (F)</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmInsertBtn">
+                    <i class="fas fa-check me-2"></i>Confirm & Insert to Guest List
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -847,72 +1566,1900 @@
     });
 </script>
 
-<!-- Simple Date Picker JavaScript (No CORS Issues) -->
-<script src="{{ url_for('static', filename='js/simple-datepicker.js') }}"></script>
-
 <script>
-    // Initialize simple date pickers after DOM is loaded
+    // Date input formatting and validation for DD/MM/YYYY format
     document.addEventListener('DOMContentLoaded', function () {
-        console.log('DOM loaded, initializing simple date pickers...');
+        const arrivalDateInput = document.getElementById('arrival_date');
+        const departureDateInput = document.getElementById('departure_date');
+        const timeLimitInput = document.getElementById('time_limit');
+        const dueDateInput = document.getElementById('due_date');
 
-        try {
-            // Initialize simple date pickers (no CORS issues)
-            const datePickers = initSimpleDatePickers();
-            console.log('Simple date pickers initialized successfully');
+        // Format date input as user types (DD/MM/YYYY)
+        function formatDateInput(input) {
+            let value = input.value.replace(/\D/g, ''); // Remove non-digits
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2);
+            }
+            if (value.length >= 5) {
+                value = value.substring(0, 5) + '/' + value.substring(5, 9);
+            }
+            input.value = value;
+        }
 
-            // Make calendar icons clickable
-            document.querySelectorAll('.input-group-text').forEach(function (icon) {
-                const hasCalendarIcon = icon.querySelector('.fa-calendar-alt, .fa-clock');
-                if (hasCalendarIcon) {
-                    icon.style.cursor = 'pointer';
-                    icon.addEventListener('click', function () {
-                        console.log('Calendar icon clicked');
-                        const input = this.parentElement.querySelector('input');
-                        if (input && input._simpleDatePicker) {
-                            console.log('Opening simple date picker for:', input.id);
-                            input._simpleDatePicker.open();
+        // Format datetime input as user types (DD/MM/YYYY HH:MM)
+        function formatDateTimeInput(input) {
+            const cursorPos = input.selectionStart;
+            const oldValue = input.value;
+            let value = input.value;
+
+            // Allow typing space, digits, colon, and slash
+            value = value.replace(/[^\d\s:/]/g, '');
+
+            // Split into date and time parts
+            let spaceIndex = value.indexOf(' ');
+            let datePart = '';
+            let timePart = '';
+
+            if (spaceIndex >= 0) {
+                datePart = value.substring(0, spaceIndex);
+                timePart = value.substring(spaceIndex + 1);
+            } else {
+                datePart = value;
+            }
+
+            // Format date part (DD/MM/YYYY)
+            let dateDigits = datePart.replace(/\D/g, '');
+            if (dateDigits.length > 8) dateDigits = dateDigits.substring(0, 8);
+
+            let formattedDate = '';
+            if (dateDigits.length > 0) {
+                formattedDate = dateDigits.substring(0, 2);
+                if (dateDigits.length >= 3) {
+                    formattedDate += '/' + dateDigits.substring(2, 4);
+                }
+                if (dateDigits.length >= 5) {
+                    formattedDate += '/' + dateDigits.substring(4, 8);
+                }
+            }
+
+            // Format time part (HH:MM)
+            let timeDigits = timePart.replace(/\D/g, '');
+            if (timeDigits.length > 4) timeDigits = timeDigits.substring(0, 4);
+
+            let formattedTime = '';
+            if (timeDigits.length > 0) {
+                formattedTime = timeDigits.substring(0, 2);
+                if (timeDigits.length >= 3) {
+                    formattedTime += ':' + timeDigits.substring(2, 4);
+                }
+            }
+
+            // Combine
+            let newValue = formattedDate;
+            if (spaceIndex >= 0 || timePart.length > 0) {
+                newValue += ' ' + formattedTime;
+            }
+
+            if (newValue !== oldValue) {
+                input.value = newValue;
+
+                // Try to maintain cursor position
+                let newCursorPos = cursorPos;
+                if (newValue.length > oldValue.length) {
+                    // Auto-inserted character (/ or :)
+                    newCursorPos = cursorPos + (newValue.length - oldValue.length);
+                } else if (newValue.length < oldValue.length) {
+                    // Character deleted
+                    newCursorPos = cursorPos;
+                }
+
+                // Keep cursor in valid range
+                newCursorPos = Math.max(0, Math.min(newCursorPos, newValue.length));
+                input.setSelectionRange(newCursorPos, newCursorPos);
+            }
+        }
+
+        // Validate date string in DD/MM/YYYY format
+        function isValidDate(dateStr) {
+            const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+            const match = dateStr.match(regex);
+            if (!match) return false;
+
+            const day = parseInt(match[1], 10);
+            const month = parseInt(match[2], 10);
+            const year = parseInt(match[3], 10);
+
+            const date = new Date(year, month - 1, day);
+            return date.getFullYear() === year &&
+                date.getMonth() === month - 1 &&
+                date.getDate() === day;
+        }
+
+        // Parse DD/MM/YYYY to Date object
+        function parseDate(dateStr) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return null;
+        }
+
+        // Set default to today for arrival date if empty
+        if (arrivalDateInput && !arrivalDateInput.value) {
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            arrivalDateInput.value = `${dd}/${mm}/${yyyy}`;
+        }
+
+        // Add input event listeners for auto-formatting
+        if (arrivalDateInput) {
+            arrivalDateInput.addEventListener('input', () => formatDateInput(arrivalDateInput));
+            arrivalDateInput.addEventListener('change', validateDateConstraints);
+        }
+        if (departureDateInput) {
+            departureDateInput.addEventListener('input', () => formatDateInput(departureDateInput));
+            departureDateInput.addEventListener('change', validateDateConstraints);
+        }
+        if (dueDateInput) {
+            dueDateInput.addEventListener('input', () => formatDateInput(dueDateInput));
+            dueDateInput.addEventListener('change', validateDateConstraints);
+        }
+        if (timeLimitInput) {
+            timeLimitInput.addEventListener('input', function (e) {
+                formatDateTimeInput(timeLimitInput);
+            });
+            timeLimitInput.addEventListener('change', validateDateConstraints);
+            timeLimitInput.addEventListener('blur', validateDateConstraints);
+        }
+
+        // Validate date constraints
+        function validateDateConstraints() {
+            if (!arrivalDateInput || !arrivalDateInput.value || !isValidDate(arrivalDateInput.value)) {
+                return;
+            }
+
+            const arrivalDate = parseDate(arrivalDateInput.value);
+            if (!arrivalDate) return;
+
+            // Validate departure date
+            if (departureDateInput && departureDateInput.value) {
+                if (!isValidDate(departureDateInput.value)) {
+                    departureDateInput.classList.add('is-invalid');
+                    departureDateInput.setCustomValidity('Invalid date format. Use DD/MM/YYYY');
+                    return;
+                }
+                const departureDate = parseDate(departureDateInput.value);
+                if (departureDate && departureDate < arrivalDate) {
+                    departureDateInput.classList.add('is-invalid');
+                    departureDateInput.setCustomValidity('Traveling to must be on or after Traveling from');
+                } else {
+                    departureDateInput.classList.remove('is-invalid');
+                    departureDateInput.setCustomValidity('');
+                }
+            }
+
+            // Validate time limit: Today <= time_limit <= Traveling to
+            if (timeLimitInput && timeLimitInput.value) {
+                const timeParts = timeLimitInput.value.split(' ');
+                if (timeParts.length >= 1 && timeParts[0]) {
+                    if (!isValidDate(timeParts[0])) {
+                        timeLimitInput.classList.add('is-invalid');
+                        timeLimitInput.setCustomValidity('Invalid date format. Use DD/MM/YYYY HH:MM');
+                        return;
+                    }
+                    const timeDate = parseDate(timeParts[0]);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+
+                    if (timeDate && timeDate < today) {
+                        timeLimitInput.classList.add('is-invalid');
+                        timeLimitInput.setCustomValidity('Time Limit must be on or after today');
+                    } else if (departureDateInput && departureDateInput.value) {
+                        const departureDate = parseDate(departureDateInput.value);
+                        if (timeDate && departureDate && timeDate > departureDate) {
+                            timeLimitInput.classList.add('is-invalid');
+                            timeLimitInput.setCustomValidity('Time Limit must be on or before Traveling to');
                         } else {
-                            console.log('No simple date picker found for input:', input ? input.id : 'no input');
+                            timeLimitInput.classList.remove('is-invalid');
+                            timeLimitInput.setCustomValidity('');
                         }
-                    });
+                    } else {
+                        timeLimitInput.classList.remove('is-invalid');
+                        timeLimitInput.setCustomValidity('');
+                    }
+                }
+            }
+
+            // Validate due date: Today <= due_date <= Traveling to
+            if (dueDateInput && dueDateInput.value) {
+                if (!isValidDate(dueDateInput.value)) {
+                    dueDateInput.classList.add('is-invalid');
+                    dueDateInput.setCustomValidity('Invalid date format. Use DD/MM/YYYY');
+                    return;
+                }
+                const dueDate = parseDate(dueDateInput.value);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (dueDate && dueDate < today) {
+                    dueDateInput.classList.add('is-invalid');
+                    dueDateInput.setCustomValidity('Due Date must be on or after today');
+                } else if (departureDateInput && departureDateInput.value) {
+                    const departureDate = parseDate(departureDateInput.value);
+                    if (dueDate && departureDate && dueDate > departureDate) {
+                        dueDateInput.classList.add('is-invalid');
+                        dueDateInput.setCustomValidity('Due Date must be on or before Traveling to');
+                    } else {
+                        dueDateInput.classList.remove('is-invalid');
+                        dueDateInput.setCustomValidity('');
+                    }
+                } else {
+                    dueDateInput.classList.remove('is-invalid');
+                    dueDateInput.setCustomValidity('');
+                }
+            }
+        }
+
+        // Calendar Popup functionality
+        let currentCalendarInput = null;
+        let currentCalendarDate = new Date();
+        let calendarPopup = null;
+
+        function createCalendarPopup() {
+            if (calendarPopup) return calendarPopup;
+
+            calendarPopup = document.createElement('div');
+            calendarPopup.className = 'calendar-popup';
+            // Force inline styles for popup container
+            calendarPopup.style.cssText = 'position: absolute; z-index: 9999; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 10px; min-width: 280px; max-width: 320px; display: none;';
+
+            calendarPopup.innerHTML = `
+                <div class="calendar-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding: 5px;">
+                    <button type="button" class="prev-month" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px 10px; border-radius: 4px;">&lsaquo;</button>
+                    <span class="current-month" style="font-weight: 600; font-size: 14px;"></span>
+                    <button type="button" class="next-month" style="background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px 10px; border-radius: 4px;">&rsaquo;</button>
+                </div>
+                <div class="calendar-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; width: 100%;"></div>
+                <div class="time-picker-section" style="display: none; margin-top: 15px; padding: 10px; border-top: 1px solid #ddd;">
+                    <div style="margin-bottom: 8px; font-weight: 600; font-size: 13px; color: #333;">Select Time:</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 11px; color: #666; margin-bottom: 3px;">Hour</label>
+                            <select class="time-hour" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            </select>
+                        </div>
+                        <div style="margin-top: 18px; font-weight: bold; color: #666;">:</div>
+                        <div style="flex: 1;">
+                            <label style="display: block; font-size: 11px; color: #666; margin-bottom: 3px;">Minute</label>
+                            <select class="time-minute" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px;">
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-done" style="width: 100%; margin-top: 10px; padding: 8px; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 600;">Done</button>
+                </div>
+            `;
+            document.body.appendChild(calendarPopup);
+
+            calendarPopup.querySelector('.prev-month').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderCalendar();
+            });
+
+            calendarPopup.querySelector('.next-month').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+            // Close calendar when clicking outside
+            document.addEventListener('click', (e) => {
+                if (calendarPopup && !calendarPopup.contains(e.target) && !e.target.closest('.calendar-icon')) {
+                    closeCalendar();
                 }
             });
 
-            // Set some default dates in DD/MM/YYYY format
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            const nextMonth = new Date(today);
-            nextMonth.setDate(today.getDate() + 30);
-
-            function formatDateToDDMMYYYY(date) {
-                const day = String(date.getDate()).padStart(2, '0');
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-                return `${day}/${month}/${year}`;
-            }
-
-            // Set default values
-            const arrivalInput = document.getElementById('arrival_date');
-            const departureInput = document.getElementById('departure_date');
-            const dueDateInput = document.getElementById('due_date');
-
-            if (arrivalInput && !arrivalInput.value) {
-                arrivalInput.value = formatDateToDDMMYYYY(today);
-            }
-
-            if (departureInput && !departureInput.value) {
-                departureInput.value = formatDateToDDMMYYYY(tomorrow);
-            }
-
-            if (dueDateInput && !dueDateInput.value) {
-                dueDateInput.value = formatDateToDDMMYYYY(nextMonth);
-            }
-
-            console.log('Default dates set in DD/MM/YYYY format');
-        } catch (error) {
-            console.error('Error initializing simple date pickers:', error);
+            return calendarPopup;
         }
+
+        function renderCalendar() {
+            const popup = createCalendarPopup();
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+
+            popup.querySelector('.current-month').textContent = `${monthNames[month]} ${year}`;
+
+            const grid = popup.querySelector('.calendar-grid');
+            // Force grid layout with inline styles
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            grid.style.gap = '2px';
+            grid.style.width = '100%';
+            grid.innerHTML = '';
+
+            // Day headers
+            const dayHeaders = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+            dayHeaders.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'calendar-day-header';
+                header.style.cssText = 'text-align: center; font-size: 11px; font-weight: 600; padding: 5px; color: #666; background: #f8f9fa; border-radius: 3px;';
+                header.textContent = day;
+                grid.appendChild(header);
+            });
+
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Get min and max date constraints
+            let minDate = null;
+            let maxDate = null;
+
+            // For time_limit and due_date: Today <= date <= Traveling to
+            if (currentCalendarInput && (currentCalendarInput.id === 'time_limit' || currentCalendarInput.id === 'due_date')) {
+                // Min date is today
+                minDate = new Date();
+                minDate.setHours(0, 0, 0, 0);
+
+                // Max date is departure date (traveling to)
+                if (departureDateInput && departureDateInput.value) {
+                    maxDate = parseDate(departureDateInput.value);
+                }
+            } else if (currentCalendarInput && currentCalendarInput.id === 'departure_date' && arrivalDateInput.value) {
+                // For departure_date: >= arrival_date
+                minDate = parseDate(arrivalDateInput.value);
+            }
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Empty cells before first day
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.style.cssText = 'min-height: 32px;';
+                grid.appendChild(emptyCell);
+            }
+
+            // Day cells
+            for (let day = 1; day <= daysInMonth; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                cell.textContent = day;
+
+                // Base styles for all day cells
+                let cellStyles = 'text-align: center; padding: 8px 4px; cursor: pointer; border-radius: 4px; font-size: 13px; min-height: 32px; display: flex; align-items: center; justify-content: center;';
+
+                const cellDate = new Date(year, month, day);
+                cellDate.setHours(0, 0, 0, 0);
+
+                // Check if disabled (outside min/max range)
+                let isDisabled = false;
+                if (minDate && cellDate < minDate) {
+                    isDisabled = true;
+                }
+                if (maxDate && cellDate > maxDate) {
+                    isDisabled = true;
+                }
+
+                if (isDisabled) {
+                    cell.classList.add('disabled');
+                    cellStyles += ' color: #ccc; cursor: not-allowed; background: #f5f5f5;';
+                } else {
+                    cell.addEventListener('click', () => selectDate(day));
+                    cellStyles += ' background: white;';
+                }
+
+                // Mark today
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (cellDate.getTime() === today.getTime()) {
+                    cell.classList.add('today');
+                    cellStyles += ' border: 2px solid #4f46e5; font-weight: 600;';
+                }
+
+                // Mark selected
+                if (currentCalendarInput && currentCalendarInput.value) {
+                    const selectedDate = parseDate(currentCalendarInput.value);
+                    if (selectedDate && cellDate.getTime() === selectedDate.getTime()) {
+                        cell.classList.add('selected');
+                        cellStyles = 'text-align: center; padding: 8px 4px; border-radius: 4px; font-size: 13px; min-height: 32px; display: flex; align-items: center; justify-content: center; background: #4f46e5; color: white; font-weight: 600; cursor: pointer;';
+                    }
+                }
+
+                cell.style.cssText = cellStyles;
+                grid.appendChild(cell);
+            }
+        }
+
+        function selectDate(day) {
+            if (!currentCalendarInput) return;
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            const dd = String(day).padStart(2, '0');
+            const mm = String(month + 1).padStart(2, '0');
+            const yyyy = year;
+
+            // Check if it's a datetime input (needs HH:MM)
+            if (currentCalendarInput.classList.contains('datetime-input')) {
+                // Get time from time picker dropdowns
+                const popup = calendarPopup;
+                const hourSelect = popup.querySelector('.time-hour');
+                const minuteSelect = popup.querySelector('.time-minute');
+
+                let timeValue = '12:00';
+                if (hourSelect && minuteSelect && hourSelect.value && minuteSelect.value) {
+                    timeValue = `${hourSelect.value}:${minuteSelect.value}`;
+                } else {
+                    // Fallback: try to preserve existing time
+                    const currentValue = currentCalendarInput.value;
+                    if (currentValue && currentValue.includes(' ')) {
+                        const parts = currentValue.split(' ');
+                        if (parts.length > 1) {
+                            timeValue = parts[1];
+                        }
+                    }
+                }
+
+                currentCalendarInput.value = `${dd}/${mm}/${yyyy} ${timeValue}`;
+                currentCalendarInput.dispatchEvent(new Event('change'));
+                validateDateConstraints();
+                // Don't close calendar for datetime inputs - let user adjust time
+            } else {
+                // Regular date input
+                currentCalendarInput.value = `${dd}/${mm}/${yyyy}`;
+                currentCalendarInput.dispatchEvent(new Event('change'));
+                validateDateConstraints();
+                closeCalendar();
+            }
+        }
+
+        function openCalendar(input) {
+            console.log('openCalendar called for:', input.id);
+            currentCalendarInput = input;
+
+            // Create popup if it doesn't exist
+            const popup = createCalendarPopup();
+
+            // Render calendar
+            renderCalendar();
+
+            // Set calendar to input's date or today
+            let currentTime = { hour: 12, minute: 0 };
+            if (input.value) {
+                // For datetime inputs, extract date and time parts
+                let dateValue = input.value;
+                if (input.classList.contains('datetime-input') && dateValue.includes(' ')) {
+                    const parts = dateValue.split(' ');
+                    dateValue = parts[0]; // Get DD/MM/YYYY part
+                    if (parts.length > 1 && parts[1].includes(':')) {
+                        const timeParts = parts[1].split(':');
+                        currentTime.hour = parseInt(timeParts[0]) || 12;
+                        currentTime.minute = parseInt(timeParts[1]) || 0;
+                    }
+                }
+
+                if (isValidDate(dateValue)) {
+                    currentCalendarDate = parseDate(dateValue);
+                } else {
+                    currentCalendarDate = new Date();
+                }
+            } else {
+                currentCalendarDate = new Date();
+                currentTime.hour = currentCalendarDate.getHours();
+                currentTime.minute = Math.floor(currentCalendarDate.getMinutes() / 5) * 5;
+            }
+
+            // Show and populate time picker for datetime inputs
+            const timePickerSection = popup.querySelector('.time-picker-section');
+            if (input.classList.contains('datetime-input') && timePickerSection) {
+                timePickerSection.style.display = 'block';
+
+                // Populate hour dropdown
+                const hourSelect = popup.querySelector('.time-hour');
+                hourSelect.innerHTML = '';
+                for (let h = 0; h < 24; h++) {
+                    const hourStr = String(h).padStart(2, '0');
+                    const option = document.createElement('option');
+                    option.value = hourStr;
+                    option.textContent = hourStr;
+                    if (h === currentTime.hour) option.selected = true;
+                    hourSelect.appendChild(option);
+                }
+
+                // Populate minute dropdown (5-minute intervals)
+                const minuteSelect = popup.querySelector('.time-minute');
+                minuteSelect.innerHTML = '';
+                for (let m = 0; m < 60; m += 5) {
+                    const minuteStr = String(m).padStart(2, '0');
+                    const option = document.createElement('option');
+                    option.value = minuteStr;
+                    option.textContent = minuteStr;
+                    if (m === currentTime.minute || (currentTime.minute >= m && currentTime.minute < m + 5)) {
+                        option.selected = true;
+                    }
+                    minuteSelect.appendChild(option);
+                }
+
+                // Update input when time changes
+                const updateTimeInInput = () => {
+                    if (!currentCalendarInput) return;
+                    const dateValue = currentCalendarInput.value.split(' ')[0] || '';
+                    if (dateValue) {
+                        const newTime = `${hourSelect.value}:${minuteSelect.value}`;
+                        currentCalendarInput.value = `${dateValue} ${newTime}`;
+                        currentCalendarInput.dispatchEvent(new Event('change'));
+                    }
+                };
+
+                hourSelect.addEventListener('change', updateTimeInInput);
+                minuteSelect.addEventListener('change', updateTimeInInput);
+
+                // Done button closes calendar
+                const doneBtn = popup.querySelector('.btn-done');
+                if (doneBtn) {
+                    doneBtn.onclick = () => closeCalendar();
+                }
+            } else if (timePickerSection) {
+                timePickerSection.style.display = 'none';
+            }
+
+            // Position calendar below input
+            const rect = input.getBoundingClientRect();
+            popup.style.position = 'fixed';
+            popup.style.left = rect.left + 'px';
+            popup.style.top = (rect.bottom + 5) + 'px';
+            popup.style.display = 'block';
+            popup.classList.add('active');
+
+            console.log('Calendar opened at:', rect.left, rect.bottom);
+        }
+
+        function closeCalendar() {
+            if (calendarPopup) {
+                calendarPopup.classList.remove('active');
+                calendarPopup.style.display = 'none';
+            }
+            currentCalendarInput = null;
+        }
+
+        // Add click handlers for calendar icons - MUST be inside DOMContentLoaded
+        const calendarIcons = document.querySelectorAll('.calendar-icon');
+        console.log('Found calendar icons:', calendarIcons.length);
+
+        calendarIcons.forEach(icon => {
+            icon.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('Calendar icon clicked:', this.getAttribute('data-input'));
+
+                const inputId = this.getAttribute('data-input');
+                const input = document.getElementById(inputId);
+
+                if (input) {
+                    // Open calendar for both date and datetime inputs
+                    console.log('Opening calendar for:', inputId);
+                    openCalendar(input);
+                }
+            });
+        });
     });
 </script>
+
+<!-- Short Itinerary Selection Modal -->
+<div class="modal fade" id="shortItineraryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-list-ul"></i> Select Short Itinerary Templates
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="itinerarySearch"
+                        placeholder="🔍 Search program name...">
+                </div>
+                <div id="itineraryLoading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-info"></div>
+                    <p class="mt-2 text-muted">Loading...</p>
+                </div>
+                <div id="itineraryList" class="list-group" style="max-height: 400px; overflow-y: auto;"></div>
+                <div id="itineraryEmpty" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No templates found</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto"><small class="text-muted"><span id="selectedCount">0</span> selected</small></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnInsertItineraries"><i class="fas fa-check"></i>
+                    Insert</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const modal = document.getElementById('shortItineraryModal');
+        const searchInput = document.getElementById('itinerarySearch');
+        const listContainer = document.getElementById('itineraryList');
+        const loadingDiv = document.getElementById('itineraryLoading');
+        const emptyDiv = document.getElementById('itineraryEmpty');
+        const selectedCountSpan = document.getElementById('selectedCount');
+        const insertBtn = document.getElementById('btnInsertItineraries');
+        const serviceDetailTextarea = document.getElementById('service_detail');
+        let selectedItems = new Set();
+        let allItineraries = [];
+        let searchTimeout = null;
+
+        async function loadItineraries(searchQuery = '') {
+            loadingDiv.style.display = 'block';
+            listContainer.style.display = 'none';
+            emptyDiv.style.display = 'none';
+            try {
+                const url = '/admin/short-itinerary/api/search' + (searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : '');
+                const response = await fetch(url);
+                const data = await response.json();
+                allItineraries = data.items;
+                renderItineraries(allItineraries);
+            } catch (error) {
+                console.error('Error loading itineraries:', error);
+                listContainer.innerHTML = '<div class="alert alert-danger">Error loading templates</div>';
+                listContainer.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function renderItineraries(items) {
+            if (items.length === 0) {
+                listContainer.style.display = 'none';
+                emptyDiv.style.display = 'block';
+                return;
+            }
+            listContainer.innerHTML = items.map(item => {
+                const prices = [];
+                if (item.adult_twin_sharing > 0) prices.push(`ADT Twin: ${item.adult_twin_sharing.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (item.adult_single > 0) prices.push(`ADT Single: ${item.adult_single.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (item.child_extra_bed > 0) prices.push(`CHD w/Bed: ${item.child_extra_bed.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                const priceText = prices.length > 0 ? prices.join(' | ') : 'No prices';
+                const isSelected = selectedItems.has(item.id);
+                return `
+                <label class="list-group-item list-group-item-action" style="cursor: pointer;">
+                    <div class="form-check">
+                        <input class="form-check-input itinerary-checkbox" type="checkbox" value="${item.id}" ${isSelected ? 'checked' : ''}>
+                        <div class="ms-2">
+                            <h6 class="mb-1">${item.program_name} ${item.tour_code ? `<span class="badge bg-info">${item.tour_code}</span>` : ''}</h6>
+                            ${item.description ? `<p class="mb-1 text-muted small">${item.description}</p>` : ''}
+                            <small class="text-info">💰 ${priceText}</small>
+                            ${item.notes ? `<br><small class="text-muted">📝 ${item.notes.substring(0, 80)}${item.notes.length > 80 ? '...' : ''}</small>` : ''}
+                        </div>
+                    </div>
+                </label>
+            `;
+            }).join('');
+            listContainer.style.display = 'block';
+            emptyDiv.style.display = 'none';
+            listContainer.querySelectorAll('.itinerary-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handleCheckboxChange);
+            });
+        }
+
+        function handleCheckboxChange(e) {
+            const itemId = parseInt(e.target.value);
+            if (e.target.checked) {
+                selectedItems.add(itemId);
+            } else {
+                selectedItems.delete(itemId);
+            }
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            selectedCountSpan.textContent = selectedItems.size;
+            insertBtn.disabled = selectedItems.size === 0;
+        }
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadItineraries(this.value);
+            }, 300);
+        });
+
+        insertBtn.addEventListener('click', async function () {
+            if (selectedItems.size === 0) return;
+            const selectedItineraries = allItineraries.filter(item => selectedItems.has(item.id));
+            const formattedTexts = [];
+            let index = 1;
+            for (const item of selectedItineraries) {
+                // Program name with tour code in parentheses
+                if (item.tour_code) {
+                    formattedTexts.push(`${index}. ${item.program_name} (${item.tour_code})`);
+                } else {
+                    formattedTexts.push(`${index}. ${item.program_name}`);
+                }
+                if (item.description) {
+                    // Split description by newlines and add proper indentation
+                    const descLines = item.description.split('\n');
+                    descLines.forEach((line, idx) => {
+                        // First line: no indentation (aligned with Day1)
+                        // Subsequent lines: keep original formatting
+                        if (idx === 0) {
+                            formattedTexts.push(line.trim());
+                        } else {
+                            formattedTexts.push(line);
+                        }
+                    });
+                }
+                const prices = [];
+                if (item.adult_twin_sharing > 0) prices.push(`Adult Twin: ${item.adult_twin_sharing.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (item.adult_single > 0) prices.push(`Adult Single: ${item.adult_single.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (item.child_extra_bed > 0) prices.push(`Child w/Bed: ${item.child_extra_bed.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (item.child_no_bed > 0) prices.push(`Child No Bed: ${item.child_no_bed.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (item.infant > 0) prices.push(`Infant: ${item.infant.toLocaleString('en-US', { minimumFractionDigits: 2 })} THB`);
+                if (prices.length > 0) {
+                    formattedTexts.push(`Price: ${prices.join(' | ')}`);
+                }
+                if (item.notes) {
+                    formattedTexts.push(`Note: ${item.notes}`);
+                }
+                if (item.product_link) {
+                    formattedTexts.push(`คลิกดูเพิ่ม ${item.product_link}`);
+                }
+                formattedTexts.push('');
+                index++;
+            }
+            const currentText = serviceDetailTextarea.value.trim();
+            const newText = formattedTexts.join('\n').trim();
+            if (currentText) {
+                serviceDetailTextarea.value = currentText + '\n\n' + newText;
+            } else {
+                serviceDetailTextarea.value = newText;
+            }
+            bootstrap.Modal.getInstance(modal).hide();
+            selectedItems.clear();
+            updateSelectedCount();
+        });
+
+        modal.addEventListener('show.bs.modal', function () {
+            loadItineraries();
+            searchInput.value = '';
+        });
+
+        updateSelectedCount();
+    })();
+</script>
+
+<!-- Flight Template Selection Modal -->
+<div class="modal fade" id="flightTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-plane"></i> Select Flight Templates
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="flightSearch"
+                        placeholder="🔍 Search template name or route...">
+                </div>
+                <div id="flightLoading" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-muted">Loading...</p>
+                </div>
+                <div id="flightList" class="list-group" style="max-height: 400px; overflow-y: auto;"></div>
+                <div id="flightEmpty" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-plane-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No flight templates found</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto"><small class="text-muted"><span id="flightSelectedCount">0</span> selected</small>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="btnInsertFlights"><i class="fas fa-check"></i>
+                    Insert</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const modal = document.getElementById('flightTemplateModal');
+        const searchInput = document.getElementById('flightSearch');
+        const listContainer = document.getElementById('flightList');
+        const loadingDiv = document.getElementById('flightLoading');
+        const emptyDiv = document.getElementById('flightEmpty');
+        const selectedCountSpan = document.getElementById('flightSelectedCount');
+        const insertBtn = document.getElementById('btnInsertFlights');
+        const flightInfoTextarea = document.getElementById('flight_info');
+        let selectedFlights = new Set();
+        let allFlights = [];
+        let searchTimeout = null;
+
+        async function loadFlights(searchQuery = '') {
+            loadingDiv.style.display = 'block';
+            listContainer.style.display = 'none';
+            emptyDiv.style.display = 'none';
+            try {
+                const url = '/admin/flight-template/api/search' + (searchQuery ? `?q=${encodeURIComponent(searchQuery)}` : '');
+                const response = await fetch(url);
+                const data = await response.json();
+                allFlights = data.items;
+                renderFlights(allFlights);
+            } catch (error) {
+                console.error('Error loading flight templates:', error);
+                listContainer.innerHTML = '<div class="alert alert-danger">Error loading templates</div>';
+                listContainer.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        function renderFlights(items) {
+            if (items.length === 0) {
+                listContainer.style.display = 'none';
+                emptyDiv.style.display = 'block';
+                return;
+            }
+            listContainer.innerHTML = items.map(item => {
+                const parts = [];
+                if (item.date) parts.push(item.date);
+                if (item.flight_no) parts.push(item.flight_no);
+                if (item.from_to) parts.push(item.from_to);
+                if (item.time) parts.push(item.time);
+                const flightInfo = parts.join(' ');
+                const isSelected = selectedFlights.has(item.id);
+                return `
+                <label class="list-group-item list-group-item-action" style="cursor: pointer;">
+                    <div class="form-check">
+                        <input class="form-check-input flight-checkbox" type="checkbox" value="${item.id}" ${isSelected ? 'checked' : ''}>
+                        <div class="ms-2">
+                            <h6 class="mb-1">${item.template_name}</h6>
+                            <p class="mb-1 text-primary small"><i class="fas fa-plane"></i> ${flightInfo}</p>
+                            ${item.note ? `<small class="text-muted">📝 ${item.note.substring(0, 80)}${item.note.length > 80 ? '...' : ''}</small>` : ''}
+                        </div>
+                    </div>
+                </label>
+            `;
+            }).join('');
+            listContainer.style.display = 'block';
+            emptyDiv.style.display = 'none';
+            listContainer.querySelectorAll('.flight-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', handleCheckboxChange);
+            });
+        }
+
+        function handleCheckboxChange(e) {
+            const itemId = parseInt(e.target.value);
+            if (e.target.checked) {
+                selectedFlights.add(itemId);
+            } else {
+                selectedFlights.delete(itemId);
+            }
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            selectedCountSpan.textContent = selectedFlights.size;
+            insertBtn.disabled = selectedFlights.size === 0;
+        }
+
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                loadFlights(searchInput.value.trim());
+            }, 300);
+        });
+
+        insertBtn.addEventListener('click', function () {
+            const selectedFlightItems = allFlights.filter(item => selectedFlights.has(item.id));
+            if (selectedFlightItems.length === 0) return;
+
+            const formattedTexts = [];
+
+            for (const item of selectedFlightItems) {
+                const parts = [];
+                if (item.date) parts.push(item.date);
+                if (item.flight_no) parts.push(item.flight_no);
+                if (item.from_to) parts.push(item.from_to);
+                if (item.time) parts.push(item.time);
+                formattedTexts.push(parts.join(' '));
+
+                // Add note if exists
+                if (item.note) {
+                    formattedTexts.push(`*${item.note}`);
+                }
+            }
+
+            const currentText = flightInfoTextarea.value.trim();
+            const newText = formattedTexts.join('\n').trim();
+            if (currentText) {
+                flightInfoTextarea.value = currentText + '\n\n' + newText;
+            } else {
+                flightInfoTextarea.value = newText;
+            }
+            bootstrap.Modal.getInstance(modal).hide();
+            selectedFlights.clear();
+            updateSelectedCount();
+        });
+
+        modal.addEventListener('show.bs.modal', function () {
+            loadFlights();
+            searchInput.value = '';
+        });
+
+        updateSelectedCount();
+    })();
+
+    // ========== Passport Upload Modal Script ==========
+    (function () {
+        const passportModal = document.getElementById('passportUploadModal');
+        const previewModal = document.getElementById('passportPreviewModal');
+        const dropZone = document.getElementById('passportDropZone');
+        const cameraZone = document.getElementById('cameraDropZone');
+        const fileInput = document.getElementById('passportFileInput');
+        const cameraInput = document.getElementById('cameraFileInput');
+        const uploadBtn = document.getElementById('uploadPassportBtn');
+        const previewForm = document.getElementById('passportPreviewForm');
+        const confirmInsertBtn = document.getElementById('confirmInsertBtn');
+        const guestListTextarea = document.getElementById('guest_list');
+
+        let extractedData = null;
+        let currentBookingId = null; // Will be set after booking creation
+        let currentFiles = null;
+
+        // File input drag-drop handlers
+        if (dropZone) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.add('border-primary');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => {
+                    dropZone.classList.remove('border-primary');
+                }, false);
+            });
+
+            dropZone.addEventListener('drop', handleDrop, false);
+            dropZone.addEventListener('click', () => fileInput.click());
+        }
+
+        // Camera zone click handler
+        if (cameraZone) {
+            cameraZone.addEventListener('click', () => cameraInput.click());
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Event listeners
+        if (fileInput) fileInput.addEventListener('change', handleFileSelect);
+        if (cameraInput) cameraInput.addEventListener('change', handleCameraCapture);
+        uploadBtn.addEventListener('click', uploadFiles);
+        confirmInsertBtn.addEventListener('click', insertToGuestList);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            currentFiles = files;
+            fileInput.files = files;
+            updateFileCount(files.length);
+        }
+
+        function handleFileSelect(e) {
+            currentFiles = e.target.files;
+            updateFileCount(e.target.files.length);
+        }
+
+        function handleCameraCapture(e) {
+            currentFiles = e.target.files;
+            updateFileCount(e.target.files.length);
+
+            // Debug log for camera capture
+            if (e.target.files.length > 0) {
+                console.log('Camera captured:', e.target.files[0].name, 'Size:', e.target.files[0].size, 'Type:', e.target.files[0].type);
+            }
+
+            // Auto-upload after camera capture for better UX
+            if (e.target.files.length > 0) {
+                setTimeout(() => {
+                    uploadFiles();
+                }, 300);
+            }
+        }
+
+        function updateFileCount(count) {
+            const countSpan = document.getElementById('selectedFileCount');
+            countSpan.textContent = count;
+            uploadBtn.disabled = count === 0;
+        }
+
+        async function uploadFiles() {
+            const files = currentFiles || fileInput.files || cameraInput.files;
+            if (!files || files.length === 0) return;
+
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Processing...';
+            statusDiv.className = 'alert alert-info mt-3';
+            statusDiv.style.display = 'block';
+            uploadBtn.disabled = true;
+
+            try {
+                const formData = new FormData();
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('files', files[i]);
+                }
+
+                const response = await fetch('/api/passport/batch-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    const successCount = result.results.filter(r => r.success).length;
+                    const failCount = result.results.length - successCount;
+
+                    if (successCount > 0) {
+                        // Show first successful extraction in preview
+                        const firstSuccess = result.results.find(r => r.success);
+                        if (firstSuccess) {
+                            bootstrap.Modal.getInstance(passportModal).hide();
+                            const modal = new bootstrap.Modal(previewModal);
+                            modal.show();
+                            // Wait for modal to be fully shown before populating data
+                            previewModal.addEventListener('shown.bs.modal', function () {
+                                showPreview(firstSuccess.data);
+                            }, { once: true });
+                        }
+
+                        if (failCount > 0) {
+                            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Extracted ${successCount} passport(s), ${failCount} failed`;
+                            statusDiv.className = 'alert alert-warning mt-3';
+                        } else {
+                            statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Extracted ${successCount} passport(s) successfully!`;
+                            statusDiv.className = 'alert alert-success mt-3';
+                        }
+                    } else {
+                        // All failed - show helpful tips
+                        let errorHtml = `<i class="fas fa-exclamation-triangle"></i> <strong>All extractions failed</strong><br>`;
+
+                        // Check if we have suggestion tips from backend
+                        if (result.results && result.results.length > 0 && result.results[0].suggestion) {
+                            const suggestion = result.results[0].suggestion;
+                            errorHtml += `<div class="mt-2"><small><strong>${suggestion.title || 'Photo Quality Tips'}:</strong></small></div>`;
+                            errorHtml += `<ul class="small text-start mb-0 mt-1">`;
+                            if (suggestion.tips && Array.isArray(suggestion.tips)) {
+                                suggestion.tips.forEach(tip => {
+                                    errorHtml += `<li>${tip}</li>`;
+                                });
+                            }
+                            errorHtml += `</ul>`;
+                            if (suggestion.mrz_info) {
+                                errorHtml += `<div class="mt-2"><small><em>${suggestion.mrz_info}</em></small></div>`;
+                            }
+                        } else {
+                            errorHtml += `<small>Please ensure good lighting and focus on MRZ (bottom 2 lines)</small>`;
+                        }
+
+                        statusDiv.innerHTML = errorHtml;
+                        statusDiv.className = 'alert alert-danger mt-3';
+                    }
+                } else {
+                    statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> ${result.error || 'Upload failed'}`;
+                    statusDiv.className = 'alert alert-danger mt-3';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Network error: ${error.message}`;
+                statusDiv.className = 'alert alert-danger mt-3';
+            } finally {
+                uploadBtn.disabled = false;
+            }
+        }
+
+        function showPreview(data) {
+            extractedData = data;
+            document.getElementById('preview_full_name').value = data.full_name || '';
+            document.getElementById('preview_passport_number').value = data.passport_number || '';
+            document.getElementById('preview_nationality').value = data.nationality || '';
+            document.getElementById('preview_date_of_birth').value = data.date_of_birth || '';
+            document.getElementById('preview_expiry_date').value = data.expiry_date || '';
+            document.getElementById('preview_sex').value = data.sex || '';
+
+            // Show additional warning if name is missing
+            const warningAlert = document.querySelector('#passportPreviewModal .alert-warning');
+            if (data.name_missing && data.name_warning_message) {
+                warningAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>⚠️ ${data.name_warning_message}</strong><br>
+                    <small>Other fields were extracted successfully. Please verify all data before inserting.</small>
+                `;
+                warningAlert.className = 'alert alert-danger';  // Make it more prominent
+
+                // Focus on the name field
+                setTimeout(() => {
+                    document.getElementById('preview_full_name').focus();
+                }, 100);
+            } else {
+                // Reset to default warning
+                warningAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Review Before Insert:</strong> Please verify extracted data is correct. You can edit any field before inserting.
+                `;
+                warningAlert.className = 'alert alert-warning';
+            }
+        }
+
+        function insertToGuestList() {
+            const fullName = document.getElementById('preview_full_name').value.trim();
+            const passportNumber = document.getElementById('preview_passport_number').value.trim();
+            const nationality = document.getElementById('preview_nationality').value.trim();
+            const dob = document.getElementById('preview_date_of_birth').value.trim();
+            const expiry = document.getElementById('preview_expiry_date').value.trim();
+            const sex = document.getElementById('preview_sex').value.trim();
+
+            if (!fullName) {
+                alert('Full name is required');
+                return;
+            }
+
+            // Format: "SURNAME, GIVEN NAMES | Passport: ABC123456 | Nationality: THA | DOB: 1990-01-15 | Expiry: 2030-12-31 | Sex: M"
+            const parts = [fullName];
+            if (passportNumber) parts.push(`Passport: ${passportNumber}`);
+            if (nationality) parts.push(`Nationality: ${nationality}`);
+            if (dob) parts.push(`DOB: ${dob}`);
+            if (expiry) parts.push(`Expiry: ${expiry}`);
+            if (sex) parts.push(`Sex: ${sex}`);
+
+            const formattedLine = parts.join(' | ');
+            const currentText = guestListTextarea.value.trim();
+
+            if (currentText) {
+                guestListTextarea.value = currentText + '\n' + formattedLine;
+            } else {
+                guestListTextarea.value = formattedLine;
+            }
+
+            // Close preview modal
+            bootstrap.Modal.getInstance(previewModal).hide();
+
+            // Reset upload modal
+            fileInput.value = '';
+            updateFileCount(0);
+            document.getElementById('uploadStatus').style.display = 'none';
+        }
+
+        // Reset on modal close
+        passportModal.addEventListener('hidden.bs.modal', function () {
+            fileInput.value = '';
+            updateFileCount(0);
+            document.getElementById('uploadStatus').style.display = 'none';
+        });
+
+        previewModal.addEventListener('hidden.bs.modal', function () {
+            extractedData = null;
+        });
+
+        // ========== Text Scanner & Parser (iPhone Live Text) ==========
+        const textInput = document.getElementById('passportTextInput');
+        const parseBtn = document.getElementById('parseTextBtn');
+        const parseResult = document.getElementById('parseResult');
+        const parsedDataDisplay = document.getElementById('parsedDataDisplay');
+        const insertBtn = document.getElementById('insertParsedDataBtn');
+
+        let parsedData = null;
+
+        if (parseBtn) {
+            parseBtn.addEventListener('click', parsePassportText);
+        }
+
+        if (insertBtn) {
+            insertBtn.addEventListener('click', insertParsedData);
+        }
+
+        function parseMRZFormat(lines) {
+            // Parse MRZ TD3 format (passport)
+            // Line 1: P<NATION<<SURNAME<<GIVEN_NAMES<<<<<<
+            // Line 2: PASSPORT_NO<CHECK<NATION<DOB<CHECK<SEX<EXPIRY<CHECK<PERSONAL_NO<CHECK<
+
+            console.log('🔍 Parsing MRZ format, input lines:', lines);
+
+            const data = {
+                full_name: '',
+                passport_number: '',
+                nationality: '',
+                date_of_birth: '',
+                expiry_date: '',
+                sex: ''
+            };
+
+            let line1 = null;
+            let line2 = null;
+
+            // Identify lines - more flexible detection
+            for (const line of lines) {
+                const cleaned = line.replace(/\s+/g, '').toUpperCase();
+                if (cleaned.length < 30) continue;
+
+                console.log('Checking line:', cleaned.substring(0, 50) + '...');
+
+                // Line 1: starts with P< or has pattern like P<XXX
+                // Also check for lines with mostly letters (names)
+                const letterCount = (cleaned.match(/[A-Z]/g) || []).length;
+                const digitCount = (cleaned.match(/[0-9]/g) || []).length;
+
+                if (cleaned.startsWith('P<') || cleaned.match(/^[A-Z]<[A-Z]{3}/)) {
+                    line1 = cleaned;
+                    console.log('✅ Detected as Line 1 (name line):', cleaned.substring(0, 50));
+                }
+                // Line 2: starts with passport number (alphanumeric), has many digits
+                else if (cleaned.match(/^[A-Z0-9]{6,}/) && digitCount > letterCount) {
+                    line2 = cleaned;
+                    console.log('✅ Detected as Line 2 (data line):', cleaned.substring(0, 50));
+                }
+                // If we have many letters, might be Line 1 without P<
+                else if (letterCount > digitCount && letterCount > 15 && !line1) {
+                    line1 = cleaned;
+                    console.log('✅ Detected as Line 1 (letter-heavy line):', cleaned.substring(0, 50));
+                }
+            }
+
+            console.log('Final detection - Line1:', line1 ? line1.substring(0, 50) : 'NULL');
+            console.log('Final detection - Line2:', line2 ? line2.substring(0, 50) : 'NULL');
+
+            // Parse Line 2 (has most data)
+            if (line2 && line2.length >= 44) {
+                // Extract passport number (first 9 chars)
+                data.passport_number = line2.substring(0, 9).replace(/<+$/, '');
+
+                // Extract nationality (pos 10-12)
+                const nat = line2.substring(10, 13).replace(/<+/, '');
+                if (nat) data.nationality = nat;
+
+                // Extract DOB (pos 13-18): YYMMDD
+                const dob = line2.substring(13, 19);
+                if (dob.match(/^\d{6}$/)) {
+                    data.date_of_birth = formatMRZDate(dob);
+                }
+
+                // Extract sex (pos 20)
+                const sex = line2.charAt(20);
+                if (sex === 'M' || sex === 'F') {
+                    data.sex = sex;
+                }
+
+                // Extract expiry (pos 21-26): YYMMDD
+                const expiry = line2.substring(21, 27);
+                if (expiry.match(/^\d{6}$/)) {
+                    data.expiry_date = formatMRZDate(expiry);
+                }
+            }
+
+            // Parse Line 1 (has name)
+            if (line1 && line1.length >= 5) {
+                console.log('📝 Parsing Line 1 for names...');
+                console.log('Full Line 1:', line1);
+
+                // MRZ Line 1 format: P<NATION<<SURNAME<<GIVEN_NAMES<<<
+                // Example: P<THAPITOON<<ADISON<<<<<<<<
+
+                let namesSection = line1;
+
+                // Remove P< prefix if exists
+                if (namesSection.startsWith('P<')) {
+                    namesSection = namesSection.substring(2);
+                    console.log('After removing P<:', namesSection);
+                }
+
+                // Try to detect and remove country code
+                // Format 1: THA<<SURNAME<<GIVEN (country code followed by <<)
+                // Format 2: THAPITOON<<ADISON (country code directly followed by surname)
+                // Format 3: PITOON<<ADISON (no country code)
+
+                if (/^[A-Z]{3}<</.test(namesSection)) {
+                    // Format 1: THA<<SURNAME<<GIVEN
+                    const countryCode = namesSection.substring(0, 3);
+                    namesSection = namesSection.substring(5); // Remove THA<<
+                    console.log('Format 1: Found country code with <<:', countryCode);
+                    console.log('After removing country+<<:', namesSection);
+                } else if (/^[A-Z]{3}[A-Z]/.test(namesSection)) {
+                    // Format 2: THAPITOON<<ADISON (country code followed by letter, not <<)
+                    const countryCode = namesSection.substring(0, 3);
+                    namesSection = namesSection.substring(3); // Remove THA only
+                    console.log('Format 2: Found country code without <<:', countryCode);
+                    console.log('After removing country:', namesSection);
+                } else {
+                    // Format 3: No country code detected
+                    console.log('Format 3: No country code, parsing as SURNAME<<GIVEN');
+                }
+
+                console.log('Names section to parse:', namesSection);
+
+                // Split by << to separate surname and given names
+                const nameParts = namesSection.split('<<').filter(p => p && p.length > 0 && p !== '<');
+
+                console.log('Name parts found:', nameParts);
+
+                if (nameParts.length > 0) {
+                    const surname = nameParts[0].replace(/<+/g, '').trim();
+                    const givenNames = nameParts.length > 1 ? nameParts[1].replace(/<+/g, '').trim() : '';
+
+                    console.log('Parsed - Surname:', surname, 'Given names:', givenNames);
+
+                    if (surname || givenNames) {
+                        const parts = [];
+                        if (surname) {
+                            // Convert to uppercase
+                            parts.push(surname.toUpperCase());
+                        }
+                        if (givenNames) {
+                            parts.push(givenNames.toUpperCase());
+                        }
+                        // Use / instead of , for separator
+                        data.full_name = parts.join(' / ');
+                        console.log('✅ Full name:', data.full_name);
+                    }
+                } else {
+                    console.warn('⚠️ No name parts found in Line 1');
+                }
+            } else {
+                console.warn('⚠️ Line 1 not found or too short');
+            }
+
+            return data;
+        }
+
+        function formatMRZDate(yymmdd) {
+            // Convert YYMMDD to YYYY-MM-DD
+            if (yymmdd.length !== 6) return '';
+
+            const yy = parseInt(yymmdd.substring(0, 2));
+            const mm = yymmdd.substring(2, 4);
+            const dd = yymmdd.substring(4, 6);
+
+            // Determine century
+            const currentYear = new Date().getFullYear() % 100;
+            const yyyy = yy <= currentYear + 20 ? 2000 + yy : 1900 + yy;
+
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function parsePassportText() {
+            const text = textInput.value.trim();
+
+            if (!text) {
+                alert('กรุณาวางข้อความจาก passport');
+                return;
+            }
+
+            try {
+                parsedData = extractPassportData(text);
+
+                if (!parsedData.passport_number && !parsedData.full_name) {
+                    alert('❌ ไม่พบข้อมูล passport ในข้อความ\nกรุณาตรวจสอบและลองอีกครั้ง');
+                    return;
+                }
+
+                displayParsedData(parsedData);
+                parseResult.style.display = 'block';
+
+                // Scroll to result
+                parseResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                console.error('Parse error:', error);
+                alert('เกิดข้อผิดพลาดในการแยกข้อมูล: ' + error.message);
+            }
+        }
+
+        function extractPassportData(text) {
+            const data = {
+                full_name: '',
+                passport_number: '',
+                nationality: '',
+                date_of_birth: '',
+                expiry_date: '',
+                sex: ''
+            };
+
+            // Check if this is MRZ format (raw lines without labels)
+            const mrzLines = text.split('\n').map(l => l.trim()).filter(l => l.length > 30);
+            if (mrzLines.length >= 1) {
+                // Try to parse as MRZ format
+                const mrzData = parseMRZFormat(mrzLines);
+                if (mrzData && (mrzData.passport_number || mrzData.full_name)) {
+                    return mrzData;
+                }
+            }
+
+            // Patterns for extracting data from labeled format
+            const patterns = {
+                passport: /(?:passport\s*no\.?|no\.?\s*de\s*passeport|passport|no\.)[:\s]*([A-Z]{1,2}[0-9]{6,8})/i,
+                surname: /(?:surname|nom)[:\s]*([A-Z][A-Z\s\-]+?)(?=\s*$|\s*given|\s*prénoms)/mi,
+                givenNames: /(?:given\s*names?|prénoms)[:\s]*([A-Z][A-Z\s\-]+?)(?=\s*$|\s*nationality|\s*nationalité)/mi,
+                nationality: /(?:code|nationality|nationalité)[:\s]*([A-Z]{3}|THAI(?:LAND)?)/i,
+                dob: /(?:date\s*of\s*birth|date\s*de\s*naissance)[:\s]*(\d{1,2}\s*(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|JANV|FÉVR|MARS|AVR|MAI|JUIN|JUIL|AOÛT|AOUT|SEPT|OCT|NOV|DÉC)[A-Z]*[\s\/]*\d{4})/i,
+                sex: /(?:sex|sexe)[:\s]*([MF])/i,
+                expiry: /(?:date\s*of\s*expiry|date\s*d'expiration)[:\s]*(\d{1,2}\s*(?:JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC|JANV|FÉVR|MARS|AVR|MAI|JUIN|JUIL|AOÛT|AOUT|SEPT|OCT|NOV|DÉC)[A-Z]*[\s\/]*\d{4})/i
+            };
+
+            // Extract passport number
+            const passportMatch = text.match(patterns.passport);
+            if (passportMatch) {
+                data.passport_number = passportMatch[1].toUpperCase().replace(/\s+/g, '');
+            }
+
+            // Extract surname
+            const surnameMatch = text.match(patterns.surname);
+            if (surnameMatch) {
+                data.surname = surnameMatch[1].trim().replace(/\s+/g, ' ');
+            }
+
+            // Extract given names
+            const givenNamesMatch = text.match(patterns.givenNames);
+            if (givenNamesMatch) {
+                data.given_names = givenNamesMatch[1].trim().replace(/\s+/g, ' ');
+            }
+
+            // Combine full name
+            if (data.surname || data.given_names) {
+                const parts = [];
+                if (data.surname) parts.push(data.surname);
+                if (data.given_names) parts.push(data.given_names);
+                data.full_name = parts.join(', ');
+            }
+
+            // Extract nationality
+            const natMatch = text.match(patterns.nationality);
+            if (natMatch) {
+                let nat = natMatch[1].toUpperCase();
+                if (nat === 'THAILAND' || nat === 'THAI') {
+                    nat = 'THA';
+                }
+                data.nationality = nat;
+            }
+
+            // Extract date of birth
+            const dobMatch = text.match(patterns.dob);
+            if (dobMatch) {
+                data.date_of_birth = parseDateString(dobMatch[1]);
+            }
+
+            // Extract sex
+            const sexMatch = text.match(patterns.sex);
+            if (sexMatch) {
+                data.sex = sexMatch[1].toUpperCase();
+            }
+
+            // Extract expiry date
+            const expiryMatch = text.match(patterns.expiry);
+            if (expiryMatch) {
+                data.expiry_date = parseDateString(expiryMatch[1]);
+            }
+
+            return data;
+        }
+
+        function parseDateString(dateStr) {
+            const monthMap = {
+                'JAN': '01', 'JANV': '01',
+                'FEB': '02', 'FÉVR': '02', 'FEVR': '02',
+                'MAR': '03', 'MARS': '03',
+                'APR': '04', 'AVR': '04',
+                'MAY': '05', 'MAI': '05',
+                'JUN': '06', 'JUIN': '06',
+                'JUL': '07', 'JUIL': '07',
+                'AUG': '08', 'AOÛT': '08', 'AOUT': '08',
+                'SEP': '09', 'SEPT': '09',
+                'OCT': '10',
+                'NOV': '11',
+                'DEC': '12', 'DÉC': '12'
+            };
+
+            const match = dateStr.match(/(\d{1,2})\s*([A-ZÀ-ÿ]+)[\s\/]*(\d{4})/i);
+            if (match) {
+                const day = match[1].padStart(2, '0');
+                const monthStr = match[2].toUpperCase();
+                const year = match[3];
+
+                const month = monthMap[monthStr] || monthMap[monthStr.substring(0, 3)] || monthMap[monthStr.substring(0, 4)];
+                if (month) {
+                    return `${year}-${month}-${day}`;
+                }
+            }
+
+            return dateStr;
+        }
+
+        function displayParsedData(data) {
+            const fields = [
+                { label: 'Full Name', value: data.full_name, icon: 'user' },
+                { label: 'Passport Number', value: data.passport_number, icon: 'id-card' },
+                { label: 'Nationality', value: data.nationality, icon: 'flag' },
+                { label: 'Date of Birth', value: data.date_of_birth, icon: 'birthday-cake' },
+                { label: 'Sex', value: data.sex === 'M' ? 'Male (M)' : data.sex === 'F' ? 'Female (F)' : data.sex, icon: 'venus-mars' },
+                { label: 'Expiry Date', value: data.expiry_date, icon: 'calendar-times' }
+            ];
+
+            let html = '<div class="row g-2">';
+            fields.forEach(field => {
+                if (field.value) {
+                    html += `
+                        <div class="col-md-6">
+                            <div class="border rounded p-2 bg-light">
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-${field.icon} me-1"></i>${field.label}
+                                </small>
+                                <strong>${field.value}</strong>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            html += '</div>';
+
+            html += `
+                <hr class="my-3">
+                <small class="text-muted">แก้ไขข้อมูลก่อนบันทึก (ถ้าต้องการ):</small>
+                <div class="row g-2 mt-2">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control form-control-sm" id="edit_full_name" 
+                               placeholder="Full Name" value="${data.full_name || ''}">
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" class="form-control form-control-sm" id="edit_passport_number" 
+                               placeholder="Passport Number" value="${data.passport_number || ''}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" id="edit_nationality" 
+                               placeholder="Nationality" value="${data.nationality || ''}">
+                    </div>
+                    <div class="col-md-4">
+                        <input type="date" class="form-control form-control-sm" id="edit_dob" 
+                               value="${data.date_of_birth || ''}">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select form-select-sm" id="edit_sex">
+                            <option value="">Sex</option>
+                            <option value="M" ${data.sex === 'M' ? 'selected' : ''}>Male (M)</option>
+                            <option value="F" ${data.sex === 'F' ? 'selected' : ''}>Female (F)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <input type="date" class="form-control form-control-sm" id="edit_expiry" 
+                               placeholder="Expiry Date" value="${data.expiry_date || ''}">
+                    </div>
+                </div>
+            `;
+
+            parsedDataDisplay.innerHTML = html;
+        }
+
+        function insertParsedData() {
+            const fullName = document.getElementById('edit_full_name').value.trim();
+            const passportNumber = document.getElementById('edit_passport_number').value.trim();
+            const nationality = document.getElementById('edit_nationality').value.trim();
+            const dob = document.getElementById('edit_dob').value.trim();
+            const sex = document.getElementById('edit_sex').value.trim();
+            const expiry = document.getElementById('edit_expiry').value.trim();
+
+            if (!fullName) {
+                alert('กรุณากรอก Full Name');
+                document.getElementById('edit_full_name').focus();
+                return;
+            }
+
+            const parts = [fullName];
+            if (passportNumber) parts.push(`Passport: ${passportNumber}`);
+            if (nationality) parts.push(`Nationality: ${nationality}`);
+            if (dob) parts.push(`DOB: ${dob}`);
+            if (expiry) parts.push(`Expiry: ${expiry}`);
+            if (sex) parts.push(`Sex: ${sex}`);
+
+            const formattedLine = parts.join(' | ');
+            const currentText = guestListTextarea.value.trim();
+
+            if (currentText) {
+                guestListTextarea.value = currentText + '\n' + formattedLine;
+            } else {
+                guestListTextarea.value = formattedLine;
+            }
+
+            bootstrap.Modal.getInstance(passportModal).hide();
+            textInput.value = '';
+            parseResult.style.display = 'none';
+            parsedData = null;
+
+            alert('✅ เพิ่มข้อมูลเรียบร้อยแล้ว!');
+        }
+
+        // ========== QR Code + NFC Functions ==========
+        let qrCodeInstance = null;
+        let nfcPollingInterval = null;
+        let currentNFCSession = null;
+
+        // Initialize QR Code when tab is shown
+        document.getElementById('qrcode-tab').addEventListener('shown.bs.tab', function () {
+            generateQRCode();
+        });
+
+        async function generateQRCode() {
+            const qrLoading = document.getElementById('qrLoading');
+            const qrCanvas = document.getElementById('qrCanvas');
+            const qrDisplay = document.getElementById('qrDisplay');
+            const sessionIdSpan = document.getElementById('sessionId');
+            const nfcStatus = document.getElementById('nfcStatus');
+
+            try {
+                // Show loading
+                qrLoading.style.display = 'block';
+                qrDisplay.style.display = 'none';
+                nfcStatus.innerHTML = '';
+
+                // Create NFC session
+                const response = await fetch('/api/passport/nfc/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.session_token) {
+                    currentNFCSession = data.session_token;
+
+                    // Clear previous QR code
+                    qrCanvas.innerHTML = '';
+
+                    // Generate QR Code
+                    const qrUrl = `${window.location.origin}/mobile/nfc-scan?token=${data.session_token}`;
+                    qrCodeInstance = new QRCode(qrCanvas, {
+                        text: qrUrl,
+                        width: 256,
+                        height: 256,
+                        colorDark: '#000000',
+                        colorLight: '#ffffff',
+                        correctLevel: QRCode.CorrectLevel.H
+                    });
+
+                    // Display session ID
+                    sessionIdSpan.textContent = data.session_token.substring(0, 8) + '...';
+
+                    // Show QR code
+                    qrLoading.style.display = 'none';
+                    qrDisplay.style.display = 'block';
+
+                    // Show waiting status
+                    showNFCStatus('waiting', '⏳ รอการสแกน QR Code จากมือถือ...');
+
+                    // Start polling for NFC data
+                    startNFCPolling();
+                } else {
+                    throw new Error(data.error || 'Failed to create NFC session');
+                }
+            } catch (error) {
+                console.error('QR Generation Error:', error);
+                qrLoading.style.display = 'none';
+                showNFCStatus('error', '❌ ไม่สามารถสร้าง QR Code ได้: ' + error.message);
+            }
+        }
+
+        function startNFCPolling() {
+            // Clear existing interval
+            if (nfcPollingInterval) {
+                clearInterval(nfcPollingInterval);
+            }
+
+            // Poll every 2 seconds
+            nfcPollingInterval = setInterval(async () => {
+                if (!currentNFCSession) {
+                    clearInterval(nfcPollingInterval);
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/passport/nfc/check/${currentNFCSession}`);
+                    const data = await response.json();
+
+                    if (data.status === 'scanning') {
+                        showNFCStatus('scanning', '📱 กำลังอ่านข้อมูล NFC จากชิปพาสปอร์ต...');
+                    } else if (data.status === 'completed' && data.data) {
+                        // Success - show preview
+                        clearInterval(nfcPollingInterval);
+                        showNFCStatus('success', '✅ อ่านข้อมูลสำเร็จ! กำลังแสดงผล...');
+
+                        setTimeout(() => {
+                            showPreview(data.data);
+                            bootstrap.Modal.getInstance(passportModal).hide();
+                            new bootstrap.Modal(previewModal).show();
+                            cleanupQRSession();
+                        }, 1000);
+                    } else if (data.status === 'expired') {
+                        clearInterval(nfcPollingInterval);
+                        showNFCStatus('error', '⏱️ Session หมดอายุ กรุณาสร้าง QR Code ใหม่');
+                    } else if (data.status === 'error') {
+                        clearInterval(nfcPollingInterval);
+                        showNFCStatus('error', '❌ เกิดข้อผิดพลาด: ' + (data.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Polling Error:', error);
+                    // Continue polling even on error
+                }
+            }, 2000);
+        }
+
+        function showNFCStatus(type, message) {
+            const nfcStatus = document.getElementById('nfcStatus');
+            let className = 'alert-info';
+
+            if (type === 'scanning') {
+                className = 'alert-primary';
+            } else if (type === 'success') {
+                className = 'alert-success';
+            } else if (type === 'error') {
+                className = 'alert-danger';
+            }
+
+            nfcStatus.innerHTML = `<div class="alert ${className} mb-0">${message}</div>`;
+        }
+
+        function cleanupQRSession() {
+            if (nfcPollingInterval) {
+                clearInterval(nfcPollingInterval);
+                nfcPollingInterval = null;
+            }
+            currentNFCSession = null;
+            qrCodeInstance = null;
+        }
+
+        // Clean up when modal closes
+        passportModal.addEventListener('hidden.bs.modal', function () {
+            cleanupQRSession();
+        });
+
+        // Clean up when switching tabs
+        document.querySelectorAll('#passportUploadModal .nav-link').forEach(tab => {
+            tab.addEventListener('shown.bs.tab', function (e) {
+                if (e.target.id !== 'qrcode-tab') {
+                    cleanupQRSession();
+                }
+            });
+        });
+    })();
+
+    // Auto-fill from queue data if available
+    {% if queue_data %}
+    const queueData = {
+        phone: "{{ queue_data.customer_phone }}",
+        name: "{{ queue_data.customer_name }}",
+        email: "{{ queue_data.customer_email or '' }}",
+        service: "{{ queue_data.service_type }}",
+        notes: "{{ queue_data.notes or '' }}",
+        queueNumber: "{{ queue_data.queue_number }}"
+    };
+
+    // Function to create customer from queue data
+    async function createCustomerFromQueue() {
+        if (!confirm(`Create new customer:\n\nName: ${queueData.name}\nPhone: ${queueData.phone}\nEmail: ${queueData.email || 'Not provided'}\n\nProceed?`)) {
+            return;
+        }
+
+        try {
+            const nameParts = queueData.name.trim().split(' ');
+            const firstName = nameParts[0];
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const response = await fetch('/booking/customers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'first_name': firstName,
+                    'last_name': lastName,
+                    'phone': queueData.phone,
+                    'email': queueData.email || '',
+                    'notes': `Created from Queue #${queueData.queueNumber}`
+                })
+            });
+
+            if (response.ok) {
+                alert('✅ Customer created successfully! Reloading page...');
+                window.location.reload();
+            } else {
+                alert('❌ Failed to create customer. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error creating customer:', error);
+            alert('❌ Error creating customer: ' + error.message);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // If customer not selected, try to find and select matching customer
+        const customerSelect = document.getElementById('customer_id');
+        if (customerSelect) {
+            let customerFound = false;
+
+            // Method 1: Check if already selected by Jinja template
+            if (customerSelect.value) {
+                customerFound = true;
+                console.log('Customer already selected by template');
+            }
+
+            // Method 2: Try to find by phone number (most reliable)
+            if (!customerFound && queueData.phone) {
+                for (let option of customerSelect.options) {
+                    const optionPhone = option.getAttribute('data-phone');
+                    if (optionPhone && optionPhone === queueData.phone) {
+                        option.selected = true;
+                        customerFound = true;
+                        console.log('Customer found by phone:', queueData.phone);
+                        break;
+                    }
+                }
+            }
+
+            // Method 3: Try to find by name
+            if (!customerFound && queueData.name) {
+                for (let option of customerSelect.options) {
+                    const optionName = option.getAttribute('data-name');
+                    if (optionName && optionName.toLowerCase() === queueData.name.toLowerCase()) {
+                        option.selected = true;
+                        customerFound = true;
+                        console.log('Customer found by name:', queueData.name);
+                        break;
+                    }
+                }
+            }
+
+            // If customer found, hide the alert
+            if (customerFound) {
+                const alert = document.getElementById('queueCustomerAlert');
+                if (alert) {
+                    alert.classList.remove('alert-warning');
+                    alert.classList.add('alert-success');
+                    alert.innerHTML = '<i class="fas fa-check-circle me-2"></i><strong>Customer matched!</strong> Customer from queue has been selected.';
+                }
+            } else {
+                console.log('Customer not found in system. Please create new customer.');
+            }
+        }
+
+        // Auto-fill notes with queue information
+        {% if queue_data.notes %}
+        setTimeout(() => {
+            const internalNoteField = document.querySelector('[name="internal_note"]');
+            if (internalNoteField && !internalNoteField.value) {
+                const queueInfo = `From Queue #${queueData.queueNumber}\nService: ${queueData.service}\n${queueData.notes}`;
+                internalNoteField.value = queueInfo;
+            }
+        }, 500);
+        {% endif %}
+
+        // Show alert about queue source
+        console.log('Booking created from Queue #{{ queue_data.queue_number }}');
+    });
+    {% endif %}
+</script>
+
 {% endblock %}

@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}{% if invoice %}Edit{% else %}Create{% endif %} Hong Kong Invoice{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-file-invoice me-2"></i>{% if invoice %}Edit{% else %}Create{% endif %} Hong Kong
+                Invoice</h2>
+        </div>
+    </div>
+
+    <form method="POST"
+        action="{% if invoice %}{{ url_for('account_report.hongkong_invoice_edit', invoice_id=invoice.id) }}{% else %}{{ url_for('account_report.hongkong_invoice_create') }}{% endif %}">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Customer Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Customer</label>
+                                <select name="customer_id" class="form-select" id="customerSelect">
+                                    <option value="">-- Select Customer --</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.id }}" {% if invoice and invoice.customer_id==customer.id
+                                        %}selected{% endif %}>
+                                        {{ customer.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Customer Name *</label>
+                                <input type="text" name="cust_name" class="form-control"
+                                    value="{{ invoice.cust_name if invoice else '' }}" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" name="company_name" class="form-control"
+                                    value="{{ invoice.company_name if invoice else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Tel</label>
+                                <input type="text" name="company_tel" class="form-control"
+                                    value="{{ invoice.company_tel if invoice else '' }}">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Tax ID</label>
+                                <input type="text" name="company_taxid" class="form-control"
+                                    value="{{ invoice.company_taxid if invoice else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Company Contact</label>
+                                <input type="text" name="company_contact" class="form-control"
+                                    value="{{ invoice.company_contact if invoice else '' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Company Address</label>
+                            <textarea name="company_address" class="form-control"
+                                rows="3">{{ invoice.company_address if invoice else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Travel Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Total Pax *</label>
+                                <input type="number" name="total_pax" class="form-control" min="0"
+                                    value="{{ invoice.total_pax if invoice else 0 }}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Arrival Date</label>
+                                <input type="date" name="arrival_date" class="form-control"
+                                    value="{{ invoice.arrival_date.strftime('%Y-%m-%d') if invoice and invoice.arrival_date else '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Departure Date</label>
+                                <input type="date" name="departure_date" class="form-control"
+                                    value="{{ invoice.departure_date.strftime('%Y-%m-%d') if invoice and invoice.departure_date else '' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Guest List</label>
+                            <textarea name="guest_list" class="form-control" rows="4"
+                                placeholder="Enter guest names, one per line">{{ invoice.guest_list if invoice else '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Flight Info</label>
+                            <textarea name="flight_info" class="form-control" rows="3"
+                                placeholder="Flight details">{{ invoice.flight_info if invoice else '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Financial Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Air Ticket Cost (HKD)</label>
+                            <input type="number" name="air_ticket_cost" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.air_ticket_cost if invoice else 0 }}" id="airTicketCost">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Transportation Fee (HKD)</label>
+                            <input type="number" name="transportation_fee" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.transportation_fee if invoice else 0 }}" id="transportationFee">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Advance Expense (HKD)</label>
+                            <input type="number" name="advance_expense" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.advance_expense if invoice else 0 }}" id="advanceExpense">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tour Fee (HKD)</label>
+                            <input type="number" name="tour_fee" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.tour_fee if invoice else 0 }}" id="tourFee">
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label class="form-label">VAT (HKD)</label>
+                            <input type="number" name="vat" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.vat if invoice else 0 }}" id="vat">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Withholding Tax (HKD)</label>
+                            <input type="number" name="withholding_tax" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.withholding_tax if invoice else 0 }}" id="withholdingTax">
+                        </div>
+                        <hr>
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Total Tour Fee (HKD)</strong></label>
+                            <input type="number" name="total_tour_fee" class="form-control" step="0.01" min="0"
+                                value="{{ invoice.total_tour_fee if invoice else 0 }}" id="totalTourFee" readonly>
+                            <small class="text-muted">Auto-calculated</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-save me-2"></i>{% if invoice %}Update{% else %}Create{% endif %} Invoice
+                    </button>
+                    <a href="{{ url_for('account_report.hongkong_invoice_list') }}" class="btn btn-secondary">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Auto-calculate total
+    function calculateTotal() {
+        const airTicket = parseFloat(document.getElementById('airTicketCost').value) || 0;
+        const transportation = parseFloat(document.getElementById('transportationFee').value) || 0;
+        const advance = parseFloat(document.getElementById('advanceExpense').value) || 0;
+        const tourFee = parseFloat(document.getElementById('tourFee').value) || 0;
+        const vat = parseFloat(document.getElementById('vat').value) || 0;
+        const withholdingTax = parseFloat(document.getElementById('withholdingTax').value) || 0;
+
+        const total = airTicket + transportation + advance + tourFee + vat - withholdingTax;
+        document.getElementById('totalTourFee').value = total.toFixed(2);
+    }
+
+    // Add event listeners
+    document.getElementById('airTicketCost').addEventListener('input', calculateTotal);
+    document.getElementById('transportationFee').addEventListener('input', calculateTotal);
+    document.getElementById('advanceExpense').addEventListener('input', calculateTotal);
+    document.getElementById('tourFee').addEventListener('input', calculateTotal);
+    document.getElementById('vat').addEventListener('input', calculateTotal);
+    document.getElementById('withholdingTax').addEventListener('input', calculateTotal);
+
+    // Calculate on page load
+    calculateTotal();
+</script>
+{% endblock %}

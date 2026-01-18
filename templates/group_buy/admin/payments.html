@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}จัดการการชำระเงิน - Group Buy System{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="fas fa-money-bill-wave me-2"></i>จัดการการชำระเงิน</h2>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Filter -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">สถานะ</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">ทั้งหมด</option>
+                        <option value="pending" {% if request.args.get('status')=='pending' %}selected{% endif %}>
+                            รอดำเนินการ</option>
+                        <option value="paid" {% if request.args.get('status')=='paid' %}selected{% endif %}>ชำระแล้ว
+                        </option>
+                        <option value="refunded" {% if request.args.get('status')=='refunded' %}selected{% endif %}>
+                            คืนเงินแล้ว</option>
+                        <option value="failed" {% if request.args.get('status')=='failed' %}selected{% endif %}>ล้มเหลว
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="method" class="form-label">ช่องทาง</label>
+                    <select class="form-select" id="method" name="method">
+                        <option value="">ทั้งหมด</option>
+                        <option value="bank" {% if request.args.get('method')=='bank' %}selected{% endif %}>โอนเงิน
+                        </option>
+                        <option value="qr" {% if request.args.get('method')=='qr' %}selected{% endif %}>QR Code</option>
+                        <option value="stripe" {% if request.args.get('method')=='stripe' %}selected{% endif %}>Stripe
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-2"></i>ค้นหา
+                    </button>
+                    <a href="{{ url_for('group_buy_payment_admin.payments') }}" class="btn btn-secondary">
+                        <i class="fas fa-redo me-2"></i>รีเซ็ต
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            {% if payments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>แคมเปญ</th>
+                            <th>ลูกค้า</th>
+                            <th>ช่องทาง</th>
+                            <th>จำนวน</th>
+                            <th>สถานะ</th>
+                            <th>วันที่</th>
+                            <th>การจัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td><strong>#{{ payment.id }}</strong></td>
+                            <td>
+                                <a href="{{ url_for('group_buy_admin.edit_campaign', id=payment.campaign_id) }}">
+                                    Campaign #{{ payment.campaign_id }}
+                                </a>
+                            </td>
+                            <td>
+                                <div>{{ payment.customer_name }}</div>
+                                <small class="text-muted">{{ payment.customer_email }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ payment.method_label }}</span>
+                            </td>
+                            <td>
+                                <div><strong>฿{{ "%.2f"|format(payment.total_amount) }}</strong></div>
+                                {% if payment.fee_amount > 0 %}
+                                <small class="text-muted">ค่าธรรมเนียม ฿{{ "%.2f"|format(payment.fee_amount) }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.payment_status == 'pending' %}
+                                <span class="badge bg-warning text-dark">{{ payment.status_label }}</span>
+                                {% elif payment.payment_status == 'paid' %}
+                                <span class="badge bg-success">{{ payment.status_label }}</span>
+                                {% elif payment.payment_status == 'refunded' %}
+                                <span class="badge bg-secondary">{{ payment.status_label }}</span>
+                                {% else %}
+                                <span class="badge bg-danger">{{ payment.status_label }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ payment.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </td>
+                            <td>
+                                {% if payment.payment_status == 'pending' %}
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal"
+                                    data-bs-target="#verifyModal{{ payment.id }}">
+                                    <i class="fas fa-check"></i> ยืนยัน
+                                </button>
+                                {% endif %}
+
+                                {% if payment.payment_status == 'paid' %}
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal"
+                                    data-bs-target="#refundModal{{ payment.id }}">
+                                    <i class="fas fa-undo"></i> คืนเงิน
+                                </button>
+                                {% endif %}
+
+                                {% if payment.bank_slip_image %}
+                                <a href="/{{ payment.bank_slip_image }}" target="_blank" class="btn btn-sm btn-info">
+                                    <i class="fas fa-image"></i> สลิป
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Verify Modal -->
+                        <div class="modal fade" id="verifyModal{{ payment.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST"
+                                        action="{{ url_for('group_buy_payment_admin.verify_payment', id=payment.id) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">ยืนยันการชำระเงิน #{{ payment.id }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>คุณต้องการยืนยันการชำระเงินนี้หรือไม่?</p>
+                                            <div class="mb-3">
+                                                <label for="admin_notes{{ payment.id }}"
+                                                    class="form-label">หมายเหตุ</label>
+                                                <textarea class="form-control" id="admin_notes{{ payment.id }}"
+                                                    name="admin_notes" rows="3"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-success">ยืนยัน</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Refund Modal -->
+                        <div class="modal fade" id="refundModal{{ payment.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <form method="POST"
+                                        action="{{ url_for('group_buy_payment_admin.refund_payment', id=payment.id) }}">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">คืนเงิน #{{ payment.id }}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="mb-3">
+                                                <label for="refund_amount{{ payment.id }}"
+                                                    class="form-label">จำนวนเงินที่คืน</label>
+                                                <input type="number" class="form-control"
+                                                    id="refund_amount{{ payment.id }}" name="refund_amount"
+                                                    value="{{ payment.total_amount }}" step="0.01" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="refund_reason{{ payment.id }}"
+                                                    class="form-label">เหตุผลในการคืนเงิน</label>
+                                                <textarea class="form-control" id="refund_reason{{ payment.id }}"
+                                                    name="refund_reason" rows="3" required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary"
+                                                data-bs-dismiss="modal">ยกเลิก</button>
+                                            <button type="submit" class="btn btn-danger">คืนเงิน</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+                <p class="text-muted">ยังไม่มีการชำระเงิน</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

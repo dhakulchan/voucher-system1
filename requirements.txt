@@ -3,11 +3,13 @@ Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.3
 Flask-WTF==1.1.1
 WTForms==3.0.1
+Jinja2==3.1.4
+gunicorn==21.2.0
 mysql-connector-python==8.1.0
 PyMySQL==1.1.0
 requests==2.31.0
 reportlab==4.0.4
-WeasyPrint==59.0
+WeasyPrint==62.3
 qrcode[pil]==7.4.2
 Pillow==10.0.0
 python-dotenv==1.0.0

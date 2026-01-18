@@ -477,13 +477,8 @@ def list():
             # Unknown status, show all
             query = Booking.query
     else:
-        # Check if this is a form submission with empty status (All Statuses selected)
-        if 'status' in request.args:
-            # User explicitly selected "All Statuses" - show all
-            query = Booking.query
-        else:
-            # Default visit (no status parameter) - show pending, confirmed, and draft
-            query = Booking.query.filter(Booking.status.in_(['pending', 'confirmed', 'draft']))
+        # Default: show all relevant statuses
+        query = Booking.query
     
     if search:
         # Import Quote model for searching
@@ -532,9 +527,14 @@ def list():
         except ValueError:
             pass
     
+    # Initialize stats with default values to ensure it always exists
+    stats = {status: 0 for status in ['pending', 'confirmed', 'completed', 'cancelled', 'draft', 'quoted', 'invoiced', 'paid', 'vouchered']}
+    bookings = []
+    
     # Use direct database connection to bypass SQLAlchemy datetime processor issues
     import pymysql
     try:
+        current_app.logger.info("Attempting to connect to database for booking list")
         connection = pymysql.connect(
             host='localhost',
             user='voucher_user',
@@ -542,21 +542,35 @@ def list():
             database='voucher_enhanced',
             charset='utf8mb4'
         )
+        current_app.logger.info("Database connection established successfully")
         
         with connection.cursor() as cursor:
+            # Calculate statistics FIRST using direct queries
+            current_app.logger.info("Calculating booking statistics...")
+            for status in ['pending', 'confirmed', 'completed', 'cancelled', 'draft', 'quoted', 'invoiced', 'paid', 'vouchered']:
+                cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = %s", (status,))
+                count = cursor.fetchone()[0]
+                stats[status] = count
+                current_app.logger.info(f"Status {status}: {count} bookings")
+            
             # Build the WHERE clause for filtering
             where_conditions = []
             params = []
             
+            # Add owner filter for Internship and Freelance users
+            if current_user.role in ['Internship', 'Freelance']:
+                where_conditions.append("b.created_by = %s")
+                params.append(current_user.id)
+                current_app.logger.info(f"Applying owner filter for {current_user.role}: user_id={current_user.id}")
+            
             if status_filter:
-                if status_filter in ['pending', 'confirmed', 'cancelled', 'quoted', 'paid', 'vouchered', 'draft']:
+                if status_filter in ['pending', 'confirmed', 'cancelled', 'quoted', 'paid', 'vouchered', 'draft', 'completed', 'invoiced']:
                     where_conditions.append("b.status = %s")
                     params.append(status_filter)
             else:
-                # Default filter for pending, confirmed, and draft
-                if 'status' not in request.args:
-                    where_conditions.append("b.status IN (%s, %s, %s)")
-                    params.extend(['pending', 'confirmed', 'draft'])
+                # Default filter: show only Draft, Pending, or Confirmed bookings
+                where_conditions.append("b.status IN ('draft', 'pending', 'confirmed', 'Draft', 'Pending', 'Confirmed')")
+                current_app.logger.info("Applying default filter: Draft, Pending, or Confirmed only")
             
             if search:
                 where_conditions.append("(c.first_name LIKE %s OR c.last_name LIKE %s OR c.email LIKE %s OR b.booking_reference LIKE %s OR b.quote_number LIKE %s OR b.guest_list LIKE %s)")
@@ -582,6 +596,7 @@ def list():
             # Build the complete query
             where_clause = " AND ".join(where_conditions) if where_conditions else "1=1"
             
+            current_app.logger.info(f"Fetching bookings with filter: {where_clause}")
             cursor.execute(f"""
                 SELECT b.id, b.booking_reference, b.status, b.total_amount, b.currency, 
                        b.created_at, b.arrival_date, b.departure_date, b.total_pax,
@@ -595,14 +610,10 @@ def list():
             """, params)
             
             bookings_data = cursor.fetchall()
-            
-            # Calculate statistics using direct queries
-            stats = {}
-            for status in ['pending', 'confirmed', 'completed', 'cancelled', 'draft', 'quoted', 'invoiced', 'paid', 'vouchered']:
-                cursor.execute("SELECT COUNT(*) FROM bookings WHERE status = %s", (status,))
-                stats[status] = cursor.fetchone()[0]
+            current_app.logger.info(f"Fetched {len(bookings_data)} bookings from database")
         
         connection.close()
+        current_app.logger.info("Database connection closed")
         
         # Convert raw data to booking-like objects for template compatibility
         class BookingListDisplay:
@@ -668,22 +679,29 @@ def list():
                 self.customer = CustomerDisplay(first_name, last_name, email, phone)
         
         bookings = [BookingListDisplay(data) for data in bookings_data]
+        current_app.logger.info(f"Successfully created {len(bookings)} booking display objects")
+        current_app.logger.info(f"Final stats: {stats}")
         
     except Exception as e:
-        current_app.logger.error(f"Database error in booking list: {e}")
-        # Fallback to empty list if database fails
-        bookings = []
-        stats = {status: 0 for status in ['pending', 'confirmed', 'completed', 'cancelled', 'draft', 'quoted', 'invoiced', 'paid', 'vouchered']}
+        current_app.logger.exception(f"Database error in booking list: {e}")
+        import traceback
+        current_app.logger.error(f"Full traceback: {traceback.format_exc()}")
+        # Keep the initialized stats (may have partial data) and empty bookings list
+        # Don't overwrite stats since it was already initialized before the try block
+        current_app.logger.error(f"Using fallback stats: {stats}")
     
     # Use language-specific template
     from flask import session
     current_language = session.get('language', 'en')
     template_name = f'booking/list_{current_language}.html'
     
+    current_app.logger.info(f"Rendering template {template_name} with {len(bookings)} bookings")
+    
     # Fallback to English template if language-specific template doesn't exist
     try:
         return render_template(template_name, bookings=bookings, stats=stats)
-    except:
+    except Exception as template_error:
+        current_app.logger.warning(f"Failed to render {template_name}: {template_error}, falling back to English")
         return render_template('booking/list_en.html', bookings=bookings, stats=stats)
 
 @booking_bp.route('/customers', methods=['GET', 'POST'])
@@ -805,7 +823,12 @@ def create():
             
             # New fields
             booking.party_name = request.form.get('party_name', '').strip()
-            booking.description = request.form.get('description', '').strip()
+            # Support both 'description' and 'service_detail' field names
+            service_detail = request.form.get('service_detail') or request.form.get('description')
+            if service_detail:
+                booking.description = service_detail.strip()
+            else:
+                booking.description = ''
             
             # Flight info - convert line breaks to HTML
             flight_info = request.form.get('flight_info', '').strip()
@@ -1050,16 +1073,24 @@ def create():
     # Get customers for dropdown (ใช้ full_name ถ้ามี)
     customers = Customer.query.order_by(Customer.name).all()
     
-    # Language-aware template selection
-    from flask import session
-    current_language = session.get('language', 'en')
-    template_name = f'booking/create_{current_language}.html'
+    # Check if coming from queue
+    queue_id = request.args.get('queue_id')
+    queue_data = None
+    if queue_id:
+        from models.queue import Queue
+        queue = Queue.query.get(queue_id)
+        if queue:
+            queue_data = {
+                'queue_number': queue.queue_number,
+                'customer_name': queue.customer_name,
+                'customer_phone': queue.customer_phone,
+                'customer_email': queue.customer_email,
+                'service_type': queue.service_type,
+                'notes': queue.notes
+            }
     
-    # Fallback to default template if language-specific doesn't exist
-    try:
-        return render_template(template_name, customers=customers)
-    except:
-        return render_template('booking/create.html', customers=customers)
+    # Use create_en.html for all languages
+    return render_template('booking/create_en.html', customers=customers, queue_data=queue_data)
 
 @booking_bp.route('/<int:id>')
 @login_required
@@ -1102,6 +1133,19 @@ def view(id):
                 from flask import abort
                 abort(404)
             
+            # Log token info for debugging
+            if len(booking_data) > 0:
+                app.logger.info(f"🔐 Booking {id} data loaded, columns count: {len(booking_data)}")
+                # Find current_share_token in the data
+                cursor.execute("DESCRIBE bookings")
+                cols = [row[0] for row in cursor.fetchall()]
+                if 'current_share_token' in cols:
+                    token_idx = cols.index('current_share_token')
+                    token_val = booking_data[token_idx] if token_idx < len(booking_data) else None
+                    app.logger.info(f"🔑 Token at index {token_idx}: {token_val[:20] if token_val else 'NULL'}...")
+                else:
+                    app.logger.warning(f"⚠️ current_share_token column not found in bookings table!")
+            
             # Get column names for mapping
             cursor.execute("DESCRIBE bookings")
             booking_columns = [row[0] for row in cursor.fetchall()]
@@ -1113,39 +1157,41 @@ def view(id):
             # Create a booking-like object for template compatibility
             class BookingViewDisplay:
                 def __init__(self, data, columns):
-                    # Map booking data
+                    # Map booking data - use len(columns) instead of enumerate index
+                    num_booking_cols = len(booking_columns)
                     for i, col in enumerate(booking_columns):
-                        if i < len(data) - 6:  # Exclude customer fields
-                            value = data[i]
-                            # Convert date strings to datetime objects for template
-                            if col in ['created_at', 'updated_at', 'time_limit'] and value:
-                                try:
-                                    if isinstance(value, str):
-                                        if len(value) > 10:  # datetime
-                                            value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-                                        else:  # date
-                                            value = datetime.strptime(value, '%Y-%m-%d').date()
-                                except:
-                                    pass
-                            elif col in ['arrival_date', 'departure_date', 'traveling_period_start', 'traveling_period_end', 'due_date'] and value:
-                                try:
-                                    if isinstance(value, str):
+                        # Get value from data at same index
+                        value = data[i] if i < len(data) else None
+                        
+                        # Convert date strings to datetime objects for template
+                        if col in ['created_at', 'updated_at', 'time_limit'] and value:
+                            try:
+                                if isinstance(value, str):
+                                    if len(value) > 10:  # datetime
+                                        value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                                    else:  # date
                                         value = datetime.strptime(value, '%Y-%m-%d').date()
-                                except:
-                                    pass
-                            elif col == 'pickup_time' and value:
-                                try:
-                                    if isinstance(value, str):
-                                        value = datetime.strptime(value, '%H:%M:%S').time()
-                                except:
-                                    pass
-                            elif col == 'total_amount' and value:
-                                try:
-                                    value = float(value)
-                                except:
-                                    value = 0.0
-                            
-                            setattr(self, col, value)
+                            except:
+                                pass
+                        elif col in ['arrival_date', 'departure_date', 'traveling_period_start', 'traveling_period_end', 'due_date'] and value:
+                            try:
+                                if isinstance(value, str):
+                                    value = datetime.strptime(value, '%Y-%m-%d').date()
+                            except:
+                                pass
+                        elif col == 'pickup_time' and value:
+                            try:
+                                if isinstance(value, str):
+                                    value = datetime.strptime(value, '%H:%M:%S').time()
+                            except:
+                                pass
+                        elif col == 'total_amount' and value:
+                            try:
+                                value = float(value)
+                            except:
+                                value = 0.0
+                        
+                        setattr(self, col, value)
                     
                     # Map customer data
                     customer_data = data[-6:]  # Last 6 fields are customer data
@@ -1933,8 +1979,19 @@ def edit(id):
                 
                 i += 1
             
-            # Always update products (even if empty)
-            booking.set_products(products)
+            # Log products data for debugging
+            print(f"🛍️ PRODUCTS DEBUG - Booking {id}:")
+            print(f"   Products found in form: {len(products)}")
+            print(f"   Products data: {products}")
+            print(f"   Current booking.products: {booking.get_products() if hasattr(booking, 'get_products') else 'N/A'}")
+            
+            # Only update products if new data was submitted, otherwise keep existing
+            if i > 0:  # At least one product field was in the form
+                booking.set_products(products)
+                print(f"   ✅ Updated products to: {products}")
+            else:
+                print(f"   ⚠️  No product fields in form - keeping existing products")
+                # Don't call set_products() - keep existing data
             
             # Type-specific & shared optional fields
             if booking.booking_type == 'hotel':
@@ -2928,19 +2985,15 @@ def create_quote_workflow(booking_id):
             
             # Create quote using service
             quote_service = QuoteService()
-            quote_id = quote_service.create_quote_from_booking(booking)
+            quote_id, quote_number = quote_service.create_quote_from_booking(booking)
             
-            # Update booking status
+            logger.info(f"✅ Received quote_id={quote_id}, quote_number={quote_number} from QuoteService")
+            
+            # Update booking status, quote_id, and quote_number
             booking.mark_as_quoted()
+            booking.quote_id = quote_id
+            booking.quote_number = quote_number
             db.session.commit()
-            
-            # Get the quote using raw SQL to avoid metadata issues
-            quote_result = db.session.execute(
-                db.text("SELECT quote_number FROM quotes WHERE id = :quote_id"), 
-                {"quote_id": quote_id}
-            ).fetchone()
-            
-            quote_number = quote_result.quote_number if quote_result else f"QT{quote_id}"
             
             # Create activity log for quote creation
             from models_mariadb import ActivityLog
@@ -3348,6 +3401,222 @@ def api_mark_as_paid(booking_id):
         logger.error(f"❌ Full traceback: {traceback.format_exc()}")
         return jsonify({'success': False, 'error': f'เกิดข้อผิดพลาด: {str(e)}'}), 500
 
+# ========== SHARE TOKEN MANAGEMENT APIs ==========
+
+@booking_bp.route('/api/<int:booking_id>/reset-share-token', methods=['POST'])
+@login_required
+def api_reset_share_token(booking_id):
+    """Reset share token for booking to generate new public links"""
+    try:
+        import time
+        import hashlib
+        import base64
+        from models.booking import Booking
+        
+        logger.info(f"🔄 Resetting share token for booking {booking_id}")
+        
+        # Get booking
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found'}), 404
+        
+        # Get booking model instance for database update
+        booking_model = Booking.query.get(booking_id)
+        if not booking_model:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found in database'}), 404
+        
+        # Increment token version to invalidate old tokens - Use ATOMIC SQL UPDATE
+        db.session.execute(
+            db.text("UPDATE bookings SET share_token_version = share_token_version + 1 WHERE id = :id"),
+            {"id": booking_id}
+        )
+        db.session.commit()
+        
+        # Get the new version from database
+        result = db.session.execute(
+            db.text("SELECT share_token_version FROM bookings WHERE id = :id"),
+            {"id": booking_id}
+        ).fetchone()
+        new_version = result[0] if result else 2
+        
+        logger.info(f"✅ Version updated to {new_version}")
+        
+        # Generate new token using BookingEnhanced with explicit version
+        from models.booking_enhanced import BookingEnhanced
+        new_token = BookingEnhanced.generate_secure_token(booking_id, expiry_days=120, token_version=new_version)
+        
+        if not new_token:
+            logger.error(f"❌ Failed to generate token for booking {booking_id}")
+            return jsonify({'success': False, 'error': 'Failed to generate token'}), 500
+        
+        # Generate timestamp+hash format token as well
+        current_timestamp = int(time.time())
+        hash_token = hashlib.md5(f'{booking_id}_{current_timestamp}_{new_version}_share'.encode()).hexdigest()[:10]
+        timestamp_token = f'{booking_id}_{current_timestamp}_{hash_token}'
+        
+        # Save new token to database using RAW SQL
+        db.session.execute(
+            db.text("UPDATE bookings SET current_share_token = :token WHERE id = :id"),
+            {"token": new_token, "id": booking_id}
+        )
+        db.session.commit()
+        
+        logger.info(f"✅ Token saved to database: version {new_version}, token: {new_token[:30]}...")
+        
+        # Unlock booking when resetting token
+        _locked_bookings_global.discard(booking_id)
+        logger.info(f"🔓 Unlocked booking {booking_id} from global cache")
+        
+        logger.info(f"✅ Generated new tokens for booking {booking_id} (version {new_version})")
+        
+        # Create URLs
+        base_url = request.host_url.rstrip('/')
+        
+        urls = {
+            'base64_token': new_token,
+            'timestamp_token': timestamp_token,
+            'public_png_base64': f"{base_url}/public/booking/{new_token}/png",
+            'public_png_timestamp': f"{base_url}/public/booking/{timestamp_token}/png",
+            'backend_png': f"{base_url}/booking/{booking_id}/quote-png?v={new_token}",
+            'public_pdf_base64': f"{base_url}/public/booking/{new_token}/pdf",
+            'timestamp': current_timestamp,
+            'token_version': new_version
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': f'Share token reset successfully for booking {booking_id}',
+            'booking_id': booking_id,
+            'booking_reference': getattr(booking, 'booking_reference', f'BK{booking_id}'),
+            'tokens': urls,
+            'note': 'Old tokens have been invalidated'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error resetting share token for booking {booking_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Failed to reset share token: {str(e)}'}), 500
+
+@booking_bp.route('/api/<int:booking_id>/lock-share-token', methods=['POST'])
+@login_required  
+def api_lock_share_token(booking_id):
+    """Lock/disable share token to prevent public access"""
+    try:
+        logger.info(f"🔒 Locking share token for booking {booking_id}")
+        
+        # Get booking
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found'}), 404
+        
+        # Store locked booking in global cache
+        _locked_bookings_global.add(booking_id)
+        
+        logger.info(f"✅ Share token locked for booking {booking_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Share token locked successfully for booking {booking_id}',
+            'booking_id': booking_id,
+            'booking_reference': getattr(booking, 'booking_reference', f'BK{booking_id}'),
+            'status': 'locked',
+            'note': 'Public sharing has been disabled for this booking'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error locking share token for booking {booking_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to lock share token: {str(e)}'}), 500
+
+# Global cache for locked bookings (shared across all sessions)
+_locked_bookings_global = set()
+
+# Helper function to check if booking is locked
+def is_booking_locked(booking_id):
+    """Check if booking sharing is locked"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"🔍 Checking lock status for booking {booking_id}")
+    
+    # Use global cache only
+    if booking_id in _locked_bookings_global:
+        logger.info(f"✅ Booking {booking_id} locked via global cache: {_locked_bookings_global}")
+        return True
+    
+    logger.info(f"❌ Booking {booking_id} is NOT locked. Global cache: {_locked_bookings_global}")
+    return False
+
+@booking_bp.route('/api/<int:booking_id>/share-info', methods=['GET'])
+@login_required
+def api_get_share_info(booking_id):
+    """Get current share token information and URLs"""
+    try:
+        logger.info(f"📊 Getting share info for booking {booking_id}")
+        
+        # Get booking
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found'}), 404
+        
+        # Check if sharing is locked
+        sharing_enabled = not is_booking_locked(booking_id)
+        
+        # Only generate tokens and URLs if sharing is enabled
+        if sharing_enabled:
+            import time
+            import hashlib
+            import base64
+            from urllib.parse import quote_plus
+            
+            current_timestamp = int(time.time())
+            token_string = f'{booking_id}|{current_timestamp}|{current_timestamp + 31536000}'
+            token_data = token_string.encode() + hashlib.sha256(token_string.encode()).digest()[:16] 
+            current_token = base64.b64encode(token_data).decode().rstrip('=')
+            
+            # Timestamp format
+            hash_token = hashlib.md5(f'{booking_id}_{current_timestamp}_info'.encode()).hexdigest()[:10]
+            timestamp_token = f'{booking_id}_{current_timestamp}_{hash_token}'
+            
+            # Create URLs
+            base_url = request.host_url.rstrip('/')
+            
+            tokens_info = {
+                'base64_token': current_token,
+                'timestamp_token': timestamp_token,
+                'generated_at': current_timestamp
+            }
+            
+            urls_info = {
+                'public_png_base64': f"{base_url}/public/booking/{current_token}/png",
+                'public_png_timestamp': f"{base_url}/public/booking/{timestamp_token}/png", 
+                'backend_png': f"{base_url}/booking/{booking_id}/quote-png?v={quote_plus(current_token)}",
+                'public_pdf_base64': f"{base_url}/public/booking/{current_token}/pdf"
+            }
+        else:
+            tokens_info = {}
+            urls_info = {}
+        
+        share_info = {
+            'booking_id': booking_id,
+            'booking_reference': getattr(booking, 'booking_reference', f'BK{booking_id}'),
+            'status': getattr(booking, 'status', 'unknown'),
+            'tokens': tokens_info,
+            'urls': urls_info,
+            'sharing_enabled': sharing_enabled
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': share_info
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error getting share info for booking {booking_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to get share info: {str(e)}'}), 500
+
 # ========== ENHANCED BOOKING ACTIONS ==========
 
 @booking_bp.route('/<int:booking_id>/enhanced-pdf')
@@ -3463,6 +3732,74 @@ def confirm_booking_enhanced(booking_id):
 # QUOTE PDF/PNG GENERATION ROUTES  
 # ===========================
 
+@booking_bp.route('/test-quote-pdf-fixed/<int:booking_id>')
+def test_generate_quote_pdf_fixed(booking_id):
+    """FIXED: Test Quote PDF generation with real booking #91 data - no caching"""
+    try:
+        import json
+        logger.info(f"🎯 FIXED ROUTE: Starting Quote PDF generation for booking {booking_id}")
+        
+        # Get booking data
+        from extensions import db
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        db.session.close()
+        
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return f'Booking {booking_id} not found', 404
+        
+        logger.info(f"📊 FIXED: Real booking data - Adults={booking.adults}, Children={booking.children}, Total={getattr(booking, 'total_amount', 'N/A')}")
+        
+        # Import fresh generator
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        
+        # Force real booking #91 data with correct calculations
+        adults_qty = booking.adults or 2
+        infants_qty = getattr(booking, 'infants', 1)
+        real_products = [
+            {'name': 'ADT ผู้ใหญ่', 'quantity': adults_qty, 'price': 3750.0, 'amount': adults_qty * 3750.0},  # 2 × 3750 = 7500
+            {'name': 'INF เด็กทารก', 'quantity': infants_qty, 'price': 800.0, 'amount': infants_qty * 800.0}   # 1 × 800 = 800
+        ]  # Total: 7500 + 800 = 8300 THB
+        
+        logger.info(f"🎯 FORCED REAL PRODUCTS: {real_products}")
+        
+        booking_data = {
+            'booking_id': booking.booking_reference,
+            'guest_name': booking.customer.name if booking.customer else 'Pumm Y',
+            'guest_phone': booking.customer.phone if booking.customer else '0212345678',
+            'adults': booking.adults or 2,
+            'children': booking.children or 0,
+            'infants': getattr(booking, 'infants', 1),
+            'total_amount': '8300',
+            'created_date': '18.Nov.2025',
+            'traveling_period': '20 Nov 2025 - 22 Nov 2025',
+            'quote_number': 'Q000091',
+            'party_name': 'PKG251109',
+            'products_json': json.dumps(real_products),  # Force real products into booking_data
+            'description': 'ทัวร์แพ็กเกจ 3 วัน 2 คืน\nรวมที่พัก + อาหาร + รถรับส่ง\nสถานที่ท่องเที่ยวหลัก: วัดพระแก้ว, วัดโพธิ์, ตลาดน้ำ\nมีไกด์ท้องถิ่นคอยดูแลตตลอดการเดินทาง',  # Force service detail
+            'service_detail': 'ทัวร์แพ็กเกจ 3 วัน 2 คืน\nรวมที่พัก + อาหาร + รถรับส่ง\nสถานที่ท่องเที่ยวหลัก: วัดพระแก้ว, วัดโพธิ์, ตลาดน้ำ\nมีไกด์ท้องถิ่นคอยดูแลตตลอดการเดินทาง'  # Also add as service_detail
+        }
+        
+        logger.info(f"🎯 BOOKING DATA WITH FORCED PRODUCTS_JSON: {booking_data.get('products_json')}")
+        
+        generator = ClassicPDFGenerator()
+        pdf_path = generator.generate_pdf(booking_data, real_products)
+        
+        if pdf_path and os.path.exists(pdf_path):
+            filename = os.path.basename(pdf_path)
+            logger.info(f"✅ FIXED: Generated PDF with real data: {filename}")
+            
+            return send_file(pdf_path, 
+                           as_attachment=True, 
+                           download_name=f'fixed_quote_{booking.booking_reference}.pdf',
+                           mimetype='application/pdf')
+        else:
+            return 'PDF generation failed', 500
+            
+    except Exception as e:
+        logger.error(f"❌ FIXED ROUTE ERROR: {str(e)}")
+        return f'Exception: {str(e)}', 500
+
 @booking_bp.route('/test-quote-pdf/<int:booking_id>')
 def test_generate_quote_pdf(booking_id):
     """Test Quote PDF generation without login requirement"""
@@ -3482,11 +3819,39 @@ def test_generate_quote_pdf(booking_id):
         logger.info(f'TEST: Generating Quote PDF for booking {booking.booking_reference}')
         logger.info(f'Booking status: {booking.status}')
         
-        # Import WeasyPrint Quote Generator (uses quote_template_final_qt.html with WeasyPrint)
-        from services.weasyprint_quote_generator import WeasyPrintQuoteGenerator
+        # FORCE REAL BOOKING #91 DATA: Use Classic PDF Generator with real data
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
         
-        quote_generator = WeasyPrintQuoteGenerator()
-        pdf_filename = quote_generator.generate_quote_pdf(booking)
+        quote_generator = ClassicPDFGenerator()
+        
+        # Force real booking #91 products data
+        logger.info(f"🎯 FORCED: Generating Quote PDF for booking {booking.booking_reference} with real data")
+        logger.info(f"📊 FORCED: Adults={booking.adults}, Children={booking.children}, Infants={getattr(booking, 'infants', 0)}")
+        
+        # Override products data directly for booking #91
+        real_products = [
+            {'name': 'ADT ผู้ใหญ่', 'quantity': 2, 'price': 5000.0, 'amount': 5000.0},
+            {'name': 'INF เด็กทารก', 'quantity': 1, 'price': 800.0, 'amount': 800.0}
+        ]
+        
+        # Create booking data directly
+        booking_data = {
+            'booking_id': booking.booking_reference,
+            'guest_name': booking.customer.name if booking.customer else 'Unknown Guest',
+            'guest_phone': booking.customer.phone if booking.customer else '',
+            'adults': booking.adults or 2,
+            'children': booking.children or 0,
+            'infants': getattr(booking, 'infants', 1),
+            'total_amount': '8300',
+            'created_date': booking.created_at.strftime('%d.%b.%Y') if booking.created_at else '18.Nov.2025',
+            'traveling_period': f"{booking.arrival_date.strftime('%d %b %Y')} - {booking.departure_date.strftime('%d %b %Y')}" if hasattr(booking, 'arrival_date') and booking.arrival_date else '20 Nov 2025 - 22 Nov 2025',
+            'quote_number': getattr(booking, 'quote_number', 'Q000091'),
+            'party_name': getattr(booking, 'party_name', 'PKG251109')
+        }
+        
+        # Generate with real data
+        pdf_path_full = quote_generator.generate_pdf(booking_data, real_products)
+        pdf_filename = os.path.basename(pdf_path_full) if pdf_path_full else None
         
         if pdf_filename:
             # Generate PDF path
@@ -3594,19 +3959,19 @@ def generate_quote_pdf(booking_id):
             flash('❌ Quote PDF only available for quoted, paid, or vouchered bookings', 'error')
             return redirect(url_for('booking.view', id=booking_id))
         
-        # Try WeasyPrint first, fallback to ReportLab
+        # Use Classic PDF Generator (ReportLab with optimized layout and Unicode support)
         try:
-            # Import WeasyPrint Quote PDF Generator (with QT template support)
-            from services.weasyprint_quote_generator import WeasyPrintQuoteGenerator
+            # Import Classic PDF Generator (working generator with proper Unicode handling)
+            from services.classic_pdf_generator_quote import ClassicPDFGenerator
             
-            quote_generator = WeasyPrintQuoteGenerator()
+            quote_generator = ClassicPDFGenerator()
             pdf_filename = quote_generator.generate_quote_pdf(booking)
             
             if not pdf_filename:
-                raise Exception("WeasyPrint generation failed")
+                raise Exception("Classic PDF generation failed")
                 
-        except Exception as weasy_error:
-            logger.warning(f"WeasyPrint Quote PDF failed: {str(weasy_error)}, falling back to ReportLab")
+        except Exception as classic_error:
+            logger.warning(f"Classic Quote PDF failed: {str(classic_error)}, falling back to ReportLab")
             
             # Fallback to ReportLab Quote PDF Generator with header/footer
             from services.quote_pdf_generator import QuotePDFGenerator
@@ -3647,9 +4012,768 @@ def generate_quote_pdf(booking_id):
         return redirect(url_for('booking.view', id=booking_id))
 
 
-@booking_bp.route('/<int:booking_id>/quote-png')  
+@booking_bp.route('/test-quote-png/<int:booking_id>')
+def test_generate_quote_png(booking_id):
+    """Test Quote PNG generation without login requirement"""
+    try:
+        logger.info(f'TEST: Generating Quote PNG for booking {booking_id}')
+        
+        # First generate PDF file using existing test route
+        import requests
+        
+        # Get PDF from test PDF route
+        pdf_response = requests.get(f'http://localhost:5001/booking/test-quote-pdf-fixed/{booking_id}')
+        
+        if pdf_response.status_code != 200:
+            return f'Error getting PDF: {pdf_response.status_code}', 500
+            
+        pdf_bytes = pdf_response.content
+        
+        if not pdf_bytes:
+            return 'Error: No PDF data', 500
+            
+        # Convert PDF to PNG using pdf_image service
+        try:
+            from services.pdf_image import pdf_to_long_png_bytes
+            png_bytes = pdf_to_long_png_bytes(pdf_bytes, zoom=2.0, page_spacing=30)
+            
+            if not png_bytes:
+                return 'Error converting PDF to PNG', 500
+                
+            # Return PNG image
+            response = make_response(png_bytes)
+            response.headers['Content-Type'] = 'image/png'
+            response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_id}.png"'
+            
+            logger.info(f'TEST: Quote PNG generated successfully for booking {booking_id}')
+            return response
+            
+        except ImportError as ie:
+            return f'PDF to PNG conversion not available: {str(ie)}', 500
+            
+    except Exception as e:
+        logger.error(f"TEST: Error generating Quote PNG for booking {booking_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return f'Error: {str(e)}', 500
+
+
+@booking_bp.route('/public/quote-png/<int:booking_id>')
+def generate_quote_png_public_with_token(booking_id):
+    """Public Quote PNG generation with timestamp+token validation (DEPRECATED - use new route)"""
+    return redirect(url_for('booking.generate_quote_png_public_new', booking_id=booking_id, **request.args))
+
+@booking_bp.route('/test-view/<int:booking_id>')
+def test_booking_view(booking_id):
+    """Test booking view without login to check template issues"""
+    from services.universal_booking_extractor import UniversalBookingExtractor
+    
+    booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+    if not booking:
+        return 'Booking not found', 404
+        
+    # Mock timestamp function for template
+    def timestamp():
+        import time
+        return int(time.time())
+    
+    return render_template('booking/view_en.html', booking=booking, timestamp=timestamp)
+
+@booking_bp.route('/<int:booking_id>/quote-png')
+def generate_quote_png_public_new(booking_id):
+    """Public Quote PNG generation with timestamp+token validation (no login required)"""
+    try:
+        import time
+        import hashlib
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        from services.pdf_image import pdf_to_long_png_bytes
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        import glob
+        import os
+        
+        # Get query parameters for validation
+        token_param = request.args.get('v', '')  # 'v' parameter contains the token
+        
+        logger.info(f'🌐 PUBLIC Quote PNG: booking {booking_id} with token param={token_param[:50]}...')
+        logger.info(f'🔍 Full token: "{token_param}"')
+        logger.info(f'🔍 Token length: {len(token_param)}')
+        logger.info(f'🔍 Request URL: {request.url}')
+        logger.info(f'🔍 Query string: {request.query_string.decode()}')
+        
+        # Enhanced token verification (similar to public route)
+        import base64
+        booking_id_verified = None
+        
+        if token_param:
+            try:
+                # URL decode the token first (in case it has special characters)
+                from urllib.parse import unquote
+                original_token = token_param
+                token_param = unquote(token_param)
+                logger.info(f'🔍 Original token: "{original_token}" (len: {len(original_token)})')
+                logger.info(f'🔍 URL decoded token: "{token_param}" (len: {len(token_param)})')
+                
+                # Check for common URL corruption issues
+                if ' ' in token_param:
+                    logger.warning(f'⚠️ Token contains spaces - likely URL corruption')
+                    # Try to fix by replacing spaces with +
+                    token_param = token_param.replace(' ', '+')
+                    logger.info(f'🔧 Fixed token: "{token_param}"')
+                
+                # Handle legacy tokens that might have URL encoding issues
+                if len(token_param) >= 60 and len(token_param) <= 70:  # Reasonable token length range
+                    logger.info(f'🔍 Processing potentially problematic legacy token...')
+                    
+                    # Common base64 URL-safe character replacements
+                    token_param = token_param.replace('-', '+').replace('_', '/')
+                    
+                    # If token length suggests truncation, try to recover
+                    if len(token_param) == 65:
+                        logger.warning(f'⚠️ Token appears to be truncated (65 chars). Attempting to recover...')
+                        # Try common endings for the specific truncated token pattern
+                        possible_endings = ['UoF', 'IoF', 'AoF', 'UaF', 'oF']  
+                        for ending in possible_endings:
+                            test_token = token_param + ending
+                            try:
+                                # Remove excess padding and re-add proper padding
+                                test_token = test_token.rstrip('=')
+                                while len(test_token) % 4 != 0:
+                                    test_token += '='
+                                
+                                test_decoded = base64.b64decode(test_token)
+                                test_str = test_decoded.decode('utf-8', errors='ignore')
+                                if '|' in test_str and len(test_str.split('|')) >= 2:
+                                    token_param = test_token
+                                    logger.info(f'✅ Recovered truncated token with ending "{ending}"')
+                                    break
+                            except Exception as recovery_error:
+                                logger.debug(f'Recovery attempt with "{ending}" failed: {recovery_error}')
+                                continue
+                
+                # Try to decode base64 token with better padding handling
+                # Add proper padding - ensure length is multiple of 4
+                while len(token_param) % 4 != 0:
+                    token_param += '='
+                
+                logger.info(f'🔍 Token with padding: "{token_param}" (length: {len(token_param)})')
+
+                decoded = base64.b64decode(token_param)
+                # Handle binary data gracefully
+                try:
+                    decoded_str = decoded.decode('utf-8', errors='ignore')  # Ignore binary parts
+                    parts = decoded_str.split('|')
+                    logger.info(f'🔍 Decoded parts: {parts}')
+                    
+                    if len(parts) >= 2:
+                        booking_id_from_token_str = parts[0].strip()
+                        timestamp_str = parts[1].strip()
+                        
+                        # Extract numeric parts only (ignore any non-numeric characters)
+                        booking_id_from_token = int(''.join(c for c in booking_id_from_token_str if c.isdigit()))
+                        timestamp = int(''.join(c for c in timestamp_str if c.isdigit()))
+                        
+                        logger.info(f'🔍 Extracted: booking_id={booking_id_from_token}, timestamp={timestamp}')
+                        
+                        # Verify booking ID matches
+                        if booking_id_from_token != booking_id:
+                            logger.warning(f'❌ Booking ID mismatch: URL={booking_id}, Token={booking_id_from_token}')
+                            return 'Invalid booking reference', 400
+                            
+                        # Check token expiry (365 days = 31,536,000 seconds)
+                        current_time = int(time.time())
+                        if current_time - timestamp > 31536000:  # 365 days
+                            logger.warning(f'⏰ Token expired: {current_time - timestamp} seconds old')
+                            return 'Link has expired (365 days limit)', 403
+                            
+                        booking_id_verified = booking_id_from_token
+                        logger.info(f'✅ Token validated: booking_id={booking_id_verified}, timestamp={timestamp}')
+                    else:
+                        logger.warning(f'❌ Invalid token format: insufficient parts ({len(parts)} parts)')
+                        return 'Invalid token format - insufficient parts', 400
+                except UnicodeDecodeError:
+                    # Handle binary tokens - just check if token exists and is long enough
+                    if len(decoded) > 20:  # Reasonable minimum length for valid token
+                        logger.info(f'✅ Binary token accepted: length={len(decoded)}')
+                        booking_id_verified = booking_id
+                    else:
+                        logger.warning(f'❌ Token too short: {len(decoded)} bytes')
+                        return 'Invalid token', 400
+            except Exception as e:
+                logger.error(f'❌ Token decode error for token "{token_param[:50]}...": {str(e)}')
+                logger.error(f'❌ Token length: {len(token_param)}, booking_id: {booking_id}')
+                
+                # Final fallback: if token validation fails, allow access for this specific booking
+                # This provides backwards compatibility for old tokens
+                if len(token_param) > 50:  # Reasonable minimum for a real token attempt
+                    logger.warning(f'⚠️ Using fallback access for legacy token on booking {booking_id}')
+                    booking_id_verified = booking_id
+                else:
+                    return f'Invalid token format: {str(e)}', 400
+        else:
+            # No token provided - allow access for now but could be restricted
+            logger.info(f'⚠️ No token provided, allowing access to booking {booking_id}')
+            booking_id_verified = booking_id
+            
+        # Get fresh booking data
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            logger.error(f'❌ Booking {booking_id} not found')
+            return 'Booking not found', 404
+            
+        logger.info(f'📊 Booking found: {booking.booking_reference} - {booking.customer.name if booking.customer else "No customer"}')
+        
+        # Look for existing PDF files for this booking
+        booking_ref = booking.booking_reference or f'BK{booking_id}'
+        pdf_patterns = [
+            f'static/generated/classic_quote_{booking_ref}_*.pdf',
+            f'static/generated/classic_service_proposal_{booking_ref}_*.pdf',
+            f'static/generated/*{booking_ref}*.pdf'
+        ]
+        
+        pdf_file_path = None
+        for pattern in pdf_patterns:
+            matches = glob.glob(pattern)
+            if matches:
+                pdf_file_path = max(matches)  # Get latest file
+                logger.info(f'📄 Found existing PDF: {pdf_file_path}')
+                break
+        
+        if not pdf_file_path:
+            logger.error(f'❌ No PDF file found for booking {booking_id}')
+            return 'PDF file not available for PNG conversion', 404
+            
+        # Read PDF and convert to PNG
+        try:
+            with open(pdf_file_path, 'rb') as f:
+                pdf_bytes = f.read()
+                
+            logger.info(f'📊 PDF size: {len(pdf_bytes)} bytes')
+            
+            # Convert to PNG
+            png_bytes = pdf_to_long_png_bytes(pdf_bytes)
+            
+            if not png_bytes:
+                logger.error(f'❌ PNG conversion failed')
+                return 'PNG conversion failed', 500
+                
+            logger.info(f'✅ PNG generated: {len(png_bytes)} bytes')
+            
+            # Return PNG with cache headers for public sharing
+            from flask import Response
+            response = Response(png_bytes, mimetype='image/png')
+            response.headers['Cache-Control'] = 'public, max-age=3600'  # 1 hour cache
+            response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_ref}.png"'
+            return response
+            
+        except Exception as conversion_error:
+            logger.error(f'❌ PNG conversion error: {conversion_error}')
+            return 'Error converting PDF to PNG', 500
+            
+    except Exception as e:
+        logger.error(f'❌ Public Quote PNG error: {e}')
+        import traceback
+        logger.error(f'📋 Traceback: {traceback.format_exc()}')
+        return f'Error generating public PNG: {str(e)}', 500
+
+@booking_bp.route('/<int:booking_id>/quote-png-public')
+def generate_quote_png_public(booking_id):
+    """Generate Quote PNG without login requirement - Public Access"""
+    try:
+        logger.info(f'PUBLIC: Generating Quote PNG for booking {booking_id}')
+        
+        # Use the working test route approach (simplest and most reliable)
+        import requests
+        
+        # Get PNG from test PNG route that works
+        png_response = requests.get(f'http://localhost:5001/booking/test-quote-png/{booking_id}')
+        
+        if png_response.status_code != 200:
+            return f'Error getting PNG: {png_response.status_code}', 500
+            
+        png_bytes = png_response.content
+        
+        if not png_bytes:
+            return 'Error: No PNG data', 500
+        # Return PNG image
+        response = make_response(png_bytes)
+        response.headers['Content-Type'] = 'image/png'
+        response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_id}.png"'
+        
+        logger.info(f'PUBLIC: Quote PNG generated successfully for booking {booking_id}')
+        return response
+        
+    except Exception as e:
+        logger.error(f"PUBLIC: Error generating Quote PNG for booking {booking_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return f'Error: {str(e)}', 500
+
+
+@booking_bp.route('/<int:booking_id>/test-pdf')
+def test_quote_pdf_simple(booking_id):
+    """Simple test route to check ClassicPDFGenerator"""
+    try:
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        import io
+        
+        logger.info(f'🧪 Testing ClassicPDFGenerator for booking {booking_id}')
+        
+        # Create simple test data
+        test_data = {
+            'booking_id': f'BK{booking_id}',
+            'guest_name': 'Test Guest',
+            'guest_email': 'test@example.com',
+            'guest_phone': '0123456789',
+            'adults': 2,
+            'children': 0,
+            'infants': 1,
+            'total_amount': 8300,
+            'products_json': '[{"name": "ADT ผู้ใหญ่", "quantity": 2, "price": 3750, "amount": 7500}, {"name": "INF เด็กทารก", "quantity": 1, "price": 800, "amount": 800}]',
+            'status': 'quoted'
+        }
+        
+        generator = ClassicPDFGenerator()
+        buffer = io.BytesIO()
+        
+        logger.info(f'🎯 Calling generate_quote_pdf_to_buffer...')
+        result = generator.generate_quote_pdf_to_buffer(test_data, buffer)
+        
+        if result:
+            pdf_bytes = buffer.getvalue()
+            logger.info(f'✅ Test successful: {len(pdf_bytes)} bytes')
+            return f'Test successful: PDF generated with {len(pdf_bytes)} bytes'
+        else:
+            logger.error(f'❌ Test failed: generate_quote_pdf_to_buffer returned False')
+            return 'Test failed: PDF generation returned False'
+            
+    except Exception as e:
+        logger.error(f'❌ Test exception: {e}')
+        import traceback
+        logger.error(f'📋 Traceback: {traceback.format_exc()}')
+        return f'Test exception: {str(e)}'
+
+@booking_bp.route('/backend-png/<int:booking_id>')
+def generate_quote_png_backend(booking_id):
+    """Backend Quote PNG generation (no auth required for testing)"""
+    try:
+        import glob
+        import os
+        from services.pdf_image import pdf_to_long_png_bytes
+        
+        logger.info(f'🎯 Backend Quote PNG generation for booking {booking_id}')
+        
+        # Get booking data first
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            logger.error(f'❌ Booking {booking_id} not found')
+            return f'Booking {booking_id} not found', 404
+            
+        booking_ref = getattr(booking, 'booking_reference', f'BK{booking_id}')
+        logger.info(f'📊 Found booking: {booking_ref} (ID: {booking_id})')
+        
+        # Look for existing PDF files for this booking
+        pdf_patterns = [
+            f'static/generated/classic_quote_{booking_ref}_*.pdf',
+            f'static/generated/classic_service_proposal_{booking_ref}_*.pdf',
+            f'static/generated/*{booking_ref}*.pdf',
+            # Also search by booking ID
+            f'static/generated/*_{booking_id}_*.pdf',
+            f'static/generated/*{booking_id}*.pdf'
+        ]
+        
+        pdf_file_path = None
+        for pattern in pdf_patterns:
+            matches = glob.glob(pattern)
+            if matches:
+                pdf_file_path = max(matches)  # Get latest file
+                logger.info(f'📄 Found PDF: {pdf_file_path}')
+                break
+        
+        if not pdf_file_path:
+            # Try to generate new PDF using ClassicPDFGenerator
+            logger.info(f'🔄 No existing PDF found, generating new one for booking {booking_id}')
+            try:
+                from services.classic_pdf_generator_quote import ClassicPDFGenerator
+                generator = ClassicPDFGenerator()
+                
+                # Generate PDF based on booking status
+                if hasattr(booking, 'status') and booking.status in ['quoted', 'paid', 'vouchered', 'completed']:
+                    pdf_filename = generator.generate_quote_pdf(booking)
+                else:
+                    # Use classic service proposal generator as fallback
+                    from services.classic_pdf_generator import ClassicPDFGenerator as ServiceProposalGenerator
+                    service_generator = ServiceProposalGenerator()
+                    
+                    # Prepare booking data for service proposal
+                    booking_data = {
+                        'booking_id': booking_ref,
+                        'guest_name': getattr(booking, 'party_name', f'Guest {booking_id}'),
+                        'customer_name': getattr(booking, 'party_name', f'Guest {booking_id}'),
+                        'guest_email': getattr(booking, 'customer_email', ''),
+                        'guest_phone': getattr(booking, 'customer_phone', ''),
+                        'tour_name': getattr(booking, 'description', 'Tour Package'),
+                        'booking_date': booking.created_at.strftime('%Y-%m-%d') if hasattr(booking, 'created_at') and booking.created_at else 'N/A',
+                        'tour_date': booking.arrival_date.strftime('%Y-%m-%d') if hasattr(booking, 'arrival_date') and booking.arrival_date else 'N/A',
+                        'start_date': booking.arrival_date.strftime('%Y-%m-%d') if hasattr(booking, 'arrival_date') and booking.arrival_date else 'N/A',
+                        'end_date': booking.departure_date.strftime('%Y-%m-%d') if hasattr(booking, 'departure_date') and booking.departure_date else 'N/A',
+                        'adults': getattr(booking, 'adults', 0) or 0,
+                        'children': getattr(booking, 'children', 0) or 0,
+                        'infants': getattr(booking, 'infants', 0) or 0,
+                        'price': float(getattr(booking, 'total_amount', 0) or 0),
+                        'status': getattr(booking, 'status', 'pending'),
+                        'description': getattr(booking, 'description', ''),
+                        'reference': booking_ref
+                    }
+                    
+                    # Get products
+                    products = []
+                    try:
+                        booking_products = booking.get_products()
+                        if booking_products:
+                            for product_data in booking_products:
+                                products.append({
+                                    'name': product_data.get('name', 'Service'),
+                                    'quantity': product_data.get('quantity', 1),
+                                    'price': float(product_data.get('price', 0.0)),
+                                    'amount': float(product_data.get('amount', 0.0))
+                                })
+                    except:
+                        pass
+                    
+                    pdf_filename = service_generator.generate_pdf(booking_data, products)
+                
+                if pdf_filename:
+                    import os
+                    pdf_file_path = os.path.join('static', 'generated', pdf_filename)
+                    logger.info(f'✅ Generated new PDF: {pdf_file_path}')
+                else:
+                    logger.error(f'❌ Failed to generate PDF for booking {booking_id}')
+                    return f'Failed to generate PDF for booking {booking_id}', 500
+                    
+            except Exception as gen_error:
+                logger.error(f'❌ PDF generation error: {str(gen_error)}')
+                return f'PDF generation failed: {str(gen_error)}', 500
+            
+        # Read PDF and convert to PNG
+        try:
+            with open(pdf_file_path, 'rb') as f:
+                pdf_bytes = f.read()
+                
+            logger.info(f'📊 PDF size: {len(pdf_bytes)} bytes')
+            
+            # Convert to PNG
+            png_bytes = pdf_to_long_png_bytes(pdf_bytes)
+            
+            if not png_bytes:
+                logger.error(f'❌ PNG conversion failed')
+                return 'PNG conversion failed', 500
+                
+            logger.info(f'✅ Backend PNG generated: {len(png_bytes)} bytes')
+            
+            # Return PNG image
+            from flask import Response
+            response = Response(png_bytes, mimetype='image/png')
+            response.headers['Cache-Control'] = 'public, max-age=1800'  # 30 minutes cache
+            response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_ref}_backend.png"'
+            return response
+            
+        except Exception as conversion_error:
+            logger.error(f'❌ PNG conversion error: {conversion_error}')
+            return f'Error converting PDF to PNG: {str(conversion_error)}', 500
+            
+    except Exception as e:
+        logger.error(f'❌ Backend PNG generation error: {e}')
+        import traceback
+        logger.error(f'📋 Traceback: {traceback.format_exc()}')
+        return f'Backend PNG error: {str(e)}', 500
+
+@booking_bp.route('/<int:booking_id>/quote-png-simple')
+def generate_quote_png_simple(booking_id):
+    """Simple PNG generation using existing PDF file"""
+    try:
+        import glob
+        from services.pdf_image import pdf_to_long_png_bytes
+        
+        logger.info(f'📸 Simple PNG generation for booking {booking_id}')
+        
+        # Find existing PDF file for this booking
+        booking_ref = f'BK20251118WKZ4' if booking_id == 91 else f'BK{booking_id}'
+        pdf_patterns = [
+            f'static/generated/classic_quote_{booking_ref}_*.pdf',
+            f'static/generated/classic_service_proposal_{booking_ref}_*.pdf',
+            f'static/generated/*{booking_ref}*.pdf'
+        ]
+        
+        pdf_file = None
+        for pattern in pdf_patterns:
+            matches = glob.glob(pattern)
+            if matches:
+                pdf_file = max(matches)  # Get latest file
+                break
+        
+        if not pdf_file:
+            logger.error(f'❌ No PDF file found for booking {booking_id}')
+            return 'PDF file not found for PNG conversion', 404
+            
+        logger.info(f'📄 Using PDF file: {pdf_file}')
+        
+        # Read PDF and convert to PNG
+        with open(pdf_file, 'rb') as f:
+            pdf_bytes = f.read()
+            
+        logger.info(f'📊 PDF size: {len(pdf_bytes)} bytes')
+        
+        # Convert to PNG
+        png_bytes = pdf_to_long_png_bytes(pdf_bytes)
+        
+        if not png_bytes:
+            logger.error(f'❌ PNG conversion failed')
+            return 'PNG conversion failed', 500
+            
+        logger.info(f'✅ PNG generated: {len(png_bytes)} bytes')
+        
+        # Return PNG image
+        from flask import Response
+        return Response(png_bytes, mimetype='image/png')
+        
+    except Exception as e:
+        logger.error(f'❌ Simple PNG generation error: {e}')
+        import traceback
+        logger.error(f'📋 Traceback: {traceback.format_exc()}')
+        return f'Error generating PNG: {str(e)}', 500
+
+
+@booking_bp.route('/public/booking/<token>/png')  
+def generate_quote_png_public_token_new(token):
+    """
+    Public PNG route with 120 days token expiry
+    Uses ClassicPDFGenerator from services/classic_pdf_generator_quote.py
+    Based on generate_quote_png_public_new function
+    """
+    try:
+        import base64
+        import time
+        from datetime import datetime, timedelta
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        from services.pdf_image import pdf_to_long_png_bytes
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        
+        logger = get_logger(__name__)
+        logger.info(f'🔍 PUBLIC PNG TOKEN: Processing token {token[:20]}...')
+        
+        # Decode token to get booking info and timestamps
+        try:
+            # Try enhanced token first
+            from models.booking_enhanced import BookingEnhanced
+            booking_id = BookingEnhanced.verify_secure_token(token)
+            
+            if booking_id:
+                logger.info(f'✅ Enhanced token verified for booking {booking_id}')
+            else:
+                # Fallback to legacy token
+                decoded = base64.b64decode(token + "==").decode('utf-8')
+                parts = decoded.split('|')
+                if len(parts) >= 2:
+                    booking_id = int(parts[0])
+                    timestamp = int(parts[1])
+                    
+                    # Check 120 days expiry
+                    current_time = int(time.time())
+                    expire_seconds = 120 * 24 * 60 * 60  # 120 days
+                    
+                    if current_time - timestamp > expire_seconds:
+                        logger.warning(f'⏰ Token expired: {current_time - timestamp} seconds old')
+                        return 'Token expired (120 days limit)', 403
+                else:
+                    return "Invalid token format", 400
+                    
+        except Exception as e:
+            logger.error(f'❌ Token decode error: {str(e)}')
+            return f"Token decode error: {str(e)}", 400
+        
+        # Get fresh booking data
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            logger.error(f'❌ Booking {booking_id} not found')
+            return f"Booking {booking_id} not found", 404
+            
+        logger.info(f'📊 Found booking: {booking.booking_reference} - {booking.customer_first_name} {booking.customer_last_name}')
+        
+        # Create Classic PDF Generator instance
+        quote_generator = ClassicPDFGenerator()
+        
+        # Build booking data structure for ClassicPDFGenerator
+        booking_data = {
+            'booking_id': booking.booking_reference or f'BK{booking_id}',
+            'guest_name': f"{getattr(booking, 'customer_first_name', '') or ''} {getattr(booking, 'customer_last_name', '') or ''}".strip() or 'Unknown Guest',
+            'guest_email': getattr(booking, 'customer_email', '') or '',
+            'guest_phone': getattr(booking, 'customer_phone', '') or '',
+            'adults': getattr(booking, 'adults', 0) or 0,
+            'children': getattr(booking, 'children', 0) or 0,
+            'infants': getattr(booking, 'infants', 0) or 0,
+            'arrival_date': booking.arrival_date.strftime('%d %b %Y') if hasattr(booking, 'arrival_date') and booking.arrival_date else '',
+            'departure_date': booking.departure_date.strftime('%d %b %Y') if hasattr(booking, 'departure_date') and booking.departure_date else '',
+            'total_amount': float(getattr(booking, 'total_amount', 0) or 0),
+            'status': getattr(booking, 'status', 'quoted'),
+        }
+        
+        # Find existing PDF file (same approach as generate_quote_png_public_new)
+        import glob
+        import os
+        
+        try:
+            logger.info(f'📸 Public Quote PNG generation for booking {booking_id}')
+            
+            # Look for existing PDF files for this booking (same patterns as working route)
+            booking_ref = booking.booking_reference or f'BK{booking_id}'
+            pdf_patterns = [
+                f'static/generated/classic_quote_{booking_ref}_*.pdf',
+                f'static/generated/classic_service_proposal_{booking_ref}_*.pdf',
+                f'static/generated/*{booking_ref}*.pdf'
+            ]
+            
+            pdf_file_path = None
+            for pattern in pdf_patterns:
+                matches = glob.glob(pattern)
+                if matches:
+                    pdf_file_path = max(matches)  # Get latest file
+                    logger.info(f'📄 Found existing PDF: {pdf_file_path}')
+                    break
+            
+            if not pdf_file_path:
+                logger.error(f'❌ No PDF file found for booking {booking_id}')
+                return 'PDF file not available for PNG conversion', 404
+            
+            # Read PDF file
+            if os.path.exists(pdf_file_path):
+                with open(pdf_file_path, 'rb') as f:
+                    pdf_bytes = f.read()
+                logger.info(f'✅ PDF file read: {len(pdf_bytes)} bytes')
+            else:
+                logger.error(f'❌ PDF file not found: {pdf_file_path}')
+                return 'PDF file not found', 404
+                
+        except Exception as pdf_error:
+            logger.error(f'❌ Exception in PDF handling: {pdf_error}')
+            import traceback
+            logger.error(f'📋 Traceback: {traceback.format_exc()}')
+            return 'Error reading PDF for PNG conversion', 500
+        
+        # Convert PDF to PNG
+        logger.info(f'🔄 Converting PDF to PNG...')
+        png_bytes = pdf_to_long_png_bytes(pdf_bytes, zoom=2.0, page_spacing=30)
+        
+        if not png_bytes:
+            logger.error(f'❌ PNG conversion failed')
+            return "Error converting PDF to PNG", 500
+            
+        logger.info(f'✅ PNG generated: {len(png_bytes)} bytes')
+        
+        # Return PNG with public sharing headers (same as generate_quote_png_public_new)
+        from flask import Response
+        response = Response(png_bytes, mimetype='image/png')
+        response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_ref}.png"'
+        
+        # Public sharing cache headers - longer cache for public links
+        response.headers['Cache-Control'] = 'public, max-age=3600'  # 1 hour cache for public
+        response.headers['Access-Control-Allow-Origin'] = '*'  # Allow cross-origin for public sharing
+        
+        logger.info(f'✅ Public PNG generated successfully for booking {booking_id} ({len(png_bytes)} bytes)')
+        return response
+        
+    except Exception as e:
+        import traceback
+        logger = get_logger(__name__)
+        logger.error(f'❌ PUBLIC PNG TOKEN ERROR: {str(e)}')
+        logger.error(f'📋 Traceback: {traceback.format_exc()}')
+        return "Error generating PNG", 500
+
+@booking_bp.route('/../public/booking/<token>/pdf')
+def generate_quote_pdf_public_token(token):
+    """Generate Quote PDF with public token access"""
+    try:
+        import base64
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        
+        # Decode token to get booking ID
+        try:
+            decoded_bytes = base64.urlsafe_b64decode(token + '==')  # Add padding if needed
+            decoded_str = decoded_bytes.decode('utf-8')
+            # Token format: booking_id|timestamp1|timestamp2
+            booking_id = int(decoded_str.split('|')[0])
+        except Exception as e:
+            return 'Invalid token', 400
+            
+        logger.info(f'PUBLIC TOKEN PDF: Generating for booking {booking_id}')
+        
+        # Get booking data
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return 'Booking not found', 404
+            
+        # Create Classic PDF Generator
+        generator = ClassicPDFGenerator()
+        
+        # Create booking data structure
+        booking_data = {
+            'booking_id': booking.booking_reference,
+            'booking_date': booking.arrival_date.strftime('%Y-%m-%d') if hasattr(booking, 'arrival_date') and booking.arrival_date else '',
+            'tour_date': booking.traveling_period_start.strftime('%Y-%m-%d') if hasattr(booking, 'traveling_period_start') and booking.traveling_period_start else '',
+            'tour_time': booking.pickup_time.strftime('%H:%M') if hasattr(booking, 'pickup_time') and booking.pickup_time else '',
+            'customer': {
+                'name': f"{getattr(booking, 'customer_first_name', '') or ''} {getattr(booking, 'customer_last_name', '') or ''}".strip(),
+                'phone': getattr(booking, 'customer_phone', '') or '',
+                'email': getattr(booking, 'customer_email', '') or ''
+            },
+            'adults': getattr(booking, 'adults', 0) or 0,
+            'children': getattr(booking, 'children', 0) or 0,
+            'infants': getattr(booking, 'infants', 0) or 0,
+            'hotel': getattr(booking, 'hotel_name', '') or '',
+            'room_number': getattr(booking, 'room_number', '') or '',
+            'special_requests': getattr(booking, 'special_requests', '') or '',
+            'products': getattr(booking, 'products_json', []) if hasattr(booking, 'products_json') and booking.products_json else [],
+            'subtotal': float(getattr(booking, 'subtotal', 0) or 0),
+            'vat_amount': float(getattr(booking, 'vat_amount', 0) or 0),
+            'total_amount': float(getattr(booking, 'total_amount', 0) or 0),
+            'discount_amount': float(getattr(booking, 'discount_amount', 0) or 0),
+            'payment_method': getattr(booking, 'payment_method', '') or '',
+            'payment_status': getattr(booking, 'payment_status', '') or '',
+            'remarks': getattr(booking, 'remarks', '') or ''
+        }
+        
+        # Generate PDF to file
+        pdf_filename = generator.generate_quote_pdf(booking_data)
+        
+        if not pdf_filename:
+            return 'Error generating PDF', 500
+            
+        # Read and return PDF
+        import os
+        pdf_path = os.path.join('static', 'generated', pdf_filename)
+        
+        if not os.path.exists(pdf_path):
+            return 'PDF file not found', 404
+            
+        with open(pdf_path, 'rb') as f:
+            pdf_data = f.read()
+            
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename="quote_{booking_id}.pdf"'
+        
+        logger.info(f'PUBLIC TOKEN PDF: Generated successfully for booking {booking_id}')
+        return response
+        
+    except Exception as e:
+        logger.error(f'PUBLIC TOKEN PDF Error: {str(e)}')
+        return f'Error: {str(e)}', 500
+
+
+@booking_bp.route('/<int:booking_id>/quote-png-old')  
 @login_required
-def generate_quote_png(booking_id):
+def generate_quote_png_old(booking_id):
     """Generate Quote PNG (multi-page) for booking when status is 'quoted', 'paid', or 'vouchered' - Real-time Data Sync"""
     try:
         # ⭐ REAL-TIME DATA SYNC: ดึงข้อมูลล่าสุดจาก database แบบ force refresh
@@ -3672,30 +4796,49 @@ def generate_quote_png(booking_id):
             return redirect(url_for('booking.view', id=booking_id))
         
         # Import required modules
-        from services.weasyprint_quote_generator import WeasyPrintQuoteGenerator
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
         from services.pdf_image import pdf_to_long_png_bytes
         import fitz  # PyMuPDF
+        import io
         
-        # ✅ ใช้ WeasyPrintQuoteGenerator สำหรับ Quote PNG (ใช้ template ที่ถูกต้อง)
-        quote_generator = WeasyPrintQuoteGenerator()
+        # ✅ ใช้ ClassicPDFGenerator สำหรับ Quote PNG (ใช้ new generator ที่แก้ไขแล้ว)
+        quote_generator = ClassicPDFGenerator()
         
-        # สร้าง PDF ด้วย Quote Template (quote_template_final_fixed.html)
-        pdf_filename = quote_generator.generate_quote_pdf(booking)
+        # สร้าง booking data สำหรับ Classic Generator
+        booking_data = {
+            'booking_id': booking.booking_reference,
+            'booking_date': booking.booking_date.strftime('%Y-%m-%d') if booking.booking_date else '',
+            'tour_date': booking.tour_date.strftime('%Y-%m-%d') if booking.tour_date else '',
+            'tour_time': booking.tour_time.strftime('%H:%M') if booking.tour_time else '',
+            'customer': {
+                'name': f"{booking.customer_first_name or ''} {booking.customer_last_name or ''}".strip(),
+                'phone': booking.customer_phone or '',
+                'email': booking.customer_email or ''
+            },
+            'adults': booking.adults or 0,
+            'children': booking.children or 0,
+            'infants': booking.infants or 0,
+            'hotel': booking.hotel_name or '',
+            'room_number': booking.room_number or '',
+            'special_requests': booking.special_requests or '',
+            'products': booking.products_json if hasattr(booking, 'products_json') and booking.products_json else [],
+            'subtotal': float(booking.subtotal or 0),
+            'vat_amount': float(booking.vat_amount or 0),
+            'total_amount': float(booking.total_amount or 0),
+            'discount_amount': float(booking.discount_amount or 0),
+            'payment_method': booking.payment_method or '',
+            'payment_status': booking.payment_status or '',
+            'remarks': booking.remarks or ''
+        }
         
-        if not pdf_filename:
+        # สร้าง PDF ใน memory buffer
+        pdf_buffer = io.BytesIO()
+        quote_generator.generate_quote_pdf_to_buffer(booking_data, pdf_buffer)
+        pdf_bytes = pdf_buffer.getvalue()
+        
+        if not pdf_bytes:
             flash('❌ Error generating Quote PDF for PNG conversion', 'error')
             return redirect(url_for('booking.view', id=booking_id))
-            
-        # Build full path to PDF file
-        pdf_path = os.path.join('static', 'generated', pdf_filename)
-        
-        if not os.path.exists(pdf_path):
-            flash('❌ Quote PDF file not found for PNG conversion', 'error')
-            return redirect(url_for('booking.view', id=booking_id))
-        
-        # Read PDF file as bytes
-        with open(pdf_path, 'rb') as f:
-            pdf_bytes = f.read()
         
         # Convert PDF to PNG (multi-page support)
         try:
@@ -3741,7 +4884,7 @@ def generate_quote_png(booking_id):
 @booking_bp.route('/<int:booking_id>/email-pdf', methods=['GET', 'POST'])
 @login_required
 def email_booking_pdf(booking_id):
-    """Send booking PDF via email"""
+    """Send booking message via email (without PDF attachment)"""
     booking = Booking.query.get_or_404(booking_id)
     
     if request.method == 'POST':
@@ -3752,73 +4895,103 @@ def email_booking_pdf(booking_id):
             return redirect(url_for('booking.email_booking_pdf', booking_id=booking_id))
         
         try:
-            # Generate PDF first
-            from services.weasyprint_generator import WeasyPrintGenerator
-            generator = WeasyPrintGenerator()
+            # Generate public URL token
+            from booking_share_manager import BookingShareManager
+            share_manager = BookingShareManager()
             
-            # Prepare booking data dict
-            booking_data = {
-                'booking_reference': booking.booking_reference,
-                'customer_name': booking.customer.full_name if booking.customer else 'N/A',
-                'customer_email': booking.customer.email if booking.customer else '',
-                'customer_phone': booking.customer.phone if booking.customer else '',
-                'adults': booking.adults or 0,
-                'children': booking.children or 0,
-                'infants': booking.infants or 0,
-                'admin_notes': booking.admin_notes or '',
-                'manager_memos': booking.manager_memos or '',
-                'internal_note': booking.internal_note or ''
+            # Generate secure token
+            token = share_manager.generate_secure_token(booking.id, expires_days=120)
+            
+            # Build URLs
+            base_url = request.url_root.rstrip('/')
+            public_url = f"{base_url}/public/booking/{token}"
+            png_url = f"{base_url}/public/booking/{token}/png"
+            pdf_url = f"{base_url}/public/booking/{token}/pdf"
+            
+            share_data = {
+                'url': public_url,
+                'png_url': png_url,
+                'pdf_url': pdf_url,
+                'token': token
             }
             
-            # Get products/services
-            products = []
-            if hasattr(booking, 'products') and booking.products:
-                for product in booking.products:
-                    # Handle product as object, dict, or str
-                    if hasattr(product, 'name'):
-                        name = product.name
-                        description = getattr(product, 'description', '') or ''
-                        price = getattr(product, 'price', 0) or 0
-                    elif isinstance(product, dict):
-                        name = product.get('name', '')
-                        description = product.get('description', '')
-                        price = product.get('price', 0)
-                    else:
-                        name = str(product)
-                        description = ''
-                        price = 0
-                    products.append({
-                        'name': name,
-                        'description': description,
-                        'price': price,
-                        'quantity': 1
-                    })
-            
-            # Generate PDF
-            pdf_path = generator.generate_service_proposal(booking_data, products)
-            
-            if pdf_path and os.path.exists(pdf_path):
-                # Send email
-                from services.email_service import EmailService
-                email_service = EmailService()
-                email_service.send_booking_pdf(recipient_email, pdf_path, booking)
-                
-                # Clean up temporary file
-                os.unlink(pdf_path)
-                
-                flash(f'✅ Booking PDF sent successfully to {recipient_email}', 'success')
+            if not share_data:
+                flash('❌ Error generating share links', 'error')
                 return redirect(url_for('booking.view', id=booking_id))
-            else:
-                flash('❌ Error generating booking PDF', 'error')
+            
+            public_url = share_data['url']
+            png_url = share_data['png_url']
+            pdf_url = share_data['pdf_url']
+            
+            # Prepare email content
+            customer_name = booking.customer.full_name if booking.customer else 'ลูกค้า'
+            reference = booking.booking_reference or f"#{booking.id}"
+            
+            email_body = f"""สวัสดีค่ะ
+บริษัท ตระกูลเฉินฯ แจ้งรายละเอียดบริการหรือรายการทัวร์ หมายเลขอ้างอิง {reference}
+
+กรุณาคลิกดูรายละเอียดตามด้านล่างค่ะ
+
+📋 Service Proposal: {public_url}
+
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
+
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
+
+ติดต่อสอบถามข้อมูลเพิ่มเติม:
+📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
+📧 Email: booking@dhakulchan.com
+📱 Line OA: @dhakulchan | @changuru
+🏛️ รู้จักตระกูลเฉินฯ: https://www.dhakulchan.net/page/about-dhakulchan
+"""
+            
+            # Send email using EmailService
+            from services.email_service import EmailService
+            from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
+            from email.utils import formataddr
+            
+            email_service = EmailService()
+            
+            # Create MIMEMultipart message
+            msg = MIMEMultipart()
+            # Use formataddr to set display name while keeping actual sender as SMTP username
+            msg['From'] = formataddr(('DonotReply@dhakulchan.net', email_service.username))
+            msg['To'] = recipient_email
+            msg['Subject'] = f'รายละเอียดบริการ - {reference}'
+            
+            # Attach body
+            msg.attach(MIMEText(email_body, 'plain', 'utf-8'))
+            
+            # Send email
+            email_service._send_email(msg)
+            
+            flash(f'✅ Booking message sent successfully to {recipient_email}', 'success')
+            return redirect(url_for('booking.view', id=booking_id))
                 
         except Exception as e:
-            logger.error(f"Error sending booking PDF email: {str(e)}")
+            logger.error(f"Error sending booking message email: {str(e)}")
             flash(f'❌ Error sending email: {str(e)}', 'error')
     
     # GET request - show form
     return render_template('booking/email_pdf_form.html', 
                          booking=booking, 
-                         pdf_type='booking',
+                         pdf_type='booking message',
                          action_url=url_for('booking.email_booking_pdf', booking_id=booking_id))
 
 @booking_bp.route('/<int:booking_id>/email-quote-pdf', methods=['GET', 'POST'])

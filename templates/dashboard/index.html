@@ -164,28 +164,6 @@
                 {% endif %}
             </div>
         </div>
-
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>Create New Booking
-                    </a>
-                    <a href="{{ url_for('dashboard.customers') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-users me-2"></i>Manage Customers
-                    </a>
-                    <a href="{{ url_for('dashboard.reports') }}" class="btn btn-outline-info">
-                        <i class="fas fa-chart-bar me-2"></i>View Reports
-                    </a>
-                    <a href="{{ url_for('supplier.list_') }}" class="btn btn-outline-success">
-                        <i class="fas fa-truck-loading me-2"></i>Supplier
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Backup Codes - Dhakul Chan Group Smart System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header {% if regenerated %}bg-warning{% else %}bg-success{% endif %} text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-key me-2"></i>
+                        {% if regenerated %}
+                        Backup Codes Regenerated
+                        {% else %}
+                        2FA Setup Complete!
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    {% if not regenerated %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Success!</strong> Two-Factor Authentication has been enabled for your account.
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Important:</strong> Save these backup codes in a safe place. You can use them to access
+                        your account if you lose access to your authenticator app.
+                    </div>
+
+                    <h5 class="mb-3">Your Backup Codes:</h5>
+                    <div class="backup-codes mb-4">
+                        <div class="row">
+                            {% for code in backup_codes %}
+                            <div class="col-md-6 mb-2">
+                                <div class="code-item p-2 bg-light border rounded text-center">
+                                    <code class="fs-5">{{ code }}</code>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <ul class="mb-0 ps-3">
+                            <li>Each backup code can only be used once</li>
+                            <li>Keep these codes in a secure location</li>
+                            <li>You can regenerate new codes from your profile at any time</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button onclick="printCodes()" class="btn btn-outline-primary">
+                            <i class="fas fa-print me-2"></i>Print Backup Codes
+                        </button>
+                        <button onclick="downloadCodes()" class="btn btn-outline-secondary">
+                            <i class="fas fa-download me-2"></i>Download as Text File
+                        </button>
+                        {% if is_pending_login %}
+                        <a href="{{ next_page or url_for('dashboard.index') }}" class="btn btn-success btn-lg">
+                            <i class="fas fa-arrow-right me-2"></i>Continue to Dashboard
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('auth.profile') }}" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>I've Saved My Codes
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const backupCodes = {{ backup_codes | tojson }};
+
+    function printCodes() {
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+        <html>
+        <head>
+            <title>2FA Backup Codes</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 20px; }
+                h2 { color: #333; }
+                .code { 
+                    font-size: 18px; 
+                    padding: 10px; 
+                    margin: 5px 0;
+                    background: #f5f5f5;
+                    border: 1px solid #ddd;
+                }
+                .warning {
+                    color: #d9534f;
+                    margin-top: 20px;
+                    padding: 10px;
+                    border: 1px solid #d9534f;
+                    background: #f2dede;
+                }
+            </style>
+        </head>
+        <body>
+            <h2>Two-Factor Authentication Backup Codes</h2>
+            <p><strong>Account:</strong> {{ current_user.email }}</p>
+            <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+            ${backupCodes.map(code => '<div class="code">' + code + '</div>').join('')}
+            <div class="warning">
+                <strong>Important:</strong> Keep these codes in a secure location. Each code can only be used once.
+            </div>
+        </body>
+        </html>
+    `);
+        printWindow.document.close();
+        printWindow.print();
+    }
+
+    function downloadCodes() {
+        const content = `Two-Factor Authentication Backup Codes
+Account: {{ current_user.email }}
+Generated: ${new Date().toLocaleString()}
+
+${backupCodes.join('\n')}
+
+Important: Keep these codes in a secure location. Each code can only be used once.
+`;
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = '2fa_backup_codes.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+</script>
+
+<style>
+    .code-item {
+        transition: all 0.2s;
+    }
+
+    .code-item:hover {
+        background-color: #e9ecef !important;
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}

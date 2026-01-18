@@ -1,4 +1,209 @@
 <!-- Booking Workflow Progress Indicator -->
+
+<!-- Define critical workflow functions IMMEDIATELY at the very top -->
+<script>
+    // IMMEDIATE implementation - works right away without waiting for full script load
+    window.markAsPaidWorkflow = function (bookingId) {
+        console.log('markAsPaidWorkflow called with bookingId:', bookingId);
+
+        // Check if the full implementation has loaded
+        if (typeof window._showPaymentModalImpl === 'function') {
+            window._showPaymentModalImpl(bookingId);
+            return;
+        }
+
+        // Fallback: create a simple working version immediately
+        console.log('Using immediate fallback implementation');
+
+        // Get default amount, booking_type, and quote_number
+        let defaultAmount = '';
+        let defaultBookingType = 'tour';
+        let defaultQuoteNumber = '';
+        const totalAmountElement = document.querySelector('[data-booking-total-amount]');
+        if (totalAmountElement) {
+            defaultAmount = totalAmountElement.getAttribute('data-booking-total-amount');
+            let rawBookingType = totalAmountElement.getAttribute('data-booking-type') || 'tour';
+            defaultQuoteNumber = totalAmountElement.getAttribute('data-quote-number') || '';
+
+            // Map booking_type to select value format
+            const typeMap = {
+                'package': 'package',
+                'tour': 'tour',
+                'collective-groups': 'collective-groups',
+                'incentive-groups': 'incentive-groups',
+                'air-ticket': 'air-ticket',
+                'hotel': 'hotel',
+                'transport': 'transport',
+                'park-ticket': 'park-ticket',
+                'fit': 'fit',
+                'other': 'other',
+                'others': 'other'
+            };
+            defaultBookingType = typeMap[rawBookingType] || 'tour';
+        }
+
+        // Create basic modal
+        const today = new Date();
+        const todayISO = today.toISOString().split('T')[0];
+        const todayFormatted = String(today.getDate()).padStart(2, '0') + '/' +
+            String(today.getMonth() + 1).padStart(2, '0') + '/' +
+            today.getFullYear();
+
+        const modalHTML = `
+        <div class="modal fade" id="paymentModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title"><i class="fas fa-credit-card me-2"></i>บันทึกการชำระเงิน</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="paymentForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="received_date_picker" class="form-label">วันที่รับเงิน <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="received_date_picker" value="${todayISO}" max="${todayISO}" required>
+                                    <input type="hidden" id="received_date" value="${todayFormatted}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="product_type" class="form-label">ประเภทสินค้า <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="product_type" required>
+                                        <option value="">Select Type</option>
+                                        <option value="package">Package</option>
+                                        <option value="tour">Tour</option>
+                                        <option value="collective-groups">Collective Groups</option>
+                                        <option value="incentive-groups">Incentive Groups</option>
+                                        <option value="air-ticket">Air Ticket</option>
+                                        <option value="hotel">Hotel</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="park-ticket">Park Ticket</option>
+                                        <option value="fit">F.I.T.</option>
+                                        <option value="other">Others</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="bank_name" class="form-label">ธนาคาร <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="bank_name" required>
+                                        <option value="">เลือกธนาคาร</option>
+                                        <option value="KBank">ธนาคารกสิกรไทย (KBank)</option>
+                                        <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>
+                                        <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
+                                        <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="amount" class="form-label">จำนวนเงิน (บาท) <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">THB</span>
+                                        <input type="text" class="form-control" id="amount" value="${defaultAmount}" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="air_ticket_cost" class="form-label">ต้นทุนตั๋วเครื่องบิน/อื่นๆ (บาท)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">THB</span>
+                                        <input type="text" class="form-control" id="air_ticket_cost" value="0.00">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="quote_number" class="form-label">Quote Number</label>
+                                    <input type="text" class="form-control" id="quote_number" value="${defaultQuoteNumber}" readonly style="background-color: #e9ecef;">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="details" class="form-label">รายละเอียดเพิ่มเติม</label>
+                                <textarea class="form-control" id="details" rows="3" maxlength="1000"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                        <button type="button" class="btn btn-success" id="confirmPaymentBtn">
+                            <i class="fas fa-check me-2"></i>บันทึกการชำระเงิน
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // Remove existing modal
+        const existing = document.getElementById('paymentModal');
+        if (existing) existing.remove();
+
+        // Add modal
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+        modal.show();
+
+        // Setup date picker
+        document.getElementById('received_date_picker').addEventListener('change', function (e) {
+            const d = new Date(e.target.value);
+            document.getElementById('received_date').value =
+                String(d.getDate()).padStart(2, '0') + '/' +
+                String(d.getMonth() + 1).padStart(2, '0') + '/' +
+                d.getFullYear();
+        });
+
+        // Set default booking_type
+        const productTypeSelect = document.getElementById('product_type');
+        if (defaultBookingType) {
+            productTypeSelect.value = defaultBookingType;
+        }
+
+        // Setup submit
+        document.getElementById('confirmPaymentBtn').addEventListener('click', function () {
+            const data = {
+                received_date: document.getElementById('received_date').value,
+                product_type: document.getElementById('product_type').value,
+                bank_name: document.getElementById('bank_name').value,
+                amount: document.getElementById('amount').value.replace(/,/g, ''),
+                air_ticket_cost: document.getElementById('air_ticket_cost').value.replace(/,/g, ''),
+                details: document.getElementById('details').value
+            };
+
+            if (!data.bank_name || !data.product_type || !data.amount) {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                return;
+            }
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังบันทึก...';
+
+            fetch(`/booking/api/${bookingId}/mark-paid-v2`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        modal.hide();
+                        alert(d.message);
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        alert(d.error || 'เกิดข้อผิดพลาด');
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-check me-2"></i>บันทึกการชำระเงิน';
+                    }
+                })
+                .catch(e => {
+                    alert('เกิดข้อผิดพลาด: ' + e.message);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-check me-2"></i>บันทึกการชำระเงิน';
+                });
+        });
+    };
+
+    // Alias for compatibility
+    window.showPaymentModal = window.markAsPaidWorkflow;
+</script>
+
 <div class="workflow-progress-container mb-4">
     <div class="workflow-progress-header">
         <h5 class="mb-3">Booking Workflow Progress</h5>
@@ -173,10 +378,13 @@
                         <i class="fas fa-download"></i> Direct PDF
                     </a>
 
+                    <!-- Mark as Paid: Only for Administrator & Manager roles -->
+                    {% if current_user.is_authenticated and current_user.can_mark_as_paid() %}
                     <button type="button" class="btn btn-success" onclick="markAsPaidWorkflow({{ booking.id }})"
                         data-toggle="tooltip" title="Mark as paid and proceed to voucher">
                         <i class="fas fa-credit-card"></i> Mark as Paid
                     </button>
+                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -204,6 +412,12 @@
                         <i class="fas fa-share-alt"></i> Share
                     </button>
                 </div>
+
+                <!-- Mark as Completed Button -->
+                <button type="button" class="btn btn-warning ml-2" onclick="markAsCompleted({{ booking.id }})"
+                    data-toggle="tooltip" title="Mark booking as completed">
+                    <i class="fas fa-check-circle"></i> Mark as Completed
+                </button>
                 {% endif %}
 
                 <!-- Always Available Actions -->
@@ -354,8 +568,8 @@
 </style>
 
 <script>
-    // Workflow action functions
-    function pendingBooking(bookingId) {
+    // Workflow action functions - Define globally to ensure they're accessible from inline onclick handlers
+    window.pendingBooking = function (bookingId) {
         if (confirm('Move this booking from draft to pending status? This will allow the booking to be processed further.')) {
             fetch(`/booking/${bookingId}/pending`, {
                 method: 'POST',
@@ -379,9 +593,9 @@
                     showAlert('error', 'An error occurred while updating booking status');
                 });
         }
-    }
+    };
 
-    function confirmBooking(bookingId) {
+    window.confirmBooking = function (bookingId) {
         if (confirm('Confirm this pending booking? This will mark it as confirmed and allow quote creation.')) {
             fetch(`/booking/${bookingId}/confirm`, {
                 method: 'POST',
@@ -405,9 +619,9 @@
                     showAlert('error', 'An error occurred while confirming booking');
                 });
         }
-    }
+    };
 
-    function createQuoteWorkflow(bookingId) {
+    window.createQuoteWorkflow = function (bookingId) {
         if (confirm('Create a professional quote for this booking?')) {
             showAlert('info', 'Creating quote... Please wait');
 
@@ -460,9 +674,9 @@
                     showAlert('error', errorMessage);
                 });
         }
-    }
+    };
 
-    function viewQuote(bookingId) {
+    window.viewQuote = function (bookingId) {
         console.log('viewQuote called with bookingId:', bookingId);
 
         // Use the dedicated quote PDF route
@@ -483,7 +697,7 @@
         }
     }
 
-    function applyToInvoiceWorkflow(bookingId) {
+    window.applyToInvoiceWorkflow = function (bookingId) {
         if (confirm('Convert the quote to an invoice?')) {
             showAlert('info', 'Creating invoice... Please wait');
 
@@ -510,12 +724,39 @@
         }
     }
 
-    function markAsPaidWorkflow(bookingId) {
+    window.markAsPaidWorkflow = function (bookingId) {
         // Show enhanced payment form modal
-        showPaymentModal(bookingId);
-    }
+        window._showPaymentModalImpl(bookingId);
+    };
 
-    function showPaymentModal(bookingId) {
+    window._showPaymentModalImpl = function (bookingId) {
+        // Get booking total_amount, booking_type, and quote_number from the page if available
+        let defaultAmount = '';
+        let defaultBookingType = 'tour';
+        let defaultQuoteNumber = '';
+        const totalAmountElement = document.querySelector('[data-booking-total-amount]');
+        if (totalAmountElement) {
+            defaultAmount = totalAmountElement.getAttribute('data-booking-total-amount');
+            let rawBookingType = totalAmountElement.getAttribute('data-booking-type') || 'tour';
+            defaultQuoteNumber = totalAmountElement.getAttribute('data-quote-number') || '';
+
+            // Map booking_type to select value format
+            const typeMap = {
+                'package': 'package',
+                'tour': 'tour',
+                'collective-groups': 'collective-groups',
+                'incentive-groups': 'incentive-groups',
+                'air-ticket': 'air-ticket',
+                'hotel': 'hotel',
+                'transport': 'transport',
+                'park-ticket': 'park-ticket',
+                'fit': 'fit',
+                'other': 'other',
+                'others': 'other'
+            };
+            defaultBookingType = typeMap[rawBookingType] || 'tour';
+        }
+
         // Create modal HTML with payment form
         const today = new Date();
         const todayFormatted = String(today.getDate()).padStart(2, '0') + '/' +
@@ -538,21 +779,26 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="received_date" class="form-label">วันที่รับเงิน <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="received_date" name="received_date" value="${todayFormatted}" required 
-                                           placeholder="วว/ดด/ปปปป" title="รูปแบบ: วัน/เดือน/ปี" maxlength="10"
-                                           pattern="^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}$">
-                                    <small class="form-text text-muted">รูปแบบ: วัน/เดือน/ปี (เช่น ${todayFormatted})</small>
+                                    <input type="date" class="form-control" id="received_date_picker" name="received_date_picker" 
+                                           value="${todayISO}" max="${todayISO}" required>
+                                    <input type="hidden" id="received_date" name="received_date" value="${todayFormatted}">
+                                    <small class="form-text text-muted">เลือกวันที่รับเงิน (ต้องไม่เกินวันนี้)</small>
                                     <div class="invalid-feedback" id="received_date_error"></div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="product_type" class="form-label">ประเภทสินค้า <span class="text-danger">*</span></label>
                                     <select class="form-select" id="product_type" name="product_type" required>
-                                        <option value="">เลือกประเภทสินค้า</option>
-                                        <option value="air_ticket">ตั๋วเครื่องบิน</option>
-                                        <option value="package">แพ็คเกจทัวร์</option>
-                                        <option value="tour">ทัวร์</option>
-                                        <option value="live_ticket">ตั๋วคอนเสิร์ต/กิจกรรม</option>
-                                        <option value="other">อื่นๆ</option>
+                                        <option value="">Select Type</option>
+                                        <option value="package">Package</option>
+                                        <option value="tour">Tour</option>
+                                        <option value="collective-groups">Collective Groups</option>
+                                        <option value="incentive-groups">Incentive Groups</option>
+                                        <option value="air-ticket">Air Ticket</option>
+                                        <option value="hotel">Hotel</option>
+                                        <option value="transport">Transport</option>
+                                        <option value="park-ticket">Park Ticket</option>
+                                        <option value="fit">F.I.T.</option>
+                                        <option value="other">Others</option>
                                     </select>
                                     <div class="invalid-feedback" id="product_type_error"></div>
                                 </div>
@@ -581,11 +827,102 @@
                                     <label for="amount" class="form-label">จำนวนเงิน (บาท) <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text">THB</span>
-                                        <input type="text" class="form-control" id="amount" name="amount" placeholder="0.00" required>
+                                        <input type="text" class="form-control" id="amount" name="amount" placeholder="0.00" required value="${defaultAmount || ''}">
                                     </div>
                                     <div class="invalid-feedback" id="amount_error"></div>
                                 </div>
                             </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="air_ticket_cost" class="form-label" style="color: #0d6efd; font-weight: bold;">ต้นทุนตั๋วเครื่องบิน/อื่นๆ (บาท)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">THB</span>
+                                        <input type="text" class="form-control" id="air_ticket_cost" name="air_ticket_cost" placeholder="0.00" value="0.00">
+                                    </div>
+                                    <small class="form-text text-muted">ระบุต้นทุนตั๋วเครื่องบิน หรือค่าใช้จ่ายอื่นๆ</small>
+                                    <div class="invalid-feedback" id="air_ticket_cost_error"></div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="quote_number" class="form-label">Quote Number</label>
+                                    <input type="text" class="form-control" id="quote_number" name="quote_number" placeholder="Enter quote number">
+                                    <small class="form-text text-muted">Quote number from booking (editable)</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Calculation Fields Section -->
+                            <div class="card mb-3" style="border: 1px solid #dee2e6;">
+                                <div class="card-header bg-light">
+                                    <strong><i class="fas fa-calculator me-2"></i>Tour Fee Calculation</strong>
+                                    <small class="text-muted">(Auto-calculated, editable)</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="transportation_fee" class="form-label" style="color: #198754; font-weight: bold;">Transportation Fee (บาท)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">THB</span>
+                                                <input type="text" class="form-control" id="transportation_fee" name="transportation_fee" placeholder="0.00" value="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">50% of (Total - Air Ticket Cost)</small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="advance_expense" class="form-label" style="color: #0056b3; font-weight: bold;">Advance Expense (บาท)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">THB</span>
+                                                <input type="text" class="form-control" id="advance_expense" name="advance_expense" placeholder="0.00" value="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">30% of (Total - Air Ticket Cost)</small>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="tour_fee" class="form-label">Tour Fee (บาท)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">THB</span>
+                                                <input type="text" class="form-control" id="tour_fee" name="tour_fee" placeholder="0.00" value="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">20% of (Total - Air Ticket Cost)</small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="vat" class="form-label">VAT 7% (บาท)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">THB</span>
+                                                <input type="text" class="form-control" id="vat" name="vat" placeholder="0.00" value="0.00" readonly style="background-color: #e9ecef;">
+                                            </div>
+                                            <small class="form-text text-muted">7% of Tour Fee (auto-calculated)</small>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="withholding_tax_percent" class="form-label" style="font-weight: bold;">Withholding Tax %</label>
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="withholding_tax_percent" name="withholding_tax_percent" placeholder="0" value="0">
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <small class="form-text text-muted">Default 0%, editable</small>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <label for="withholding_tax" class="form-label" style="font-weight: bold;">Withholding Tax (บาท)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">THB</span>
+                                                <input type="text" class="form-control" id="withholding_tax" name="withholding_tax" placeholder="0.00" value="0.00">
+                                            </div>
+                                            <small class="form-text text-muted">Tour Fee × Withholding Tax %</small>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="total_tour_fee" class="form-label" style="color: #dc3545; font-weight: bold;">Total Tour Fee (บาท)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-success text-white">THB</span>
+                                                <input type="text" class="form-control fw-bold" id="total_tour_fee" name="total_tour_fee" placeholder="0.00" value="0.00" readonly style="background-color: #d1e7dd; font-weight: bold;">
+                                            </div>
+                                            <small class="form-text text-muted">(Tour Fee + VAT) - WHT</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <div class="mb-3">
                                 <label for="details" class="form-label">รายละเอียดเพิ่มเติม</label>
                                 <textarea class="form-control" id="details" name="details" rows="3" maxlength="1000" placeholder="รายละเอียดการชำระเงิน (ไม่บังคับ)"></textarea>
@@ -616,99 +953,199 @@
         // Initialize modal
         const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
 
+        // Setup date picker to update hidden field
+        const datePickerInput = document.getElementById('received_date_picker');
+        const hiddenDateInput = document.getElementById('received_date');
+
+        datePickerInput.addEventListener('change', function (e) {
+            const selectedDate = new Date(e.target.value);
+            const formattedDate = String(selectedDate.getDate()).padStart(2, '0') + '/' +
+                String(selectedDate.getMonth() + 1).padStart(2, '0') + '/' +
+                selectedDate.getFullYear();
+            hiddenDateInput.value = formattedDate;
+            console.log('Date selected:', formattedDate);
+        });
+
         // Setup amount formatting
         const amountInput = document.getElementById('amount');
+
+        // Allow only numbers and one decimal point during input
         amountInput.addEventListener('input', function (e) {
             let value = e.target.value.replace(/[^0-9.]/g, '');
-
-            // Allow only one decimal point
             const parts = value.split('.');
             if (parts.length > 2) {
                 value = parts[0] + '.' + parts.slice(1).join('');
             }
-
-            // Limit decimal places to 2
             if (parts[1] && parts[1].length > 2) {
                 value = parts[0] + '.' + parts[1].substring(0, 2);
             }
+            e.target.value = value;
+        });
 
-            // Add thousands separators
+        // Format with thousands separator when field loses focus
+        amountInput.addEventListener('blur', function (e) {
+            let value = e.target.value.replace(/[^0-9.]/g, '');
             if (value) {
                 const numericValue = parseFloat(value);
                 if (!isNaN(numericValue)) {
-                    e.target.value = numericValue.toLocaleString('en-US', {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 2
-                    });
+                    e.target.value = numericValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 }
             }
         });
 
-        // Setup date validation for DD/MM/YYYY format
-        const dateInput = document.getElementById('received_date');
-
-        // Add auto-formatting for date input
-        function formatDateInput(input) {
-            let value = input.value.replace(/[^0-9]/g, '');
-            if (value.length >= 2) {
-                value = value.substring(0, 2) + '/' + value.substring(2);
-            }
-            if (value.length >= 5) {
-                value = value.substring(0, 5) + '/' + value.substring(5, 9);
-            }
-            input.value = value;
-        }
-
-        // Parse DD/MM/YYYY to Date object
-        function parseThaiDate(dateStr) {
-            const parts = dateStr.split('/');
-            if (parts.length === 3) {
-                const day = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-                const year = parseInt(parts[2], 10);
-                return new Date(year, month, day);
-            }
-            return null;
-        }
-
-        // Validate Thai date format
-        function validateThaiDate(dateStr) {
-            const dateRegex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/[0-9]{4}$/;
-            if (!dateRegex.test(dateStr)) {
-                return 'รูปแบบวันที่ไม่ถูกต้อง (ใช้รูปแบบ วว/ดด/ปปปป)';
-            }
-
-            const date = parseThaiDate(dateStr);
-            if (!date || isNaN(date.getTime())) {
-                return 'วันที่ไม่ถูกต้อง';
-            }
-
-            const today = new Date();
-            today.setHours(23, 59, 59, 999); // Allow same day
-
-            if (date > today) {
-                return 'วันที่รับเงินต้องไม่อยู่ในอนาคต';
-            }
-
-            return null; // Valid date
-        }
-
-        dateInput.addEventListener('input', function (e) {
-            formatDateInput(e.target);
-        });
-
-        dateInput.addEventListener('blur', function (e) {
-            const error = validateThaiDate(e.target.value);
-            if (error) {
-                e.target.setCustomValidity(error);
-                e.target.classList.add('is-invalid');
-                document.getElementById('received_date_error').textContent = error;
-            } else {
-                e.target.setCustomValidity('');
-                e.target.classList.remove('is-invalid');
-                document.getElementById('received_date_error').textContent = '';
+        // Remove formatting when field gains focus for easier editing
+        amountInput.addEventListener('focus', function (e) {
+            let value = e.target.value.replace(/,/g, '');
+            if (value) {
+                e.target.value = value;
             }
         });
+
+        // Setup air_ticket_cost formatting (same as amount)
+        const airTicketCostInput = document.getElementById('air_ticket_cost');
+
+        // Allow only numbers and one decimal point during input
+        airTicketCostInput.addEventListener('input', function (e) {
+            let value = e.target.value.replace(/[^0-9.]/g, '');
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            if (parts[1] && parts[1].length > 2) {
+                value = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+            e.target.value = value;
+        });
+
+        // Format with thousands separator when field loses focus
+        airTicketCostInput.addEventListener('blur', function (e) {
+            let value = e.target.value.replace(/[^0-9.]/g, '');
+            if (value) {
+                const numericValue = parseFloat(value);
+                if (!isNaN(numericValue)) {
+                    e.target.value = numericValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+            }
+        });
+
+        // Remove formatting when field gains focus for easier editing
+        airTicketCostInput.addEventListener('focus', function (e) {
+            let value = e.target.value.replace(/,/g, '');
+            if (value) {
+                e.target.value = value;
+            }
+        });
+
+        // Set default booking_type from data attribute
+        const productTypeSelect = document.getElementById('product_type');
+        if (defaultBookingType) {
+            productTypeSelect.value = defaultBookingType;
+        }
+
+        // Auto-calculation function
+        function calculateFees() {
+            const totalAmount = parseFloat(document.getElementById('amount').value.replace(/,/g, '')) || 0;
+            const airTicketCost = parseFloat(document.getElementById('air_ticket_cost').value.replace(/,/g, '')) || 0;
+            const netAmount = totalAmount - airTicketCost;
+
+            // Calculate base fees (editable)
+            const transportation = netAmount * 0.50; // 50%
+            const advance = netAmount * 0.30; // 30%
+            const tourFeeAmount = netAmount * 0.20; // 20%
+
+            // Update fields (keep them editable)
+            document.getElementById('transportation_fee').value = transportation.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('advance_expense').value = advance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('tour_fee').value = tourFeeAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Calculate VAT and Total (these trigger from tour_fee change)
+            calculateVATAndTotal();
+        }
+
+        function calculateVATAndTotal() {
+            const tourFeeAmount = parseFloat(document.getElementById('tour_fee').value.replace(/,/g, '')) || 0;
+            const whtPercent = parseFloat(document.getElementById('withholding_tax_percent').value.replace(/,/g, '')) || 0;
+
+            // Calculate Withholding Tax (Tour Fee × Withholding Tax %)
+            const wht = tourFeeAmount * (whtPercent / 100);
+            document.getElementById('withholding_tax').value = wht.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Calculate VAT (7% of tour fee)
+            const vatAmount = tourFeeAmount * 0.07;
+            document.getElementById('vat').value = vatAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Calculate Total Tour Fee
+            const totalTourFee = (tourFeeAmount + vatAmount) - wht;
+            document.getElementById('total_tour_fee').value = totalTourFee.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Trigger calculation when amount or air_ticket_cost changes
+        amountInput.addEventListener('change', calculateFees);
+        airTicketCostInput.addEventListener('change', calculateFees);
+
+        // Setup formatting and recalculation for editable fee fields
+        ['transportation_fee', 'advance_expense', 'tour_fee', 'withholding_tax_percent', 'withholding_tax'].forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+
+            // Allow only numbers and one decimal point during input
+            field.addEventListener('input', function (e) {
+                let value = e.target.value.replace(/[^0-9.]/g, '');
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+                if (parts[1] && parts[1].length > 2) {
+                    value = parts[0] + '.' + parts[1].substring(0, 2);
+                }
+                e.target.value = value;
+            });
+
+            // Format with thousands separator when field loses focus
+            field.addEventListener('blur', function (e) {
+                let value = e.target.value.replace(/[^0-9.]/g, '');
+                if (value) {
+                    const numericValue = parseFloat(value);
+                    if (!isNaN(numericValue)) {
+                        e.target.value = numericValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                }
+            });
+
+            // Remove formatting when field gains focus for easier editing
+            field.addEventListener('focus', function (e) {
+                let value = e.target.value.replace(/,/g, '');
+                if (value) {
+                    e.target.value = value;
+                }
+            });
+
+            // Recalculate VAT and Total when tour_fee or WHT percent changes
+            if (fieldId === 'tour_fee' || fieldId === 'withholding_tax_percent') {
+                field.addEventListener('change', calculateVATAndTotal);
+            }
+
+            // When withholding_tax amount is manually edited, reverse-calculate the percentage
+            if (fieldId === 'withholding_tax') {
+                field.addEventListener('change', function () {
+                    const tourFeeAmount = parseFloat(document.getElementById('tour_fee').value.replace(/,/g, '')) || 0;
+                    const whtAmount = parseFloat(document.getElementById('withholding_tax').value.replace(/,/g, '')) || 0;
+                    if (tourFeeAmount > 0) {
+                        const whtPercent = (whtAmount / tourFeeAmount) * 100;
+                        document.getElementById('withholding_tax_percent').value = whtPercent.toFixed(2);
+                    }
+                    calculateVATAndTotal();
+                });
+            }
+        });
+
+        // Initial calculation
+        calculateFees();
+
+        // Populate quote_number field with booking data
+        const quoteNumberField = document.getElementById('quote_number');
+        if (quoteNumberField && defaultQuoteNumber) {
+            quoteNumberField.value = defaultQuoteNumber;
+        }
 
         // Setup form submission
         document.getElementById('confirmPaymentBtn').addEventListener('click', function () {
@@ -716,9 +1153,12 @@
         });
 
         modal.show();
-    }
+    };
 
-    function submitPaymentForm(bookingId, modal) {
+    // Make showPaymentModal available publicly as well
+    window.showPaymentModal = window._showPaymentModalImpl;
+
+    window.submitPaymentForm = function (bookingId, modal) {
         const form = document.getElementById('paymentForm');
         const submitBtn = document.getElementById('confirmPaymentBtn');
 
@@ -729,10 +1169,18 @@
         // Get form data
         const formData = new FormData(form);
         const data = {
-            received_date: formData.get('received_date'),
+            received_date: formData.get('received_date'),  // Already in DD/MM/YYYY format from hidden field
             product_type: formData.get('product_type'),
             bank_name: formData.get('bank_name'),
             amount: formData.get('amount').replace(/,/g, ''), // Remove commas
+            air_ticket_cost: formData.get('air_ticket_cost').replace(/,/g, ''),
+            quote_number: formData.get('quote_number'),
+            transportation_fee: formData.get('transportation_fee').replace(/,/g, ''),
+            advance_expense: formData.get('advance_expense').replace(/,/g, ''),
+            tour_fee: formData.get('tour_fee').replace(/,/g, ''),
+            vat: formData.get('vat').replace(/,/g, ''),
+            withholding_tax: formData.get('withholding_tax').replace(/,/g, ''),
+            total_tour_fee: formData.get('total_tour_fee').replace(/,/g, ''),
             details: formData.get('details')
         };
 
@@ -742,28 +1190,6 @@
         if (!data.received_date) {
             showFieldError('received_date', 'วันที่รับเงินจำเป็นต้องระบุ');
             hasErrors = true;
-        } else {
-            // Parse Thai date format DD/MM/YYYY
-            const parts = data.received_date.split('/');
-            if (parts.length === 3) {
-                const day = parseInt(parts[0], 10);
-                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
-                const year = parseInt(parts[2], 10);
-                const selectedDate = new Date(year, month, day);
-                const today = new Date();
-                today.setHours(23, 59, 59, 999); // Allow same day
-
-                console.log('Validation - Selected date:', selectedDate);
-                console.log('Validation - Today:', today);
-
-                if (selectedDate > today) {
-                    showFieldError('received_date', 'วันที่รับเงินต้องไม่อยู่ในอนาคต');
-                    hasErrors = true;
-                }
-            } else {
-                showFieldError('received_date', 'รูปแบบวันที่ไม่ถูกต้อง');
-                hasErrors = true;
-            }
         }
 
         if (!data.product_type) {
@@ -836,9 +1262,9 @@
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-check me-2"></i>บันทึกการชำระเงิน';
             });
-    }
+    };
 
-    function showFieldError(fieldId, message) {
+    window.showFieldError = function (fieldId, message) {
         const field = document.getElementById(fieldId);
         const errorElement = document.getElementById(fieldId + '_error');
 
@@ -846,9 +1272,9 @@
         if (errorElement) {
             errorElement.textContent = message;
         }
-    }
+    };
 
-    function generateVoucherWorkflow(bookingId) {
+    window.generateVoucherWorkflow = function (bookingId) {
         if (confirm('Generate the final tour voucher with PDF and PNG formats?')) {
             showAlert('info', 'Generating voucher... Please wait');
 
@@ -873,32 +1299,60 @@
                     showAlert('error', 'An error occurred while generating voucher');
                 });
         }
-    }
+    };
 
-    function downloadVoucherPDF(bookingId) {
-        window.open(`/voucher/${bookingId}/pdf`, '_blank');
-    }
+    window.downloadVoucherPDF = function (bookingId) {
+        window.open(`/voucher/download/${bookingId}`, '_blank');
+    };
 
-    function downloadVoucherPNG(bookingId) {
+    window.downloadVoucherPNG = function (bookingId) {
         // Generate PNG from PDF on the fly (using existing voucher view functionality)
         window.open(`/voucher/${bookingId}`, '_blank');
-    }
+    };
 
-    function shareVoucher(bookingId) {
+    window.shareVoucher = function (bookingId) {
         window.open(`/voucher/${bookingId}`, '_blank');
-    }
+    };
 
-    function editBooking(bookingId) {
+    window.markAsCompleted = function (bookingId) {
+        if (confirm('Are you sure you want to mark this booking as completed? This action cannot be undone.')) {
+            fetch(`/booking/${bookingId}/completed`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        showAlert('success', 'Booking marked as completed successfully');
+                        // Reload the page to show updated status
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        return response.json().then(data => {
+                            showAlert('danger', data.message || 'Failed to mark booking as completed');
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'An error occurred while marking booking as completed');
+                });
+        }
+    };
+
+    window.editBooking = function (bookingId) {
         window.location.href = `/booking/edit/${bookingId}`;
-    }
+    };
 
-    function viewDocuments(bookingId) {
+    window.viewDocuments = function (bookingId) {
         // Redirect to booking view where documents are accessible
         window.location.href = `/booking/view/${bookingId}`;
-    }
+    };
 
     // Alert utility function
-    function showAlert(type, message) {
+    window.showAlert = function (type, message) {
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.style.position = 'fixed';
@@ -922,7 +1376,7 @@
                 alertDiv.parentNode.removeChild(alertDiv);
             }
         }, 5000);
-    }
+    };
 
     // Initialize tooltips
     document.addEventListener('DOMContentLoaded', function () {

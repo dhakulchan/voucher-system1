@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>รับหมายเลขคิว - DCTS</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 15px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .form-container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            height: 3px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+            z-index: 1;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #999;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            transform: scale(1.2);
+        }
+
+        .step.completed {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-control,
+        .form-select {
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .service-card {
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: white;
+        }
+
+        .service-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            transform: scale(1.05);
+        }
+
+        .service-card i {
+            font-size: 32px;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .service-card .service-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 15px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-top: 20px;
+            transition: all 0.3s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-back {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .required-mark {
+            color: #dc3545;
+        }
+
+        .input-group-text {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-right: none;
+        }
+
+        .input-group .form-control {
+            border-left: none;
+        }
+
+        .char-count {
+            font-size: 12px;
+            color: #999;
+            text-align: right;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 576px) {
+            .service-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-card {
+                padding: 25px 20px;
+            }
+        }
+
+        .footer-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+            margin-top: 30px;
+            padding: 15px 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container">
+        <div class="form-card">
+            <!-- Progress Steps -->
+            <div class="progress-steps">
+                <div class="progress-line" id="progressLine" style="width: 0%"></div>
+                <div class="step active" id="step1">1</div>
+                <div class="step" id="step2">2</div>
+                <div class="step" id="step3">3</div>
+            </div>
+
+            <form id="queueForm">
+                <!-- Step 1: Personal Information -->
+                <div class="step-content active" id="content1">
+                    <h4 class="text-center mb-4">
+                        <i class="fas fa-user-circle text-primary me-2"></i>
+                        ข้อมูลส่วนตัว
+                    </h4>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-user"></i>
+                            ชื่อ-นามสกุล <span class="required-mark">*</span>
+                        </label>
+                        <input type="text" class="form-control" id="customerName" placeholder="กรุณากรอกชื่อ-นามสกุล"
+                            required minlength="2" maxlength="100">
+                        <div class="char-count">
+                            <span id="nameCount">0</span>/100
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-phone"></i>
+                            เบอร์โทรศัพท์ <span class="required-mark">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-mobile-alt"></i>
+                            </span>
+                            <input type="tel" class="form-control" id="customerPhone" placeholder="0XX-XXX-XXXX"
+                                pattern="[0-9]{10}" required maxlength="10">
+                        </div>
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            ใช้สำหรับแจ้งเตือนเมื่อเกือบถึงคิว
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-envelope"></i>
+                            อีเมล (ถ้ามี)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-at"></i>
+                            </span>
+                            <input type="email" class="form-control" id="customerEmail" placeholder="example@email.com">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-submit" onclick="nextStep(2)">
+                        ถัดไป <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                </div>
+
+                <!-- Step 2: Service Selection -->
+                <div class="step-content" id="content2">
+                    <h4 class="text-center mb-4">
+                        <i class="fas fa-concierge-bell text-primary me-2"></i>
+                        เลือกบริการ
+                    </h4>
+
+                    <p class="text-center text-muted mb-4">
+                        กรุณาเลือกบริการที่ต้องการ <span class="required-mark">*</span>
+                    </p>
+
+                    <div class="service-grid">
+                        <div class="service-card" onclick="selectService('booking', this)">
+                            <i class="fas fa-calendar-check"></i>
+                            <div class="service-name">จองทัวร์ใหม่</div>
+                        </div>
+
+                        <div class="service-card" onclick="selectService('inquiry', this)">
+                            <i class="fas fa-question-circle"></i>
+                            <div class="service-name">สอบถามข้อมูล</div>
+                        </div>
+
+                        <div class="service-card" onclick="selectService('payment', this)">
+                            <i class="fas fa-credit-card"></i>
+                            <div class="service-name">ชำระเงิน</div>
+                        </div>
+
+                        <div class="service-card" onclick="selectService('document', this)">
+                            <i class="fas fa-file-alt"></i>
+                            <div class="service-name">รับเอกสาร</div>
+                        </div>
+
+                        <div class="service-card" onclick="selectService('change', this)">
+                            <i class="fas fa-edit"></i>
+                            <div class="service-name">แก้ไข/เปลี่ยนแปลง</div>
+                        </div>
+
+                        <div class="service-card" onclick="selectService('cancel', this)">
+                            <i class="fas fa-times-circle"></i>
+                            <div class="service-name">ยกเลิกทัวร์</div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="serviceType">
+
+                    <button type="button" class="btn btn-submit" onclick="nextStep(3)" id="serviceNextBtn" disabled>
+                        ถัดไป <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
+                    <button type="button" class="btn btn-back" onclick="prevStep(1)">
+                        <i class="fas fa-arrow-left me-2"></i> ย้อนกลับ
+                    </button>
+                </div>
+
+                <!-- Step 3: Confirm & Submit -->
+                <div class="step-content" id="content3">
+                    <h4 class="text-center mb-4">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        ยืนยันข้อมูล
+                    </h4>
+
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        กรุณาตรวจสอบข้อมูลให้ถูกต้อง
+                    </div>
+
+                    <div class="card mb-3" style="border-radius: 15px;">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3 text-muted">ข้อมูลส่วนตัว</h6>
+                            <p class="mb-2">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <strong>ชื่อ:</strong> <span id="confirmName">-</span>
+                            </p>
+                            <p class="mb-2">
+                                <i class="fas fa-phone text-primary me-2"></i>
+                                <strong>เบอร์:</strong> <span id="confirmPhone">-</span>
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                <strong>อีเมล:</strong> <span id="confirmEmail">-</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card mb-3" style="border-radius: 15px;">
+                        <div class="card-body">
+                            <h6 class="card-subtitle mb-3 text-muted">บริการที่เลือก</h6>
+                            <p class="mb-0">
+                                <i class="fas fa-concierge-bell text-primary me-2"></i>
+                                <strong id="confirmService">-</strong>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="acceptTerms" required>
+                        <label class="form-check-label" for="acceptTerms">
+                            ข้าพเจ้ายอมรับเงื่อนไขการให้บริการ
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-submit" id="submitBtn">
+                        <i class="fas fa-ticket-alt me-2"></i>
+                        รับหมายเลขคิว
+                    </button>
+                    <button type="button" class="btn btn-back" onclick="prevStep(2)">
+                        <i class="fas fa-arrow-left me-2"></i> ย้อนกลับ
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Current Status Info -->
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted">
+                    <i class="fas fa-users me-2"></i>คิวที่รออยู่
+                </span>
+                <span class="badge bg-warning text-dark" style="font-size: 16px; padding: 8px 15px;"
+                    id="currentWaiting">-</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">
+                    <i class="fas fa-clock me-2"></i>เวลารอโดยประมาณ
+                </span>
+                <span class="badge bg-info" style="font-size: 16px; padding: 8px 15px;" id="estimatedWait">-</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentStep = 1;
+        let selectedServiceType = null;
+
+        const serviceNames = {
+            'booking': 'จองทัวร์ใหม่',
+            'inquiry': 'สอบถามข้อมูล',
+            'payment': 'ชำระเงิน',
+            'document': 'รับเอกสาร',
+            'change': 'แก้ไข/เปลี่ยนแปลง',
+            'cancel': 'ยกเลิกทัวร์'
+        };
+
+        // Character counter
+        document.getElementById('customerName').addEventListener('input', function () {
+            document.getElementById('nameCount').textContent = this.value.length;
+        });
+
+        // Phone number formatting
+        document.getElementById('customerPhone').addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        function nextStep(step) {
+            // Validate current step
+            if (step === 2) {
+                const name = document.getElementById('customerName').value.trim();
+                const phone = document.getElementById('customerPhone').value.trim();
+
+                if (!name || name.length < 2) {
+                    alert('กรุณากรอกชื่อ-นามสกุล (อย่างน้อย 2 ตัวอักษร)');
+                    return;
+                }
+
+                if (!phone || phone.length !== 10) {
+                    alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
+                    return;
+                }
+            }
+
+            if (step === 3) {
+                if (!selectedServiceType) {
+                    alert('กรุณาเลือกประเภทบริการ');
+                    return;
+                }
+
+                // Update confirmation
+                document.getElementById('confirmName').textContent = document.getElementById('customerName').value;
+                document.getElementById('confirmPhone').textContent = document.getElementById('customerPhone').value;
+                document.getElementById('confirmEmail').textContent =
+                    document.getElementById('customerEmail').value || 'ไม่ระบุ';
+                document.getElementById('confirmService').textContent = serviceNames[selectedServiceType];
+            }
+
+            // Hide current step
+            document.getElementById(`content${currentStep}`).classList.remove('active');
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+            document.getElementById(`step${currentStep}`).classList.add('completed');
+
+            // Show next step
+            currentStep = step;
+            document.getElementById(`content${currentStep}`).classList.add('active');
+            document.getElementById(`step${currentStep}`).classList.add('active');
+
+            // Update progress line
+            const progressWidth = ((currentStep - 1) / 2) * 100;
+            document.getElementById('progressLine').style.width = progressWidth + '%';
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function prevStep(step) {
+            // Remove completed from current
+            document.getElementById(`step${currentStep}`).classList.remove('active');
+
+            // Hide current step
+            document.getElementById(`content${currentStep}`).classList.remove('active');
+
+            // Show previous step
+            currentStep = step;
+            document.getElementById(`content${currentStep}`).classList.add('active');
+            document.getElementById(`step${currentStep}`).classList.remove('completed');
+            document.getElementById(`step${currentStep}`).classList.add('active');
+
+            // Update progress line
+            const progressWidth = ((currentStep - 1) / 2) * 100;
+            document.getElementById('progressLine').style.width = progressWidth + '%';
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function selectService(serviceType, element) {
+            // Remove previous selection
+            document.querySelectorAll('.service-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Add selection
+            element.classList.add('selected');
+            selectedServiceType = serviceType;
+            document.getElementById('serviceType').value = serviceType;
+
+            // Enable next button
+            document.getElementById('serviceNextBtn').disabled = false;
+        }
+
+        // Form submission
+        document.getElementById('queueForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            if (!document.getElementById('acceptTerms').checked) {
+                alert('กรุณายอมรับเงื่อนไขการให้บริการ');
+                return;
+            }
+
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>กำลังดำเนินการ...';
+
+            try {
+                const response = await fetch('/queue/api/queue', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        customer_name: document.getElementById('customerName').value,
+                        customer_phone: document.getElementById('customerPhone').value,
+                        customer_email: document.getElementById('customerEmail').value || null,
+                        service_type: selectedServiceType
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Redirect to tracking page
+                    window.location.href = `/queue/track/${data.queue.queue_number}`;
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + (data.error || 'กรุณาลองใหม่อีกครั้ง'));
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-ticket-alt me-2"></i>รับหมายเลขคิว';
+                }
+            } catch (error) {
+                alert('ไม่สามารถออกคิวได้ กรุณาลองใหม่');
+                console.error(error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-ticket-alt me-2"></i>รับหมายเลขคิว';
+            }
+        });
+
+        // Update current status
+        async function updateCurrentStatus() {
+            try {
+                const response = await fetch('/queue/api/queues');
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('currentWaiting').textContent = data.waiting_count || 0;
+
+                    const avgMinutes = Math.ceil((data.waiting_count || 0) * 5);
+                    document.getElementById('estimatedWait').textContent =
+                        avgMinutes > 0 ? `${avgMinutes} นาที` : 'ไม่ต้องรอ';
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+
+        updateCurrentStatus();
+        setInterval(updateCurrentStatus, 10000);
+    </script>
+
+    <div class="footer-text">
+        © 2025 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1
+    </div>
+</body>
+
+</html>

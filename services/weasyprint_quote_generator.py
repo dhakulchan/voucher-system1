@@ -69,7 +69,7 @@ class WeasyPrintQuoteGenerator:
         try:
             if value is None:
                 return '0'
-            return '{:.2f}'.format(float(value))
+            return f'{float(value):,.2f}'.replace(',', ',')
         except:
             return str(value)
     
@@ -78,9 +78,9 @@ class WeasyPrintQuoteGenerator:
         try:
             if value is None:
                 return '฿0.00'
-            return '฿{:.2f}'.format(float(value))
+            return f'฿{float(value):,.2f}'
         except:
-            return '฿{}'.format(value)
+            return f'฿{value}'
     
     def _format_thai_date(self, value):
         """Format date in Thai style"""
@@ -146,6 +146,25 @@ class WeasyPrintQuoteGenerator:
             # Enhanced template rendering with error handling
             template = self._load_template_with_fallback()
             
+            # 🔥 FORCE: Override template_data with direct booking data
+            template_data.update({
+                'service_detail': fresh_booking.description or 'No service detail',
+                'name_list': fresh_booking.guest_list or 'No guest list', 
+                'flight_info': fresh_booking.flight_info or 'No flight info'
+            })
+            
+            # 🔥 DEBUG: Log all booking data before template rendering
+            logger.info(f"=== BOOKING DATA DEBUG ===")
+            logger.info(f"Booking ID: {fresh_booking.id}")
+            logger.info(f"Booking Reference: {fresh_booking.booking_reference}")
+            logger.info(f"Description: {repr(fresh_booking.description)}")
+            logger.info(f"Guest List: {repr(fresh_booking.guest_list)}")
+            logger.info(f"Flight Info: {repr(fresh_booking.flight_info)}")
+            logger.info(f"Template data service_detail: {template_data.get('service_detail', 'N/A')}")
+            logger.info(f"Template data name_list: {template_data.get('name_list', 'N/A')}")
+            logger.info(f"Template data flight_info: {template_data.get('flight_info', 'N/A')}")
+            logger.info(f"=== END DEBUG ===")
+            
             # Render HTML template with enhanced data
             html_content = template.render(**template_data)
             
@@ -157,7 +176,7 @@ class WeasyPrintQuoteGenerator:
                 f.write(pdf_bytes)
             
             file_size = os.path.getsize(output_path)
-            logger.info(f'✅ Generated Enhanced WeasyPrint Quote PDF: {filename} ({file_size} bytes)')
+            logger.info(f'✅ Generated Enhanced WeasyPrint Quote PDF: {filename} ({file_size:,} bytes)')
             return filename
             
         except Exception as e:
@@ -168,7 +187,7 @@ class WeasyPrintQuoteGenerator:
         """Load quote template with intelligent fallback system"""
         template_hierarchy = [
             'quote_template_final_v2.html',
-            'quote_template_final_enhanced.html',
+            'quote_template_final_enhanced.html', 
             'quote_template_final_fixed.html',
             'quote_template_final_qt.html',
             'quote_template_modern.html',
@@ -224,7 +243,7 @@ class WeasyPrintQuoteGenerator:
             html_doc = HTML(string=html_content, base_url=base_url)
             pdf_bytes = html_doc.write_pdf(stylesheets=stylesheets, **self.weasyprint_config)
             
-            logger.info(f'🎨 PDF generated with enhanced styling ({len(pdf_bytes)} bytes)')
+            logger.info(f'🎨 PDF generated with enhanced styling ({len(pdf_bytes):,} bytes)')
             return pdf_bytes
             
         except Exception as e:
@@ -282,19 +301,44 @@ class WeasyPrintQuoteGenerator:
             
             logger.info(f'📄 Generating Quote PDF with WeasyPrint: {filename}')
             
-            # Render HTML template - use the production quote template
+            # Render HTML template - use FORCED Thai template for testing
             try:
-                template = self.jinja_env.get_template('quote_template_final_v2.html')
-                logger.info('✅ Using quote_template_final_v2.html for production')
+                template = self.jinja_env.get_template('quote_thai_forced.html')
+                logger.info('✅ Using quote_thai_forced.html for Thai content test')
             except Exception as e:
-                logger.warning(f'⚠️ Could not load quote_template_final_v2.html: {e}, falling back to test template')
+                logger.warning(f'⚠️ Could not load quote_thai_forced.html: {e}, falling back to production template')
                 try:
-                    template = self.jinja_env.get_template('quote_test_simple.html')
-                    logger.info('✅ Using quote_test_simple.html as fallback')
+                    template = self.jinja_env.get_template('quote_template_final_v2.html')
+                    logger.info('✅ Using quote_template_final_v2.html for production')
                 except Exception as e2:
-                    logger.error(f'❌ Could not load any template: {e2}')
-                    raise Exception(f"Template loading failed: {e2}")
+                    logger.warning(f'⚠️ Could not load quote_template_final_v2.html: {e2}, falling back to test template')
+                    try:
+                        template = self.jinja_env.get_template('quote_test_simple.html')
+                        logger.info('✅ Using quote_test_simple.html as fallback')
+                    except Exception as e3:
+                        logger.error(f'❌ Could not load any template: {e3}')
+                        raise Exception(f"Template loading failed: {e3}")
+            
+            # 🔥 FORCE: Override template_data with direct booking data
+            if booking_to_use:
+                template_data.update({
+                    'service_detail': booking_to_use.description or 'No service detail',
+                    'name_list': booking_to_use.guest_list or 'No guest list', 
+                    'flight_info': booking_to_use.flight_info or 'No flight info'
+                })
                 
+                # 🔥 DEBUG: Log all booking data before template rendering
+                logger.info(f"=== BOOKING DATA DEBUG ===")
+                logger.info(f"Booking ID: {booking_to_use.id}")
+                logger.info(f"Booking Reference: {booking_to_use.booking_reference}")
+                logger.info(f"Description: {repr(booking_to_use.description)}")
+                logger.info(f"Guest List: {repr(booking_to_use.guest_list)}")
+                logger.info(f"Flight Info: {repr(booking_to_use.flight_info)}")
+                logger.info(f"Template data service_detail: {template_data.get('service_detail', 'N/A')}")
+                logger.info(f"Template data name_list: {template_data.get('name_list', 'N/A')}")
+                logger.info(f"Template data flight_info: {template_data.get('flight_info', 'N/A')}")
+                logger.info(f"=== END DEBUG ===")
+            
             html_content = template.render(**template_data)
             logger.info(f'✅ Template rendered successfully, HTML length: {len(html_content)}')
             
@@ -469,7 +513,15 @@ class WeasyPrintQuoteGenerator:
             logger.info(f'Using fresh products data from Universal Extractor: {fresh_products_data}')
             # อาจจะต้องแปลง format ให้เข้ากับ template
         
-        products = product_data.get('products', [])
+        # Check if product_data is dict or list
+        if isinstance(product_data, dict):
+            products = product_data.get('products', [])
+        elif isinstance(product_data, list):
+            # If it's already a list, use it directly
+            products = product_data
+        else:
+            # Fallback to empty list
+            products = []
         
         # Format products to ensure proper display in template
         formatted_products = []
@@ -480,12 +532,12 @@ class WeasyPrintQuoteGenerator:
                 amount = product.get('amount', 0)
                 
                 if isinstance(price, (int, float)):
-                    price_formatted = '{:.2f}'.format(price)
+                    price_formatted = f'{price:,.2f}'
                 else:
                     price_formatted = str(price)
                     
                 if isinstance(amount, (int, float)):
-                    amount_formatted = '{:.2f}'.format(amount)
+                    amount_formatted = f'{amount:,.2f}'
                 else:
                     amount_formatted = str(amount)
                 
@@ -510,7 +562,7 @@ class WeasyPrintQuoteGenerator:
         # Format total amount safely
         try:
             total_amount_float = float(total_amount) if isinstance(total_amount, str) else total_amount
-            formatted_total = '{:.2f}'.format(total_amount_float)
+            formatted_total = f'{total_amount_float:,.2f}'
         except (ValueError, TypeError):
             formatted_total = str(total_amount)
         
@@ -543,7 +595,6 @@ class WeasyPrintQuoteGenerator:
         
         logger.info(f'Service detail source: {service_detail[:100]}...' if len(str(service_detail)) > 100 else f'Service detail: {service_detail}')
         
-        # Format guest list and add to all_fields
         name_list = self._format_guest_list(booking, all_booking_fields)
         # ไม่ส่ง name_list fallback เพื่อให้ template ใช้ booking.guest_list โดยตรง
         if name_list and len(name_list.strip()) <= 3:
@@ -565,15 +616,24 @@ class WeasyPrintQuoteGenerator:
         logger.info(f"🔍 DEBUG booking.id: {booking.id}")
         logger.info(f"🔍 DEBUG booking.booking_reference: {booking.booking_reference}")
         
-        # 🔥 FORCE THAI DATA: Override processed variables with direct booking data
-        logger.info(f"🔥 FORCE OVERRIDE: Using direct booking data for Thai content")
-        logger.info(f"🔥 booking.description: {repr(booking.description)}")
-        logger.info(f"🔥 booking.guest_list: {repr(booking.guest_list)}")
-        logger.info(f"🔥 booking.flight_info: {repr(booking.flight_info)}")
+        # Company Information for PDF Header
+        company_info = {
+            'name_th': 'ธากุล จันทร์ ทราเวล เซอร์วิส (ประเทศไทย) จำกัด',
+            'name_en': 'DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO.,LTD.',
+            'address': '710, 716, 704, 706 Prachauthit Road, Samseenook, Huai Kwang, Bangkok 10310',
+            'tel': '+662 2744218',
+            'fax': '+662 0266525',
+            'line': '@dhakulchan',
+            'website': 'www.dhakulchan.net',
+            'email': 'dhakulchan@hotmail.com',
+            'license': 'T.A.T License 11/03659',
+            'logo_path': 'static/images/dcts-logo-vou.png'
+        }
         
         template_data = {
             'booking': booking,
             'customer': customer_info,
+            'company': company_info,  # ← เพิ่ม company information
             'quote_number': quote_number,
             'quote_date': current_time,
             'current_date': current_time,
@@ -592,15 +652,15 @@ class WeasyPrintQuoteGenerator:
             'total_amount': grand_total_formatted,
             'currency': all_booking_fields.get('currency', 'THB'),
             'grand_total': grand_total_formatted,
-            # 🔥 REMOVE processed variables to force template to use booking.* directly
-            # 'service_detail': service_detail,  # Force template to use booking.description
-            # 'name_list': name_list,           # Force template to use booking.guest_list  
-            # 'flight_info': flight_info,       # Force template to use booking.flight_info
+            'service_detail': service_detail,
+            # 🔥 ไม่ส่ง name_list เพื่อให้ template ใช้ booking.guest_list เท่านั้น
+            # 'name_list': name_list,  # ปิดการส่งตัวแปรนี้
+            'flight_info': flight_info,
             'additional_flight_info': all_booking_fields.get('additional_flight_info'),
             # Smart Price Calculation Data
             'smart_totals': smart_totals,
             'product_data': product_data,
-            'data_quality': product_data.get('data_quality', {'accuracy': 'estimated', 'source': 'fallback'}),
+            'data_quality': product_data.get('data_quality', {'accuracy': 'estimated', 'source': 'fallback'}) if isinstance(product_data, dict) else {'accuracy': 'estimated', 'source': 'fallback'},
             # All booking fields สำหรับ template
             'all_fields': all_booking_fields,
             # Environment variables from .env
@@ -619,10 +679,7 @@ class WeasyPrintQuoteGenerator:
         return self._extract_real_booking_products(booking)
 
     def _format_guest_list(self, booking, all_booking_fields):
-        """Format guest list from fresh booking data and return HTML formatted list"""
-        import json
-        import codecs
-        
+        """Format guest list from fresh booking data"""
         # 🔥 ใช้ข้อมูลใหม่จาก Universal Booking Extractor แทน
         guest_list_fresh = all_booking_fields.get('guest_list_current')
         
@@ -631,49 +688,12 @@ class WeasyPrintQuoteGenerator:
             guest_list_fresh = booking.guest_list
             
         if guest_list_fresh:
-            try:
-                # Parse JSON string to list
-                if isinstance(guest_list_fresh, str):
-                    guest_list = json.loads(guest_list_fresh)
-                else:
-                    guest_list = guest_list_fresh
-                    
-                if isinstance(guest_list, list):
-                    # แปลง Unicode escape sequences และจัดรูปแบบ
-                    formatted_items = []
-                    for item in guest_list:
-                        try:
-                            # Decode Unicode escapes if present
-                            if '\\u' in str(item):
-                                decoded_item = codecs.decode(str(item), 'unicode_escape')
-                            else:
-                                decoded_item = str(item)
-                            formatted_items.append(decoded_item)
-                        except:
-                            formatted_items.append(str(item))
-                    
-                    # Join with <br> tags for HTML line breaks
-                    formatted_html = '<br>'.join(formatted_items)
-                    all_booking_fields['formatted_guest_list'] = formatted_html
-                    return formatted_html
-                else:
-                    return str(guest_list)
-            except:
-                # If parsing fails, return as string
+            if isinstance(guest_list_fresh, list):
+                return '\n'.join(guest_list_fresh)
+            else:
                 guest_list_str = str(guest_list_fresh)
                 
-                # Try to decode Unicode escapes
-                try:
-                    if '\\u' in guest_list_str:
-                        decoded = codecs.decode(guest_list_str, 'unicode_escape')
-                        all_booking_fields['formatted_guest_list'] = decoded
-                        return decoded
-                    else:
-                        all_booking_fields['formatted_guest_list'] = guest_list_str
-                        return guest_list_str
-                except:
-                    all_booking_fields['formatted_guest_list'] = guest_list_str
-                    return guest_list_str
+                # Parse JSON if it's JSON format - this automatically decodes Unicode
                 import json
                 import html
                 import re
@@ -798,8 +818,35 @@ class WeasyPrintQuoteGenerator:
     def _get_quote_number_from_quotes_table(self, booking_id):
         """ดึง quote_number จากตาราง quotes"""
         try:
-            # For testing with SQLite, return a mock quote number
-            return f"Q{str(booking_id).zfill(6)}"
+            import mysql.connector
+            
+            mariadb_config = {
+                'user': 'voucher_user',
+                'password': 'voucher_secure_2024',
+                'host': 'localhost',
+                'port': 3306,
+                'database': 'voucher_enhanced',
+                'charset': 'utf8mb4'
+            }
+            
+            conn = mysql.connector.connect(**mariadb_config)
+            cursor = conn.cursor()
+            
+            # ดึง quote_number จากตาราง quotes ที่เกี่ยวข้องกับ booking_id
+            cursor.execute("""
+                SELECT quote_number 
+                FROM quotes 
+                WHERE booking_id = %s 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            """, (booking_id,))
+            
+            result = cursor.fetchone()
+            conn.close()
+            
+            if result:
+                return result[0]
+            return None
             
         except Exception as e:
             logger.warning(f"Error getting quote number from quotes table: {e}")
@@ -825,7 +872,7 @@ class WeasyPrintQuoteGenerator:
                     'name': 'ADT',
                     'quantity': booking.adults,
                     'price': '5,000.00',
-                    'amount': '{:.2f}'.format(booking.adults * 5000)
+                    'amount': f'{booking.adults * 5000:,.2f}'
                 })
             
             if booking.children and booking.children > 0:
@@ -834,7 +881,7 @@ class WeasyPrintQuoteGenerator:
                     'name': 'CHD', 
                     'quantity': booking.children,
                     'price': '2,000.00',
-                    'amount': '{:.2f}'.format(booking.children * 2000)
+                    'amount': f'{booking.children * 2000:,.2f}'
                 })
             
             if booking.infants and booking.infants > 0:
@@ -843,7 +890,7 @@ class WeasyPrintQuoteGenerator:
                     'name': 'INF',
                     'quantity': booking.infants,
                     'price': '100.00', 
-                    'amount': '{:.2f}'.format(booking.infants * 100)
+                    'amount': f'{booking.infants * 100:,.2f}'
                 })
         
         return products
@@ -859,7 +906,7 @@ class WeasyPrintQuoteGenerator:
             try:
                 # Convert to float if it's a string
                 amount = float(booking.total_amount) if isinstance(booking.total_amount, str) else booking.total_amount
-                return '{:.2f}'.format(amount)
+                return f'{amount:,.2f}'
             except (ValueError, TypeError):
                 # If conversion fails, return as string
                 return str(booking.total_amount)
@@ -873,7 +920,7 @@ class WeasyPrintQuoteGenerator:
         if booking.infants:
             total += booking.infants * 100
             
-        return '{:.2f}'.format(total)
+        return f'{total:,.2f}'
     
     def _format_total_amount(self, booking):
         """Format total amount for display in voucher"""
@@ -1079,6 +1126,6 @@ class WeasyPrintQuoteGenerator:
                 amount_float = float(amount)
             else:
                 amount_float = float(amount)
-            return "{:.2f}".format(amount_float)
+            return f"{amount_float:,.2f}"
         except (ValueError, TypeError):
             return "0.00"

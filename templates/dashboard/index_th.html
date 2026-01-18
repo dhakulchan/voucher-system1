@@ -266,35 +266,6 @@
                 {% endif %}
             </div>
         </div>
-
-        <!-- การดำเนินการด่วน -->
-        <div class="card shadow">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">การดำเนินการด่วน</h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
-                        <i class="fas fa-plus me-2"></i>สร้างการจองใหม่
-                    </a>
-                    <a href="{{ url_for('dashboard.customers') }}" class="btn btn-outline-primary">
-                        <i class="fas fa-users me-2"></i>จัดการลูกค้า
-                    </a>
-                    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-info">
-                        <i class="fas fa-calendar-alt me-2"></i>การจอง
-                    </a>
-                    <a href="{{ url_for('quote.list_quotes') }}" class="btn btn-outline-warning">
-                        <i class="fas fa-file-alt me-2"></i>ใบเสนอราคา
-                    </a>
-                    <a href="{{ url_for('voucher.list') }}" class="btn btn-outline-success">
-                        <i class="fas fa-ticket-alt me-2"></i>ใบบัตรทัวร์
-                    </a>
-                    <a href="{{ url_for('dashboard.reports') }}" class="btn btn-outline-info">
-                        <i class="fas fa-chart-bar me-2"></i>ดูรายงาน
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 

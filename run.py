@@ -1,3 +1,12 @@
+# Set timezone to Asia/Bangkok FIRST
+import os
+os.environ.setdefault('TZ', 'Asia/Bangkok')
+try:
+    import time
+    time.tzset()
+except AttributeError:
+    pass  # Windows doesn't support time.tzset()
+
 # Apply ReportLab MD5 fix FIRST for Python 3.8 compatibility
 from reportlab_fix import patch_reportlab_md5
 patch_reportlab_md5()
@@ -27,7 +36,7 @@ def create_admin():
     """Create admin user"""
     admin = User.create_user(
         username='admin',
-        email='admin@example.com',
+        email='support@dhakulchan.com',
         password='admin123',
         is_admin=True
     )
@@ -47,7 +56,7 @@ if __name__ == '__main__':
                 if not existing_admin:
                     admin = User.create_user(
                         username='admin',
-                        email='admin@example.com',
+                        email='support@dhakulchan.com',
                         password='admin123',
                         is_admin=True
                     )
@@ -62,7 +71,7 @@ if __name__ == '__main__':
                 db.create_all()
                 admin = User.create_user(
                     username='admin',
-                    email='admin@example.com',
+                    email='support@dhakulchan.com',
                     password='admin123',
                     is_admin=True
                 )

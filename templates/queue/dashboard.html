@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Queue Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-tachometer-alt me-2"></i>Queue Management Dashboard</h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-warning text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock me-2"></i>Waiting
+                    </h5>
+                    <h2 class="mb-0" id="statWaiting">{{ queues|selectattr('status', 'equalto', 'waiting')|list|length
+                        }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-user-check me-2"></i>Serving
+                    </h5>
+                    <h2 class="mb-0" id="statServing">{{ queues|selectattr('status', 'equalto', 'serving')|list|length
+                        }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-primary text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-check-circle me-2"></i>Completed
+                    </h5>
+                    <h2 class="mb-0" id="statCompleted">{{ queues|selectattr('status', 'equalto',
+                        'completed')|list|length }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white shadow">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-list me-2"></i>Total Today
+                    </h5>
+                    <h2 class="mb-0">{{ queues|length }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('queue.welcome') }}" class="btn btn-success me-2" target="_blank">
+                        <i class="fas fa-qrcode me-2"></i>View QR Code
+                    </a>
+                    <a href="{{ url_for('queue.display') }}" class="btn btn-info me-2" target="_blank">
+                        <i class="fas fa-tv me-2"></i>Display Screen
+                    </a>
+                    <a href="{{ url_for('queue.counter', counter_id='1') }}" class="btn btn-warning me-2"
+                        target="_blank">
+                        <i class="fas fa-desktop me-2"></i>Counter Interface
+                    </a>
+                    <a href="{{ url_for('queue.history') }}" class="btn btn-secondary me-2">
+                        <i class="fas fa-history me-2"></i>Queue History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Queue List -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Queues Today</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="queueTable">
+                            <thead>
+                                <tr>
+                                    <th>Queue #</th>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th>Service</th>
+                                    <th>Status</th>
+                                    <th>Counter</th>
+                                    <th>Created</th>
+                                    <th>Wait Time</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for queue in queues %}
+                                <tr>
+                                    <td><strong>{{ queue.queue_number }}</strong></td>
+                                    <td>{{ queue.customer_name }}</td>
+                                    <td>{{ queue.customer_phone }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ queue.service_type }}</span>
+                                    </td>
+                                    <td>
+                                        {% if queue.status == 'waiting' %}
+                                        <span class="badge bg-warning text-dark">Waiting</span>
+                                        {% elif queue.status == 'serving' %}
+                                        <span class="badge bg-success">Serving</span>
+                                        {% elif queue.status == 'completed' %}
+                                        <span class="badge bg-primary">Completed</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ queue.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ queue.counter or '-' }}</td>
+                                    <td>{{ queue.created_at.strftime('%H:%M') }}</td>
+                                    <td>
+                                        {% if queue.waiting_time %}
+                                        {{ queue.waiting_time }} min
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('queue.track', queue_number=queue.queue_number) }}"
+                                            class="btn btn-sm btn-info" target="_blank">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if queue.status == 'waiting' %}
+                                        <button class="btn btn-sm btn-danger" onclick="cancelQueue({{ queue.id }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No queues today</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function cancelQueue(queueId) {
+        if (!confirm('Are you sure you want to cancel this queue?')) return;
+
+        try {
+            const response = await fetch(`/queue/api/queue/${queueId}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error cancelling queue');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error cancelling queue');
+        }
+    }
+
+    // Auto refresh every 30 seconds
+    setTimeout(() => location.reload(), 30000);
+</script>
+{% endblock %}

@@ -51,6 +51,34 @@ class Invoice(db.Model):
     payment_method = db.Column(db.String(100))
     payment_reference = db.Column(db.String(200))
     bank_details = db.Column(db.Text)
+    air_ticket_cost = db.Column(db.Numeric(12, 2), default=0)  # Air ticket cost/other expenses
+    
+    # Calculation Fields (Auto-calculated from total_amount and air_ticket_cost)
+    transportation_fee = db.Column(db.Numeric(12, 2), default=0)  # (total-air)*50%
+    advance_expense = db.Column(db.Numeric(12, 2), default=0)  # (total-air)*30%
+    tour_fee = db.Column(db.Numeric(12, 2), default=0)  # (total-air)*20%
+    vat = db.Column(db.Numeric(12, 2), default=0)  # tour_fee*7%
+    withholding_tax = db.Column(db.Numeric(12, 2), default=0)  # Default 0, editable
+    total_tour_fee = db.Column(db.Numeric(12, 2), default=0)  # (tour_fee+vat)-wht
+    
+    # Booking Sync Fields (auto-populated from bookings)
+    quote_number = db.Column(db.String(100))  # Quote number from booking
+    customer_id = db.Column(db.Integer)  # Customer ID reference
+    cust_name = db.Column(db.String(255))  # Customer name
+    booking_type = db.Column(db.String(50))  # Booking type (tour/hotel/transport)
+    total_pax = db.Column(db.Integer)  # Total number of passengers
+    arrival_date = db.Column(db.Date)  # Arrival date
+    departure_date = db.Column(db.Date)  # Departure date
+    guest_list = db.Column(db.Text)  # Guest list (JSON)
+    flight_info = db.Column(db.Text)  # Flight information
+    
+    # Customer Company Fields (copied from customer)
+    customer_type = db.Column(db.String(50))  # Visitor-Individual, Corporate-Company, Travel Agent
+    company_name = db.Column(db.String(255))
+    company_address = db.Column(db.Text)
+    company_tel = db.Column(db.String(50))
+    company_taxid = db.Column(db.String(50))
+    company_contact = db.Column(db.String(255))
     
     # Relationships
     booking = db.relationship('Booking', backref=db.backref('invoices', lazy=True))

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Token Manager - จัดการ Token สำหรับหน้าจอแสดงผล</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container {
+            padding: 40px 20px;
+        }
+
+        .header-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .token-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .token-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .token-string {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            border: 1px solid #dee2e6;
+        }
+
+        .qr-container {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-action {
+            margin: 2px;
+        }
+
+        .status-badge {
+            font-size: 14px;
+            padding: 5px 15px;
+        }
+
+        .stats-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="fas fa-key"></i> Display Token Manager</h1>
+                    <p class="text-muted mb-0">จัดการ Token สำหรับแชร์หน้าจอแสดงคิวไปยังอุปกรณ์ภายนอก</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary btn-lg" onclick="showCreateModal()">
+                        <i class="fas fa-plus"></i> สร้าง Token ใหม่
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tokens List -->
+        <div id="tokensList">
+            <div class="text-center py-5">
+                <div class="spinner-border text-light" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-light mt-3">กำลังโหลด tokens...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create/Edit Token Modal -->
+    <div class="modal fade" id="tokenModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">สร้าง Token ใหม่</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="tokenForm">
+                        <input type="hidden" id="tokenId">
+
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อ Token *</label>
+                            <input type="text" class="form-control" id="tokenName" required
+                                placeholder="เช่น หน้าจอทีวีชั้น 1">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">คำอธิบาย</label>
+                            <textarea class="form-control" id="tokenDescription" rows="3"
+                                placeholder="รายละเอียดเพิ่มเติมเกี่ยวกับการใช้งาน Token นี้"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">วันหมดอายุ (เว้นว่าง = ไม่มีวันหมดอายุ)</label>
+                            <input type="datetime-local" class="form-control" id="tokenExpires">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="tokenActive" checked>
+                                <label class="form-check-label" for="tokenActive">เปิดใช้งาน</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" onclick="saveToken()">
+                        <i class="fas fa-save"></i> บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center" id="qrContent">
+                    <!-- QR code will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+
+    <script>
+        let tokenModal, qrModal;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            tokenModal = new bootstrap.Modal(document.getElementById('tokenModal'));
+            qrModal = new bootstrap.Modal(document.getElementById('qrModal'));
+            loadTokens();
+        });
+
+        async function loadTokens() {
+            try {
+                const response = await fetch('/queue/api/tokens');
+                const data = await response.json();
+
+                if (data.success) {
+                    renderTokens(data.tokens);
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error loading tokens:', error);
+                document.getElementById('tokensList').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> เกิดข้อผิดพลาด: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function renderTokens(tokens) {
+            const container = document.getElementById('tokensList');
+
+            if (tokens.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-light py-5">
+                        <i class="fas fa-key fa-4x mb-3 opacity-50"></i>
+                        <h4>ยังไม่มี Token</h4>
+                        <p>คลิกปุ่ม "สร้าง Token ใหม่" เพื่อเริ่มต้น</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tokens.map(token => {
+                const url = `${window.location.origin}/queue/display/${token.token}`;
+                const isExpired = token.expires_at && new Date(token.expires_at) < new Date();
+                const statusClass = token.is_active && !isExpired ? 'success' : 'secondary';
+                const statusText = !token.is_active ? 'ปิดใช้งาน' : isExpired ? 'หมดอายุ' : 'ใช้งานได้';
+
+                return `
+                    <div class="token-card">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h4 class="mb-1">${token.name}</h4>
+                                        <span class="badge bg-${statusClass} status-badge">${statusText}</span>
+                                    </div>
+                                </div>
+
+                                ${token.description ? `
+                                    <p class="text-muted mb-3"><i class="fas fa-info-circle"></i> ${token.description}</p>
+                                ` : ''}
+
+                                <div class="stats-box">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div><i class="fas fa-eye"></i></div>
+                                            <div class="fw-bold">${token.access_count || 0}</div>
+                                            <div class="small">เข้าชม</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div><i class="fas fa-calendar-plus"></i></div>
+                                            <div class="fw-bold">${new Date(token.created_at).toLocaleDateString('th-TH')}</div>
+                                            <div class="small">สร้างเมื่อ</div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div><i class="fas fa-clock"></i></div>
+                                            <div class="fw-bold">${token.expires_at ? new Date(token.expires_at).toLocaleDateString('th-TH') : 'ไม่มี'}</div>
+                                            <div class="small">หมดอายุ</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="token-string mt-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <code class="flex-grow-1">${url}</code>
+                                        <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyUrl('${url}')">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="qr-container">
+                                    <canvas id="qr-${token.id}"></canvas>
+                                    <small class="text-muted d-block mt-2">สแกนเพื่อเปิดหน้าจอ</small>
+                                </div>
+                                
+                                <div class="d-grid gap-2 mt-3">
+                                    <a href="${url}" target="_blank" class="btn btn-primary btn-action">
+                                        <i class="fas fa-external-link-alt"></i> เปิดหน้าจอ
+                                    </a>
+                                    <button class="btn btn-warning btn-action" onclick="editToken(${token.id})">
+                                        <i class="fas fa-edit"></i> แก้ไข
+                                    </button>
+                                    <button class="btn btn-info btn-action" onclick="regenerateToken(${token.id})">
+                                        <i class="fas fa-sync"></i> สร้าง Token ใหม่
+                                    </button>
+                                    <button class="btn btn-danger btn-action" onclick="deleteToken(${token.id}, '${token.name}')">
+                                        <i class="fas fa-trash"></i> ลบ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Generate QR codes
+            tokens.forEach(token => {
+                const url = `${window.location.origin}/queue/display/${token.token}`;
+                const canvas = document.getElementById(`qr-${token.id}`);
+                if (canvas) {
+                    QRCode.toCanvas(canvas, url, {
+                        width: 200,
+                        margin: 2,
+                        color: {
+                            dark: '#000000',
+                            light: '#ffffff'
+                        }
+                    });
+                }
+            });
+        }
+
+        function showCreateModal() {
+            document.getElementById('modalTitle').textContent = 'สร้าง Token ใหม่';
+            document.getElementById('tokenForm').reset();
+            document.getElementById('tokenId').value = '';
+            document.getElementById('tokenActive').checked = true;
+            tokenModal.show();
+        }
+
+        async function editToken(id) {
+            try {
+                const response = await fetch('/queue/api/tokens');
+                const data = await response.json();
+                const token = data.tokens.find(t => t.id === id);
+
+                if (token) {
+                    document.getElementById('modalTitle').textContent = 'แก้ไข Token';
+                    document.getElementById('tokenId').value = token.id;
+                    document.getElementById('tokenName').value = token.name;
+                    document.getElementById('tokenDescription').value = token.description || '';
+                    document.getElementById('tokenActive').checked = token.is_active;
+
+                    if (token.expires_at) {
+                        const date = new Date(token.expires_at);
+                        document.getElementById('tokenExpires').value = date.toISOString().slice(0, 16);
+                    }
+
+                    tokenModal.show();
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
+            }
+        }
+
+        async function saveToken() {
+            const id = document.getElementById('tokenId').value;
+            const name = document.getElementById('tokenName').value;
+            const description = document.getElementById('tokenDescription').value;
+            const expires = document.getElementById('tokenExpires').value;
+            const isActive = document.getElementById('tokenActive').checked;
+
+            if (!name) {
+                alert('กรุณาระบุชื่อ Token');
+                return;
+            }
+
+            const data = {
+                name,
+                description,
+                is_active: isActive,
+                expires_at: expires || null
+            };
+
+            try {
+                const url = id ? `/queue/api/tokens/${id}` : '/queue/api/tokens';
+                const method = id ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    tokenModal.hide();
+                    loadTokens();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.error);
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+            }
+        }
+
+        async function deleteToken(id, name) {
+            if (!confirm(`ยืนยันการลบ Token "${name}"?`)) return;
+
+            try {
+                const response = await fetch(`/queue/api/tokens/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    loadTokens();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.error);
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+            }
+        }
+
+        async function regenerateToken(id) {
+            if (!confirm('ยืนยันการสร้าง Token ใหม่? URL เดิมจะใช้งานไม่ได้')) return;
+
+            try {
+                const response = await fetch(`/queue/api/tokens/${id}/regenerate`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('สร้าง Token ใหม่สำเร็จ');
+                    loadTokens();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + result.error);
+                }
+            } catch (error) {
+                alert('เกิดข้อผิดพลาด: ' + error.message);
+            }
+        }
+
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                alert('คัดลอก URL แล้ว!');
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Create Flight Template - DHAKULCHAN{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-plane"></i> Create Flight Template</h2>
+            <p class="text-muted">Create a new reusable flight template</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Template Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('flight_template_admin.create_template') }}">
+                        <!-- Template Name -->
+                        <div class="mb-3">
+                            <label for="template_name" class="form-label">Template Name <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="template_name" name="template_name" required
+                                placeholder="e.g., BKK-HKG Round Trip">
+                            <small class="text-muted">Required - Unique name for this template</small>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="text" class="form-control" id="date" name="date" placeholder="e.g., 20Dec25">
+                            <small class="text-muted">Optional - Flight date</small>
+                        </div>
+
+                        <!-- Flight No -->
+                        <div class="mb-3">
+                            <label for="flight_no" class="form-label">Flight No</label>
+                            <input type="text" class="form-control" id="flight_no" name="flight_no"
+                                placeholder="e.g., TG600">
+                            <small class="text-muted">Optional - Flight number</small>
+                        </div>
+
+                        <!-- From-To -->
+                        <div class="mb-3">
+                            <label for="from_to" class="form-label">From-To</label>
+                            <input type="text" class="form-control" id="from_to" name="from_to"
+                                placeholder="e.g., BKKHKG">
+                            <small class="text-muted">Optional - Route (origin-destination)</small>
+                        </div>
+
+                        <!-- Time -->
+                        <div class="mb-3">
+                            <label for="time" class="form-label">Time</label>
+                            <input type="text" class="form-control" id="time" name="time"
+                                placeholder="e.g., 08:30-12:50 +1hrs">
+                            <small class="text-muted">Optional - Departure-Arrival time</small>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="mb-3">
+                            <label for="note" class="form-label">Note</label>
+                            <textarea class="form-control" id="note" name="note" rows="3"
+                                placeholder="Additional notes or remarks..."></textarea>
+                            <small class="text-muted">Optional - Additional information</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Template
+                            </button>
+                            <a href="{{ url_for('flight_template_admin.list_templates') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Format Example</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small mb-2"><strong>Single Flight:</strong></p>
+                    <pre class="bg-light p-2 small">20Dec25 BKKHKG 08:30-12:50 +1hrs</pre>
+
+                    <p class="small mb-2 mt-3"><strong>With Note:</strong></p>
+                    <pre class="bg-light p-2 small">20Dec25 BKKHKG 08:30-12:50 +1hrs
+Remarks: เที่ยวบินและเวลาอาจมีการเปลี่ยนแปลง</pre>
+
+                    <hr>
+                    <p class="small text-muted mb-0">
+                        <strong>Tips:</strong><br>
+                        • Use short date format (20Dec25)<br>
+                        • Airport codes in uppercase (BKKHKG)<br>
+                        • Time zones: +1hrs, -1hrs, +1D<br>
+                        • Add remarks for important notes
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

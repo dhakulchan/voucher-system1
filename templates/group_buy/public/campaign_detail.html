@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}{{ campaign.name }} - Group Buy{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h1 class="mb-2" style="font-size: 1.8rem;">{{ campaign.name }}</h1>
+                    {% if campaign.travel_date_from and campaign.travel_date_to %}
+                    <p class="mb-4">
+                        <i class="fas fa-plane-departure"></i> <strong style="font-weight: 700;">วันที่เดินทาง: {{
+                            campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                            campaign.travel_date_to.strftime('%d/%m/%Y') }}</strong>
+                    </p>
+                    {% endif %}
+
+                    <div class="row mb-4">
+                        <div class="col-md-6 order-md-1">
+                            {% if campaign.product_image %}
+                            <div class="text-center mb-3 mb-md-0">
+                                {% if campaign.image_title %}
+                                <div class="alert alert-primary mb-2" style="font-size: 1.1rem; font-weight: 600;">
+                                    {{ campaign.image_title }}
+                                </div>
+                                {% endif %}
+                                <img src="{{ url_for('static', filename=campaign.product_image.replace('static/', '')) }}"
+                                    alt="{{ campaign.name }}" class="img-fluid rounded shadow"
+                                    style="max-width: 100%; max-height: 300px;">
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 order-md-2">
+                            <div class="price-box p-4 border rounded bg-light h-100">
+                                <p class="text-muted mb-1">ราคาปกติ</p>
+                                <h4 class="text-muted text-decoration-line-through">฿{{
+                                    "{:,.2f}".format(campaign.regular_price) }}</h4>
+
+                                <hr>
+
+                                <p class="text-success mb-1"><strong>ราคากลุ่ม</strong></p>
+                                <h2 class="text-success mb-0">฿{{ "{:,.2f}".format(campaign.group_price) }}</h2>
+
+                                <div class="mt-3">
+                                    <span class="badge bg-danger p-2" style="font-size: 1.1rem;">
+                                        ประหยัด {{ "{:.0f}".format(campaign.discount_percentage) }}%
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-4">
+                        <h5>
+                            <a href="#terms-section" class="text-decoration-none text-dark" style="cursor: pointer;">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                            เงื่อนไขการจองแบบ Group Buy:
+                        </h5>
+                        <ul class="mb-0">
+                            <li>ต้องมีอย่างน้อย <strong>{{ campaign.min_participants }} คน</strong></li>
+                            <li>รวมกลุ่มภายใน <strong>{{ campaign.duration_hours }} ชั่วโมง</strong></li>
+                            {% if campaign.max_participants %}
+                            <li>สูงสุด {{ campaign.max_participants }} คนต่อกลุ่ม</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+
+                    {% if campaign.album_images %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-images"></i> Album ภาพเพิ่มเติม</h5>
+                        <div class="row g-3">
+                            {% set album_list = campaign.album_images|from_json %}
+                            {% for item in album_list %}
+                            <div class="col-md-4 col-sm-6 mb-3">
+                                <div class="album-card position-relative">
+                                    {% if item is mapping %}
+                                    <a href="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                        data-lightbox="album-gallery" data-title="{{ item.title or '' }}"
+                                        class="d-block overflow-hidden rounded">
+                                        <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                            class="img-fluid rounded shadow album-image"
+                                            style="width: 100%; height: 220px; object-fit: cover; cursor: pointer; transition: all 0.3s ease;">
+                                        <div class="album-overlay">
+                                            <i class="fas fa-search-plus"></i>
+                                        </div>
+                                    </a>
+                                    {% if item.title %}
+                                    <div class="text-center mt-2">
+                                        <span class="badge bg-gradient text-white"
+                                            style="font-size: 0.95rem; padding: 0.5rem 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                            <i class="fas fa-tag"></i> {{ item.title }}
+                                        </span>
+                                    </div>
+                                    {% endif %}
+                                    {% else %}
+                                    <a href="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                        data-lightbox="album-gallery" class="d-block overflow-hidden rounded">
+                                        <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                            class="img-fluid rounded shadow album-image"
+                                            style="width: 100%; height: 220px; object-fit: cover; cursor: pointer; transition: all 0.3s ease;">
+                                        <div class="album-overlay">
+                                            <i class="fas fa-search-plus"></i>
+                                        </div>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if campaign.product_details %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-plane"></i> Flights & Hotels (เที่ยวบิน / โรงแรม)</h5>
+                        <p style="white-space: pre-line;">{{ campaign.product_details }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if campaign.description %}
+                    <div class="mb-4">
+                        <h5><i class="fas fa-align-left"></i> Description - รายละเอียด:</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-0" style="white-space: pre-line;">{{ campaign.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if campaign.terms_conditions %}
+                    <div class="mb-4" id="terms-section">
+                        <h5><i class="fas fa-file-contract"></i> เงื่อนไขและข้อตกลง</h5>
+                        <div class="alert alert-warning" style="max-height: 200px; overflow-y: auto;">
+                            <p class="small mb-0" style="white-space: pre-line;">{{ campaign.terms_conditions }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                            class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus-circle"></i> สร้างกลุ่มใหม่
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> กลุ่มที่กำลังรอ</h5>
+                </div>
+                <div class="card-body">
+                    {% if active_groups %}
+                    <div class="list-group list-group-flush">
+                        {% for group in active_groups %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <strong>{{ group.group_name }}</strong>
+                                <span class="badge bg-info">{{ group.current_participants }}/{{
+                                    group.required_participants }}</span>
+                            </div>
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar bg-success" style="width: {{ group.progress_percentage }}%">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i> {{ group.time_remaining_formatted }}
+                                </small>
+                                <a href="{{ url_for('public_group_buy.join_group', token=group.share_token) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    เข้าร่วม
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center my-4">
+                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                        ยังไม่มีกลุ่มที่กำลังรอ<br>
+                        <small>เป็นคนแรกที่สร้างกลุ่ม!</small>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-3 border-primary">
+                <div class="card-body">
+                    <h6 class="text-primary mb-3"><i class="fas fa-calendar-check"></i> Campaign เริ่มวันที่ - สิ้นสุด:
+                    </h6>
+                    <p class="mb-0" style="font-size: 1rem; font-weight: 400;">{{
+                        campaign.campaign_start_date.strftime('%d/%m/%Y') }} - {{
+                        campaign.campaign_end_date.strftime('%d/%m/%Y') }}</p>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-success">
+                <div class="card-body">
+                    <h6 class="text-success mb-3"><i class="fas fa-boxes"></i> Inventory - จำนวนทั้งหมด:</h6>
+                    {% if campaign.total_slots %}
+                    <p class="mb-0" style="font-size: 1rem; font-weight: 400;">{{ (campaign.total_slots -
+                        (campaign.available_slots or 0)) }}/{{
+                        campaign.total_slots }}
+                        <small class="text-muted">(เหลือ {{ campaign.available_slots or 0 }})</small>
+                    </p>
+                    {% else %}
+                    <p class="mb-0 text-success" style="font-size: 1rem; font-weight: 400;">ไม่จำกัดจำนวน</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .album-card {
+        position: relative;
+        overflow: hidden;
+        border-radius: 0.5rem;
+    }
+
+    .album-image {
+        transition: transform 0.4s ease, filter 0.4s ease;
+    }
+
+    .album-card:hover .album-image {
+        transform: scale(1.1);
+        filter: brightness(0.8);
+    }
+
+    .album-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: white;
+        font-size: 2rem;
+        pointer-events: none;
+    }
+
+    .album-card:hover .album-overlay {
+        opacity: 1;
+    }
+
+    .badge.bg-gradient {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<!-- Lightbox CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Lightbox JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script>
+    lightbox.option({
+        'resizeDuration': 200,
+        'wrapAround': true,
+        'albumLabel': 'ภาพที่ %1 จาก %2'
+    });
+</script>
+{% endblock %}

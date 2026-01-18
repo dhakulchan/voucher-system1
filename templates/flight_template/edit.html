@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Flight Template - DHAKULCHAN{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2><i class="fas fa-plane"></i> Edit Flight Template</h2>
+            <p class="text-muted">Update flight template information</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> Template Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('flight_template_admin.edit_template', id=template.id) }}">
+                        <!-- Template Name -->
+                        <div class="mb-3">
+                            <label for="template_name" class="form-label">Template Name <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="template_name" name="template_name" required
+                                value="{{ template.template_name }}" placeholder="e.g., BKK-HKG Round Trip">
+                            <small class="text-muted">Required - Unique name for this template</small>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <input type="text" class="form-control" id="date" name="date"
+                                value="{{ template.date or '' }}" placeholder="e.g., 20Dec25">
+                            <small class="text-muted">Optional - Flight date</small>
+                        </div>
+
+                        <!-- Flight No -->
+                        <div class="mb-3">
+                            <label for="flight_no" class="form-label">Flight No</label>
+                            <input type="text" class="form-control" id="flight_no" name="flight_no"
+                                value="{{ template.flight_no or '' }}" placeholder="e.g., TG600">
+                            <small class="text-muted">Optional - Flight number</small>
+                        </div>
+
+                        <!-- From-To -->
+                        <div class="mb-3">
+                            <label for="from_to" class="form-label">From-To</label>
+                            <input type="text" class="form-control" id="from_to" name="from_to"
+                                value="{{ template.from_to or '' }}" placeholder="e.g., BKKHKG">
+                            <small class="text-muted">Optional - Route (origin-destination)</small>
+                        </div>
+
+                        <!-- Time -->
+                        <div class="mb-3">
+                            <label for="time" class="form-label">Time</label>
+                            <input type="text" class="form-control" id="time" name="time"
+                                value="{{ template.time or '' }}" placeholder="e.g., 08:30-12:50 +1hrs">
+                            <small class="text-muted">Optional - Departure-Arrival time</small>
+                        </div>
+
+                        <!-- Note -->
+                        <div class="mb-3">
+                            <label for="note" class="form-label">Note</label>
+                            <textarea class="form-control" id="note" name="note" rows="3"
+                                placeholder="Additional notes or remarks...">{{ template.note or '' }}</textarea>
+                            <small class="text-muted">Optional - Additional information</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Template
+                            </button>
+                            <a href="{{ url_for('flight_template_admin.list_templates') }}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-eye"></i> Preview</h6>
+                </div>
+                <div class="card-body">
+                    <pre class="bg-light p-2 small">{{ template.format_for_booking() }}</pre>
+
+                    <hr>
+                    <p class="small text-muted mb-0">
+                        <strong>Format Example:</strong><br>
+                        20Dec25 BKKHKG 08:30-12:50 +1hrs
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

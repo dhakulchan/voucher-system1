@@ -1,0 +1,11 @@
+total 88
+drwxr-xr-x  10 pummin  staff   320 Nov 16 22:26 .
+drwx------@ 16 pummin  staff   512 Nov 16 22:26 ..
+-rw-r--r--   1 pummin  staff  1243 Nov 16 22:26 DEPLOYMENT_INSTRUCTIONS.txt
+-rw-r--r--   1 pummin  staff     0 Nov 16 22:26 file_list.txt
+-rw-r--r--   1 pummin  staff  2750 Nov 16 22:26 MANUAL_DEPLOYMENT_GUIDE.txt
+-rw-r--r--   1 pummin  staff  3874 Nov 16 22:26 quote_template_emergency_thai.html
+-rw-r--r--   1 pummin  staff  8392 Nov 16 22:26 quote_template_final_thai_fix.html
+-rw-r--r--   1 pummin  staff  8392 Nov 16 22:26 quote_template_system_fonts.html
+-rw-r--r--   1 pummin  staff  1132 Nov 16 22:26 README.md
+-rwxr-xr-x   1 pummin  staff   784 Nov 16 22:26 server_deploy.sh

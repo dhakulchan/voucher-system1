@@ -6,10 +6,13 @@ from models.booking import Booking
 
 api_share_bp = Blueprint('api_share', __name__, url_prefix='/api/share')
 
-@api_share_bp.route('/booking/<int:booking_id>/url', methods=['GET'])
+# DEPRECATED: This route moved to api_share_enhanced.py for better token management
+# @api_share_bp.route('/booking/<int:booking_id>/url', methods=['GET'])
+@api_share_bp.route('/booking/<int:booking_id>/url_old', methods=['GET'])
 @login_required
 def get_secure_share_url(booking_id):
-    """Generate secure share URL for booking"""
+    """Generate secure share URL for booking - LEGACY VERSION"""
+    print(f"⚠️ WARNING: Using OLD api_share.py route for booking {booking_id} - should use api_share_enhanced.py instead!")
     # Check if user is authenticated
     if not current_user.is_authenticated:
         return jsonify({

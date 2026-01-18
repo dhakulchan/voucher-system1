@@ -49,8 +49,35 @@ def scrub_glyphs(text: Optional[str], replacement: str = "-") -> str:
     return text
 
 
+def get_writable_output_dir(subdirs=''):
+    """Get the first writable output directory with write-test logic"""
+    base_paths = [
+        '/home/ubuntu/voucher-ro_v1.0/static/generated',
+        '/opt/bitnami/apache/htdocs/static/generated',
+        'static/generated'
+    ]
+    
+    for base_path in base_paths:
+        try:
+            full_path = os.path.join(base_path, subdirs) if subdirs else base_path
+            os.makedirs(full_path, exist_ok=True)
+            # Test write permission
+            test_file = os.path.join(full_path, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            return full_path
+        except (PermissionError, OSError):
+            continue
+    
+    # Fallback
+    fallback = os.path.join('static/generated', subdirs) if subdirs else 'static/generated'
+    os.makedirs(fallback, exist_ok=True)
+    return fallback
+
+
 class PDFGenerator:
-    OUTPUT_DIR = "/opt/bitnami/apache/htdocs/static/generated" if os.path.exists("/opt/bitnami") else "static/generated"  # Adaptive path
+    OUTPUT_DIR = get_writable_output_dir()  # Use write-test logic
     
     # Original Thai terms kept EXACT for legacy test assertion (TERMS_LIST)
     TERMS_LIST = [

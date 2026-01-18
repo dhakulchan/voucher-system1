@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Two-Factor Authentication - Dhakul Chan Group Smart System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Setup Two-Factor Authentication
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    {% if is_pending_login %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>2FA Required:</strong> Your administrator has enabled Two-Factor Authentication for your
+                        account. Please complete the setup to continue logging in.
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>What is 2FA?</strong> Two-Factor Authentication adds an extra layer of security by
+                        requiring a verification code from your phone in addition to your password.
+                    </div>
+                    {% endif %}
+
+                    <h5 class="mb-3">Step 1: Scan QR Code</h5>
+                    <p>Scan this QR code with your authenticator app (Google Authenticator, Authy, Microsoft
+                        Authenticator, etc.):</p>
+
+                    <div class="text-center mb-4">
+                        <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid"
+                            style="max-width: 300px;">
+                    </div>
+
+                    <div class="alert alert-secondary">
+                        <p class="mb-2"><strong>Can't scan the QR code?</strong></p>
+                        <p class="mb-0">Enter this secret key manually in your authenticator app:</p>
+                        <code class="d-block mt-2 p-2 bg-white text-dark">{{ secret }}</code>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3">Step 2: Verify Setup</h5>
+                    <p>Enter the 6-digit code from your authenticator app to complete setup:</p>
+
+                    <form method="POST" action="{{ url_for('two_factor.verify_setup') }}">
+                        <div class="mb-3">
+                            <label for="token" class="form-label">Verification Code</label>
+                            <input type="text" class="form-control form-control-lg text-center" id="token" name="token"
+                                placeholder="000000" maxlength="6" pattern="[0-9]{6}" required autofocus>
+                            <div class="form-text">Enter the 6-digit code from your authenticator app</div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-check me-2"></i>Verify and Enable 2FA
+                            </button>
+                            {% if not is_pending_login %}
+                            <a href="{{ url_for('auth.profile') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancel
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Login
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-submit when 6 digits are entered
+    document.getElementById('token').addEventListener('input', function (e) {
+        if (e.target.value.length === 6) {
+            // Optional: auto-submit
+            // e.target.form.submit();
+        }
+    });
+
+    // Only allow numbers
+    document.getElementById('token').addEventListener('keypress', function (e) {
+        if (!/[0-9]/.test(e.key) && e.key !== 'Enter') {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

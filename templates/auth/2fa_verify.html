@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Two-Factor Authentication - Dhakul Chan Group Smart System{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Two-Factor Authentication
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Enter the verification code from your authenticator app to continue.
+                    </div>
+
+                    <form method="POST" id="2faForm">
+                        <div class="mb-3">
+                            <label for="token" class="form-label">Verification Code</label>
+                            <input type="text" class="form-control form-control-lg text-center" id="token" name="token"
+                                placeholder="000000" maxlength="6" pattern="[0-9]{6}" required autofocus>
+                            <div class="form-text">Enter the 6-digit code from your authenticator app</div>
+                        </div>
+
+                        <input type="hidden" name="use_backup" id="use_backup" value="false">
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Verify
+                            </button>
+                        </div>
+                    </form>
+
+                    <hr class="my-3">
+
+                    <div class="text-center">
+                        <button type="button" class="btn btn-link btn-sm" onclick="showBackupCodeInput()">
+                            <i class="fas fa-key me-1"></i>Use Backup Code Instead
+                        </button>
+                    </div>
+
+                    <div id="backupCodeHelp" class="alert alert-warning mt-3" style="display: none;">
+                        <p class="mb-2"><strong>Using a Backup Code:</strong></p>
+                        <p class="mb-0 small">Backup codes can be used when you don't have access to your authenticator
+                            app. Enter one of your saved backup codes above.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-3">
+                <a href="{{ url_for('auth.login') }}" class="text-muted">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Only allow numbers
+    document.getElementById('token').addEventListener('keypress', function (e) {
+        if (!/[0-9A-Fa-f]/.test(e.key) && e.key !== 'Enter') {
+            e.preventDefault();
+        }
+    });
+
+    function showBackupCodeInput() {
+        document.getElementById('use_backup').value = 'true';
+        document.getElementById('backupCodeHelp').style.display = 'block';
+        document.getElementById('token').placeholder = 'Enter backup code';
+        document.getElementById('token').maxLength = 20;
+        document.getElementById('token').removeAttribute('pattern');
+        document.getElementById('token').focus();
+    }
+</script>
+{% endblock %}

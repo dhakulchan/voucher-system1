@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Invoices List - Financial Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-file-invoice me-2"></i>Invoices List</h2>
+                <div>
+                    <a href="{{ url_for('account_report.export_invoices_excel', type=invoice_type) }}"
+                        class="btn btn-success me-2">
+                        <i class="fas fa-file-excel me-1"></i>Export to Excel
+                    </a>
+                    <div class="btn-group">
+                        <a href="{{ url_for('account_report.hongkong_invoice_create') }}" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>New HK Invoice
+                        </a>
+                        <a href="{{ url_for('account_report.thai_invoice_create') }}" class="btn btn-info">
+                            <i class="fas fa-plus me-1"></i>New Thai Invoice
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Type Selector -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <label class="me-3 mb-0"><strong>Invoice Type:</strong></label>
+                        <div class="btn-group" role="group">
+                            <a href="{{ url_for('account_report.invoices_list', type='booking') }}"
+                                class="btn btn-outline-primary {% if invoice_type == 'booking' %}active{% endif %}">
+                                <i class="fas fa-file-invoice me-1"></i>Booking Invoice
+                            </a>
+                            <a href="{{ url_for('account_report.invoices_list', type='hongkong') }}"
+                                class="btn btn-outline-primary {% if invoice_type == 'hongkong' %}active{% endif %}">
+                                <i class="fas fa-file-invoice-dollar me-1"></i>HK Invoice
+                            </a>
+                            <a href="{{ url_for('account_report.invoices_list', type='thai') }}"
+                                class="btn btn-outline-info {% if invoice_type == 'thai' %}active{% endif %}">
+                                <i class="fas fa-file-invoice me-1"></i>Thai Invoice
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped" id="invoicesTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Type</th>
+                                    <th>ID</th>
+                                    <th>{% if invoice_type == 'booking' %}Title{% else %}Customer Name{% endif %}</th>
+                                    <th>Total Pax</th>
+                                    <th>{% if invoice_type == 'booking' %}Invoice Date{% else %}Arrival Date{% endif %}
+                                    </th>
+                                    <th>{% if invoice_type == 'booking' %}Due Date{% else %}Departure Date{% endif %}
+                                    </th>
+                                    <th>Total {% if invoice_type == 'booking' %}Amount{% else %}Tour Fee{% endif %}</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in invoices %}
+                                <tr>
+                                    <td>
+                                        {% if invoice.type == 'Booking' %}
+                                        <span class="badge bg-success">Booking</span>
+                                        {% elif invoice.type == 'HK' %}
+                                        <span class="badge bg-primary">Hong Kong</span>
+                                        {% else %}
+                                        <span class="badge bg-info">Thai</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ invoice.id }}</td>
+                                    <td>{{ invoice.cust_name or '-' }}</td>
+                                    <td>{{ invoice.total_pax if invoice.total_pax else '-' }}</td>
+                                    <td>{{ invoice.arrival_date or '-' }}</td>
+                                    <td>{{ invoice.departure_date or '-' }}</td>
+                                    <td>{{ "{:,.2f}".format(invoice.total_tour_fee) }}</td>
+                                    <td>{{ invoice.created_at[:10] if invoice.created_at else '-' }}</td>
+                                    <td>
+                                        {% if invoice.type == 'Booking' %}
+                                        <a href="{{ url_for('invoice.view_invoice', invoice_id=invoice.id) }}"
+                                            class="btn btn-sm btn-info" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% elif invoice.type == 'HK' %}
+                                        <a href="{{ url_for('account_report.hongkong_invoice_view', invoice_id=invoice.id) }}"
+                                            class="btn btn-sm btn-info" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('account_report.hongkong_invoice_edit', invoice_id=invoice.id) }}"
+                                            class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% else %}
+                                        <a href="{{ url_for('account_report.thai_invoice_view', invoice_id=invoice.id) }}"
+                                            class="btn btn-sm btn-info" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('account_report.thai_invoice_edit', invoice_id=invoice.id) }}"
+                                            class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted">No invoices found</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        $('#invoicesTable').DataTable({
+            order: [[7, 'desc']], // Sort by created date descending
+            pageLength: 25,
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ invoices per page",
+                info: "Showing _START_ to _END_ of _TOTAL_ invoices",
+                infoEmpty: "No invoices available",
+                infoFiltered: "(filtered from _MAX_ total invoices)"
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -168,15 +168,34 @@
         .service-table th,
         .service-table td {
             border: 1px solid #666;
-            padding: 6px 4px;
+            padding: 3px 5px;
             text-align: center;
             font-size: 10px;
+            vertical-align: top;
         }
 
         /* Service table specific column alignments */
         .service-table td:nth-child(4) {
             text-align: left;
+            padding: 3px;
+            padding-left: 3px;
+            vertical-align: top;
+            line-height: 1.3;
+            white-space: pre-wrap;
+            font-weight: normal;
             /* Service By / Supplier column */
+        }
+
+        /* Type/Class/Pax/Pieces column - align left */
+        .service-table td:nth-child(5) {
+            text-align: left;
+            padding: 3px;
+            padding-left: 3px;
+            vertical-align: top;
+            line-height: 1.3;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-width: 40%;
         }
 
         .service-table th {
@@ -204,6 +223,22 @@
             white-space: normal;
             background-color: transparent;
             text-indent: 0px;
+            text-align: left;
+            line-height: 1.2;
+        }
+
+        /* Service Detail specific styling */
+        .service-detail-content {
+            line-height: 1.1 !important;
+            margin: 0px;
+            padding: 0px;
+            text-align: left;
+        }
+
+        .service-detail-content br {
+            line-height: 1.0;
+            margin: 0;
+            padding: 0;
         }
 
         /* Guest Names Content */
@@ -378,13 +413,15 @@
                 </td>
                 <td>
                     <span class="info-label">Arrival Date:</span>
-                    <span class="info-value">{{ booking.traveling_period_start.strftime('%d/%m/%Y') if
-                        booking.traveling_period_start else '22/09/2025' }}</span>
+                    <span class="info-value">{{ (booking.traveling_period_start or
+                        booking.arrival_date).strftime('%d/%m/%Y') if (booking.traveling_period_start or
+                        booking.arrival_date) else 'DD/MM/YYYY' }}</span>
                 </td>
                 <td>
                     <span class="info-label">Departure Date:</span>
-                    <span class="info-value">{{ booking.traveling_period_end.strftime('%d/%m/%Y') if
-                        booking.traveling_period_end else '22/09/2025' }}</span>
+                    <span class="info-value">{{ (booking.traveling_period_end or
+                        booking.departure_date).strftime('%d/%m/%Y') if (booking.traveling_period_end or
+                        booking.departure_date) else 'DD/MM/YYYY' }}</span>
                 </td>
             </tr>
         </table>
@@ -394,11 +431,11 @@
         <table class="service-table">
             <thead>
                 <tr>
-                    <th style="width: 8%;">No.</th>
-                    <th style="width: 18%;">Arrival</th>
-                    <th style="width: 18%;">Departure</th>
-                    <th style="width: 36%;">Service By / Supplier</th>
-                    <th style="width: 20%;">Type/Class/Pax/Pieces</th>
+                    <th style="width: 7%;">No.</th>
+                    <th style="width: 15%;">Arrival</th>
+                    <th style="width: 15%;">Departure</th>
+                    <th style="width: 33%;">Service By / Supplier</th>
+                    <th style="width: 30%;">Type/Class/Pax/Pieces</th>
                 </tr>
             </thead>
             <tbody>
@@ -449,8 +486,15 @@
 
         <!-- Service Detail Section -->
         <div class="section-header">Service Detail / Itinerary :</div>
-        <div class="section-content" style="white-space: pre-wrap;">{{ booking.description or booking.internal_note or
-            'SSSSSSS' }}</div>
+        <div class="section-content service-detail-content">
+            {% if booking.description %}
+            {{ booking.description|nl2br|safe }}
+            {% elif booking.internal_note %}
+            {{ booking.internal_note|nl2br|safe }}
+            {% else %}
+            No service detail available
+            {% endif %}
+        </div>
 
 
 
@@ -477,6 +521,30 @@
                 <div class="voucher-image-title">{{ image.title }}</div>
                 {% endif %}
                 <img src="{{ image.url }}" alt="Voucher Image" class="voucher-image">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Voucher Library Images Display -->
+        {% set library_images = booking.get_voucher_library_images() %}
+        {% if library_images %}
+        <div class="voucher-library-container" style="margin-top: 15px;">
+            {% for image in library_images %}
+            <div class="voucher-library-item" style="margin-bottom: 15px; page-break-inside: avoid;">
+                {% if image.title %}
+                <div class="voucher-library-title"
+                    style="font-weight: bold; margin-bottom: 5px; font-size: 18.72px; color: #333;">{{ image.title }}
+                </div>
+                {% endif %}
+                {% if image.remarks %}
+                <div class="voucher-library-remarks"
+                    style="margin-bottom: 8px; font-size: 15.6px; color: #dc3545; font-style: italic;">{{ image.remarks
+                    }}
+                </div>
+                {% endif %}
+                <img src="{{ image.url }}" alt="{{ image.title }}" class="voucher-library-image"
+                    style="max-width: 100%; height: auto; display: block; border: 1px solid #ddd; border-radius: 4px;">
             </div>
             {% endfor %}
         </div>
@@ -527,6 +595,68 @@
             </table>
         </div>
     </div>
+
+    <!-- Thank You Page for Completed Status -->
+    {% if is_completed %}
+    <div class="thank-you-page"
+        style="page-break-before: always; text-align: center; padding: 50px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div
+            style="background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 40px; max-width: 600px; margin: auto;">
+            <!-- Celebration Emojis -->
+            <div style="font-size: 48px; margin-bottom: 20px;">
+                🎉 ✨ 🙏 ✨ 🎉
+            </div>
+
+            <!-- Main Thank You Message -->
+            <h1
+                style="font-size: 36px; font-weight: 700; color: #2c5282; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);">
+                Thank You For Letting Us Take Care of You
+            </h1>
+
+            <!-- Sub Message -->
+            <h2 style="font-size: 28px; font-weight: 600; color: #2d3748; margin-bottom: 30px;">
+                Have a Safe Journey, and We Hope to See You Again!
+            </h2>
+
+            <!-- Thai Message -->
+            <p style="font-size: 22px; color: #4a5568; margin-bottom: 30px; font-weight: 500;">
+                ขอบคุณที่ให้เราดูแลท่าน<br>
+                ขอให้เดินทางปลอดภัย และหวังว่าจะได้พบกันอีก!
+            </p>
+
+            <!-- Booking Reference Box -->
+            <div
+                style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); color: white; padding: 15px 30px; border-radius: 10px; margin: 30px 0; font-size: 18px; font-weight: 600; box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);">
+                📋 Booking Reference: {{ booking.booking_reference }}
+            </div>
+
+            <!-- Contact Information -->
+            <div style="background: #f7fafc; padding: 25px; border-radius: 10px; margin-top: 30px; text-align: left;">
+                <h3 style="color: #2b6cb0; font-size: 20px; margin-bottom: 15px; text-align: center;">
+                    📞 Contact Information
+                </h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                    <div>
+                        <strong style="color: #48bb78;">📞 Bangkok:</strong> +66 2 274 4216
+                    </div>
+                    <div>
+                        <strong style="color: #4299e1;">📧 Email:</strong> booking@dhakulchan.com
+                    </div>
+                    <div>
+                        <strong style="color: #48bb78;">📞 Hong Kong:</strong> +852 2392 1155
+                    </div>
+                    <div>
+                        <strong style="color: #48bb78;">💬 Line OA:</strong> @dhakulchan | @changuru
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 15px;">
+                    <strong style="color: #4299e1;">🌐 Visit Us:</strong>
+                    <span style="color: #3182ce; font-weight: 600;">WWW.DHAKULCHAN.NET</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </body>
 
 </html>

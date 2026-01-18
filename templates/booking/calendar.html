@@ -1,0 +1,2006 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar Booking Management - Dhakul Chan{% endblock %}
+
+{% block extra_css %}
+<!-- Flatpickr Date Picker -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<!-- FullCalendar v6 bundles CSS in JS, no separate CSS needed -->
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .fc-event {
+        cursor: pointer;
+        border-radius: 4px;
+        padding: 2px 4px;
+    }
+
+    .fc-event:hover {
+        opacity: 0.8;
+    }
+
+    .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .legend-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+    }
+
+    .modal-body .info-row {
+        margin-bottom: 10px;
+        padding: 8px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .modal-body .info-label {
+        font-weight: 600;
+        color: #555;
+        display: inline-block;
+        min-width: 150px;
+    }
+
+    .conflict-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+
+    .conflict-item {
+        padding: 5px;
+        margin: 5px 0;
+        background: white;
+        border-radius: 3px;
+    }
+
+    /* Todo styles */
+    .form-check-input {
+        cursor: pointer;
+        width: 1.2em;
+        height: 1.2em;
+    }
+
+    #todoList .card:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        transition: box-shadow 0.2s;
+    }
+
+    .nav-tabs .nav-link {
+        color: #495057;
+    }
+
+    .nav-tabs .nav-link.active {
+        font-weight: 600;
+    }
+
+    /* Tooltip styles */
+    .booking-tooltip {
+        position: absolute;
+        background: white;
+        border: 2px solid #007bff;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        z-index: 10000;
+        min-width: 300px;
+        max-width: 400px;
+        font-size: 13px;
+        pointer-events: none;
+    }
+
+    .booking-tooltip .tooltip-title {
+        font-weight: 700;
+        color: #007bff;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 14px;
+    }
+
+    .booking-tooltip .tooltip-row {
+        margin: 4px 0;
+        display: flex;
+    }
+
+    .booking-tooltip .tooltip-label {
+        font-weight: 600;
+        color: #555;
+        min-width: 110px;
+        flex-shrink: 0;
+    }
+
+    .booking-tooltip .tooltip-value {
+        color: #333;
+        flex-grow: 1;
+    }
+
+    /* Alert animations for Time Limit and Due Date warnings */
+    @keyframes blink-warning {
+
+        0%,
+        50%,
+        100% {
+            opacity: 1;
+        }
+
+        25%,
+        75% {
+            opacity: 0.4;
+        }
+    }
+
+    .fc-event.time-limit-alert {
+        animation: blink-warning 2s infinite;
+        border: 3px solid #ff0000 !important;
+        box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
+    }
+
+    .fc-event.due-date-alert {
+        animation: blink-warning 2s infinite;
+        border: 3px solid #ff6600 !important;
+        box-shadow: 0 0 10px rgba(255, 102, 0, 0.5);
+    }
+
+    .alert-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #ff0000;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        z-index: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-calendar-alt me-2 text-primary"></i>Calendar Booking Management
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-list me-2"></i>Booking List
+            </a>
+            <a href="{{ url_for('booking_calendar.daily_report') }}" class="btn btn-outline-success">
+                <i class="fas fa-chart-bar me-2"></i>Daily Report
+            </a>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #6c757d;"></div>
+            <span>Draft</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #ffc107;"></div>
+            <span>Pending</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #17a2b8;"></div>
+            <span>Confirmed</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #fd7e14;"></div>
+            <span>Quoted</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #28a745;"></div>
+            <span>Paid</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #20c997;"></div>
+            <span>Vouchered</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #6610f2;"></div>
+            <span>Completed</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color" style="background-color: #9e9e9e;"></div>
+            <span>Cancelled</span>
+        </div>
+    </div>
+
+    <!-- Operation Status Legend -->
+    <div class="legend mt-3">
+        <h6 class="mb-2" style="font-weight: bold;">Operation Status:</h6>
+        <div class="legend-item">
+            <span>⏳ No - รอดำเนินการ</span>
+        </div>
+        <div class="legend-item">
+            <span>✅ Yes - ดำเนินการเรียบร้อย</span>
+        </div>
+        <div class="legend-item">
+            <span>❌ Cancel - ยกเลิก</span>
+        </div>
+    </div>
+
+    <!-- Calendar -->
+    <div id="calendar"></div>
+</div>
+
+<!-- Booking Details Modal -->
+<div class="modal fade" id="bookingModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Booking Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Left Column: Booking Info -->
+                    <div class="col-md-6">
+                        <div id="bookingDetails">
+                            <!-- Content loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Notes & Todos -->
+                    <div class="col-md-6">
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item">
+                                <a class="nav-link active" data-bs-toggle="tab" href="#tasksTab">
+                                    <i class="fas fa-tasks me-2"></i>Task
+                                    <span class="badge bg-primary ms-2" id="taskCount">0</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="tab" href="#notesTab">
+                                    <i class="fas fa-sticky-note me-2"></i>Notes
+                                </a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content border border-top-0 p-3"
+                            style="min-height: 600px; max-height: 700px; overflow-y: auto;">
+                            <!-- Tasks Tab -->
+                            <div class="tab-pane fade show active" id="tasksTab">
+                                <!-- Add Task Form -->
+                                <div class="card mb-3 border-primary">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3"><i class="fas fa-plus-circle me-2"></i>Add New Task
+                                        </h6>
+
+                                        <!-- Title -->
+                                        <div class="mb-2">
+                                            <input type="text" class="form-control" id="newTaskTitle"
+                                                placeholder="Task Title *" required />
+                                        </div>
+
+                                        <!-- Description -->
+                                        <div class="mb-2">
+                                            <textarea class="form-control" id="newTaskDescription" rows="2"
+                                                placeholder="Description (optional)"></textarea>
+                                        </div>
+
+                                        <div class="row mb-2">
+                                            <!-- Priority -->
+                                            <div class="col-6">
+                                                <select class="form-select" id="newTaskPriority">
+                                                    <option value="low">🟢 Low</option>
+                                                    <option value="normal" selected>🔵 Normal</option>
+                                                    <option value="high">🟠 High</option>
+                                                    <option value="urgent">🔴 Urgent</option>
+                                                </select>
+                                            </div>
+                                            <!-- Deadline -->
+                                            <div class="col-6">
+                                                <input type="text" class="form-control" id="newTaskDeadline"
+                                                    placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" />
+                                            </div>
+                                        </div>
+
+                                        <div class="row mb-2">
+                                            <!-- Category -->
+                                            <div class="col-6">
+                                                <input type="text" class="form-control" id="newTaskCategory"
+                                                    placeholder="Category (e.g., flights, hotels)" />
+                                            </div>
+                                            <!-- Assigned To -->
+                                            <div class="col-6">
+                                                <select class="form-select" id="newTaskAssignedTo">
+                                                    <option value="">No assignee</option>
+                                                    <!-- Options loaded dynamically -->
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <button class="btn btn-primary w-100" onclick="addTask()">
+                                            <i class="fas fa-plus me-2"></i>Add Task
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Task List -->
+                                <div id="taskList">
+                                    <!-- Tasks loaded dynamically -->
+                                </div>
+                            </div>
+
+                            <!-- Notes Tab -->
+                            <div class="tab-pane fade" id="notesTab">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">General Notes</label>
+                                    <textarea class="form-control" id="bookingNotes" rows="6"
+                                        placeholder="Enter booking notes..."></textarea>
+                                    <small class="text-muted">Visible to all staff members</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold text-danger">
+                                        <i class="fas fa-lock me-2"></i>Admin Notes
+                                    </label>
+                                    <textarea class="form-control" id="adminNotes" rows="6"
+                                        placeholder="Admin-only notes..."></textarea>
+                                    <small class="text-muted">Only visible to administrators</small>
+                                </div>
+                                <button class="btn btn-success w-100" onclick="saveNotes()">
+                                    <i class="fas fa-save me-2"></i>Save Notes
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" id="viewBookingBtn" class="btn btn-primary">
+                    <i class="fas fa-eye me-2"></i>View Booking
+                </a>
+                <a href="#" id="editBookingBtn" class="btn btn-warning">
+                    <i class="fas fa-edit me-2"></i>Edit Booking
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Task Edit/Details Modal -->
+<div class="modal fade" id="taskDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-tasks me-2"></i>รายละเอียด Task</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="taskEditForm">
+                    <input type="hidden" id="editTaskId">
+
+                    <!-- Title -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Task Title *</strong></label>
+                        <input type="text" class="form-control" id="editTaskTitle" required>
+                    </div>
+
+                    <!-- Service Detail / Itinerary (View Only) -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong style="color: #505050;">Service Detail /
+                                Itinerary</strong></label>
+                        <div class="card bg-light">
+                            <div class="card-body p-2" id="bookingServiceDetail"
+                                style="max-height: 200px; overflow-y: auto; font-size: 0.9rem;">
+                                <em class="text-muted">ไม่มีข้อมูล</em>
+                            </div>
+                        </div>
+                        <small class="text-muted">*ข้อมูลจาก Booking (ดูอย่างเดียว)</small>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>รายละเอียด / Description</strong></label>
+                        <textarea class="form-control" id="editTaskDescription" rows="4"
+                            placeholder="ใส่รายละเอียดงาน, หมายเหตุ หรือข้อมูลเพิ่มเติม..."></textarea>
+                        <small class="text-muted">*ใช้สำหรับบันทึกรายละเอียดงานหรือข้อมูลสำคัญ</small>
+                    </div>
+
+                    <!-- Confirmation -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong style="color: #006400;">ยืนยันการจอง /
+                                Confirmation (Operation/Staff view confirmation order, code)</strong></label>
+                        <textarea class="form-control" id="editTaskConfirmation" rows="3"
+                            placeholder="ใส่รายละเอียดการยืนยันการจอง, เลขที่การยืนยัน, ลิงค์ใบจอง (RO), หรือข้อมูลอ้างอิง..."></textarea>
+                        <small class="text-muted">*ใช้สำหรับบันทึกการยืนยันการจอง</small>
+                    </div>
+
+                    <!-- Reservation Details -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong style="color: #00008B;">Reservation Details (For Admin or
+                                Manager use only)</strong></label>
+                        <textarea class="form-control" id="editTaskReservation" rows="4"
+                            placeholder="ใส่ข้อความสำหรับส่งอีเมล์ทำการจอง/booking/order...&#10;ตัวอย่าง: Booking kowloon Hotel: 1 Jan 2025 x 2 rooms"></textarea>
+                        <small class="text-muted">*ใช้สำหรับข้อความที่จะส่งอีเมล์ไปยังผู้ให้บริการเพื่อทำการจอง</small>
+                    </div>
+
+                    <!-- Copy Message Button -->
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-info w-100 mb-2" onclick="copyTaskMessage()">
+                            <i class="fas fa-copy me-2"></i>Copy Message (For Line/Email)
+                        </button>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <button type="button" class="btn btn-success w-100" onclick="sendLineMessage()">
+                                    <i class="fab fa-line me-2"></i>Line Message
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button type="button" class="btn btn-primary w-100" onclick="sendEmailMessage()">
+                                    <i class="fas fa-envelope me-2"></i>Email Message
+                                </button>
+                            </div>
+                        </div>
+                        <small class="text-muted">*คัดลอกข้อความทั้งหมดเพื่อส่ง Line หรือ Email</small>
+                    </div>
+
+                    <div class="row">
+                        <!-- Priority -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Priority</strong></label>
+                            <select class="form-select" id="editTaskPriority">
+                                <option value="low">🟢 Low</option>
+                                <option value="normal">🔵 Normal</option>
+                                <option value="high">🟠 High</option>
+                                <option value="urgent">🔴 Urgent</option>
+                            </select>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Status</strong></label>
+                            <select class="form-select" id="editTaskStatus">
+                                <option value="pending">รอดำเนินการ</option>
+                                <option value="in_progress">กำลังดำเนินการ</option>
+                                <option value="completed">เสร็จสิ้น</option>
+                                <option value="on_hold">พักไว้ก่อน</option>
+                                <option value="cancelled">ยกเลิก</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Category -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Category</strong></label>
+                            <input type="text" class="form-control" id="editTaskCategory"
+                                placeholder="flights, hotels, transfers...">
+                        </div>
+
+                        <!-- Deadline -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label"><strong>Deadline</strong></label>
+                            <input type="text" class="form-control" id="editTaskDeadline" placeholder="DD/MM/YYYY"
+                                pattern="\d{2}/\d{2}/\d{4}">
+                        </div>
+                    </div>
+
+                    <!-- Assigned To -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Assigned To</strong></label>
+                        <select class="form-select" id="editTaskAssignedTo">
+                            <option value="">No assignee</option>
+                            <!-- Options loaded dynamically -->
+                        </select>
+                    </div>
+
+                    <!-- Metadata -->
+                    <div class="alert alert-info" id="taskMetadata">
+                        <!-- Loaded dynamically -->
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+                <button type="button" class="btn btn-danger" onclick="deleteTaskFromModal()">
+                    <i class="fas fa-trash me-2"></i>ลบ Task
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveTaskChanges()">
+                    <i class="fas fa-save me-2"></i>บันทึกการเปลี่ยนแปลง
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Flatpickr Date Picker JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- FullCalendar JS (includes CSS) -->
+<script src='{{ url_for("static", filename="fullcalendar/fullcalendar.min.js") }}'></script>
+
+<script>
+    // Store current booking ID for notes/tasks operations (global scope)
+    let currentBookingId = null;
+    let availableUsers = [];  // Store available users for assignment
+
+    // Initialize Flatpickr date picker for Task date fields
+    document.addEventListener('DOMContentLoaded', function () {
+        const dateInputs = ['newTaskDeadline', 'editTaskDeadline', 'newTaskPickupDate', 'editTaskPickupDate'];
+        const flatpickrOptions = {
+            dateFormat: 'd/m/Y',
+            allowInput: true,
+            altInput: false,
+            clickOpens: true
+        };
+
+        dateInputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input && !input._flatpickr) {
+                flatpickr(input, flatpickrOptions);
+            }
+        });
+    });
+
+    // Global functions for onclick handlers
+    function saveNotes() {
+        if (!currentBookingId) return;
+
+        const data = {
+            notes: document.getElementById('bookingNotes').value,
+            admin_notes: document.getElementById('adminNotes').value
+        };
+
+        fetch(`/booking/api/booking/${currentBookingId}/notes`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ Notes saved successfully!');
+                } else {
+                    alert('❌ Error: ' + (data.error || 'Failed to save notes'));
+                }
+            })
+            .catch(error => {
+                console.error('Error saving notes:', error);
+                alert('❌ Error saving notes');
+            });
+    }
+
+    function addTask(parentTaskId = null) {
+        const title = document.getElementById('newTaskTitle').value.trim();
+        if (!title) {
+            alert('กรุณาระบุหัวข้อ Task');
+            return;
+        }
+
+        const assignedTo = document.getElementById('newTaskAssignedTo').value;
+
+        // Validate: ถ้าไม่มีผู้รับผิดชอบ ให้ยืนยันก่อน
+        if (!assignedTo) {
+            if (!confirm('⚠️ คุณไม่ได้ระบุผู้รับผิดชอบ\n\nต้องการดำเนินการต่อหรือไม่?')) {
+                return;
+            }
+        }
+
+        const data = {
+            title: title,
+            description: document.getElementById('newTaskDescription').value.trim(),
+            priority: document.getElementById('newTaskPriority').value,
+            category: document.getElementById('newTaskCategory').value.trim(),
+            deadline: convertToAPIDate(document.getElementById('newTaskDeadline').value),
+            assigned_to: assignedTo || null,
+            parent_task_id: parentTaskId,
+            status: 'pending'
+        };
+
+        fetch(`/booking/api/booking/${currentBookingId}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Clear form
+                    document.getElementById('newTaskTitle').value = '';
+                    document.getElementById('newTaskDescription').value = '';
+                    document.getElementById('newTaskCategory').value = '';
+                    document.getElementById('newTaskDeadline').value = '';
+                    document.getElementById('newTaskAssignedTo').value = '';
+                    loadTasks(currentBookingId);
+
+                    // แสดงข้อความสำเร็จ
+                    alert('✅ เพิ่ม Task สำเร็จ!');
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to add task'));
+                }
+            })
+            .catch(error => {
+                console.error('Error adding task:', error);
+                alert('Error adding task');
+            });
+    }
+
+    function toggleTask(taskId, isCompleted) {
+        fetch(`/booking/api/booking/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_completed: isCompleted })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTasks(currentBookingId);
+                }
+            })
+            .catch(error => console.error('Error toggling task:', error));
+    }
+
+    function deleteTask(taskId) {
+        if (!confirm('ลบ Task นี้หรือไม่?')) return;
+
+        fetch(`/booking/api/booking/tasks/${taskId}`, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTasks(currentBookingId);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete task'));
+                }
+            })
+            .catch(error => console.error('Error deleting task:', error));
+    }
+
+    // Update operation status (global function)
+    function updateOperationStatus(bookingId, newStatus) {
+        if (!confirm(`เปลี่ยน Operation Status เป็น "${newStatus}" ใช่หรือไม่?`)) {
+            return;
+        }
+
+        fetch(`/booking/api/booking/${bookingId}/operation-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                operation_status: newStatus
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the display
+                    const statusElement = document.getElementById('currentOperationStatus');
+                    if (statusElement) {
+                        statusElement.textContent = `${data.operation_icon} ${data.operation_status}`;
+
+                        // Change badge color based on status
+                        statusElement.className = 'badge';
+                        if (data.operation_status === 'Yes') {
+                            statusElement.classList.add('bg-success');
+                        } else if (data.operation_status === 'Cancel') {
+                            statusElement.classList.add('bg-danger');
+                        } else {
+                            statusElement.classList.add('bg-secondary');
+                        }
+                        statusElement.style.fontSize = '1.1em';
+                    }
+
+                    // Show success message
+                    alert('✅ อัพเดท Operation Status เรียบร้อย!');
+
+                    // Refresh calendar to show updated icon
+                    if (window.calendar) {
+                        window.calendar.refetchEvents();
+                    }
+                } else {
+                    alert('❌ เกิดข้อผิดพลาด: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error updating operation status:', error);
+                alert('❌ ไม่สามารถอัพเดท Operation Status ได้');
+            });
+    }
+
+    // Utility functions
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Escape HTML but preserve line breaks
+    function escapeHtmlWithLineBreaks(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    // Convert DD/MM/YYYY to YYYY-MM-DD for API
+    function convertToAPIDate(ddmmyyyy) {
+        if (!ddmmyyyy || !ddmmyyyy.trim()) return null;
+        const parts = ddmmyyyy.trim().split('/');
+        if (parts.length !== 3) return null;
+        const day = parts[0].padStart(2, '0');
+        const month = parts[1].padStart(2, '0');
+        const year = parts[2];
+        return `${year}-${month}-${day}`;
+    }
+
+    // Convert YYYY-MM-DD to DD/MM/YYYY for display
+    function convertToDisplayDate(yyyymmdd) {
+        if (!yyyymmdd || !yyyymmdd.trim()) return '';
+        const parts = yyyymmdd.trim().split('-');
+        if (parts.length !== 3) return yyyymmdd;
+        const year = parts[0];
+        const month = parts[1];
+        const day = parts[2];
+        return `${day}/${month}/${year}`;
+    }
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = date.getFullYear();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}`;
+    }
+
+    // Load tasks
+    function loadTasks(bookingId) {
+        fetch(`/booking/api/booking/${bookingId}/tasks`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Tasks response:', data);
+                if (data && data.tasks) {
+                    renderTasks(data.tasks);
+                } else {
+                    console.error('No tasks in response:', data);
+                    renderTasks([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading tasks:', error);
+                renderTasks([]);
+            });
+    }
+
+    // Render tasks list
+    function renderTasks(tasks) {
+        const taskList = document.getElementById('taskList');
+        if (!taskList) {
+            console.error('taskList element not found');
+            return;
+        }
+
+        // Safety check
+        if (!Array.isArray(tasks)) {
+            console.error('tasks is not an array:', tasks);
+            tasks = [];
+        }
+
+        const completed = tasks.filter(t => t.is_completed);
+        const pending = tasks.filter(t => !t.is_completed);
+
+        const taskCountEl = document.getElementById('taskCount');
+        if (taskCountEl) {
+            taskCountEl.textContent = pending.length;
+        }
+
+        let html = '';
+
+        // Pending tasks first
+        if (pending.length > 0) {
+            html += '<h6 class="text-primary mb-3">กำลังดำเนินการ (' + pending.length + ')</h6>';
+            pending.forEach(task => {
+                html += renderTaskItem(task);
+            });
+        }
+
+        // Completed tasks
+        if (completed.length > 0) {
+            html += '<h6 class="text-success mb-3 mt-4">เสร็จสิ้น (' + completed.length + ')</h6>';
+            completed.forEach(task => {
+                html += renderTaskItem(task);
+            });
+        }
+
+        if (tasks.length === 0) {
+            html = '<div class="alert alert-info"><i class="fas fa-info-circle me-2"></i>ยังไม่มี Task เพิ่ม Task แรกของคุณ!</div>';
+        }
+
+        taskList.innerHTML = html;
+    }
+
+    // Render single task item
+    function renderTaskItem(task) {
+        const priorityColors = {
+            low: 'secondary',
+            normal: 'info',
+            high: 'warning',
+            urgent: 'danger'
+        };
+
+        const priorityIcons = {
+            low: '🟢',
+            normal: '🔵',
+            high: '🟠',
+            urgent: '🔴'
+        };
+
+        const checked = task.is_completed ? 'checked' : '';
+        const textStyle = task.is_completed ? 'opacity: 0.5;' : '';
+        const priorityBadge = `<span class="badge bg-${priorityColors[task.priority] || 'info'}">${priorityIcons[task.priority]} ${task.priority}</span>`;
+        const categoryBadge = task.category ? `<span class="badge bg-secondary"><i class="fas fa-tag"></i> ${task.category}</span>` : '';
+
+        // Deadline badge with overdue check
+        let deadlineBadge = '';
+        if (task.deadline) {
+            const deadline = new Date(task.deadline);
+            const today = new Date();
+            const isOverdue = !task.is_completed && deadline < today;
+            const deadlineColor = isOverdue ? 'danger' : 'info';
+            const day = String(deadline.getDate()).padStart(2, '0');
+            const month = String(deadline.getMonth() + 1).padStart(2, '0');
+            const year = deadline.getFullYear();
+            deadlineBadge = `<span class="badge bg-${deadlineColor}"><i class="far fa-calendar"></i> ${day}/${month}/${year}</span>`;
+        }
+
+        // Assigned to badge
+        const assignedBadge = task.assigned_to_name ?
+            `<span class="badge bg-success"><i class="fas fa-user"></i> ${task.assigned_to_name}</span>` : '';
+
+        // Sub-tasks progress
+        let subTasksInfo = '';
+        if (task.sub_tasks_count > 0) {
+            const progress = Math.round((task.completed_subtasks_count / task.sub_tasks_count) * 100);
+            subTasksInfo = `
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-list-ul"></i> Sub-tasks: ${task.completed_subtasks_count}/${task.sub_tasks_count}
+                    </small>
+                    <div class="progress" style="height: 5px;">
+                        <div class="progress-bar bg-success" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Description
+        const descriptionHtml = task.description ?
+            `<div class="text-muted small mt-1" style="white-space: pre-wrap;">${escapeHtmlWithLineBreaks(task.description)}</div>` : '';
+
+        let html = `
+            <div class="card mb-2 ${task.is_completed ? 'border-success' : ''}" style="cursor: pointer;" onclick="showTaskDetails(${task.id})">
+                <div class="card-body p-2">
+                    <div class="d-flex align-items-start">
+                        <div class="form-check me-2" onclick="event.stopPropagation();">
+                            <input class="form-check-input" type="checkbox" ${checked} 
+                                   onchange="toggleTask(${task.id}, this.checked)">
+                        </div>
+                        <div class="flex-grow-1" style="${textStyle}">
+                            <div class="mb-1"><strong>${escapeHtml(task.title)}</strong></div>
+                            ${descriptionHtml}
+                            <div class="mt-2">
+                                ${priorityBadge} ${categoryBadge} ${deadlineBadge} ${assignedBadge}
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                <i class="fas fa-user-circle"></i> ${task.created_by} • 
+                                <i class="far fa-clock"></i> ${formatDate(task.created_at)}
+                            </small>
+                            ${subTasksInfo}
+                        </div>
+                        <div class="btn-group-vertical btn-group-sm" onclick="event.stopPropagation();">
+                            <button class="btn btn-sm btn-outline-info" onclick="showTaskDetails(${task.id})" title="Edit Task">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="addSubTask(${task.id})" title="Add Sub-task">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTask(${task.id})" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+        `;
+
+        // Render sub-tasks if any
+        if (task.sub_tasks && task.sub_tasks.length > 0) {
+            html += '<div class="ms-4 mt-2 border-start ps-3">';
+            task.sub_tasks.forEach(subTask => {
+                const subChecked = subTask.is_completed ? 'checked' : '';
+                const hasDescription = subTask.description && subTask.description.trim();
+
+                html += `
+                    <div class="card mb-2 border-0 bg-light">
+                        <div class="card-body p-2">
+                            <div class="d-flex align-items-start">
+                                <div class="form-check me-2" onclick="event.stopPropagation();">
+                                    <input class="form-check-input form-check-input-sm" type="checkbox" ${subChecked} 
+                                           onchange="toggleTask(${subTask.id}, this.checked)">
+                                </div>
+                                <div class="flex-grow-1" style="cursor: pointer;" onclick="showTaskDetails(${subTask.id})">
+                                    <div><strong>${escapeHtml(subTask.title)}</strong></div>
+                                    ${hasDescription ? '<div class="text-muted small mt-1" style="white-space: pre-wrap;"><i class="fas fa-file-alt me-1"></i>' + escapeHtmlWithLineBreaks(subTask.description.substring(0, 100)) + (subTask.description.length > 100 ? '...' : '') + '</div>' : ''}
+                                </div>
+                                <div class="btn-group btn-group-sm" onclick="event.stopPropagation();">
+                                    <button class="btn btn-sm btn-link text-primary p-0 me-2" onclick="showTaskDetails(${subTask.id})" title="Edit Sub-task">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-link text-danger p-0" onclick="deleteTask(${subTask.id})" title="Delete Sub-task">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+        }
+
+        html += `
+                </div>
+            </div>
+        `;
+
+        return html;
+    }
+
+    // Add sub-task
+    function addSubTask(parentTaskId) {
+        event.stopPropagation();
+        const title = prompt('ระบุหัวข้อ Sub-task:');
+        if (!title || !title.trim()) return;
+
+        const data = {
+            title: title.trim(),
+            parent_task_id: parentTaskId,
+            priority: 'normal',
+            status: 'pending'
+        };
+
+        fetch(`/booking/api/booking/${currentBookingId}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadTasks(currentBookingId);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to add sub-task'));
+                }
+            })
+            .catch(error => {
+                console.error('Error adding sub-task:', error);
+                alert('Error adding sub-task');
+            });
+    }
+
+    // Show task details modal for editing
+    let currentEditingTask = null;
+    let currentBookingData = null; // Store booking data for copy message
+
+    function copyTaskMessage() {
+        if (!currentEditingTask || !currentBookingData) {
+            alert('ไม่สามารถคัดลอกข้อความได้ กรุณาลองใหม่อีกครั้ง');
+            return;
+        }
+
+        const task = currentEditingTask;
+        const booking = currentBookingData;
+
+        // Format traveling dates
+        let travelingDate = '';
+        if (booking.arrival_date) {
+            const arrivalDate = new Date(booking.arrival_date);
+            const arrivalStr = `${String(arrivalDate.getDate()).padStart(2, '0')}/${String(arrivalDate.getMonth() + 1).padStart(2, '0')}/${arrivalDate.getFullYear()}`;
+            travelingDate = arrivalStr;
+
+            if (booking.departure_date) {
+                const departureDate = new Date(booking.departure_date);
+                const departureStr = `${String(departureDate.getDate()).padStart(2, '0')}/${String(departureDate.getMonth() + 1).padStart(2, '0')}/${departureDate.getFullYear()}`;
+                travelingDate += ` To ${departureStr}`;
+            }
+        }
+
+        // Format passengers
+        const adults = booking.adults || 0;
+        const children = booking.children || 0;
+        const infants = booking.infants || 0;
+        const totalPax = adults + children + infants;
+        const passengersStr = `${totalPax} (Adults: ${adults}, Children: ${children}, Infants: ${infants})`;
+
+        // Format created/updated dates
+        const createdDate = task.created_at ? formatDate(task.created_at) : '';
+        const updatedDate = task.updated_at ? formatDate(task.updated_at) : '';
+
+        // Build message with new format
+        let message = `Dear Reservation & Support Team,\n\n`;
+
+        // Reservation Details section
+        const reservation = document.getElementById('editTaskReservation').value.trim();
+        if (reservation) {
+            message += `${reservation}\n\n`;
+        }
+
+        // Confirmation section
+        const confirmation = document.getElementById('editTaskConfirmation').value.trim();
+        if (confirmation) {
+            message += `Confirmation:\n${confirmation}\n\n`;
+        }
+
+        message += `——————-\n\n`;
+
+        // Booking Information
+        message += `Booking Reference: ${booking.booking_reference || 'N/A'}\n`;
+        message += `Type: ${booking.booking_type || 'N/A'}\n`;
+        message += `Traveling Date (DD/MM/YYYY): ${travelingDate}\n`;
+        message += `Passengers: ${passengersStr}\n\n`;
+
+        // Name List
+        if (booking.guest_list && booking.guest_list.trim()) {
+            let guestListText = booking.guest_list;
+            // Check if it's JSON array format and convert to plain text
+            try {
+                const parsed = JSON.parse(booking.guest_list);
+                if (Array.isArray(parsed)) {
+                    guestListText = parsed.join('\n');
+                }
+            } catch (e) {
+                // Not JSON, use as is
+                guestListText = booking.guest_list;
+            }
+            message += `Name List / Rooming List:\n${guestListText}\n\n`;
+        }
+
+        // Company Signature
+        message += `Best Regards,\n`;
+        message += `Dhakul Chan Nice Holidays Group.\n`;
+        message += `Tel: +852 23921155 or +662 2744216\n`;
+        message += `Visit us: www.dhakulchan.net\n\n`;
+
+        message += `---------------------------------\n`;
+
+        // Task Information
+        message += `User name: {{ current_user.username if current_user else 'N/A' }}\n`;
+        message += `Task Title: ${task.title}\n`;
+        message += `Click Here to Task: ${window.location.origin}/booking/calendar?booking_id=${task.booking_id}\n`;
+        message += `Category: ${task.category || 'N/A'} | Priority: ${task.priority}\n`;
+        message += `Create by: ${task.created_by} | Date: ${createdDate}\n`;
+        message += `Assigned To: ${task.assigned_to_name || 'Unassigned'}`;
+        if (updatedDate) {
+            message += ` | Updated: ${updatedDate}`;
+        }
+
+        // Copy to clipboard
+        navigator.clipboard.writeText(message).then(() => {
+            alert('✅ คัดลอกข้อความสำเร็จ! พร้อมส่ง Line หรือ Email แล้ว');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            alert('❌ ไม่สามารถคัดลอกได้ กรุณาลองใหม่');
+        });
+    }
+
+    function sendLineMessage() {
+        if (!currentEditingTask || !currentBookingData) {
+            alert('ไม่สามารถส่ง LINE ได้ กรุณาลองใหม่อีกครั้ง');
+            return;
+        }
+
+        const task = currentEditingTask;
+        const booking = currentBookingData;
+
+        // Build same message as copyTaskMessage
+        let travelingDate = '';
+        if (booking.arrival_date) {
+            const arrivalDate = new Date(booking.arrival_date);
+            const arrivalStr = `${String(arrivalDate.getDate()).padStart(2, '0')}/${String(arrivalDate.getMonth() + 1).padStart(2, '0')}/${arrivalDate.getFullYear()}`;
+            travelingDate = arrivalStr;
+
+            if (booking.departure_date) {
+                const departureDate = new Date(booking.departure_date);
+                const departureStr = `${String(departureDate.getDate()).padStart(2, '0')}/${String(departureDate.getMonth() + 1).padStart(2, '0')}/${departureDate.getFullYear()}`;
+                travelingDate += ` To ${departureStr}`;
+            }
+        }
+
+        const adults = booking.adults || 0;
+        const children = booking.children || 0;
+        const infants = booking.infants || 0;
+        const totalPax = adults + children + infants;
+        const passengersStr = `${totalPax} (Adults: ${adults}, Children: ${children}, Infants: ${infants})`;
+
+        const createdDate = task.created_at ? formatDate(task.created_at) : '';
+        const updatedDate = task.updated_at ? formatDate(task.updated_at) : '';
+
+        let message = `Dear Reservation & Support Team,\n\n`;
+
+        // Reservation Details section
+        const reservation = document.getElementById('editTaskReservation').value.trim();
+        if (reservation) {
+            message += `${reservation}\n\n`;
+        }
+
+        // Confirmation section
+        const confirmation = document.getElementById('editTaskConfirmation').value.trim();
+        if (confirmation) {
+            message += `Confirmation:\n${confirmation}\n\n`;
+        }
+
+        message += `——————-\n\n`;
+
+        // Booking Information
+        message += `Booking Reference: ${booking.booking_reference || 'N/A'}\n`;
+        message += `Type: ${booking.booking_type || 'N/A'}\n`;
+        message += `Traveling Date (DD/MM/YYYY): ${travelingDate}\n`;
+        message += `Passengers: ${passengersStr}\n\n`;
+
+        if (booking.guest_list && booking.guest_list.trim()) {
+            let guestListText = booking.guest_list;
+            // Check if it's JSON array format and convert to plain text
+            try {
+                const parsed = JSON.parse(booking.guest_list);
+                if (Array.isArray(parsed)) {
+                    guestListText = parsed.join('\n');
+                }
+            } catch (e) {
+                // Not JSON, use as is
+                guestListText = booking.guest_list;
+            }
+            message += `Name List / Rooming List:\n${guestListText}\n\n`;
+        }
+
+        // Company Signature
+        message += `Best Regards,\n`;
+        message += `Dhakul Chan Nice Holidays Group.\n`;
+        message += `Tel: +852 23921155 or +662 2744216\n`;
+        message += `Visit us: www.dhakulchan.net\n\n`;
+
+        message += `---------------------------------\n`;
+
+        // Task Information
+        message += `User name: {{ current_user.username if current_user else 'N/A' }}\n`;
+        message += `Task Title: ${task.title}\n`;
+        message += `Click Here to Task: ${window.location.origin}/booking/calendar?booking_id=${task.booking_id}\n`;
+        message += `Category: ${task.category || 'N/A'} | Priority: ${task.priority}\n`;
+        message += `Create by: ${task.created_by} | Date: ${createdDate}\n`;
+        message += `Assigned To: ${task.assigned_to_name || 'Unassigned'}`;
+        if (updatedDate) {
+            message += ` | Updated: ${updatedDate}`;
+        }
+
+        // Send LINE notification
+        fetch(`/booking/api/booking/tasks/${task.id}/send-line`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ส่ง LINE notification สำเร็จ!');
+                } else {
+                    alert('❌ ไม่สามารถส่ง LINE ได้: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error sending LINE:', error);
+                alert('❌ เกิดข้อผิดพลาดในการส่ง LINE');
+            });
+    }
+
+    function sendEmailMessage() {
+        if (!currentEditingTask || !currentBookingData) {
+            alert('ไม่สามารถส่ง Email ได้ กรุณาลองใหม่อีกครั้ง');
+            return;
+        }
+
+        const task = currentEditingTask;
+
+        // Check if assigned user exists
+        if (!task.assigned_to || !task.assigned_to_name) {
+            alert('❌ Task นี้ยังไม่มีผู้รับผิดชอบ (Assigned To) กรุณาเลือกผู้รับผิดชอบก่อนส่ง Email');
+            return;
+        }
+
+        const booking = currentBookingData;
+
+        // Build same message as copyTaskMessage
+        let travelingDate = '';
+        if (booking.arrival_date) {
+            const arrivalDate = new Date(booking.arrival_date);
+            const arrivalStr = `${String(arrivalDate.getDate()).padStart(2, '0')}/${String(arrivalDate.getMonth() + 1).padStart(2, '0')}/${arrivalDate.getFullYear()}`;
+            travelingDate = arrivalStr;
+
+            if (booking.departure_date) {
+                const departureDate = new Date(booking.departure_date);
+                const departureStr = `${String(departureDate.getDate()).padStart(2, '0')}/${String(departureDate.getMonth() + 1).padStart(2, '0')}/${departureDate.getFullYear()}`;
+                travelingDate += ` To ${departureStr}`;
+            }
+        }
+
+        const adults = booking.adults || 0;
+        const children = booking.children || 0;
+        const infants = booking.infants || 0;
+        const totalPax = adults + children + infants;
+        const passengersStr = `${totalPax} (Adults: ${adults}, Children: ${children}, Infants: ${infants})`;
+
+        const createdDate = task.created_at ? formatDate(task.created_at) : '';
+        const updatedDate = task.updated_at ? formatDate(task.updated_at) : '';
+
+        let message = `Dear Reservation & Support Team,\n\n`;
+
+        // Reservation Details section
+        const reservation = document.getElementById('editTaskReservation').value.trim();
+        if (reservation) {
+            message += `${reservation}\n\n`;
+        }
+
+        // Confirmation section
+        const confirmation = document.getElementById('editTaskConfirmation').value.trim();
+        if (confirmation) {
+            message += `Confirmation:\n${confirmation}\n\n`;
+        }
+
+        message += `——————-\n\n`;
+
+        // Booking Information
+        message += `Booking Reference: ${booking.booking_reference || 'N/A'}\n`;
+        message += `Type: ${booking.booking_type || 'N/A'}\n`;
+        message += `Traveling Date (DD/MM/YYYY): ${travelingDate}\n`;
+        message += `Passengers: ${passengersStr}\n\n`;
+
+        if (booking.guest_list && booking.guest_list.trim()) {
+            let guestListText = booking.guest_list;
+            // Check if it's JSON array format and convert to plain text
+            try {
+                const parsed = JSON.parse(booking.guest_list);
+                if (Array.isArray(parsed)) {
+                    guestListText = parsed.join('\n');
+                }
+            } catch (e) {
+                // Not JSON, use as is
+                guestListText = booking.guest_list;
+            }
+            message += `Name List / Rooming List:\n${guestListText}\n\n`;
+        }
+
+        // Company Signature
+        message += `Best Regards,\n`;
+        message += `Dhakul Chan Nice Holidays Group.\n`;
+        message += `Tel: +852 23921155 or +662 2744216\n`;
+        message += `Visit us: www.dhakulchan.net\n\n`;
+
+        message += `---------------------------------\n`;
+
+        // Task Information
+        message += `User name: {{ current_user.username if current_user else 'N/A' }}\n`;
+        message += `Task Title: ${task.title}\n`;
+        message += `Click Here to Task: ${window.location.origin}/booking/calendar?booking_id=${task.booking_id}\n`;
+        message += `Category: ${task.category || 'N/A'} | Priority: ${task.priority}\n`;
+        message += `Create by: ${task.created_by} | Date: ${createdDate}\n`;
+        message += `Assigned To: ${task.assigned_to_name || 'Unassigned'}`;
+        if (updatedDate) {
+            message += ` | Updated: ${updatedDate}`;
+        }
+
+        // Confirm before sending
+        if (!confirm(`ส่ง Email ไปยัง: ${task.assigned_to_name}\nCC: support@dhakulchan.com\n\nคุณต้องการส่ง Email หรือไม่?`)) {
+            return;
+        }
+
+        // Send email
+        fetch(`/booking/api/booking/tasks/${task.id}/send-email`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ส่ง Email สำเร็จแล้ว!\n' + data.message);
+                } else {
+                    alert('❌ ไม่สามารถส่ง Email ได้: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error sending email:', error);
+                alert('❌ เกิดข้อผิดพลาดในการส่ง Email');
+            });
+    }
+
+    function showTaskDetails(taskId) {
+        if (event && event.stopPropagation) {
+            event.stopPropagation();
+        }
+
+        console.log('showTaskDetails called with taskId:', taskId);
+
+        // Fetch task details
+        fetch(`/booking/api/booking/tasks/${taskId}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Task data loaded:', data);
+                if (data.success && data.task) {
+                    currentEditingTask = data.task;
+
+                    // Also fetch booking data for copy message
+                    if (data.task.booking_id) {
+                        fetch(`/booking/api/booking/${data.task.booking_id}`)
+                            .then(response => response.json())
+                            .then(bookingData => {
+                                if (bookingData.success && bookingData.booking) {
+                                    currentBookingData = bookingData.booking;
+                                }
+                            })
+                            .catch(error => console.error('Error loading booking:', error));
+                    }
+
+                    populateTaskEditForm(data.task);
+
+                    // Show modal
+                    const modal = new bootstrap.Modal(document.getElementById('taskDetailsModal'));
+                    modal.show();
+                } else {
+                    alert('Error loading task details');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading task:', error);
+                alert('Error loading task details');
+            });
+    }
+
+    function populateTaskEditForm(task) {
+        document.getElementById('editTaskId').value = task.id;
+        document.getElementById('editTaskTitle').value = task.title;
+        document.getElementById('editTaskDescription').value = task.description || '';
+        document.getElementById('editTaskConfirmation').value = task.confirmation || '';
+        document.getElementById('editTaskReservation').value = task.reservation || '';
+        document.getElementById('editTaskPriority').value = task.priority;
+        document.getElementById('editTaskStatus').value = task.status;
+        document.getElementById('editTaskCategory').value = task.category || '';
+        document.getElementById('editTaskDeadline').value = convertToDisplayDate(task.deadline || '');
+        document.getElementById('editTaskAssignedTo').value = task.assigned_to || '';
+
+        // Populate booking service detail (view only)
+        const serviceDetailDiv = document.getElementById('bookingServiceDetail');
+        if (task.booking_service_detail && task.booking_service_detail.trim()) {
+            // Convert line breaks to <br> and display as HTML
+            serviceDetailDiv.innerHTML = task.booking_service_detail.replace(/\n/g, '<br>');
+        } else {
+            serviceDetailDiv.innerHTML = '<em class="text-muted">ไม่มีข้อมูล</em>';
+        }
+
+        // Populate user dropdown in edit form
+        const select = document.getElementById('editTaskAssignedTo');
+        select.innerHTML = '<option value="">ไม่ระบุผู้รับผิดชอบ</option>';
+        availableUsers.forEach(user => {
+            const selected = user.id == task.assigned_to ? 'selected' : '';
+            select.innerHTML += `<option value="${user.id}" ${selected}>${user.username}</option>`;
+        });
+
+        // Show metadata
+        const metadata = document.getElementById('taskMetadata');
+        metadata.innerHTML = `
+            <strong>ข้อมูล Task:</strong><br>
+            <i class="fas fa-user"></i> สร้างโดย: ${task.created_by}<br>
+            <i class="far fa-clock"></i> สร้างเมื่อ: ${formatDate(task.created_at)}<br>
+            ${task.updated_at ? '<i class="fas fa-sync"></i> แก้ไขล่าสุด: ' + formatDate(task.updated_at) + '<br>' : ''}
+            ${task.completed_at ? '<i class="fas fa-check"></i> เสร็จสิ้นเมื่อ: ' + formatDate(task.completed_at) : ''}
+        `;
+    }
+
+    function saveTaskChanges() {
+        const taskId = document.getElementById('editTaskId').value;
+        const title = document.getElementById('editTaskTitle').value.trim();
+
+        if (!title) {
+            alert('กรุณาระบุหัวข้อ Task');
+            return;
+        }
+
+        const data = {
+            title: title,
+            description: document.getElementById('editTaskDescription').value.trim(),
+            confirmation: document.getElementById('editTaskConfirmation').value.trim(),
+            reservation: document.getElementById('editTaskReservation').value.trim(),
+            priority: document.getElementById('editTaskPriority').value,
+            status: document.getElementById('editTaskStatus').value,
+            category: document.getElementById('editTaskCategory').value.trim(),
+            deadline: convertToAPIDate(document.getElementById('editTaskDeadline').value),
+            assigned_to: document.getElementById('editTaskAssignedTo').value || null
+        };
+
+        // Check if assigned user changed
+        const oldAssignedTo = currentEditingTask.assigned_to;
+        const newAssignedTo = data.assigned_to;
+
+        fetch(`/booking/api/booking/tasks/${taskId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('✅ บันทึกการเปลี่ยนแปลงสำเร็จ!');
+
+                    // Close modal
+                    bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal')).hide();
+
+                    // Reload tasks
+                    loadTasks(currentBookingId);
+
+                    // Send email if assigned user changed
+                    if (oldAssignedTo != newAssignedTo && newAssignedTo) {
+                        sendTaskAssignmentEmail(taskId);
+                    }
+                } else {
+                    alert('Error: ' + (result.error || 'Failed to update task'));
+                }
+            })
+            .catch(error => {
+                console.error('Error updating task:', error);
+                alert('Error updating task');
+            });
+    }
+
+    function deleteTaskFromModal() {
+        const taskId = document.getElementById('editTaskId').value;
+
+        if (confirm('ยืนยันการลบ Task นี้หรือไม่?')) {
+            deleteTask(taskId);
+            bootstrap.Modal.getInstance(document.getElementById('taskDetailsModal')).hide();
+        }
+    }
+
+    function sendTaskAssignmentEmail(taskId) {
+        fetch(`/booking/api/booking/tasks/${taskId}/send-notification`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Email notification sent');
+                } else {
+                    console.warn('⚠️ Failed to send email notification');
+                }
+            })
+            .catch(error => {
+                console.error('Error sending email:', error);
+            });
+    }
+
+    // Global variables
+    window.calendar = null;
+    let tooltipElement = null;
+
+    // Create tooltip element
+    function createTooltip() {
+        if (!tooltipElement) {
+            tooltipElement = document.createElement('div');
+            tooltipElement.className = 'booking-tooltip';
+            tooltipElement.style.display = 'none';
+            document.body.appendChild(tooltipElement);
+        }
+        return tooltipElement;
+    }
+
+    // Show tooltip
+    function showTooltip(event, jsEvent) {
+        const tooltip = createTooltip();
+        const props = event.extendedProps;
+
+        // Build alert warnings
+        let alertWarnings = '';
+        if (props.dueDateAlert) {
+            alertWarnings += `
+                <div class="tooltip-row" style="background: #fff3cd; padding: 5px; border-radius: 4px; margin-bottom: 5px;">
+                    <span style="color: #856404; font-weight: bold;">⚠️ ครบ/เลยเวลายืนยัน/ชำระเงินแล้ว (DUE DATE REACHED!)</span>
+                </div>
+            `;
+        }
+        if (props.timeLimitAlert) {
+            alertWarnings += `
+                <div class="tooltip-row" style="background: #ffe5cc; padding: 5px; border-radius: 4px; margin-bottom: 5px;">
+                    <span style="color: #cc5200; font-weight: bold;">⚠️ ถึงกำหนดวันดำเนินการแล้ว (TIME LIMIT APPROACHING!)</span>
+                </div>
+            `;
+        }
+
+        const html = `
+            <div class="tooltip-title">${props.bookingReference}</div>
+            ${alertWarnings}
+            <div class="tooltip-row">
+                <span class="tooltip-label">Status:</span>
+                <span class="tooltip-value"><strong>${props.status.toUpperCase()}</strong></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Type:</span>
+                <span class="tooltip-value">${props.type}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Customer:</span>
+                <span class="tooltip-value">${props.customerName}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Passengers:</span>
+                <span class="tooltip-value">${props.passengers} pax</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Traveling From:</span>
+                <span class="tooltip-value">${props.travelingFrom}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Traveling To:</span>
+                <span class="tooltip-value">${props.travelingTo}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Grand Total:</span>
+                <span class="tooltip-value"><strong>${props.currency} ${props.grandTotal.toLocaleString()}</strong></span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Time Limit:</span>
+                <span class="tooltip-value">${props.timeLimit}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Due Date:</span>
+                <span class="tooltip-value">${props.dueDate}</span>
+            </div>
+            <div class="tooltip-row">
+                <span class="tooltip-label">Created By:</span>
+                <span class="tooltip-value">${props.createdBy}</span>
+            </div>
+        `;
+
+        tooltip.innerHTML = html;
+        tooltip.style.display = 'block';
+
+        // Position tooltip near mouse cursor
+        const x = jsEvent.pageX + 15;
+        const y = jsEvent.pageY + 15;
+
+        // Check if tooltip would go off screen
+        const tooltipRect = tooltip.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let finalX = x;
+        let finalY = y;
+
+        // Adjust horizontal position if needed
+        if (x + tooltipRect.width > viewportWidth) {
+            finalX = jsEvent.pageX - tooltipRect.width - 15;
+        }
+
+        // Adjust vertical position if needed
+        if (y + tooltipRect.height > viewportHeight) {
+            finalY = jsEvent.pageY - tooltipRect.height - 15;
+        }
+
+        tooltip.style.left = finalX + 'px';
+        tooltip.style.top = finalY + 'px';
+    }
+
+    // Hide tooltip
+    function hideTooltip() {
+        if (tooltipElement) {
+            tooltipElement.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var calendarEl = document.getElementById('calendar');
+
+        window.calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,listWeek'
+            },
+            height: 'auto',
+            navLinks: true,
+            editable: false,
+            selectable: true,
+            selectMirror: true,
+            dayMaxEvents: true,
+
+            // Fetch events from API
+            events: function (info, successCallback, failureCallback) {
+                fetch('/booking/api/calendar/events?start=' + info.startStr + '&end=' + info.endStr)
+                    .then(response => response.json())
+                    .then(data => {
+                        successCallback(data);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching events:', error);
+                        failureCallback(error);
+                    });
+            },
+
+            // Event render callback - add alert classes
+            eventDidMount: function (info) {
+                const props = info.event.extendedProps;
+                if (props.timeLimitAlert) {
+                    info.el.classList.add('time-limit-alert');
+                    info.el.title = '⚠️ Time Limit Exceeded!';
+                }
+                if (props.dueDateAlert) {
+                    info.el.classList.add('due-date-alert');
+                    info.el.title = '⚠️ Due Date Reached!';
+                }
+            },
+
+            // Mouse enter event
+            eventMouseEnter: function (info) {
+                showTooltip(info.event, info.jsEvent);
+            },
+
+            // Mouse leave event
+            eventMouseLeave: function (info) {
+                hideTooltip();
+            },
+
+            // Click on event
+            eventClick: function (info) {
+                hideTooltip();
+                showBookingDetails(info.event);
+            },
+
+            // Date click
+            dateClick: function (info) {
+                console.log('Clicked on: ' + info.dateStr);
+            },
+
+            // Loading callback
+            loading: function (isLoading) {
+                if (isLoading) {
+                    console.log('Loading events...');
+                }
+            }
+        });
+
+        window.calendar.render();
+
+        // Check for booking_id or task_id in URL and open modal
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookingIdFromUrl = urlParams.get('booking_id');
+        const taskIdFromUrl = urlParams.get('task_id');
+
+        if (taskIdFromUrl) {
+            // If task_id is provided, fetch task details first to get booking_id
+            fetch(`/booking/api/booking/tasks/${taskIdFromUrl}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.task) {
+                        const bookingId = data.task.booking_id;
+
+                        // Wait for calendar to fully render
+                        setTimeout(() => {
+                            // Find the event in calendar
+                            const event = window.calendar.getEventById(bookingId);
+
+                            if (event) {
+                                // Use existing showBookingDetails function
+                                showBookingDetails(event);
+
+                                // Set currentBookingId for tasks/notes
+                                currentBookingId = parseInt(bookingId);
+
+                                // Load users first
+                                loadAvailableUsers();
+
+                                // Load tasks and notes
+                                loadTasks(bookingId);
+                                loadNotes(bookingId);
+
+                                // Ensure Task tab is active and open specific task modal
+                                setTimeout(() => {
+                                    console.log('Switching to Task tab...');
+                                    const taskTab = document.querySelector('a[href="#tasksTab"]');
+                                    if (taskTab) {
+                                        const tab = new bootstrap.Tab(taskTab);
+                                        tab.show();
+                                    }
+
+                                    // Wait longer for tasks to load, then open the specific task details modal
+                                    setTimeout(() => {
+                                        console.log('About to open task modal, taskIdFromUrl:', taskIdFromUrl);
+                                        showTaskDetails(parseInt(taskIdFromUrl));
+                                    }, 800);
+                                }, 100);
+                            } else {
+                                console.error('Event not found in calendar');
+                                alert('ไม่พบข้อมูล Booking นี้ในปฏิทิน');
+                            }
+                        }, 1000);
+                    } else {
+                        alert('ไม่พบข้อมูล Task นี้');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading task:', error);
+                    alert('เกิดข้อผิดพลาดในการโหลดข้อมูล Task');
+                });
+        } else if (bookingIdFromUrl) {
+            // Wait a bit for calendar to fully render, then open the booking modal
+            setTimeout(() => {
+                // Find the event in calendar
+                const event = window.calendar.getEventById(bookingIdFromUrl);
+
+                if (event) {
+                    // Use existing showBookingDetails function
+                    showBookingDetails(event);
+
+                    // Set currentBookingId for tasks/notes
+                    currentBookingId = parseInt(bookingIdFromUrl);
+
+                    // Load users first
+                    loadAvailableUsers();
+
+                    // Load tasks and notes
+                    loadTasks(bookingIdFromUrl);
+                    loadNotes(bookingIdFromUrl);
+
+                    // Ensure Task tab is active after modal is shown
+                    setTimeout(() => {
+                        const taskTab = document.querySelector('a[href="#tasksTab"]');
+                        if (taskTab) {
+                            const tab = new bootstrap.Tab(taskTab);
+                            tab.show();
+                        }
+                    }, 100);
+                } else {
+                    console.error('Event not found in calendar');
+                    alert('ไม่พบข้อมูล Booking นี้ในปฏิทิน');
+                }
+            }, 1000); // Increase timeout to ensure calendar events are loaded
+        }
+
+        // Check for alerts on page load and periodically
+        checkBookingAlerts();
+
+        // Check alerts every 30 minutes
+        setInterval(checkBookingAlerts, 30 * 60 * 1000);
+
+        // Function to check booking alerts
+        function checkBookingAlerts() {
+            fetch('/booking/api/calendar/check-alerts')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.total_alerts > 0) {
+                        console.log(`📧 Sent ${data.total_alerts} alert notification(s)`);
+                        console.log(`- Time Limit alerts: ${data.time_limit_count}`);
+                        console.log(`- Due Date alerts: ${data.due_date_count}`);
+
+                        // Refresh calendar to show updated alert status
+                        window.calendar.refetchEvents();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking alerts:', error);
+                });
+        }
+
+        // Show booking details in modal
+        function showBookingDetails(event) {
+            const props = event.extendedProps;
+            const bookingId = event.id;
+
+            // Build details HTML
+            let html = `
+            <div class="info-row">
+                <span class="info-label">Booking Reference:</span>
+                <strong>${props.bookingReference}</strong>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Type:</span>
+                <span class="badge bg-info">${props.type}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Status:</span>
+                <span class="badge" style="background-color: ${event.backgroundColor}">${props.status}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Operation Status:</span>
+                <div id="operationStatusDisplay">
+                    <span class="badge bg-secondary" style="font-size: 1.1em;" id="currentOperationStatus">${props.operationIcon} ${props.operationStatus}</span>
+                    <div class="btn-group btn-group-sm ms-3" role="group">
+                        <button type="button" class="btn btn-outline-secondary" onclick="updateOperationStatus(${bookingId}, 'No')" title="รอดำเนินการ">
+                            ⏳ No
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="updateOperationStatus(${bookingId}, 'Yes')" title="ดำเนินการเรียบร้อย">
+                            ✅ Yes
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="updateOperationStatus(${bookingId}, 'Cancel')" title="ยกเลิก">
+                            ❌ Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Traveling From:</span>
+                ${props.travelingFrom}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Traveling To:</span>
+                ${props.travelingTo}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Grand Total:</span>
+                <strong>${props.currency} ${props.grandTotal.toLocaleString()}</strong>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Time Limit:</span>
+                ${props.timeLimit}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Due Date:</span>
+                ${props.dueDate}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Passengers:</span>
+                ${props.passengers} (Adults: ${props.adults}, Children: ${props.children}, Infants: ${props.infants})
+            </div>
+            <div class="info-row">
+                <span class="info-label">Customer Name:</span>
+                ${props.customerName}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Customer Email:</span>
+                ${props.customerEmail}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Customer Phone:</span>
+                ${props.customerPhone}
+            </div>
+            <div class="info-row">
+                <span class="info-label">Created By:</span>
+                <strong>${props.createdBy}</strong>
+                <span class="badge bg-secondary ms-2">${props.createdByRole}</span>
+            </div>
+        `;
+
+            // Check for conflicts
+            checkConflicts(props.travelingFrom, props.travelingTo, bookingId, html);
+        }
+
+        // Check for booking conflicts
+        function checkConflicts(arrivalDate, departureDate, bookingId, baseHtml) {
+            fetch(`/booking/api/calendar/conflicts?arrival_date=${arrivalDate}&departure_date=${departureDate}&booking_id=${bookingId}`)
+                .then(response => response.json())
+                .then(data => {
+                    let html = baseHtml;
+
+                    if (data.has_conflicts) {
+                        html += `
+                        <div class="conflict-warning">
+                            <strong><i class="fas fa-exclamation-triangle me-2"></i>Conflict Warning!</strong>
+                            <p class="mb-2">This booking overlaps with ${data.count} other booking(s):</p>
+                    `;
+
+                        data.conflicts.forEach(conflict => {
+                            html += `
+                            <div class="conflict-item">
+                                <strong>${conflict.reference}</strong> - ${conflict.customer}
+                                <br><small>${conflict.arrival} to ${conflict.departure} (${conflict.status})</small>
+                            </div>
+                        `;
+                        });
+
+                        html += '</div>';
+                    }
+
+                    document.getElementById('bookingDetails').innerHTML = html;
+                    document.getElementById('viewBookingBtn').href = `/booking/view/${bookingId}`;
+                    document.getElementById('editBookingBtn').href = `/booking/edit/${bookingId}`;
+
+                    // Load notes and tasks
+                    loadNotesAndTasks(bookingId);
+
+                    var modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+                    modal.show();
+                })
+                .catch(error => {
+                    console.error('Error checking conflicts:', error);
+                    document.getElementById('bookingDetails').innerHTML = baseHtml;
+
+                    // Still load notes and tasks even if conflicts check fails
+                    loadNotesAndTasks(bookingId);
+
+                    var modal = new bootstrap.Modal(document.getElementById('bookingModal'));
+                    modal.show();
+                });
+        }
+
+        // Load notes and tasks for booking
+        function loadNotesAndTasks(bookingId) {
+            currentBookingId = bookingId;
+            loadNotes(bookingId);
+            loadTasks(bookingId);
+            loadAvailableUsers();  // Load users for assignment dropdown
+        }
+
+        // Load notes
+        function loadNotes(bookingId) {
+            fetch(`/booking/api/booking/${bookingId}/notes`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('bookingNotes').value = data.notes || '';
+                    document.getElementById('adminNotes').value = data.admin_notes || '';
+                })
+                .catch(error => console.error('Error loading notes:', error));
+        }
+
+        // Load available users for task assignment
+        function loadAvailableUsers() {
+            fetch('/booking/api/users')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Users response:', data);
+                    availableUsers = data.users || [];
+                    const select = document.getElementById('newTaskAssignedTo');
+                    if (!select) {
+                        console.error('newTaskAssignedTo element not found');
+                        return;
+                    }
+                    select.innerHTML = '<option value="">ไม่ระบุผู้รับผิดชอบ</option>';
+                    availableUsers.forEach(user => {
+                        select.innerHTML += `<option value="${user.id}">${user.username}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error loading users:', error));
+        }
+    });
+</script>
+{% endblock %}

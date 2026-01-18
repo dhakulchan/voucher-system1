@@ -16,11 +16,19 @@ class BookingEnhanced:
     """Enhanced booking model with comprehensive token management"""
     
     @staticmethod
-    def generate_secure_token(booking_id: int, expiry_days: int = 120) -> Optional[str]:
-        """Generate secure token with 120-day expiry or departure_date + 120 days"""
+    @staticmethod
+    def generate_secure_token(booking_id: int, expiry_days: int = 120, token_version: int = None) -> Optional[str]:
+        """Generate secure token with 120-day expiry or departure_date + 120 days
+        
+        Args:
+            booking_id: ID of the booking
+            expiry_days: Number of days until token expires (default 120)
+            token_version: Explicit version number to use (if None, will query from DB)
+        """
         try:
             # Get booking to determine expiry based on departure date
             from models.booking import Booking
+            from extensions import db
             booking = Booking.query.get(booking_id)
             
             if booking and booking.departure_date:
@@ -35,8 +43,18 @@ class BookingEnhanced:
             
             current_timestamp = int(time.time())
             
-            # Create token payload: booking_id|current_timestamp|expiry_timestamp
-            payload = f"{booking_id}|{current_timestamp}|{expiry_timestamp}"
+            # Get current token version from database using RAW SQL if not provided
+            if token_version is None:
+                result = db.session.execute(
+                    db.text("SELECT share_token_version FROM bookings WHERE id = :id"),
+                    {"id": booking_id}
+                ).fetchone()
+                token_version = result[0] if result else 1
+            
+            logger.info(f"Using token version: {token_version}")
+            
+            # Create token payload: booking_id|current_timestamp|version|expiry_timestamp (4 parts)
+            payload = f"{booking_id}|{current_timestamp}|{token_version}|{expiry_timestamp}"
             
             # Sign with HMAC - Use Flask app's secret key for consistency
             from flask import current_app
@@ -92,18 +110,56 @@ class BookingEnhanced:
             
             # Parse payload
             parts = payload.split('|')
-            if len(parts) != 3:
+            
+            # Support both old (3 parts) and new (4 parts with version) formats
+            # Old: booking_id|timestamp|expiry
+            # New: booking_id|timestamp|version|expiry
+            if len(parts) == 4:
+                # New format with version
+                booking_id = int(parts[0])
+                token_version = int(parts[2])
+                expiry_timestamp = int(parts[3])
+            elif len(parts) == 3:
+                # Old format without version
+                booking_id = int(parts[0])
+                token_version = 1  # Default version for old tokens
+                expiry_timestamp = int(parts[2])
+            else:
                 logger.warning(f"Invalid token payload format: {len(parts)} parts")
                 return None
-                
-            booking_id = int(parts[0])
-            expiry_timestamp = int(parts[2])
             
             # Check if token has expired
             current_time = time.time()
             if current_time > expiry_timestamp:
                 logger.warning(f"Token expired: {current_time} > {expiry_timestamp}")
                 return None
+            
+            # Check if token version matches DB version (to invalidate old tokens after reset)
+            try:
+                from extensions import db
+                raw_ver = db.session.execute(
+                    db.text("SELECT share_token_version, status FROM bookings WHERE id = :id"),
+                    {"id": booking_id}
+                ).fetchone()
+                
+                if raw_ver:
+                    db_version = raw_ver[0] if raw_ver[0] else 1
+                    db_status = raw_ver[1] if len(raw_ver) > 1 else None
+                    
+                    # Check if booking is cancelled
+                    if db_status == 'cancelled':
+                        logger.warning(f"🚫 Booking {booking_id} is cancelled")
+                        return None
+                    
+                    # Check if token version matches
+                    if token_version < db_version:
+                        logger.warning(f"🚫 Token version mismatch: token v{token_version} < DB v{db_version} (token reset)")
+                        return None
+                    
+                    logger.info(f"✅ Token version verified: v{token_version} matches DB v{db_version}")
+            except Exception as db_err:
+                logger.warning(f"Could not verify token version against DB: {db_err}")
+                # Continue anyway for backward compatibility
                 
             logger.info(f"Token verified successfully for booking {booking_id}")
             return booking_id
@@ -165,13 +221,29 @@ class BookingEnhanced:
         """Generate the standardized Thai message for sharing"""
         message = f"""สวัสดีค่ะ
 บริษัท ตระกูลเฉินฯ แจ้งรายละเอียดบริการหรือรายการทัวร์ หมายเลขอ้างอิง {booking_reference}
+
 กรุณาคลิกดูรายละเอียดตามด้านล่างค่ะ
 
-📋 {document_title}: {secure_url}
+📋 Service Proposal: {secure_url}
 
-🖼️ Download PNG: {png_url}
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
 
-📄 Download PDF: {pdf_url}
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
 
 ติดต่อสอบถามข้อมูลเพิ่มเติม:
 📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155

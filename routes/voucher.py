@@ -62,10 +62,14 @@ except:
 
 # Use absolute path for PNG cache directory in WSGI environment
 def _get_png_cache_dir():
-    # Production server path
-    production_path = '/opt/bitnami/apache/htdocs/static/generated/png_cache'
-    if os.path.exists('/opt/bitnami/apache/htdocs'):
-        return production_path
+    """Get PNG cache directory path for current environment"""
+    # Check for production environment markers
+    if os.path.exists('/home/ubuntu/voucher-ro_v1.0'):
+        # Production path (home directory)
+        return '/home/ubuntu/voucher-ro_v1.0/static/generated/png_cache'
+    elif os.path.exists('/opt/bitnami/apache/htdocs'):
+        # Production path (Bitnami stack - fallback)
+        return '/opt/bitnami/apache/htdocs/static/generated/png_cache'
     
     # Development path
     basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -281,49 +285,63 @@ def test_list():
 @voucher_bp.route('/list', endpoint='list')
 @login_required
 def list_vouchers():  # renamed from list to avoid shadowing built-in list
-    """List all vouchers (only vouchered status)"""
-    status_filter = request.args.get('status', '')
-    voucher_type_filter = request.args.get('voucher_type', '')  # currently unused
-    search = request.args.get('search', '')
-    date_from = request.args.get('date_from', '')
-
-    # Only bookings that have vouchered status
-    query = Booking.query.filter(
-        Booking.status == 'vouchered'
-    )
-
-    if search:
-        query = query.join(Customer).filter(
-            db.or_(
-                Customer.first_name.contains(search),
-                Customer.last_name.contains(search),
-                Customer.email.contains(search),
-                Booking.booking_reference.contains(search)
-            )
-        )
-
-    if date_from:
-        try:
-            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
-            query = query.filter(Booking.created_at >= date_from_obj)
-        except ValueError:
-            pass
-
-    vouchers = query.order_by(Booking.created_at.desc()).all()
-
-    # If no vouchered bookings exist, show empty list instead of redirecting
-    stats = {
-        'active': Booking.query.filter(Booking.status == 'vouchered').count(),
-        'used': 0,
-        'expired': 0,
-    }
-
-    language = session.get('language', 'en')
-    template_name = f'voucher/list_{language}.html'
+    """List all vouchers (all relevant statuses: confirmed, quoted, paid, vouchered, completed)"""
     try:
-        return render_template(template_name, vouchers=vouchers, stats=stats, now=datetime.now)
-    except:
-        return render_template('voucher/list_en.html', vouchers=vouchers, stats=stats, now=datetime.now)
+        status_filter = request.args.get('status', '')
+        voucher_type_filter = request.args.get('voucher_type', '')  # currently unused
+        search = request.args.get('search', '')
+        date_from = request.args.get('date_from', '')
+
+        # Show all bookings that can have vouchers (confirmed, quoted, paid, vouchered, completed)
+        query = Booking.query.filter(
+            Booking.status.in_(['confirmed', 'quoted', 'paid', 'vouchered', 'completed'])
+        )
+        
+        # Apply status filter if provided
+        if status_filter:
+            query = query.filter(Booking.status == status_filter)
+
+        if search:
+            query = query.join(Customer).filter(
+                db.or_(
+                    Customer.first_name.contains(search),
+                    Customer.last_name.contains(search),
+                    Customer.email.contains(search),
+                    Booking.booking_reference.contains(search)
+                )
+            )
+
+        if date_from:
+            try:
+                date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+                query = query.filter(Booking.created_at >= date_from_obj)
+            except ValueError:
+                pass
+
+        vouchers = query.order_by(Booking.created_at.desc()).all()
+
+        # Calculate stats for all relevant statuses
+        stats = {
+            'active': Booking.query.filter(Booking.status.in_(['confirmed', 'quoted', 'paid', 'vouchered'])).count(),
+            'used': 0,
+            'expired': 0,
+            'vouchered': Booking.query.filter(Booking.status == 'vouchered').count(),
+            'paid': Booking.query.filter(Booking.status == 'paid').count(),
+            'quoted': Booking.query.filter(Booking.status == 'quoted').count(),
+            'confirmed': Booking.query.filter(Booking.status == 'confirmed').count(),
+        }
+
+        language = session.get('language', 'en')
+        template_name = f'voucher/list_{language}.html'
+        try:
+            return render_template(template_name, vouchers=vouchers, stats=stats, now=datetime.now)
+        except Exception as render_error:
+            current_app.logger.error(f'Failed to render {template_name}: {render_error}')
+            return render_template('voucher/list_en.html', vouchers=vouchers, stats=stats, now=datetime.now)
+    except Exception as e:
+        current_app.logger.exception(f'Error in list_vouchers: {e}')
+        flash(f'Error loading voucher list: {str(e)}', 'error')
+        return redirect(url_for('booking.list'))
 
 @voucher_bp.route('/<int:id>')
 @login_required
@@ -402,9 +420,34 @@ def _process_voucher_image_upload(file, booking):
     if sz > max_size:
         current_app.logger.warning('Image too large (>1MB)'); return None
     rel_dir = 'uploads/voucher_images'
-    # Use adaptive path for development vs production
-    abs_dir = '/opt/bitnami/apache/htdocs/static/uploads/voucher_images' if os.path.exists('/opt/bitnami') else 'static/uploads/voucher_images'
-    os.makedirs(abs_dir, exist_ok=True)
+    
+    # Use adaptive path with write-test for development vs production
+    possible_paths = [
+        '/home/ubuntu/voucher-ro_v1.0/static/uploads/voucher_images',  # Production (home)
+        '/opt/bitnami/apache/htdocs/static/uploads/voucher_images',     # Production (Bitnami)
+        'static/uploads/voucher_images'                                 # Development
+    ]
+    
+    abs_dir = None
+    for path in possible_paths:
+        try:
+            os.makedirs(path, exist_ok=True)
+            # Test if we can write to it
+            test_file = os.path.join(path, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('test')
+            os.remove(test_file)
+            # If we got here, this path is writable
+            abs_dir = path
+            break
+        except (PermissionError, OSError):
+            continue
+    
+    if not abs_dir:
+        # Fallback to current directory
+        abs_dir = 'static/uploads/voucher_images'
+        os.makedirs(abs_dir, exist_ok=True)
+    
     new_name = f"booking_{booking.id}_{int(time.time())}.{ext}"
     abs_path = os.path.join(abs_dir, new_name)
     # Save temp then resize/compress if needed
@@ -578,11 +621,33 @@ def reorder_images(id):
     data = request.get_json()
     image_order = data.get('image_order', [])
     
-    # Store image order in booking metadata or separate table
-    # For now, just return success - this would need proper implementation
-    # based on your multi-image storage strategy
+    if not image_order:
+        return jsonify({'success': False, 'error': 'No image order provided'})
     
-    return jsonify({'success': True})
+    try:
+        # Get current images
+        current_images = booking.get_voucher_images()
+        
+        # Create a mapping of image IDs to image data
+        image_map = {img.get('id'): img for img in current_images if isinstance(img, dict) and img.get('id')}
+        
+        # Reorder images based on the provided order
+        reordered_images = []
+        for image_id in image_order:
+            if image_id in image_map:
+                reordered_images.append(image_map[image_id])
+        
+        # Save the reordered images
+        booking.set_voucher_images(reordered_images)
+        db.session.commit()
+        
+        current_app.logger.info(f'Reordered {len(reordered_images)} images for booking {id}')
+        return jsonify({'success': True, 'message': f'Reordered {len(reordered_images)} images'})
+        
+    except Exception as e:
+        current_app.logger.error(f'Error reordering images for booking {id}: {str(e)}')
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @voucher_bp.route('/<int:id>/upload-image', methods=['POST'])
 @login_required
@@ -737,58 +802,35 @@ def download(id):
 @voucher_bp.route('/<int:id>/pdf')
 @login_required
 def generate_pdf(id):
+    """Generate PDF voucher - uses same logic as PNG route"""
     booking = Booking.query.get_or_404(id)
     if booking.status not in ['confirmed', 'quoted', 'paid', 'vouchered', 'completed']:
         flash('ต้องยืนยันก่อนสร้าง PDF', 'error')
         return redirect(url_for('voucher.view', id=id))
     
     try:
-        from services.pdf_generator import PDFGenerator
-        pdf_generator = PDFGenerator()
-        
-        # ✅ เพิ่มการสร้าง Quote PDF สำหรับ status "quoted"
-        if booking.status == 'quoted':
-            # สร้าง Quote PDF ตามรูปแบบในภาพ
-            pdf_file = pdf_generator.generate_quote_document(booking)
-            filename = pdf_file  # ใช้ชื่อไฟล์ที่ generator สร้างให้
-        elif booking.booking_type == 'tour':
-            # ✅ ใช้ TourVoucherWeasyPrintV2 สำหรับ Tour Voucher (HTML Template)
-            from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
-            
-            # ใช้ TourVoucherWeasyPrintV2 กับ HTML template สำหรับ Tour Voucher
-            tour_generator = TourVoucherWeasyPrintV2()
-            pdf_file = tour_generator.generate_tour_voucher_v2(booking)
-            filename = pdf_file  # ใช้ชื่อไฟล์ที่ generator สร้างให้
-        else:
-            # booking_type อื่น ๆ ให้ใช้ Service Proposal header
-            pdf_file = pdf_generator.generate_mpv_booking(booking)
-            filename = pdf_file  # ใช้ชื่อไฟล์ที่ generator สร้างให้
-        
-        # จัดการ path ให้ถูกต้องตาม generator type
+        # Generate PDF bytes using same logic as PNG route
         if booking.booking_type == 'tour':
-            # WeasyPrint generator ส่งกลับชื่อไฟล์, ต้องสร้าง full path
-            pdf_path = f'static/generated/{pdf_file}'
+            from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
+            tour_generator = TourVoucherWeasyPrintV2()
+            pdf_bytes = tour_generator.generate_tour_voucher_v2_bytes(booking)
         else:
-            # PDF generator เดิมส่งกลับชื่อไฟล์
-            pdf_path = f'static/generated/{pdf_file}'
-            
-        if not os.path.exists(pdf_path):
-            flash('ไม่สามารถสร้างไฟล์ PDF ได้', 'error')
+            from services.pdf_generator import PDFGenerator
+            gen = PDFGenerator()
+            pdf_bytes = gen.generate_tour_voucher_bytes(booking)
+        
+        if not pdf_bytes:
+            flash('PDF generation failed', 'error')
             return redirect(url_for('voucher.view', id=id))
-            
-        # Fix for compatibility - use attachment_filename instead of download_name for older Flask versions
-        try:
-            # Try the newer parameter name first
-            return send_file(pdf_path, 
-                            as_attachment=True, 
-                            download_name=filename,
-                            mimetype='application/pdf')
-        except TypeError:
-            # Fall back to older parameter name
-            return send_file(pdf_path, 
-                            as_attachment=True, 
-                            attachment_filename=filename,
-                            mimetype='application/pdf')
+        
+        # Return PDF file directly from bytes
+        import io
+        buf = io.BytesIO(pdf_bytes)
+        buf.seek(0)
+        return send_file(buf, 
+                        mimetype='application/pdf',
+                        as_attachment=True,
+                        download_name=f'voucher_{booking.booking_reference}.pdf')
         
     except Exception as e:
         current_app.logger.error(f'Error generating PDF: {str(e)}')
@@ -811,7 +853,14 @@ def generate_quote_pdf(id):
         # สร้าง Quote PDF ตามรูปแบบในภาพ: DHAKUL CHAN TRAVEL SERVICE
         pdf_file = pdf_generator.generate_quote_document(booking)
         
-        pdf_path = f'static/generated/{pdf_file}'
+        # Use production path if available
+        if os.path.exists('/home/ubuntu/voucher-ro_v1.0'):
+            pdf_path = f'/home/ubuntu/voucher-ro_v1.0/static/generated/{pdf_file}'
+        elif os.path.exists('/opt/bitnami/apache/htdocs'):
+            pdf_path = f'/opt/bitnami/apache/htdocs/static/generated/{pdf_file}'
+        else:
+            pdf_path = f'static/generated/{pdf_file}'
+        
         if not os.path.exists(pdf_path):
             flash('ไม่สามารถสร้างไฟล์ Quote PDF ได้', 'error')
             return redirect(url_for('voucher.view', id=id))
@@ -1001,6 +1050,14 @@ def save_rows_api(id):
             booking.set_voucher_images(vi)
         else:
             current_app.logger.debug(f"voucher_images not a list or missing: {type(vi)}")
+        
+        # Handle voucher album IDs from library
+        album_ids = data.get('voucher_album_ids')
+        if isinstance(album_ids, list):
+            current_app.logger.debug(f"Setting voucher_album_ids with {len(album_ids)} items")
+            booking.set_voucher_album_ids(album_ids)
+        elif album_ids is not None:
+            current_app.logger.debug(f"voucher_album_ids not a list: {type(album_ids)}")
 
         # ลบ cache PNG voucher ทุกครั้งที่แก้ไขข้อมูล
         try:

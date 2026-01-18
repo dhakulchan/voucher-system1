@@ -4,7 +4,7 @@ SQLAlchemy ORM models with complete workflow support
 """
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import event
+from sqlalchemy import event, text
 from sqlalchemy.orm import relationship, foreign
 from datetime import datetime, date, timedelta
 import json
@@ -12,6 +12,9 @@ import secrets
 import string
 
 db = SQLAlchemy()
+
+# Import BookingTask model
+from models.booking_task import BookingTask
 
 class NumberSequence(db.Model):
     """Number sequences for booking, quote, voucher numbering"""
@@ -119,6 +122,10 @@ class Booking(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     confirmed_at = db.Column(db.DateTime)
     
+    # Quote reference (denormalized for quick access)
+    quote_id = db.Column(db.Integer, db.ForeignKey('quotes.id', ondelete='SET NULL'), nullable=True)
+    quote_number = db.Column(db.String(50), nullable=True)
+    
     # Metadata
     notes = db.Column(db.Text)
     internal_notes = db.Column(db.Text)
@@ -126,7 +133,8 @@ class Booking(db.Model):
     # Relationships
     customer = relationship('Customer', back_populates='bookings')
     products = relationship('BookingProduct', back_populates='booking', cascade='all, delete-orphan')
-    quotes = relationship('Quote', back_populates='booking', cascade='all, delete-orphan')
+    quotes = relationship('Quote', back_populates='booking', cascade='all, delete-orphan', 
+                         foreign_keys='Quote.booking_id')
     vouchers = relationship('Voucher', back_populates='booking', cascade='all, delete-orphan')
     
     @property
@@ -222,7 +230,7 @@ class Quote(db.Model):
     terms_conditions = db.Column(db.Text)
     
     # Relationships
-    booking = relationship('Booking', back_populates='quotes')
+    booking = relationship('Booking', back_populates='quotes', foreign_keys=[booking_id])
     vouchers = relationship('Voucher', back_populates='quote', cascade='all, delete-orphan')
     document_shares = relationship('DocumentShare', 
                                  primaryjoin="and_(Quote.id==foreign(DocumentShare.document_id), DocumentShare.document_type=='quote')",
@@ -424,10 +432,41 @@ def generate_booking_number(mapper, connection, target):
 
 @event.listens_for(Quote, 'before_insert')
 def generate_quote_number(mapper, connection, target):
-    """Auto-generate quote number"""
+    """Auto-generate quote number using app_settings"""
     if not target.quote_number:
-        next_num, format_template = NumberSequence.get_next_number('quote')
-        target.quote_number = f"QT{date.today().strftime('%Y%m%d')}{next_num:06d}"
+        # Get next_quote_number from app_settings
+        result = connection.execute(
+            text("SELECT setting_value FROM app_settings WHERE setting_key = 'next_quote_number'")
+        ).fetchone()
+        
+        if result and result[0]:
+            current_value = str(result[0]).strip()
+            
+            # Remove QT prefix if exists
+            if current_value.startswith('QT'):
+                current_value = current_value[2:]
+            
+            try:
+                next_number = int(current_value)
+                target.quote_number = f'QT{next_number}'
+                
+                # Update app_settings with next number
+                connection.execute(
+                    text("UPDATE app_settings SET setting_value = :next_value, updated_at = NOW() WHERE setting_key = 'next_quote_number'"),
+                    {"next_value": str(next_number + 1)}
+                )
+            except ValueError:
+                # Fallback to default
+                target.quote_number = 'QT2601001'
+                connection.execute(
+                    text("UPDATE app_settings SET setting_value = '2601002', updated_at = NOW() WHERE setting_key = 'next_quote_number'")
+                )
+        else:
+            # Initialize if not exists
+            target.quote_number = 'QT2601001'
+            connection.execute(
+                text("INSERT INTO app_settings (setting_key, setting_value, updated_at) VALUES ('next_quote_number', '2601002', NOW()) ON DUPLICATE KEY UPDATE setting_value = '2601002', updated_at = NOW()")
+            )
 
 @event.listens_for(Voucher, 'before_insert')
 def generate_voucher_number(mapper, connection, target):

@@ -27,6 +27,15 @@ def edit(id):
             customer.nationality = request.form.get('nationality') or customer.nationality
             customer.address = request.form.get('address') or customer.address
             customer.notes = request.form.get('notes') or customer.notes
+            
+            # Update company fields
+            customer.customer_type = request.form.get('customer_type') or customer.customer_type
+            customer.company_name = request.form.get('company_name') or None
+            customer.company_address = request.form.get('company_address') or None
+            customer.company_tel = request.form.get('company_tel') or None
+            customer.company_taxid = request.form.get('company_taxid') or None
+            customer.company_contact = request.form.get('company_contact') or None
+            
             customer.sync_name()
 
             # Invoice Ninja integration removed - skip client linking
@@ -60,6 +69,13 @@ def create():
                 nationality=request.form.get('nationality'),
                 address=request.form.get('address'),
                 notes=request.form.get('notes'),
+                customer_type=request.form.get('customer_type') or 'Visitor-Individual',
+                company_name=request.form.get('company_name'),
+                company_address=request.form.get('company_address'),
+                company_tel=request.form.get('company_tel'),
+                company_taxid=request.form.get('company_taxid'),
+                company_contact=request.form.get('company_contact'),
+                created_by=current_user.id,
                 name=''  # set then sync
             )
             c.sync_name()
@@ -107,6 +123,10 @@ def list():
     
     query = Customer.query
     
+    # Add owner filter for Internship and Freelance users
+    if current_user.role in ['Internship', 'Freelance']:
+        query = query.filter(Customer.created_by == current_user.id)
+    
     if search:
         search_filter = or_(
             Customer.name.ilike(f'%{search}%'),
@@ -139,8 +159,15 @@ def api_search():
     if not query:
         return jsonify([])
     
+    # Build base query
+    base_query = Customer.query
+    
+    # Add owner filter for Internship and Freelance users
+    if current_user.role in ['Internship', 'Freelance']:
+        base_query = base_query.filter(Customer.created_by == current_user.id)
+    
     # Local search
-    local_customers = Customer.query.filter(
+    local_customers = base_query.filter(
         or_(
             Customer.name.ilike(f'%{query}%'),
             Customer.email.ilike(f'%{query}%'),

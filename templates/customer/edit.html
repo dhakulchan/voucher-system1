@@ -5,6 +5,22 @@
 <form method="POST">
     <div class="row">
         <div class="col-md-6 mb-3">
+            <label class="form-label">ประเภท *</label>
+            <select name="customer_type" id="customer_type" class="form-select" required>
+                <option value="Visitor-Individual" {% if customer.customer_type=='Visitor-Individual' or not
+                    customer.customer_type %}selected{% endif %}>Visitor - Individual</option>
+                <option value="Corporate-Company" {% if customer.customer_type=='Corporate-Company' %}selected{% endif
+                    %}>
+                    Corporate - Company</option>
+                <option value="Travel Agent" {% if customer.customer_type=='Travel Agent' %}selected{% endif %}>Travel
+                    Agent
+                </option>
+            </select>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
             <label class="form-label">ชื่อ</label>
             <input type="text" name="first_name" class="form-control" value="{{ customer.first_name }}">
         </div>
@@ -33,6 +49,37 @@
             <input type="text" name="address" class="form-control" value="{{ customer.address }}">
         </div>
     </div>
+
+    <!-- Company/Organization Fields -->
+    <div id="company_fields"
+        style="display: {% if customer.customer_type == 'Corporate-Company' or customer.customer_type == 'Travel Agent' %}block{% else %}none{% endif %};">
+        <h5 class="mt-4 mb-3"><i class="fas fa-building me-2"></i>ข้อมูลบริษัท/องค์กร</h5>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">ชื่อบริษัท</label>
+                <input type="text" name="company_name" class="form-control" value="{{ customer.company_name }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">เบอร์โทรบริษัท</label>
+                <input type="text" name="company_tel" class="form-control" value="{{ customer.company_tel }}">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">เลขประจำตัวผู้เสียภาษี</label>
+                <input type="text" name="company_taxid" class="form-control" value="{{ customer.company_taxid }}">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">ผู้ติดต่อ</label>
+                <input type="text" name="company_contact" class="form-control" value="{{ customer.company_contact }}">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">ที่อยู่บริษัท</label>
+            <textarea name="company_address" class="form-control" rows="3">{{ customer.company_address }}</textarea>
+        </div>
+    </div>
+
     <div class="mb-3">
         <label class="form-label">หมายเหตุ</label>
         <textarea name="notes" class="form-control" rows="4">{{ customer.notes }}</textarea>
@@ -42,4 +89,20 @@
         <a href="{{ url_for('customer.view', id=customer.id) }}" class="btn btn-secondary">ยกเลิก</a>
     </div>
 </form>
+
+<script>
+    (function () {
+        const customerType = document.getElementById('customer_type');
+        const companyFields = document.getElementById('company_fields');
+
+        // Toggle company fields based on customer type
+        customerType.addEventListener('change', function () {
+            if (this.value === 'Corporate-Company' || this.value === 'Travel Agent') {
+                companyFields.style.display = 'block';
+            } else {
+                companyFields.style.display = 'none';
+            }
+        });
+    })();
+</script>
 {% endblock %}

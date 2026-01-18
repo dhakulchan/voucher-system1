@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}รายการกลุ่ม Group Buy{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="fas fa-users"></i> รายการกลุ่มทั้งหมด</h1>
+        </div>
+        <div class="col-md-4">
+            <div class="btn-group float-end">
+                <a href="{{ url_for('group_buy_admin.groups', status='all') }}"
+                    class="btn btn-sm btn-{{ 'primary' if status_filter == 'all' else 'outline-secondary' }}">
+                    ทั้งหมด
+                </a>
+                <a href="{{ url_for('group_buy_admin.groups', status='active') }}"
+                    class="btn btn-sm btn-{{ 'info' if status_filter == 'active' else 'outline-secondary' }}">
+                    กำลังรอ
+                </a>
+                <a href="{{ url_for('group_buy_admin.groups', status='success') }}"
+                    class="btn btn-sm btn-{{ 'success' if status_filter == 'success' else 'outline-secondary' }}">
+                    สำเร็จ
+                </a>
+                <a href="{{ url_for('group_buy_admin.groups', status='failed') }}"
+                    class="btn btn-sm btn-{{ 'danger' if status_filter == 'failed' else 'outline-secondary' }}">
+                    ล้มเหลว
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>รหัสกลุ่ม</th>
+                            <th>แคมเปญ</th>
+                            <th>ชื่อกลุ่ม</th>
+                            <th>หัวหน้า</th>
+                            <th>สมาชิก</th>
+                            <th>จำนวนคน</th>
+                            <th>ความคืบหน้า</th>
+                            <th>สถานะ</th>
+                            <th>เวลาที่สร้าง</th>
+                            <th>เวลาที่หมดอายุ</th>
+                            <th>การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in groups %}
+                        <tr>
+                            <td>{{ group.id }}</td>
+                            <td><code>{{ group.group_code }}</code></td>
+                            <td>
+                                <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=group.campaign_id) }}">
+                                    {{ group.campaign.name }}
+                                </a>
+                            </td>
+                            <td>{{ group.group_name }}</td>
+                            <td>
+                                {{ group.leader_name }}<br>
+                                <small class="text-muted">{{ group.leader_phone or group.leader_email }}</small>
+                            </td>
+                            <td>{{ group.current_participants }}/{{ group.required_participants }}</td>
+                            <td><strong>{{ group.total_pax_count }}</strong> คน</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar bg-success"
+                                        style="width: {{ group.progress_percentage }}%">
+                                        {{ "{:.0f}".format(group.progress_percentage) }}%
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if group.status == 'success' %}
+                                <span class="badge bg-success">สำเร็จ</span>
+                                {% elif group.status == 'active' %}
+                                {% if group.is_expired %}
+                                <span class="badge bg-warning">หมดเวลา</span>
+                                {% else %}
+                                <span class="badge bg-info">กำลังรอ</span>
+                                {% endif %}
+                                {% elif group.status == 'failed' %}
+                                <span class="badge bg-danger">ล้มเหลว</span>
+                                {% else %}
+                                <span class="badge bg-secondary">{{ group.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">{{ group.created_at.strftime('%d/%m/%Y<br>%H:%M') | safe }}</td>
+                            <td class="small">
+                                {{ group.expires_at.strftime('%d/%m/%Y<br>%H:%M') | safe }}
+                                {% if group.status == 'active' and not group.is_expired %}
+                                <br><span class="text-info">{{ group.time_remaining_formatted }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
+                                    class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> ดู
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

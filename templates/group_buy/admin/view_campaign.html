@@ -1,0 +1,451 @@
+{% extends "base.html" %}
+
+{% block title %}{{ campaign.name }} - รายละเอียดแคมเปญ{% endblock %}
+
+{% block content %}
+<div class="container-fluid" style="font-size: 90%;">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 style="font-size: 1.75rem;">
+                <i class="fas fa-bullhorn" style="font-size: 1.5rem;"></i> {{ campaign.name }}
+                {% if campaign.featured %}
+                <span class="badge bg-warning"><i class="fas fa-star"></i> Featured</span>
+                {% endif %}
+            </h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{{ url_for('group_buy_admin.quick_booking', campaign_id=campaign.id) }}"
+                class="btn btn-success me-2">
+                <i class="fas fa-user-plus"></i> จองแทนลูกค้า
+            </a>
+            <a href="{{ url_for('group_buy_admin.manage_special_codes', campaign_id=campaign.id) }}"
+                class="btn btn-info me-2">
+                <i class="fas fa-key"></i> รหัสพิเศษ
+            </a>
+            <a href="{{ url_for('group_buy_admin.edit_campaign', campaign_id=campaign.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> แก้ไข
+            </a>
+            <form method="POST"
+                action="{{ url_for('group_buy_admin.toggle_campaign_status', campaign_id=campaign.id) }}"
+                style="display: inline;">
+                <button type="submit" class="btn btn-{{ 'danger' if campaign.is_active else 'success' }}">
+                    <i class="fas fa-power-off"></i> {{ 'ปิดใช้งาน' if campaign.is_active else 'เปิดใช้งาน' }}
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ stats.total_groups }}</h3>
+                    <p class="mb-0 small">กลุ่มทั้งหมด</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">{{ stats.successful_groups }}</h3>
+                    <p class="mb-0 small">สำเร็จ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-info">{{ stats.active_groups }}</h3>
+                    <p class="mb-0 small">กำลังรอ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ stats.failed_groups }}</h3>
+                    <p class="mb-0 small">ล้มเหลว</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ stats.total_participants }}</h3>
+                    <p class="mb-0 small">ผู้เข้าร่วม</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3 class="text-success">฿{{ "{:,.0f}".format(stats.total_revenue) }}</h3>
+                    <p class="mb-0 small">รายได้</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Campaign Details -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">รายละเอียดแคมเปญ</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>ประเภท:</strong> {{ campaign.product_type }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>สถานะ:</strong>
+                            {% if campaign.is_active_now %}
+                            <span class="badge bg-success">กำลังทำงาน</span>
+                            {% else %}
+                            <span class="badge bg-secondary">ไม่ทำงาน</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>ราคาปกติ:</strong> <span class="text-muted text-decoration-line-through">฿{{
+                                "{:,.2f}".format(campaign.regular_price) }}</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ราคากลุ่ม:</strong> <span class="text-success h5">฿{{
+                                "{:,.2f}".format(campaign.group_price) }}</span>
+                            {% if campaign.allow_partial_payment %}
+                            <br>
+                            <span class="text-warning" style="font-size: 1.1rem; font-weight: 600;">
+                                <i class="fas fa-coins"></i>
+                                {% if campaign.partial_payment_type == 'fixed' %}
+                                จ่ายเงินมัดจำ {{ "{:,.0f}".format(campaign.partial_payment_value) }} บาท/คน
+                                {% elif campaign.partial_payment_type == 'percentage' %}
+                                จ่ายเงินมัดจำ {{ "{:.0f}".format(campaign.partial_payment_value) }}% ({{
+                                "{:,.0f}".format(campaign.group_price * campaign.partial_payment_value / 100) }}
+                                บาท/คน)
+                                {% elif campaign.partial_payment_type == 'full' %}
+                                จ่ายเต็มจำนวน {{ "{:,.0f}".format(campaign.group_price) }} บาท/คน
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>ส่วนลด:</strong> <span class="badge bg-danger">-{{
+                                "{:.0f}".format(campaign.discount_percentage) }}%</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>จำนวนกลุ่มขั้นต่ำ:</strong> {{ campaign.min_participants }} กลุ่ม/ต่อคณะ
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>ระยะเวลารวมกลุ่ม:</strong> {{ campaign.duration_hours }} ชั่วโมง
+                        </div>
+                        <div class="col-md-6">
+                            <strong>จำนวนสูงสุด:</strong> {{ campaign.max_participants or 'ไม่จำกัด'
+                            }} คน/ต่อกลุ่ม
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Campaign เริ่มวันที่ - สิ้นสุด:</strong><br>
+                            {{ campaign.campaign_start_date.strftime('%d/%m/%Y') }} - {{
+                            campaign.campaign_end_date.strftime('%d/%m/%Y') }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Inventory - จำนวนทั้งหมด:</strong><br>
+                            {% if campaign.total_slots %}
+                            {{ campaign.inventory_used }} / {{ campaign.total_slots }}
+                            (เหลือ {{ campaign.inventory_remaining }} คณะ)
+                            {% else %}
+                            ไม่จำกัด
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong style="font-size: 1.1rem;">🧳 Pax (จำนวนผู้เดินทางสูงสุด):</strong>
+                            {% if campaign.max_pax %}
+                            <span class="badge bg-info" style="font-size: 1.1rem; padding: 0.5rem 1rem;">{{
+                                campaign.max_pax }} คน</span>
+                            {% else %}
+                            <span class="text-muted">ไม่จำกัด</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>ที่นั่งคงเหลือ:</strong>
+                            {% if campaign.max_pax %}
+                            {% set total_confirmed_pax = campaign.groups|selectattr('status', 'equalto',
+                            'success')|sum(attribute='total_pax_count') %}
+                            {% set remaining_seats = campaign.max_pax - total_confirmed_pax %}
+                            <span class="badge bg-primary" style="font-size: 1.1rem; padding: 0.5rem 1rem;">คงเหลือ {{
+                                remaining_seats }} ที่นั่ง(seats)</span>
+                            {% else %}
+                            <span class="text-muted">ไม่จำกัด</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if campaign.travel_date_from or campaign.travel_date_to %}
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <strong style="font-size: 1.1rem;">🛫 วันที่เดินทาง:</strong><br>
+                            <span style="font-size: 1.1rem; font-weight: 600; color: #2563eb;">
+                                {% if campaign.travel_date_from and campaign.travel_date_to %}
+                                {{ campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                                campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                                {% elif campaign.travel_date_from %}
+                                {{ campaign.travel_date_from.strftime('%d/%m/%Y') }}
+                                {% elif campaign.travel_date_to %}
+                                {{ campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Groups List -->
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">กลุ่มทั้งหมด</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>รหัสกลุ่ม</th>
+                                            <th>คณะ</th>
+                                            <th>ผู้จอง</th>
+                                            <th>สมาชิก</th>
+                                            <th>จำนวน</th>
+                                            <th>สถานะ</th>
+                                            <th>เวลาสร้าง</th>
+                                            <th>View</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for group in groups %}
+                                        <tr>
+                                            <td><code>{{ group.group_code }}</code></td>
+                                            <td>{{ group.group_name }}</td>
+                                            <td>{{ group.leader_name }}</td>
+                                            <td>
+                                                {{ group.current_participants }}/{{ group.required_participants }}
+                                                <div class="progress" style="height: 5px;">
+                                                    <div class="progress-bar bg-success"
+                                                        style="width: {{ group.progress_percentage }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><strong>{{ group.total_pax_count }}</strong> คน</td>
+                                            <td>
+                                                {% if group.status == 'success' %}
+                                                <span class="badge bg-success">สำเร็จ</span>
+                                                {% elif group.status == 'active' %}
+                                                <span class="badge bg-info">กำลังรอ</span>
+                                                {% elif group.status == 'failed' %}
+                                                <span class="badge bg-danger">ล้มเหลว</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ group.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="small">{{ group.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                            <td>
+                                                <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
+                                                    class="btn btn-sm btn-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Summary Statistics -->
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong class="text-primary"><i
+                                                class="fas fa-users me-2"></i>จำนวนสมาชิกเข้าร่วม:</strong>
+                                        <span class="ms-2 fs-5 fw-bold">
+                                            {% set success_groups = groups|selectattr('status', 'equalto',
+                                            'success')|list %}
+                                            {% set total_members = success_groups|sum(attribute='current_participants')
+                                            %}
+                                            {{ total_members }} ชุด
+                                        </span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong class="text-success"><i class="fas fa-check-circle me-2"></i>สำเร็จ
+                                            จำนวนคนรวม:</strong>
+                                        <span class="ms-2 fs-5 fw-bold">
+                                            {% set success_total_pax = success_groups|sum(attribute='total_pax_count')
+                                            %}
+                                            {{ success_total_pax }} คน
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if campaign.product_details %}
+                    <div class="mb-3">
+                        <strong>Flights & Hotels (เที่ยวบิน / โรงแรม):</strong>
+                        <p style="white-space: pre-line;">{{ campaign.product_details }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if campaign.description %}
+                    <div class="mb-3">
+                        <strong>Description - รายละเอียด:</strong>
+                        <p style="white-space: pre-line;">{{ campaign.description }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if campaign.terms_conditions %}
+                    <div class="mb-3">
+                        <strong>เงื่อนไขและหมายเหตุ:</strong>
+                        <div
+                            style="white-space: pre-line; max-height: 200px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; padding: 10px; background-color: #f8f9fa;">
+                            {{ campaign.terms_conditions }}</div>
+                    </div>
+                    {% endif %}
+
+                    {% if campaign.admin_notes %}
+                    <div class="mb-3">
+                        <strong>หมายเหตุสำหรับ Admin:</strong>
+                        <div class="alert alert-warning" style="white-space: pre-line;">{{ campaign.admin_notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Success Rate</h5>
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-success">{{ "{:.1f}".format(stats.success_rate) }}%</h2>
+                    <p class="text-muted">{{ stats.successful_groups }}/{{ stats.total_groups }} กลุ่มสำเร็จ</p>
+                </div>
+            </div>
+
+            {% if campaign.product_image %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">รูปภาพสินค้า</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if campaign.image_title %}
+                    <div class="alert alert-info mb-3">
+                        <strong>Title ภาพ:</strong> {{ campaign.image_title }}
+                    </div>
+                    {% endif %}
+                    <img src="{{ url_for('static', filename=campaign.product_image.replace('static/', '')) }}"
+                        alt="{{ campaign.name }}" class="img-thumbnail" style="max-width: 100%;">
+                </div>
+            </div>
+            {% endif %}
+
+            {% if campaign.album_images %}
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-images"></i> Album ภาพเพิ่มเติม</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% set album_list = campaign.album_images|from_json %}
+                        {% for item in album_list %}
+                        <div class="col-md-4 col-sm-6 mb-4">
+                            <div class="position-relative album-item">
+                                {% if item is mapping %}
+                                <a href="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                    data-lightbox="campaign-album" data-title="{{ item.title or '' }}">
+                                    <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                        class="img-thumbnail shadow-sm hover-zoom"
+                                        style="width: 100%; height: 220px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;">
+                                </a>
+                                {% if item.title %}
+                                <div class="mt-2 text-center">
+                                    <span class="badge bg-primary" style="font-size: 0.9rem; padding: 0.5rem 1rem;">
+                                        <i class="fas fa-tag"></i> {{ item.title }}
+                                    </span>
+                                </div>
+                                {% endif %}
+                                {% else %}
+                                <a href="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                    data-lightbox="campaign-album">
+                                    <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                        class="img-thumbnail shadow-sm hover-zoom"
+                                        style="width: 100%; height: 220px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;">
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <style>
+                .hover-zoom:hover {
+                    transform: scale(1.05);
+                    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;
+                }
+
+                .album-item {
+                    overflow: hidden;
+                }
+            </style>
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Share Link</h5>
+                </div>
+                <div class="card-body">
+                    <p class="small">ลูกค้าสามารถเข้าถึงแคมเปญได้ที่:</p>
+                    <div class="input-group">
+                        <input type="text" class="form-control"
+                            value="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id, _external=True) }}"
+                            readonly id="campaignUrl">
+                        <button class="btn btn-outline-secondary" type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('campaignUrl').value); alert('คัดลอกแล้ว!')">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lightbox CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Lightbox JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+<script>
+    lightbox.option({
+        'resizeDuration': 200,
+        'wrapAround': true,
+        'albumLabel': 'ภาพที่ %1 จาก %2'
+    });
+</script>
+{% endblock %}

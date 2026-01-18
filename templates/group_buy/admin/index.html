@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Group Buy Admin - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-users"></i> Group Buy Management</h1>
+            <p class="text-muted">จัดการแคมเปญ Group Buy และกลุ่ม</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ stats.active_campaigns }}</h3>
+                    <p class="mb-0">แคมเปญที่กำลังทำงาน</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ stats.successful_groups }}</h3>
+                    <p class="mb-0">กลุ่มที่สำเร็จ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ stats.active_groups }}</h3>
+                    <p class="mb-0">กลุ่มที่กำลังรอ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <h3>{{ stats.total_groups }}</h3>
+                    <p class="mb-0">กลุ่มทั้งหมด</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <a href="{{ url_for('group_buy_admin.create_campaign') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> สร้างแคมเปญใหม่
+            </a>
+            <a href="{{ url_for('group_buy_admin.campaigns') }}" class="btn btn-outline-primary">
+                <i class="fas fa-list"></i> รายการแคมเปญทั้งหมด
+            </a>
+            <a href="{{ url_for('group_buy_admin.groups') }}" class="btn btn-outline-info">
+                <i class="fas fa-users"></i> รายการกลุ่มทั้งหมด
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Campaigns -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">แคมเปญล่าสุด</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ชื่อแคมเปญ</th>
+                                    <th>ประเภท</th>
+                                    <th>ราคา</th>
+                                    <th>ส่วนลด</th>
+                                    <th>สถานะ</th>
+                                    <th>วันที่เริ่ม-สิ้นสุด</th>
+                                    <th>การดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in campaigns[:10] %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ campaign.name }}</strong>
+                                        {% if campaign.featured %}
+                                        <span class="badge bg-warning">Featured</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ campaign.product_type }}</td>
+                                    <td>
+                                        <span class="text-muted text-decoration-line-through">฿{{
+                                            "{:,.2f}".format(campaign.regular_price) }}</span><br>
+                                        <strong class="text-success">฿{{ "{:,.2f}".format(campaign.group_price)
+                                            }}</strong>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">-{{ "{:.0f}".format(campaign.discount_percentage)
+                                            }}%</span>
+                                    </td>
+                                    <td>
+                                        {% if campaign.is_active_now %}
+                                        <span class="badge bg-success">เปิดใช้งาน</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">ปิด</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small">
+                                        {{ campaign.campaign_start_date.strftime('%d/%m/%Y') }}<br>
+                                        - {{ campaign.campaign_end_date.strftime('%d/%m/%Y') }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=campaign.id) }}"
+                                            class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('group_buy_admin.edit_campaign', campaign_id=campaign.id) }}"
+                                            class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

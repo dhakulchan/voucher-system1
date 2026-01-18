@@ -14,21 +14,22 @@ user_mgmt_bp = Blueprint('user_mgmt', __name__, url_prefix='/admin/users')
 
 @user_mgmt_bp.route('/')
 @login_required
+@admin_required
 def list_users():
-    """List all users - Manager/Admin only (temporarily bypass role check)"""
+    """List all users - Admin only"""
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin/users/list.html', users=users)
 
 @user_mgmt_bp.route('/create', methods=['GET', 'POST'])
 @login_required
-@manager_required  
+@admin_required  
 def create_user():
-    """Create new user - Manager/Admin only"""
+    """Create new user - Admin only"""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
-        role = request.form.get('role', 'staff')
+        role = request.form.get('role', 'staff').lower().strip()  # Normalize to lowercase
         
         # Validation
         errors = []
@@ -52,7 +53,7 @@ def create_user():
         elif len(password) < 6:
             errors.append('Password must be at least 6 characters')
         
-        if role not in ['staff', 'manager', 'admin', 'operation']:
+        if role not in ['staff', 'manager', 'admin', 'operation', 'internship', 'freelance']:
             errors.append('Invalid role')
         
         # Only admin can create admin users
@@ -70,7 +71,9 @@ def create_user():
                 'staff': 'Staff',
                 'manager': 'Manager', 
                 'admin': 'Administrator',
-                'operation': 'Operation'
+                'operation': 'Operation',
+                'internship': 'Internship',
+                'freelance': 'Freelance'
             }
             
             user = User(
@@ -95,14 +98,14 @@ def create_user():
 
 @user_mgmt_bp.route('/<int:user_id>/role', methods=['POST'])
 @login_required
-@manager_required
+@admin_required
 def update_role(user_id):
-    """Update user role - Manager/Admin only"""
+    """Update user role - Admin only"""
     user = User.query.get_or_404(user_id)
-    new_role = request.form.get('role')
+    new_role = request.form.get('role', '').lower().strip()  # Normalize to lowercase
     
     # Validation
-    if new_role not in ['staff', 'manager', 'admin', 'operation']:
+    if new_role not in ['staff', 'manager', 'admin', 'operation', 'internship', 'freelance']:
         flash('❌ Invalid role', 'error')
         return redirect(url_for('user_mgmt.list_users'))
     
@@ -124,7 +127,9 @@ def update_role(user_id):
             'staff': 'Staff',
             'manager': 'Manager', 
             'admin': 'Administrator',
-            'operation': 'Operation'
+            'operation': 'Operation',
+            'internship': 'Internship',
+            'freelance': 'Freelance'
         }
         
         user.role = role_mapping.get(new_role, 'Staff')
@@ -140,9 +145,9 @@ def update_role(user_id):
 
 @user_mgmt_bp.route('/<int:user_id>/reset-password', methods=['POST'])
 @login_required
-@manager_required
+@admin_required
 def reset_password(user_id):
-    """Reset user password - Manager/Admin only"""
+    """Reset user password - Admin only"""
     user = User.query.get_or_404(user_id)
     new_password = request.form.get('password', '').strip()
     
@@ -193,3 +198,29 @@ def delete_user(user_id):
         flash(f'❌ Error deleting user: {str(e)}', 'error')
     
     return redirect(url_for('user_mgmt.list_users'))
+
+@user_mgmt_bp.route('/<int:user_id>/toggle-2fa', methods=['POST'])
+@login_required
+@admin_required
+def toggle_2fa(user_id):
+    """Enable or disable 2FA for a user - Admin only"""
+    user = User.query.get_or_404(user_id)
+    enable = request.form.get('enable', 'false').lower() == 'true'
+    
+    try:
+        if enable:
+            # Enable 2FA requirement (user will need to set it up on next login)
+            user.is_2fa_enabled = True
+            flash(f'✅ 2FA requirement enabled for "{user.username}". They will be prompted to set up Google Authenticator on next login.', 'success')
+        else:
+            # Disable and clear 2FA
+            user.disable_2fa()
+            flash(f'✅ 2FA disabled for "{user.username}"', 'success')
+        
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash(f'❌ Error updating 2FA: {str(e)}', 'error')
+    
+    return redirect(url_for('user_mgmt.list_users'))
+

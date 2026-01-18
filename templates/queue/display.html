@@ -1,105 +1,820 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
-    <meta charset="utf-8" />
-    <title>Queue Display</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Display - Enhanced</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: 'Sarabun', Arial, sans-serif;
+            overflow: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
         }
 
-        .current {
-            font-size: 48px;
+        .display-container {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            height: 100vh;
+            gap: 0;
+            transition: grid-template-columns 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .display-container.fullscreen-media {
+            grid-template-columns: 0% 100%;
+        }
+
+        .display-container.fullscreen-media .queue-section {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .display-container.fullscreen-media .header {
+            display: none;
+        }
+
+        /* Left Section - Queue Information */
+        .queue-section {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: opacity 0.5s ease;
+        }
+
+        .display-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
             font-weight: bold;
-            color: #1D5FE9;
         }
 
-        table {
-            border-collapse: collapse;
+        .header-title {
+            font-size: 32px;
+            margin-bottom: 5px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+            line-height: 1.3;
+        }
+
+        .header-subtitle {
+            font-size: 20px;
+            font-weight: 500;
+            margin-top: 5px;
+            opacity: 0.95;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .datetime-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-size: 16px;
+        }
+
+        .digital-clock {
+            font-size: 22px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .current-queue {
+            background: #16213e;
+            margin: 20px;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+
+        .queue-number {
+            font-size: 100px;
+            font-weight: 800;
+            color: #4CAF50;
+            animation: pulseGlow 2s ease-in-out infinite;
+            text-shadow: 0 0 30px rgba(76, 175, 80, 0.5),
+                0 0 60px rgba(76, 175, 80, 0.3),
+                4px 4px 12px rgba(0, 0, 0, 0.5);
+            letter-spacing: 4px;
+            white-space: nowrap;
+            max-width: 100%;
+            line-height: 1.1;
+        }
+
+        /* Responsive queue number size */
+        .queue-number.long {
+            font-size: 80px;
+            letter-spacing: 2px;
+        }
+
+        .queue-number.extra-long {
+            font-size: 70px;
+            letter-spacing: 1px;
+        }
+
+        .counter-number {
+            font-size: 52px;
+            color: #ffd700;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.4),
+                2px 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .welcome-message {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .welcome-message h2 {
+            font-size: 42px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            animation: welcomeGlow 3s ease-in-out infinite;
+        }
+
+        .welcome-message p {
+            font-size: 24px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @keyframes welcomeGlow {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .waiting-list {
+            flex: 1;
+            margin: 0 20px 20px;
+            padding: 20px;
+            overflow-y: auto;
+            transition: opacity 0.4s ease, max-height 0.4s ease;
+        }
+
+        .waiting-list.hidden {
+            opacity: 0;
+            max-height: 0;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        .queue-item {
+            background: #16213e;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Right Section - Media Carousel */
+        .media-section {
+            background: #0f1419;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .media-carousel {
             width: 100%;
-            margin-top: 20px;
+            height: 100%;
+            position: relative;
         }
 
-        th,
-        td {
-            border: 1px solid #ccc;
-            padding: 6px 8px;
+        .media-item {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .media-item.active {
+            display: flex;
+            opacity: 1;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .media-item img,
+        .media-item video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 0;
+        }
+
+        .media-item iframe {
+            width: 100%;
+            height: 100%;
+            border-radius: 0;
+            border: none;
+        }
+
+        .media-title {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            padding: 15px 30px;
+            font-size: 28px;
+            font-weight: 600;
+            text-align: center;
+            color: #fff;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+            font-family: 'Sarabun', Arial, sans-serif;
+        }
+
+        .media-description {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            margin-top: 10px;
+            text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.5);
+            animation: fadeInUp 1s ease;
+        }
+
+        .media-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .unmute-button {
+            position: fixed;
+            top: 50%;
+            right: 40px;
+            transform: translateY(-50%);
+            background: rgba(102, 126, 234, 0.95);
+            border: none;
+            padding: 20px 30px;
+            border-radius: 50px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s ease;
+            animation: pulseButton 2s ease-in-out infinite;
+        }
+
+        .unmute-button:hover {
+            background: rgba(118, 75, 162, 0.95);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .unmute-button.hidden {
+            display: none;
+        }
+
+        @keyframes pulseButton {
+
+            0%,
+            100% {
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 4px 30px rgba(102, 126, 234, 0.8);
+            }
+        }
+
+        .media-counter {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.95);
+            font-weight: 600;
+            margin-left: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .media-counter::before {
+            content: '📷 ';
+            margin-right: 4px;
+        }
+
+        .indicator-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transition: all 0.4s ease;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        0%,
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.8;
+            transform: scale(1.02) border-radius: 8px;
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        @keyframes pulseGlow {
+
+            0%,
+            100% {
+                transform: scale(1);
+                text-shadow: 0 0 30px rgba(76, 175, 80, 0.5),
+                    0 0 60px rgba(76, 175, 80, 0.3),
+                    4px 4px 12px rgba(0, 0, 0, 0.5);
+            }
+
+            50% {
+                transform: scale(1.03);
+                text-shadow: 0 0 40px rgba(76, 175, 80, 0.7),
+                    0 0 80px rgba(76, 175, 80, 0.5),
+                    4px 4px 12px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        /* Red blinking animation for newly called queue */
+        @keyframes redBlink {
+
+            0%,
+            100% {
+                color: #ff0000;
+                text-shadow: 0 0 30px rgba(255, 0, 0, 0.8),
+                    0 0 60px rgba(255, 0, 0, 0.5),
+                    4px 4px 12px rgba(0, 0, 0, 0.5);
+                transform: scale(1);
+            }
+
+            50% {
+                color: #ff4444;
+                text-shadow: 0 0 50px rgba(255, 0, 0, 1),
+                    0 0 100px rgba(255, 0, 0, 0.7),
+                    4px 4px 12px rgba(0, 0, 0, 0.5);
+                transform: scale(1.05);
+            }
+        }
+
+        .queue-number.new-call {
+            animation: redBlink 0.8s ease-in-out infinite !important;
+            color: #ff0000 !important;
+        }
+
+        .footer-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
             font-size: 14px;
+            padding: 12px 10px;
+            background: rgba(26, 26, 46, 0.95);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 40%;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 100;
+            white-space: nowrap;
+            overflow: visible;
         }
 
-        th {
-            background: #f2f2f2;
+        /* Responsive - Single column on small screens */
+        @media (max-width: 1024px) {
+            .display-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 70% 30%;
+            }
+
+            .footer-text {
+                width: 100%;
+            }
         }
 
-        .status-calling {
-            color: #e67e22;
+        /* Hide scrollbar */
+        .waiting-list::-webkit-scrollbar {
+            width: 8px;
         }
 
-        .status-serving {
-            color: #27ae60;
+        .waiting-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
         }
 
-        .status-waiting {
-            color: #555;
-        }
-
-        .status-done {
-            color: #888;
-            text-decoration: line-through;
+        .waiting-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
         }
     </style>
 </head>
 
 <body>
-    <h1>Queue Channel: <span id="channel"></span></h1>
-    <div>Last Number: <span id="lastNumber">-</span></div>
-    <div class="current" id="currentCall">--</div>
-    <table>
-        <thead>
-            <tr>
-                <th>No</th>
-                <th>Code</th>
-                <th>Status</th>
-                <th>Name</th>
-                <th>Service</th>
-            </tr>
-        </thead>
-        <tbody id="queueBody"></tbody>
-    </table>
+    <div class="display-container">
+        <!-- Left Section: Queue Information -->
+        <div class="queue-section">
+            <div class="display-header">
+                <div class="header-title">ตระกูลเฉิน ไนซ์ฮอลลิเดย์</div>
+                <div class="header-subtitle">ระบบจัดการคิว</div>
+                <div class="datetime-display">
+                    <div class="digital-clock" id="digitalClock">00:00:00</div>
+                    <div class="thai-date" id="thaiDate">Loading...</div>
+                </div>
+            </div>
+
+            <div class="current-queue" id="currentQueueBox">
+                <h2>NOW SERVING / กำลังให้บริการ</h2>
+                <div class="queue-number" id="currentQueue">---</div>
+                <div class="counter-number">Counter: <span id="currentCounter">-</span></div>
+            </div>
+
+            <div class="waiting-list">
+                <h3 class="text-center mb-3">Waiting Queue / คิวรอ</h3>
+                <div id="waitingQueues"></div>
+            </div>
+
+            <div class="footer-text">
+                © 2026 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1
+            </div>
+        </div>
+
+        <!-- Right Section: Media Carousel -->
+        <div class="media-section">
+            <button class="unmute-button" id="unmuteButton" onclick="enableSound()">
+                🔊 เปิดเสียง / Enable Sound
+            </button>
+            <div class="media-carousel" id="mediaCarousel">
+                <!-- Media items will be loaded here -->
+            </div>
+            <div class="media-indicator" id="mediaIndicator">
+                <!-- Indicator dots will be loaded here -->
+            </div>
+        </div>
+    </div>
+
     <script>
-        const params = new URLSearchParams(location.search);
-        const channel = params.get('channel') || '{{ channel }}';
-        const intervalMs = Math.min(60000, Math.max(1000, parseInt(params.get('interval') || '5000')));
-        const watermark = params.get('watermark');
-        document.getElementById('channel').textContent = channel;
-        if (watermark) {
-            const wm = document.createElement('div');
-            wm.textContent = watermark;
-            wm.style.cssText = 'position:fixed;bottom:8px;right:12px;opacity:0.35;font-size:12px;';
-            document.body.appendChild(wm);
+        // Thai month and day names
+        const thaiMonths = [
+            'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+
+        const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+        // Sound enabled flag
+        let soundEnabled = false;
+
+        // Enable sound function
+        function enableSound() {
+            soundEnabled = true;
+            const videos = document.querySelectorAll('.media-video');
+            videos.forEach(video => {
+                video.muted = false;
+                video.play().catch(err => console.log('Play error:', err));
+            });
+            document.getElementById('unmuteButton').classList.add('hidden');
         }
-        async function loadQueue() {
+
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+
+            const hours = String(thaiTime.getHours()).padStart(2, '0');
+            const minutes = String(thaiTime.getMinutes()).padStart(2, '0');
+            const seconds = String(thaiTime.getSeconds()).padStart(2, '0');
+            document.getElementById('digitalClock').textContent = `${hours}:${minutes}:${seconds}`;
+
+            const dayName = thaiDays[thaiTime.getDay()];
+            const day = thaiTime.getDate();
+            const month = thaiMonths[thaiTime.getMonth()];
+            const year = thaiTime.getFullYear() + 543;
+            document.getElementById('thaiDate').textContent = `วัน${dayName}ที่ ${day} ${month} ${year}`;
+        }
+
+        // Update queue display
+        async function updateDisplay() {
             try {
-                const res = await fetch(`/queue/status?channel=${encodeURIComponent(channel)}`);
-                if (!res.ok) return;
-                const data = await res.json();
-                document.getElementById('lastNumber').textContent = data.last_number;
-                const tbody = document.getElementById('queueBody');
-                tbody.innerHTML = '';
-                let current = '--';
-                (data.tickets || []).forEach(t => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${t.number}</td><td>${t.display_code || ''}</td><td class="status-${t.status}">${t.status}</td><td>${t.customer_name || ''}</td><td>${t.service_type || ''}</td>`;
-                    tbody.appendChild(tr);
-                    if (['calling', 'serving'].includes(t.status) && current === '--') current = t.display_code || t.number;
-                });
-                document.getElementById('currentCall').textContent = current;
-            } catch (e) { console.warn(e); }
+                const response = await fetch('/queue/api/queues');
+                const data = await response.json();
+
+                if (data.success) {
+                    const servingQueues = data.queues.filter(q => q.status === 'serving');
+                    const waiting = data.queues.filter(q => q.status === 'waiting');
+                    const container = document.querySelector('.display-container');
+                    const currentQueueBox = document.getElementById('currentQueueBox');
+                    const waitingListEl = document.querySelector('.waiting-list');
+
+                    // Dynamic layout: fullscreen media when no queues OR after 12 seconds of new call
+                    if (waiting.length === 0 && (servingQueues.length === 0 || isShowingFullscreen)) {
+                        // แสดงภาพเต็มจอเมื่อไม่มีคิวรอ และ (ไม่มี serving หรือผ่าน 12 วินาทีแล้ว)
+                        container.classList.add('fullscreen-media');
+                        container.classList.remove('expanded-media');
+                        waitingListEl.classList.add('hidden');
+                    } else {
+                        // แสดง layout ปกติเมื่อมีคิวรอหรืออยู่ในช่วง 12 วินาทีแรก
+                        container.classList.remove('fullscreen-media', 'expanded-media');
+                        waitingListEl.classList.remove('hidden');
+                    }
+
+                    if (servingQueues.length > 0) {
+                        servingQueues.sort((a, b) => {
+                            const dateA = new Date(a.called_at || 0);
+                            const dateB = new Date(b.called_at || 0);
+                            return dateB - dateA;
+                        });
+
+                        const serving = servingQueues[0];
+                        currentQueueBox.classList.remove('welcome-message');
+
+                        // Check if this is a newly called queue
+                        const isNewCall = lastCalledQueue !== serving.queue_number;
+                        if (isNewCall) {
+                            lastCalledQueue = serving.queue_number;
+                            isShowingFullscreen = false;
+
+                            // Clear existing timer
+                            if (callTimer) clearTimeout(callTimer);
+
+                            // Set timer to switch to fullscreen after 12 seconds
+                            callTimer = setTimeout(() => {
+                                isShowingFullscreen = true;
+                                if (waiting.length === 0) {
+                                    container.classList.add('fullscreen-media');
+                                    container.classList.remove('expanded-media');
+                                }
+                            }, 12000);
+                        }
+
+                        // Determine queue number length for responsive sizing
+                        const queueLength = serving.queue_number.length;
+                        let sizeClass = '';
+                        if (queueLength >= 10) {
+                            sizeClass = 'extra-long';
+                        } else if (queueLength >= 8) {
+                            sizeClass = 'long';
+                        }
+
+                        // Add red blinking class for new calls (first 12 seconds)
+                        const blinkClass = isNewCall && !isShowingFullscreen ? 'new-call' : '';
+
+                        currentQueueBox.innerHTML = `
+                            <div style="font-size: 22px; margin-bottom: 15px; color: rgba(255,255,255,0.9); font-weight: 600;">
+                                NOW SERVING / กำลังให้บริการ
+                            </div>
+                            <div class="queue-number ${sizeClass} ${blinkClass}">${serving.queue_number}</div>
+                            <div class="counter-number" style="margin-top: 20px;">Counter: ${serving.counter || '1'}</div>
+                        `;
+                    } else {
+                        // Show welcome message when no queue serving
+                        currentQueueBox.classList.add('welcome-message');
+                        currentQueueBox.innerHTML = `
+                            <h2>🌟 ยินดีต้อนรับ Welcome 🌟</h2>
+                            <p style="font-size: 28px; margin: 15px 0;">ตระกูลเฉิน ไนซ์ฮอลลิเดย์</p>
+                            <p style="font-size: 18px; color: rgba(255,255,255,0.7);">โปรดรอสักครู่ Please Wait</p>
+                        `;
+                    }
+
+                    const waitingHtml = waiting.slice(0, 10).map(q => `
+                        <div class="queue-item">
+                            <span style="font-size: 22px; font-weight: bold;">${q.queue_number}</span>
+                            <span style="font-size: 16px;">${q.service_type}</span>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('waitingQueues').innerHTML = waitingHtml ||
+                        '<p class="text-center text-muted">No waiting customers</p>';
+                }
+            } catch (error) {
+                console.error('Error updating display:', error);
+            }
         }
-        loadQueue();
-        setInterval(loadQueue, intervalMs);
+
+        // Media carousel management
+        let mediaList = [];
+        let currentMediaIndex = 0;
+        let mediaInterval = null;
+
+        // Track last called queue for red blinking effect
+        let lastCalledQueue = null;
+        let callTimer = null;
+        let isShowingFullscreen = false;
+
+        // Extract YouTube video ID
+        function getYouTubeEmbedUrl(url) {
+            const videoId = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            return videoId ? `https://www.youtube.com/embed/${videoId[1]}?autoplay=1&loop=1&playlist=${videoId[1]}` : '';
+        }
+
+        // Load media from API
+        async function loadMedia() {
+            try {
+                const response = await fetch('/queue/api/media');
+                const data = await response.json();
+
+                if (data.success && data.media.length > 0) {
+                    mediaList = data.media;
+                    renderMediaCarousel();
+                    startMediaRotation();
+                } else {
+                    // Show default message if no media
+                    document.getElementById('mediaCarousel').innerHTML = `
+                        <div class="media-item active">
+                            <div style="text-align: center;">
+                                <h2 style="color: #667eea; font-size: 48px; margin-bottom: 20px;">
+                                    ยินดีต้อนรับ
+                                </h2>
+                                <h3 style="font-size: 32px;">
+                                    ตระกูลเฉิน ไนซ์ฮอลลิเดย์
+                                </h3>
+                                <p style="font-size: 20px; color: rgba(255,255,255,0.7); margin-top: 20px;">
+                                    บริษัททัวร์ชั้นนำของไทย
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading media:', error);
+            }
+        }
+
+        // Render media carousel
+        function renderMediaCarousel() {
+            const carousel = document.getElementById('mediaCarousel');
+            const indicator = document.getElementById('mediaIndicator');
+
+            carousel.innerHTML = mediaList.map((media, index) => {
+                let content = '';
+
+                if (media.media_type === 'image') {
+                    content = `<img src="${media.file_path}" alt="${media.title}">`;
+                } else if (media.media_type === 'video') {
+                    content = `<video class="media-video" src="${media.file_path}" autoplay muted loop playsinline></video>`;
+                } else if (media.media_type === 'youtube') {
+                    const embedUrl = getYouTubeEmbedUrl(media.youtube_url);
+                    content = `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+                }
+
+                // Only show description if it's not empty or placeholder
+                const hasDescription = media.description &&
+                    media.description.trim() &&
+                    !media.description.match(/^[A-Z]+$/);
+
+                return `
+                    <div class="media-item ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        ${content}
+                        <div class="media-title">${media.title}</div>
+                        ${hasDescription ? `<div class="media-description">${media.description}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            // Unmute videos after render
+            setTimeout(() => {
+                const videos = carousel.querySelectorAll('.media-video');
+                videos.forEach(video => {
+                    if (soundEnabled) {
+                        video.muted = false;
+                    }
+                    video.play().catch(err => {
+                        console.log('Autoplay error:', err);
+                    });
+                });
+            }, 100);
+
+            indicator.innerHTML = mediaList.map((_, index) =>
+                `<div class="indicator-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></div>`
+            ).join('') + `<span class="media-counter">1/${mediaList.length}</span>`;
+
+            // Update counter display
+            updateMediaCounter();
+        }
+
+        // Update media counter
+        function updateMediaCounter() {
+            const counter = document.querySelector('.media-counter');
+            if (counter) {
+                counter.textContent = `${currentMediaIndex + 1}/${mediaList.length}`;
+            }
+        }
+
+        // Start media rotation
+        function startMediaRotation() {
+            if (mediaInterval) clearInterval(mediaInterval);
+
+            mediaInterval = setInterval(() => {
+                showNextMedia();
+            }, mediaList[currentMediaIndex]?.duration * 1000 || 10000);
+        }
+
+        // Show next media
+        function showNextMedia() {
+            const items = document.querySelectorAll('.media-item');
+            const dots = document.querySelectorAll('.indicator-dot');
+
+            // Stop and pause the previous video
+            const previousItem = items[currentMediaIndex];
+            const previousVideo = previousItem.querySelector('video');
+            if (previousVideo) {
+                previousVideo.pause();
+                previousVideo.currentTime = 0; // Reset to start
+            }
+
+            items[currentMediaIndex].classList.remove('active');
+            dots[currentMediaIndex].classList.remove('active');
+
+            currentMediaIndex = (currentMediaIndex + 1) % mediaList.length;
+
+            items[currentMediaIndex].classList.add('active');
+            dots[currentMediaIndex].classList.add('active');
+
+            // Play the new video if it's a video element
+            const currentItem = items[currentMediaIndex];
+            const video = currentItem.querySelector('video');
+            if (video) {
+                if (soundEnabled) {
+                    video.muted = false;
+                }
+                video.currentTime = 0; // Start from beginning
+                video.play().catch(err => {
+                    console.log('Autoplay error:', err);
+                });
+            }
+
+            // Update counter
+            updateMediaCounter();
+
+            startMediaRotation(); // Restart interval with new duration
+        }
+
+        // Initialize
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        setInterval(updateDisplay, 3000);
+        updateDisplay();
+
+        loadMedia();
+
+        // Reload media every 5 minutes to get updates
+        setInterval(loadMedia, 300000);
     </script>
 </body>
 

@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}ยืนยันข้อมูลการจอง - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <!-- Progress Steps -->
+            <div class="progress-steps mb-5">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="step completed">
+                        <div class="step-circle">✓</div>
+                        <small>กรอกข้อมูล</small>
+                    </div>
+                    <div class="step-line active"></div>
+                    <div class="step active">
+                        <div class="step-circle">2</div>
+                        <small>ยืนยันข้อมูล</small>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step">
+                        <div class="step-circle">3</div>
+                        <small>ชำระเงิน</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Card -->
+            <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                <div class="card-header text-white py-4"
+                    style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px 20px 0 0;">
+                    <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i>ยืนยันข้อมูลการจอง</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Campaign Info -->
+                    <div class="mb-4 p-3 bg-light rounded-3">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-map-marked-alt me-2 text-primary"></i>{{ campaign.name
+                            }}</h5>
+                        {% if campaign.travel_date_from and campaign.travel_date_to %}
+                        <p class="mb-0">
+                            <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                            <strong>วันเดินทาง:</strong>
+                            {{ campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                            campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Participant Info -->
+                    <h6 class="fw-bold mb-3"><i class="fas fa-user me-2 text-success"></i>ข้อมูลผู้จอง</h6>
+                    <div class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="info-box p-3 border rounded-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">ชื่อ-นามสกุล:</span>
+                                        <strong>{{ booking_data.name }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">อีเมล:</span>
+                                        <strong>{{ booking_data.email }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">เบอร์โทร:</span>
+                                        <strong>{{ booking_data.phone }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">จำนวนผู้เดินทาง:</span>
+                                        <strong class="text-primary">{{ booking_data.pax_count }} คน</strong>
+                                    </div>
+                                    {% if booking_data.group_name %}
+                                    <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                                        <span class="text-muted">ชื่อกลุ่ม:</span>
+                                        <strong class="text-info">{{ booking_data.group_name }}</strong>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price Summary -->
+                    <h6 class="fw-bold mb-3"><i class="fas fa-receipt me-2 text-warning"></i>สรุปยอดชำระ</h6>
+                    <div class="price-summary p-4 bg-light rounded-3 mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>ราคาต่อคน:</span>
+                            <strong>฿{{ "{:,.0f}".format(campaign.group_price) }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>จำนวน:</span>
+                            <strong>{{ booking_data.pax_count }} คน</strong>
+                        </div>
+                        <div class="border-top pt-2 mt-2">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="fs-5 fw-bold">ยอดรวม:</span>
+                                <span class="fs-4 fw-bold text-success">฿{{ "{:,.0f}".format(campaign.group_price *
+                                    booking_data.pax_count) }}</span>
+                            </div>
+                        </div>
+
+                        {% if campaign.allow_partial_payment and campaign.partial_payment_value %}
+                        {% set total_price = campaign.group_price * booking_data.pax_count %}
+                        {% if campaign.partial_payment_type == 'fixed' %}
+                        {% set deposit_amount = campaign.partial_payment_value * booking_data.pax_count %}
+                        {% elif campaign.partial_payment_type == 'percentage' %}
+                        {% set deposit_amount = (total_price * campaign.partial_payment_value / 100)|round|int %}
+                        {% else %}
+                        {% set deposit_amount = total_price %}
+                        {% endif %}
+                        <div class="alert alert-warning mb-0"
+                            style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-coins me-2"></i>
+                                    <strong>จ่ายเงินมัดจำก่อน
+                                        {% if campaign.partial_payment_type == 'fixed' %}
+                                        ({{ "{:,.0f}".format(campaign.partial_payment_value) }} บาท/คน)
+                                        {% elif campaign.partial_payment_type == 'percentage' %}
+                                        ({{ campaign.partial_payment_value }}%)
+                                        {% endif %}
+                                        :</strong>
+                                </div>
+                                <span class="fs-5 fw-bold text-warning">฿{{ "{:,.0f}".format(deposit_amount) }}</span>
+                            </div>
+                            <small class="text-muted">ส่วนที่เหลือ ฿{{ "{:,.0f}".format(total_price - deposit_amount) }}
+                                ชำระหลังกลุ่มสำเร็จ</small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info mb-0"
+                            style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>ชำระเต็มจำนวน</strong>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="alert alert-info">
+                        <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-circle me-2"></i>ข้อมูลสำคัญ</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>กลุ่มต้องครบ {{ campaign.min_participants }} กลุ่ม ภายใน {{ campaign.duration_hours }}
+                                ชั่วโมง</li>
+                            <li>หากกลุ่มไม่สำเร็จ จะคืนเงินเต็มจำนวนภายใน 7 วันทำการ</li>
+                            <li>คุณจะได้รับอีเมลยืนยันและลิงก์แชร์กลุ่ม</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <form method="POST"
+                        action="{{ url_for('public_group_buy.confirm_booking', campaign_id=campaign.id) }}">
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-lg btn-success py-3 shadow-lg"
+                                style="border-radius: 14px; font-weight: 700; font-size: 1.2rem;">
+                                <i class="fas fa-check-circle me-2"></i>ยืนยันและไปชำระเงิน
+                            </button>
+                            {% if booking_data.group_name %}
+                            <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                class="btn btn-lg btn-outline-secondary py-3"
+                                style="border-radius: 14px; font-weight: 600;">
+                                <i class="fas fa-arrow-left me-2"></i>แก้ไขข้อมูล
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                                class="btn btn-lg btn-outline-secondary py-3"
+                                style="border-radius: 14px; font-weight: 600;">
+                                <i class="fas fa-arrow-left me-2"></i>กลับไปเลือกกลุ่ม
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .progress-steps {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .step {
+        text-align: center;
+        flex: 1;
+    }
+
+    .step-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .step.completed .step-circle {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .step.active .step-circle {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .step-line {
+        height: 3px;
+        background: #e5e7eb;
+        flex: 1;
+        margin: 0 10px;
+        align-self: center;
+        margin-bottom: 30px;
+    }
+
+    .step-line.active {
+        background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+    }
+
+    .step small {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .info-box {
+        background: rgba(59, 130, 246, 0.05);
+    }
+</style>
+{% endblock %}

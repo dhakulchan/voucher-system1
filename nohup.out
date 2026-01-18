@@ -1,0 +1,229 @@
+INFO:ultra_aggressive_datetime_fix:✅ Ultra-aggressive patch: MySQL TIME.result_processor completely replaced
+WARNING:ultra_aggressive_datetime_fix:Could not patch dialect level: '_memoized_property' object has no attribute 'clear'
+INFO:ultra_aggressive_datetime_fix:✅ Engine-level time handling event registered
+INFO:ultra_aggressive_datetime_fix:✅ Ultra-aggressive patch: MySQL TIME.result_processor completely replaced
+WARNING:ultra_aggressive_datetime_fix:Could not patch dialect level: '_memoized_property' object has no attribute 'clear'
+INFO:ultra_aggressive_datetime_fix:✅ Engine-level time handling event registered
+WARNING:critical_datetime_fix:⚠️ Could not patch PyMySQL converters: module 'pymysql.converters' has no attribute 'convert_timestamp'
+INFO:critical_datetime_fix:🔧 Critical datetime corruption fixes applied
+INFO:datetime_fix:🔧 MariaDB DateTime Fix Module Loaded
+INFO:datetime_fix:✅ System configured for MariaDB database
+INFO:datetime_fix:✅ MySQL DATETIME class replaced with safe version
+INFO:mysql.connector:package: mysql.connector.plugins
+INFO:mysql.connector:plugin_name: caching_sha2_password
+INFO:mysql.connector:AUTHENTICATION_PLUGIN_CLASS: MySQLCachingSHA2PasswordAuthPlugin
+INFO:datetime_fix:✅ MariaDB connection test successful
+INFO:datetime_fix:✅ MySQL dialect colspecs updated
+INFO:datetime_fix:✅ MySQL TIME type completely replaced with ultra-safe version
+INFO:datetime_fix:🔧 MariaDB DateTime Fix Module Loaded
+INFO:app:Logging initialized, writing to /Applications/python/voucher-ro_v1.1/instance/app.log
+INFO:app:✅ Models with event listeners imported successfully
+INFO:routes.queue_routes:✅ Queue management routes registered
+INFO:booking_45_routes:✅ Booking #45 special routes registered
+INFO:ultra_test_45:✅ Ultra test routes registered
+INFO:final_booking_45:✅ Final booking #45 routes registered
+INFO:debug_booking_45:✅ Debug booking #45 routes registered
+INFO:minimal_booking_45:✅ Minimal booking #45 routes registered
+INFO:booking_45_final_fix:✅ Final booking #45 routes registered
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:critical_datetime_fix:✅ MySQL connection datetime settings applied
+INFO:app:Logging initialized, writing to /Applications/python/voucher-ro_v1.1/instance/app.log
+INFO:app:✅ Models with event listeners imported successfully
+INFO:booking_45_routes:✅ Booking #45 special routes registered
+INFO:ultra_test_45:✅ Ultra test routes registered
+INFO:final_booking_45:✅ Final booking #45 routes registered
+INFO:debug_booking_45:✅ Debug booking #45 routes registered
+INFO:minimal_booking_45:✅ Minimal booking #45 routes registered
+INFO:booking_45_final_fix:✅ Final booking #45 routes registered
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:critical_datetime_fix:✅ MySQL connection datetime settings applied
+✅ MD5 usedforsecurity parameter is supported
+🚀 Ultra-aggressive datetime fix applied in run.py
+✅ PNG cache directory ready: /Applications/python/voucher-ro_v1.1/static/generated/png_cache
+✅ Pre-receipt blueprint imported successfully
+✅ Booking #46 special routes registered
+✅ Pre-receipt blueprint registered successfully
+✅ Short Itinerary Admin registered
+✅ Flight Template Admin registered
+✅ Mark-paid API registered
+✅ Pre-receipt blueprint imported successfully
+✅ Booking #46 special routes registered
+✅ Pre-receipt blueprint registered successfully
+✅ Short Itinerary Admin registered
+✅ Flight Template Admin registered
+✅ Mark-paid API registered
+Admin user already exists
+ * Serving Flask app 'app'
+ * Debug mode: off
+INFO:werkzeug:[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5001
+ * Running on http://192.168.1.120:5001
+INFO:werkzeug:[33mPress CTRL+C to quit[0m
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:critical_datetime_fix:✅ MySQL connection datetime settings applied
+INFO:app:USER DEBUG: username=admin, role=Administrator, is_admin=True
+INFO:werkzeug:127.0.0.1 - - [20/Dec/2025 20:46:49] "GET /booking/create HTTP/1.1" 200 -
+INFO:app:USER DEBUG: username=admin, role=Administrator, is_admin=True
+INFO:werkzeug:127.0.0.1 - - [20/Dec/2025 20:46:50] "[36mGET /static/favicon.ico HTTP/1.1[0m" 304 -
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:critical_datetime_fix:✅ MySQL connection datetime settings applied
+INFO:app:USER DEBUG: username=admin, role=Administrator, is_admin=True
+INFO:werkzeug:127.0.0.1 - - [20/Dec/2025 22:46:02] "GET /booking/create HTTP/1.1" 200 -
+INFO:app:USER DEBUG: username=admin, role=Administrator, is_admin=True
+INFO:werkzeug:127.0.0.1 - - [20/Dec/2025 22:46:02] "GET /static/favicon.ico HTTP/1.1" 200 -
+INFO:app:USER DEBUG: username=admin, role=Administrator, is_admin=True
+INFO:routes.passport_upload:=== Batch upload started by user admin ===
+INFO:routes.passport_upload:Processing 1 files for booking_id: None
+INFO:utils.passport_mrz_processor:Converting PDF to images: /var/folders/j2/bv2wvql90hj5njl4w4r9hd1r0000gn/T/passport_batch_gsj5d8ga.pdf
+/Applications/python/voucher-ro_v1.1/.venv/lib/python3.13/site-packages/PIL/Image.py:3452: DecompressionBombWarning: Image size (116274942 pixels) exceeds limit of 89478485 pixels, could be decompression bomb DOS attack.
+  warnings.warn(
+INFO:utils.passport_mrz_processor:Converted 1 pages from PDF
+INFO:routes.passport_upload:=== Processing passport: KINGDOM_OF_THAILAND.pdf ===
+INFO:utils.passport_mrz_processor:Processing passport image: tmppzzzgc21_page0.jpg
+INFO:utils.passport_mrz_processor:No EXIF orientation tag found
+INFO:utils.passport_mrz_processor:No small skew angles detected, image likely already oriented
+INFO:utils.passport_mrz_processor:Aggressive preprocessing completed
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (original) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (original) line: 'M' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted) line: 'M' (len=1)
+INFO:utils.passport_mrz_processor:OCR (eroded): 2 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded) line: '0' (len=1)
+INFO:utils.passport_mrz_processor:OCR (dilated): 2 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (dilated) line: '1' (len=1)
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+WARNING:utils.passport_mrz_processor:Initial extraction failed (0 lines). Trying rotations...
+INFO:utils.passport_mrz_processor:Trying 90° rotation...
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted): 3 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted) line: 'TT' (len=2)
+INFO:utils.passport_mrz_processor:OCR (eroded): 3 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded) line: 'PO' (len=2)
+INFO:utils.passport_mrz_processor:OCR (dilated): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 0 non-empty lines
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+INFO:utils.passport_mrz_processor:Trying 180° rotation...
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (dilated): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 0 non-empty lines
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+INFO:utils.passport_mrz_processor:Trying 270° rotation...
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (original) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (original) line: 'I' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted) line: 'I' (len=1)
+INFO:utils.passport_mrz_processor:OCR (eroded): 2 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded) line: 'I' (len=1)
+INFO:utils.passport_mrz_processor:OCR (dilated): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 0 non-empty lines
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+WARNING:utils.passport_mrz_processor:Poor quality: Only 0 MRZ lines detected (need 2)
+INFO:routes.passport_upload:=== Result for KINGDOM_OF_THAILAND.pdf: success=False ===
+INFO:utils.passport_mrz_processor:Deleted temp file: passport_batch_gsj5d8ga.pdf
+INFO:utils.passport_mrz_processor:Deleted temp file: tmppzzzgc21_page0.jpg
+INFO:werkzeug:127.0.0.1 - - [20/Dec/2025 22:47:30] "POST /api/passport/batch-upload HTTP/1.1" 200 -
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:ultra_aggressive_datetime_fix:Setting up safe time handling for new connection
+INFO:critical_datetime_fix:✅ MySQL connection datetime settings applied
+INFO:app:USER DEBUG: username=admin, role=Administrator, is_admin=True
+INFO:routes.passport_upload:=== Batch upload started by user admin ===
+INFO:routes.passport_upload:Processing 1 files for booking_id: None
+INFO:utils.passport_mrz_processor:Converting PDF to images: /var/folders/j2/bv2wvql90hj5njl4w4r9hd1r0000gn/T/passport_batch_or9zc5ba.pdf
+/Applications/python/voucher-ro_v1.1/.venv/lib/python3.13/site-packages/PIL/Image.py:3452: DecompressionBombWarning: Image size (116274942 pixels) exceeds limit of 89478485 pixels, could be decompression bomb DOS attack.
+  warnings.warn(
+INFO:utils.passport_mrz_processor:Converted 1 pages from PDF
+INFO:routes.passport_upload:=== Processing passport: pp1.pdf ===
+INFO:utils.passport_mrz_processor:Processing passport image: tmpckdvx3oo_page0.jpg
+INFO:utils.passport_mrz_processor:No EXIF orientation tag found
+INFO:utils.passport_mrz_processor:No small skew angles detected, image likely already oriented
+INFO:utils.passport_mrz_processor:Aggressive preprocessing completed
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (original) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (original) line: 'M' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted) line: 'M' (len=1)
+INFO:utils.passport_mrz_processor:OCR (eroded): 2 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded) line: '0' (len=1)
+INFO:utils.passport_mrz_processor:OCR (dilated): 2 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (dilated) line: '1' (len=1)
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+WARNING:utils.passport_mrz_processor:Initial extraction failed (0 lines). Trying rotations...
+INFO:utils.passport_mrz_processor:Trying 90° rotation...
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted): 3 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted) line: 'TT' (len=2)
+INFO:utils.passport_mrz_processor:OCR (eroded): 3 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded) line: 'PO' (len=2)
+INFO:utils.passport_mrz_processor:OCR (dilated): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 0 non-empty lines
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+INFO:utils.passport_mrz_processor:Trying 180° rotation...
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 0 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (dilated): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 0 non-empty lines
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+INFO:utils.passport_mrz_processor:Trying 270° rotation...
+INFO:utils.passport_mrz_processor:MRZ region extracted successfully
+INFO:utils.passport_mrz_processor:OCR (original): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (original) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (original) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (original) line: 'I' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted): 4 chars, 2 lines
+INFO:utils.passport_mrz_processor:OCR (inverted) extracted 2 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (inverted) line: '7' (len=1)
+INFO:utils.passport_mrz_processor:OCR (inverted) line: 'I' (len=1)
+INFO:utils.passport_mrz_processor:OCR (eroded): 2 chars, 1 lines
+INFO:utils.passport_mrz_processor:OCR (eroded) extracted 1 non-empty lines
+INFO:utils.passport_mrz_processor:OCR (eroded) line: 'I' (len=1)
+INFO:utils.passport_mrz_processor:OCR (dilated): 0 chars, 0 lines
+INFO:utils.passport_mrz_processor:OCR (dilated) extracted 0 non-empty lines
+WARNING:utils.passport_mrz_processor:No valid MRZ lines found in OCR output
+WARNING:utils.passport_mrz_processor:Poor quality: Only 0 MRZ lines detected (need 2)
+INFO:routes.passport_upload:=== Result for pp1.pdf: success=False ===
+INFO:utils.passport_mrz_processor:Deleted temp file: passport_batch_or9zc5ba.pdf
+INFO:utils.passport_mrz_processor:Deleted temp file: tmpckdvx3oo_page0.jpg
+INFO:werkzeug:127.0.0.1 - - [20/Dec/2025 22:52:18] "POST /api/passport/batch-upload HTTP/1.1" 200 -

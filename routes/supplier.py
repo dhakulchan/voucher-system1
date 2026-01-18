@@ -110,7 +110,8 @@ def api_list():
             'name': s.name,
             'address': s.address or '',
             'phone': s.phone or '',
-            'notes': s.notes or ''
+            'notes': s.notes or '',
+            'remarks': s.remarks or ''
         })
     
     return jsonify({'suppliers': supplier_list})

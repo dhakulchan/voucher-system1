@@ -1,0 +1,661 @@
+{% extends "base.html" %}
+
+{% block title %}แก้ไขแคมเปญ - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 style="font-size: 1.5rem;"><i class="fas fa-edit"></i> แก้ไขแคมเปญ: {{ campaign.name }}</h1>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">ข้อมูลพื้นฐาน</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อแคมเปญ <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" value="{{ campaign.name }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">คำอธิบาย</label>
+                            <textarea name="description" class="form-control"
+                                rows="4">{{ campaign.description or '' }}</textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label">ประเภทสินค้า <span class="text-danger">*</span></label>
+                                <select name="product_type" class="form-select" required>
+                                    <option value="Package" {% if campaign.product_type=='Package' %}selected{% endif
+                                        %}>Package</option>
+                                    <option value="Tour" {% if campaign.product_type=='Tour' %}selected{% endif %}>Tour
+                                    </option>
+                                    <option value="Collective Groups" {% if campaign.product_type=='Collective Groups'
+                                        %}selected{% endif %}>Collective Groups</option>
+                                    <option value="Air Ticket" {% if campaign.product_type=='Air Ticket' %}selected{%
+                                        endif %}>Air Ticket</option>
+                                    <option value="Hotel" {% if campaign.product_type=='Hotel' %}selected{% endif %}>
+                                        Hotel</option>
+                                    <option value="Transport" {% if campaign.product_type=='Transport' %}selected{%
+                                        endif %}>Transport</option>
+                                    <option value="Park Ticket" {% if campaign.product_type=='Park Ticket' %}selected{%
+                                        endif %}>Park Ticket</option>
+                                    <option value="F.I.T." {% if campaign.product_type=='F.I.T.' %}selected{% endif %}>
+                                        F.I.T.</option>
+                                    <option value="Others" {% if campaign.product_type=='Others' %}selected{% endif %}>
+                                        Others</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Product Details</label>
+                            <textarea name="product_details" class="form-control" rows="3"
+                                placeholder="รายละเอียดสินค้า เช่น รหัสทัวร์, ชื่อโรงแรม, เที่ยวบิน ฯลฯ">{{ campaign.product_details or '' }}</textarea>
+                            <small class="text-muted">ระบุรายละเอียดสินค้าเพิ่มเติม</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">วันที่เดินทางไป</label>
+                                <input type="text" name="travel_date_from" class="form-control datepicker"
+                                    placeholder="DD/MM/YYYY"
+                                    value="{{ campaign.travel_date_from.strftime('%d/%m/%Y') if campaign.travel_date_from else '' }}">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">วันที่เดินทางกลับ</label>
+                                <input type="text" name="travel_date_to" class="form-control datepicker"
+                                    placeholder="DD/MM/YYYY"
+                                    value="{{ campaign.travel_date_to.strftime('%d/%m/%Y') if campaign.travel_date_to else '' }}">
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">ราคาและส่วนลด</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">ราคาปกติ (บาท) <span
+                                                class="text-danger">*</span></label>
+                                        <input type="number" name="regular_price" class="form-control" step="0.01"
+                                            value="{{ campaign.regular_price }}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">ราคากลุ่ม (บาท) <span
+                                                class="text-danger">*</span></label>
+                                        <input type="number" name="group_price" class="form-control" step="0.01"
+                                            value="{{ campaign.group_price }}" required>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">กฎการจัดกลุ่ม</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">จำนวนกลุ่มขั้นต่ำ/ต่อคณะ <span
+                                                class="text-danger">*</span></label>
+                                        <input type="number" name="min_participants" class="form-control"
+                                            value="{{ campaign.min_participants }}" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">จำนวนคนสูงสุดต่อกลุ่ม</label>
+                                        <input type="number" name="max_participants" class="form-control"
+                                            value="{{ campaign.max_participants or '' }}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">ระยะเวลาในการรวมกลุ่ม (ชั่วโมง) <span
+                                            class="text-danger">*</span></label>
+                                    <input type="number" name="duration_hours" class="form-control"
+                                        value="{{ campaign.duration_hours }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">วันที่และ Inventory</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">วันเริ่มแคมเปญ <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" name="campaign_start_date" class="form-control datepicker"
+                                            value="{{ campaign.campaign_start_date.strftime('%d/%m/%Y') }}"
+                                            placeholder="DD/MM/YYYY" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">วันสิ้นสุดแคมเปญ <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" name="campaign_end_date" class="form-control datepicker"
+                                            value="{{ campaign.campaign_end_date.strftime('%d/%m/%Y') }}"
+                                            placeholder="DD/MM/YYYY" required>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Inventory ทั้งหมด</label>
+                                        <input type="number" name="total_slots" class="form-control"
+                                            value="{{ campaign.total_slots or '' }}">
+                                        <small class="text-muted"><strong>จำนวนกลุ่มที่รับได้สูงสุด</strong><br>
+                                            ตัวอย่าง: ใส่ 7 = รับได้ไม่เกิน 7 กลุ่ม (เว้นว่างหากไม่จำกัด)</small>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Pax (จำนวนผู้เดินทางสูงสุด)</label>
+                                        <input type="number" name="max_pax" class="form-control" min="0"
+                                            value="{{ campaign.max_pax or '' }}" placeholder="ไม่จำกัด">
+                                        <small class="text-muted"><strong>จำนวนคนทั้งหมดที่รับได้สูงสุด</strong><br>
+                                            ตัวอย่าง: ใส่ 14 = รับได้ไม่เกิน 14 คน (เว้นว่างหากไม่จำกัด)</small>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info" style="font-size: 0.9rem;">
+                                    <i class="fas fa-info-circle me-2"></i><strong>การจำกัด:</strong>
+                                    ระบบจะหยุดรับเมื่อถึงเงื่อนไขใดเงื่อนไขหนึ่ง<br>
+                                    • เมื่อมีกลุ่มสำเร็จครบตาม <strong>Inventory</strong> หรือ<br>
+                                    • เมื่อมีคนจองสำเร็จครบตาม <strong>Pax</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">เงื่อนไขและหมายเหตุ</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">เงื่อนไขและข้อตกลง</label>
+                                    <textarea name="terms_and_conditions" class="form-control"
+                                        rows="4">{{ campaign.terms_conditions or '' }}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">หมายเหตุสำหรับ Admin</label>
+                                    <textarea name="admin_notes" class="form-control"
+                                        rows="2">{{ campaign.admin_notes or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">การตั้งค่า</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {% if
+                                campaign.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">เปิดใช้งาน</label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="is_public" class="form-check-input" id="is_public" {% if
+                                campaign.is_public %}checked{% endif %}>
+                            <label class="form-check-label" for="is_public">แสดงต่อสาธารณะ</label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="featured" class="form-check-input" id="featured" {% if
+                                campaign.featured %}checked{% endif %}>
+                            <label class="form-check-label" for="featured">
+                                <i class="fas fa-star text-warning"></i> Featured
+                            </label>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="allow_partial_payment" class="form-check-input"
+                                id="allow_partial_payment" {% if campaign.allow_partial_payment %}checked{% endif %}
+                                onchange="document.getElementById('partial_payment_config').style.display = this.checked ? 'block' : 'none';">
+                            <label class="form-check-label" for="allow_partial_payment">อนุญาตให้จ่ายบางส่วน</label>
+                        </div>
+
+                        <!-- Auto Cancel Configuration -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <strong><i class="fas fa-clock"></i> การยกเลิกอัตโนมัติ</strong>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" name="auto_cancel_enabled" class="form-check-input"
+                                        id="auto_cancel_enabled" {% if campaign.auto_cancel_enabled %}checked{% endif %}
+                                        onchange="document.getElementById('auto_cancel_config').style.display = this.checked ? 'block' : 'none';">
+                                    <label class="form-check-label" for="auto_cancel_enabled">
+                                        <strong><i class="fas fa-power-off"></i> เปิดใช้งานการยกเลิกอัตโนมัติ</strong>
+                                    </label>
+                                    <br>
+                                    <small
+                                        class="text-muted">ระบบจะยกเลิกการจองที่ยังไม่ชำระเงินอัตโนมัติตามเวลาที่กำหนด</small>
+                                </div>
+                                <div id="auto_cancel_config"
+                                    style="display: {% if campaign.auto_cancel_enabled %}block{% else %}none{% endif %};">
+                                    <div class="mb-3">
+                                        <label for="auto_cancel_hours" class="form-label">ยกเลิกอัตโนมัติหลังจาก
+                                            (ชั่วโมง)</label>
+                                        <input type="number" class="form-control" name="auto_cancel_hours"
+                                            id="auto_cancel_hours" value="{{ campaign.auto_cancel_hours or 4 }}" min="1"
+                                            max="168" style="max-width: 200px;">
+                                        <small class="text-muted">ระบบจะยกเลิกการจองที่ยังไม่ชำระเงินหลังจากเวลาที่กำหนด
+                                            (เริ่มต้น 4 ชม.)</small>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" name="auto_cancel_send_email" class="form-check-input"
+                                            id="auto_cancel_send_email" {% if campaign.auto_cancel_send_email==None or
+                                            campaign.auto_cancel_send_email %}checked{% endif %}>
+                                        <label class="form-check-label" for="auto_cancel_send_email">
+                                            <i class="fas fa-envelope"></i> ส่งอีเมลแจ้งเตือนเมื่อยกเลิก
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="partial_payment_config" class="ms-4 mb-3"
+                            style="display: {% if campaign.allow_partial_payment %}block{% else %}none{% endif %};">
+                            <label class="form-label"><strong>ประเภทการจ่ายมัดจำ</strong></label>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="partial_payment_type"
+                                    id="partial_type_fixed" value="fixed" {% if campaign.partial_payment_type=='fixed'
+                                    or not campaign.partial_payment_type %}checked{% endif %}
+                                    onchange="updatePartialPaymentLabel()">
+                                <label class="form-check-label" for="partial_type_fixed">
+                                    จำนวนคงที่ต่อคน (เช่น 5,000 บาท/คน)
+                                </label>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="partial_payment_type"
+                                    id="partial_type_percentage" value="percentage" {% if
+                                    campaign.partial_payment_type=='percentage' %}checked{% endif %}
+                                    onchange="updatePartialPaymentLabel()">
+                                <label class="form-check-label" for="partial_type_percentage">
+                                    เปอร์เซ็นต์ (เช่น 30% ของราคา)
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="partial_payment_type"
+                                    id="partial_type_full" value="full" {% if campaign.partial_payment_type=='full'
+                                    %}checked{% endif %} onchange="updatePartialPaymentLabel()">
+                                <label class="form-check-label" for="partial_type_full">
+                                    เต็มจำนวน × จำนวนคน (ราคาคูณด้วย pax_count)
+                                </label>
+                            </div>
+
+                            <div class="mb-2" id="partial_value_container">
+                                <label class="form-label" id="partial_value_label">จำนวนเงิน</label>
+                                <div class="input-group" style="max-width: 300px;">
+                                    <input type="number" class="form-control" name="partial_payment_value"
+                                        id="partial_payment_value" value="{{ campaign.partial_payment_value or 30.00 }}"
+                                        step="0.01" min="0">
+                                    <span class="input-group-text" id="partial_value_unit">%</span>
+                                </div>
+                                <small class="text-muted"
+                                    id="partial_value_hint">ระบุเปอร์เซ็นต์ที่ต้องจ่ายล่วงหน้า</small>
+                            </div>
+                        </div>
+
+                        <script>
+                            function updatePartialPaymentLabel() {
+                                const type = document.querySelector('input[name="partial_payment_type"]:checked').value;
+                                const valueContainer = document.getElementById('partial_value_container');
+                                const valueLabel = document.getElementById('partial_value_label');
+                                const valueUnit = document.getElementById('partial_value_unit');
+                                const valueHint = document.getElementById('partial_value_hint');
+                                const valueInput = document.getElementById('partial_payment_value');
+
+                                if (type === 'fixed') {
+                                    valueContainer.style.display = 'block';
+                                    valueLabel.textContent = 'จำนวนเงินต่อคน';
+                                    valueUnit.textContent = 'บาท';
+                                    valueHint.textContent = 'ระบุจำนวนเงินที่ต้องจ่ายล่วงหน้าต่อคน';
+                                    valueInput.value = valueInput.value || '5000.00';
+                                } else if (type === 'percentage') {
+                                    valueContainer.style.display = 'block';
+                                    valueLabel.textContent = 'เปอร์เซ็นต์';
+                                    valueUnit.textContent = '%';
+                                    valueHint.textContent = 'ระบุเปอร์เซ็นต์ที่ต้องจ่ายล่วงหน้า (เช่น 30 = 30%)';
+                                    valueInput.value = valueInput.value || '30.00';
+                                } else if (type === 'full') {
+                                    valueContainer.style.display = 'none';
+                                    valueHint.textContent = 'จ่ายเต็มจำนวนคูณด้วยจำนวนคน (ไม่ต้องระบุค่า)';
+                                }
+                            }
+
+                            // Initialize on page load
+                            document.addEventListener('DOMContentLoaded', function () {
+                                updatePartialPaymentLabel();
+                            });
+                        </script>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="mb-0">รูปภาพสินค้า</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if campaign.product_image %}
+                        <div class="mb-3">
+                            <div class="text-center position-relative">
+                                <img src="{{ url_for('static', filename=campaign.product_image.replace('static/', '')) }}"
+                                    alt="Product Image" class="img-thumbnail" style="max-width: 100%;">
+                            </div>
+                            <div class="text-center mt-2">
+                                <button type="button" class="btn btn-danger btn-sm"
+                                    onclick="deleteProductImage({{ campaign.id }})">
+                                    <i class="fas fa-trash"></i> ลบรูปภาพสินค้า
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label class="form-label">อัปโหลดรูปภาพใหม่ (อัตราส่วน 1:1)</label>
+                            <input type="file" name="product_image" class="form-control" accept="image/*">
+                            <small class="text-muted">แนะนำขนาด 800x800 px หรือ 1:1 ratio
+                                (เว้นว่างถ้าไม่ต้องการเปลี่ยน)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Title ภาพ</label>
+                            <input type="text" name="image_title" class="form-control"
+                                value="{{ campaign.image_title or '' }}" placeholder="ข้อความที่จะแสดงด้านบนภาพ">
+                            <small class="text-muted">ข้อความนี้จะแสดงบนรูปภาพสินค้า (ถ้ามี)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ตำแหน่ง Title ภาพ</label>
+                            <select name="image_title_position" class="form-control">
+                                <option value="left" {% if campaign.image_title_position=='left' or not
+                                    campaign.image_title_position %}selected{% endif %}>ด้านซ้าย</option>
+                                <option value="center" {% if campaign.image_title_position=='center' %}selected{% endif
+                                    %}>ตรงกลาง</option>
+                                <option value="right" {% if campaign.image_title_position=='right' %}selected{% endif
+                                    %}>ด้านขวา</option>
+                            </select>
+                            <small class="text-muted">เลือกตำแหน่งที่ต้องการแสดง Title ภาพ</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Album ภาพเพิ่มเติม</label>
+                            {% if campaign.album_images %}
+                            <div class="mb-3">
+                                <h6>ภาพที่มีอยู่แล้ว:</h6>
+                                <div class="row">
+                                    {% set album_list = campaign.album_images|from_json %}
+                                    {% for item in album_list %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="position-relative">
+                                            {% if item is mapping %}
+                                            <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                                class="img-thumbnail mb-2" style="width: 100%;">
+                                            <div class="text-muted small mb-2">
+                                                <strong>Title:</strong> {{ item.title or '(ไม่มี)' }}
+                                            </div>
+                                            <button type="button" class="btn btn-danger btn-sm w-100"
+                                                onclick="deleteAlbumImage({{ campaign.id }}, '{{ item.path }}')">
+                                                <i class="fas fa-trash"></i> ลบรูปนี้
+                                            </button>
+                                            {% else %}
+                                            <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                                class="img-thumbnail mb-2" style="width: 100%;">
+                                            <div class="text-muted small mb-2">(รูปแบบเก่า - ไม่มี title)</div>
+                                            <button type="button" class="btn btn-danger btn-sm w-100"
+                                                onclick="deleteAlbumImage({{ campaign.id }}, '{{ item }}')">
+                                                <i class="fas fa-trash"></i> ลบรูปนี้
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            <h6>เพิ่มภาพใหม่:</h6>
+                            <input type="file" name="album_images" id="albumImages" class="form-control"
+                                accept="image/*" multiple>
+                            <small class="text-muted">เลือกได้หลายไฟล์พร้อมกัน (จะเพิ่มเข้ากับภาพเดิม)</small>
+                            <div id="albumTitlesContainer" class="mt-3"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Settings -->
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>ตั้งค่าการชำระเงิน</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Stripe Settings -->
+                        <div class="border rounded p-3 mb-3">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="payment_stripe_enabled"
+                                    name="payment_stripe_enabled" {% if campaign.payment_stripe_enabled %}checked{%
+                                    endif %}>
+                                <label class="form-check-label fw-bold" for="payment_stripe_enabled">
+                                    <i class="fab fa-stripe me-2"></i>เปิดใช้งาน Stripe Payment
+                                </label>
+                            </div>
+
+                            <div id="stripeSettings"
+                                style="display: {% if campaign.payment_stripe_enabled %}block{% else %}none{% endif %};">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">ประเภทค่าธรรมเนียม</label>
+                                        <select name="payment_stripe_fee_type" class="form-select">
+                                            <option value="percentage" {% if
+                                                campaign.payment_stripe_fee_type=='percentage' %}selected{% endif %}>
+                                                เปอร์เซ็นต์ (%)</option>
+                                            <option value="fixed" {% if campaign.payment_stripe_fee_type=='fixed'
+                                                %}selected{% endif %}>ค่าคงที่ (บาท)</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">มูลค่าค่าธรรมเนียม</label>
+                                        <input type="number" name="payment_stripe_fee_value" class="form-control"
+                                            value="{{ campaign.payment_stripe_fee_value or 0 }}" step="0.01" min="0">
+                                        <small class="text-muted">เช่น 3.5 (3.5%) หรือ 10 (10 บาท)</small>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">ข้อความแสดงค่าธรรมเนียม</label>
+                                    <input type="text" name="payment_stripe_fee_label" class="form-control"
+                                        value="{{ campaign.payment_stripe_fee_label or '' }}"
+                                        placeholder="เช่น ค่าธรรมเนียมการชำระเงินออนไลน์">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bank Transfer Settings -->
+                        <div class="border rounded p-3 mb-3">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" id="payment_bank_enabled"
+                                    name="payment_bank_enabled" {% if campaign.payment_bank_enabled %}checked{% endif
+                                    %}>
+                                <label class="form-check-label fw-bold" for="payment_bank_enabled">
+                                    <i class="fas fa-university me-2"></i>เปิดใช้งานการโอนเงินผ่านธนาคาร
+                                </label>
+                            </div>
+                            <small class="text-muted">บัญชีธนาคารจัดการที่
+                                <a href="{{ url_for('group_buy_payment_admin.bank_accounts') }}"
+                                    target="_blank">หน้าจัดการบัญชีธนาคาร</a>
+                            </small>
+                        </div>
+
+                        <!-- QR Code Settings -->
+                        <div class="border rounded p-3">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="payment_qr_enabled"
+                                    name="payment_qr_enabled" {% if campaign.payment_qr_enabled %}checked{% endif %}>
+                                <label class="form-check-label fw-bold" for="payment_qr_enabled">
+                                    <i class="fas fa-qrcode me-2"></i>เปิดใช้งานการชำระเงินผ่าน QR Code
+                                </label>
+                            </div>
+
+                            <div id="qrSettings"
+                                style="display: {% if campaign.payment_qr_enabled %}block{% else %}none{% endif %};">
+                                {% if campaign.payment_qr_image %}
+                                <div class="mb-3">
+                                    <label class="form-label">QR Code ปัจจุบัน:</label>
+                                    <div>
+                                        <img src="/{{ campaign.payment_qr_image }}" alt="QR Code" class="img-thumbnail"
+                                            style="max-width: 200px;">
+                                    </div>
+                                </div>
+                                {% endif %}
+                                <div class="mb-3">
+                                    <label class="form-label">อัปโหลด QR Code ใหม่</label>
+                                    <input type="file" name="payment_qr_image" class="form-control" accept="image/*">
+                                    <small class="text-muted">อัปโหลด QR Code สำหรับรับชำระเงิน</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-save"></i> บันทึกการแก้ไข
+                </button>
+                <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=campaign.id) }}"
+                    class="btn btn-secondary w-100 mt-2">
+                    <i class="fas fa-times"></i> ยกเลิก
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function () {
+        // Handle album images file selection
+        $('#albumImages').on('change', function (e) {
+            const files = e.target.files;
+            const container = $('#albumTitlesContainer');
+            container.empty();
+
+            if (files.length > 0) {
+                container.append('<h6 class="mb-3 mt-3">Title สำหรับแต่ละภาพใหม่:</h6>');
+
+                for (let i = 0; i < files.length; i++) {
+                    const fileName = files[i].name;
+                    container.append(`
+                        <div class="mb-2">
+                            <label class="form-label"><i class="fas fa-image"></i> ${fileName}</label>
+                            <input type="text" name="album_titles" class="form-control" placeholder="Title สำหรับภาพนี้ (ถ้ามี)">
+                        </div>
+                    `);
+                }
+            }
+        });
+
+        // Toggle Stripe settings
+        $('#payment_stripe_enabled').on('change', function () {
+            if ($(this).is(':checked')) {
+                $('#stripeSettings').slideDown();
+            } else {
+                $('#stripeSettings').slideUp();
+            }
+        });
+
+        // Toggle QR settings
+        $('#payment_qr_enabled').on('change', function () {
+            if ($(this).is(':checked')) {
+                $('#qrSettings').slideDown();
+            } else {
+                $('#qrSettings').slideUp();
+            }
+        });
+    });
+
+    // Delete product image
+    function deleteProductImage(campaignId) {
+        if (!confirm('ยืนยันการลบรูปภาพสินค้า?')) {
+            return;
+        }
+
+        fetch(`/backoffice/group-buy/campaigns/${campaignId}/delete-product-image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('ลบรูปภาพสินค้าสำเร็จ');
+                    location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการลบรูปภาพ: ' + error.message);
+            });
+    }
+
+    // Delete album image
+    function deleteAlbumImage(campaignId, imagePath) {
+        if (!confirm('ยืนยันการลบรูปภาพนี้จาก Album?')) {
+            return;
+        }
+
+        fetch(`/backoffice/group-buy/campaigns/${campaignId}/delete-album-image`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({ image_path: imagePath })
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert('ลบรูปภาพจาก Album สำเร็จ');
+                    location.reload();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('เกิดข้อผิดพลาดในการลบรูปภาพ: ' + error.message);
+            });
+    }
+</script>
+{% endblock %}

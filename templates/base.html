@@ -306,7 +306,41 @@
             }
 
             document.body.removeChild(testElement);
+
+            // Update task alert badge
+            updateTaskAlertBadge();
+
+            // Update every 5 minutes
+            setInterval(updateTaskAlertBadge, 5 * 60 * 1000);
         });
+
+        function updateTaskAlertBadge() {
+            fetch('/booking/api/tasks/alert-count')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success && data.alert_count > 0) {
+                        const badge = document.getElementById('taskAlertBadge');
+                        if (badge) {
+                            badge.textContent = data.alert_count;
+                            badge.style.display = 'inline';
+                        }
+                    } else {
+                        const badge = document.getElementById('taskAlertBadge');
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => {
+                    // Silently fail - badge just won't update
+                    // This is normal for public pages or when not logged in
+                });
+        }
     </script>
 
     {% block extra_css %}{% endblock %}
@@ -316,39 +350,43 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="{{ url_for('dashboard.index') }}">
-                <i class="fas fa-building me-2 text-light"></i>
-                <span class="fw-bold
-                <span class=" navbar-toggler-icon"></span>
-                </button>
+            <a class="navbar-brand d-flex align-items-center" href="https://www.dhakulchan.net" target="_blank">
+                <i class="fas fa-home me-2 text-light"></i>
+                <span class="fw-bold text-light">DHAKULCHAN.NET</span>
+            </a>
 
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        {% if current_user.is_authenticated %}
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                                data-bs-toggle="dropdown">
-                                <i class="fas fa-user me-1"></i>{{ current_user.username }}
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
-                                        <i class="fas fa-user-cog me-2"></i>{{ t('profile') }}
-                                    </a></li>
-                                <li>
-                                    <hr class="dropdown-divider">
-                                </li>
-                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
-                                        <i class="fas fa-sign-out-alt me-2"></i>{{ t('logout') }}
-                                    </a></li>
-                            </ul>
-                        </li>
-                        {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('auth.login') }}">{{ t('login') }}</a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </div>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="navbar-text text-light me-3">
+                            <i class="fas fa-plane me-2"></i>Dhakul Chan Nice Holidays Discovery Group
+                        </span>
+                    </li>
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                    <i class="fas fa-user-cog me-2"></i>{{ t('profile') }}
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    <i class="fas fa-sign-out-alt me-2"></i>{{ t('logout') }}
+                                </a></li>
+                        </ul>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
         </div>
     </nav>
 
@@ -366,12 +404,16 @@
                                 <i class="fas fa-tachometer-alt me-2"></i>{{ t('dashboard') }}
                             </a>
                         </li>
+
+                        <!-- Main Operations -->
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('booking') %}active{% endif %}"
                                 href="{{ url_for('booking.list') }}">
                                 <i class="fas fa-calendar-alt me-2"></i>{{ t('booking') }}
                             </a>
                         </li>
+
+                        {% if current_user.role not in ['Internship', 'Freelance'] %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('quote') %}active{% endif %}"
                                 href="{{ url_for('quote.list_quotes') }}">
@@ -385,15 +427,15 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('voucher') %}active{% endif %}"
-                                href="{{ url_for('voucher.list') }}">
-                                <i class="fas fa-ticket-alt me-2"></i>{{ t('voucher') }}
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('pre_receipt') %}active{% endif %}"
                                 href="{{ url_for('pre_receipt.list') }}">
                                 <i class="fas fa-file-invoice me-2"></i>Pre-Receipt
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('voucher') and not request.endpoint.startswith('voucher_library') %}active{% endif %}"
+                                href="{{ url_for('voucher.list') }}">
+                                <i class="fas fa-ticket-alt me-2"></i>{{ t('voucher') }}
                             </a>
                         </li>
                         <li class="nav-item">
@@ -402,54 +444,159 @@
                                 <i class="fas fa-flag-checkered me-2"></i>Completed
                             </a>
                         </li>
+
+                        <!-- Library & Admin Tools -->
+                        <li class="nav-item mt-2 mb-1">
+                            <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('voucher_library') %}active{% endif %}"
+                                href="{{ url_for('voucher_library.list_albums') }}">
+                                <i class="fas fa-images me-2"></i>Voucher Library
+                            </a>
+                        </li>
+                        {% if current_user.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('short_itinerary_admin') %}active{% endif %}"
+                                href="{{ url_for('short_itinerary_admin.list_itineraries') }}">
+                                <i class="fas fa-list-ul me-2"></i>Short Itinerary
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('flight_template_admin') %}active{% endif %}"
+                                href="{{ url_for('flight_template_admin.list_templates') }}">
+                                <i class="fas fa-plane me-2"></i>Flight Templates
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_permission('group_buy', 'view') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('group_buy_admin') %}active{% endif %}"
+                                href="{{ url_for('group_buy_admin.campaigns') }}">
+                                <i class="fas fa-users-cog me-2"></i>Group Buy Management
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Calendar & Management -->
+                        <li class="nav-item mt-2 mb-1">
+                            <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.role not in ['Internship', 'Freelance'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'booking_calendar.calendar_view' %}active{% endif %}"
+                                href="{{ url_for('booking_calendar.calendar_view') }}">
+                                <i class="fas fa-calendar me-2"></i>Booking Management
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('queue') %}active{% endif %}"
+                                href="{{ url_for('queue.index') }}">
+                                <i class="fas fa-list-ol me-2"></i>Queue Management
+                            </a>
+                        </li>
+
+                        {% if current_user.assigned_counter %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('queue.my_counter') }}"
+                                style="padding-left: 2.5rem; background: rgba(76, 175, 80, 0.1);">
+                                <i class="fas fa-desktop me-2"></i>My Counter ({{ current_user.assigned_counter }})
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'queue.media_manager' %}active{% endif %}"
+                                href="{{ url_for('queue.media_manager') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-photo-video me-2"></i>Queue Media Manager
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'queue.token_manager' %}active{% endif %}"
+                                href="{{ url_for('queue.token_manager') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-key me-2"></i>Display Token Manager
+                            </a>
+                        </li>
+
+                        {% if current_user.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'queue.counter_assignments' %}active{% endif %}"
+                                href="{{ url_for('queue.counter_assignments') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-users-cog me-2"></i>Counter Assignments
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'booking_calendar.task_list_view' %}active{% endif %}"
+                                href="{{ url_for('booking_calendar.task_list_view') }}">
+                                <i class="fas fa-tasks me-2"></i>Task List
+                                <span class="badge bg-danger ms-1" id="taskAlertBadge" style="display: none;"></span>
+                            </a>
+                        </li>
+
+                        {% if current_user.role not in ['Internship', 'Freelance'] %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'booking_calendar.daily_report' %}active{% endif %}"
+                                href="{{ url_for('booking_calendar.daily_report') }}">
+                                <i class="fas fa-chart-bar me-2"></i>Daily Report
+                            </a>
+                        </li>
+
+                        <!-- Master Data -->
+                        <li class="nav-item mt-2 mb-1">
+                            <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
+                        </li>
+                        {% endif %}
+
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('customer') %}active{% endif %}"
                                 href="{{ url_for('booking.customers') }}">
                                 <i class="fas fa-users me-2"></i>{{ t('customer') }}
                             </a>
                         </li>
+
+                        {% if current_user.role not in ['Internship', 'Freelance'] %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('supplier') %}active{% endif %}"
                                 href="{{ url_for('supplier.list_') }}">
                                 <i class="fas fa-truck-loading me-2"></i>Supplier
                             </a>
                         </li>
+
+                        <!-- Financial & Settings -->
+                        <li class="nav-item mt-2 mb-1">
+                            <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
+                        </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('auto_completion') %}active{% endif %}"
-                                href="{{ url_for('auto_completion.index') }}">
-                                <i class="fas fa-sync me-2"></i>Sync Status
+                            <a class="nav-link {% if request.endpoint.startswith('account_report') %}active{% endif %}"
+                                href="{{ url_for('account_report.invoices_list') }}">
+                                <i class="fas fa-file-invoice-dollar me-2"></i>Financial Management
                             </a>
                         </li>
+                        {% if current_user.can_manage_users() %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('user_mgmt') %}active{% endif %}"
                                 href="{{ url_for('user_mgmt.list_users') }}">
                                 <i class="fas fa-users-cog me-2"></i>User Management
                             </a>
                         </li>
+                        {% endif %}
+                        {% if current_user.can_manage_permissions() %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('api.docs') }}">
-                                <i class="fas fa-code me-2"></i>{{ t('api_docs') }}
+                            <a class="nav-link {% if request.endpoint.startswith('permissions') %}active{% endif %}"
+                                href="{{ url_for('permissions.index') }}">
+                                <i class="fas fa-user-shield me-2"></i>Permission Management
                             </a>
                         </li>
+                        {% endif %}
+                        {% endif %}
                     </ul>
 
-                    <!-- Language Switcher -->
-                    <div class="mt-4 px-3">
-                        <div class="d-flex flex-column gap-2">
-                            <small class="text-white-50">{{ t('language_label') if current_language == 'en' else 'ภาษา /
-                                Language' }}</small>
-                            <div class="btn-group-vertical w-100" role="group">
-                                <a href="{{ url_for('language.set_language', language='th') }}"
-                                    class="btn btn-outline-light btn-sm {% if session.get('language') == 'th' %}active{% endif %}">
-                                    🇹🇭 ไทย
-                                </a>
-                                <a href="{{ url_for('language.set_language', language='en') }}"
-                                    class="btn btn-outline-light btn-sm {% if session.get('language') == 'en' or not session.get('language') %}active{% endif %}">
-                                    🇺🇸 English
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
             </nav>
 
@@ -476,12 +623,59 @@
                         <!-- Page Content -->
                         {% block content %}{% endblock %}
                     </div>
+
+                    <!-- Footer -->
+                    <footer class="mt-5 py-4 border-top bg-light">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-12 text-center mb-3">
+                                    <p class="text-muted mb-2" style="font-weight: 600;">
+                                        &copy; 2026 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1
+                                        |
+                                        <a href="https://www.dhakulchan.net/page/about-dhakulchan" target="_blank"
+                                            rel="noopener noreferrer" class="text-primary text-decoration-none">
+                                            <i class="fas fa-info-circle me-1"></i>รู้จักเรา
+                                        </a>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <p class="text-muted small mb-1"><strong>HKG:</strong> Flat C13, 21/F, Mai Wah
+                                        Industrial Bldg., No. 1–7 Wah Shing Street, Kwai Chung, NT.</p>
+                                    <p class="text-muted small mb-0"><strong>Tel:</strong> +852 23921155, +852 23921177
+                                        | <strong>Fax:</strong> +852 23929845</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <p class="text-muted small mb-1"><strong>BKK:</strong> 710, 716, 704, 706 Prachautid
+                                        Road, Samsennok, Huai Kwang, Bangkok 10320 Thailand.</p>
+                                    <p class="text-muted small mb-0"><strong>Tel:</strong> +66 020266525, 022744216, +66
+                                        0818453303, 0846763332 | <strong>Fax:</strong> +66 020266525 Ext. 5</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12 text-center mt-2">
+                                    <p class="text-muted small mb-0" style="font-size: 0.85rem;">
+                                        บริษัทตระกูลเฉินฯ
+                                        ได้รับการอนุญาตอย่างเป็นทางการจากสมาคมขนส่งทางอากาศระหว่างประเทศ <strong>IATA
+                                            License 3530464</strong> โดยมีสมาชิกรวมกันมากว่า 112 สายการบินทั่วโลก
+                                        พร้อมสามารถทำการออกบัตรโดยสารได้เองที่สำนักงาน
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </footer>
                 </main>
         </div>
     </div> <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- DataTables -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <!-- Font loading optimization -->
     <script>

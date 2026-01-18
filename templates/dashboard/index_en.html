@@ -180,7 +180,8 @@
                                     </td>
                                     <td>
                                         {% if booking.total_amount %}
-                                        {{ booking.currency }} {{ "{:,.0f}".format(booking.total_amount|float) }}
+                                        {{ booking.currency or 'THB' }} {{ "{:,.0f}".format(booking.total_amount|float)
+                                        }}
                                         {% else %}
                                         -
                                         {% endif %}
@@ -232,63 +233,31 @@
                 </div>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="card shadow">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-bolt me-2"></i>Quick Actions
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('booking.create') }}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>New Booking
-                        </a>
-                        <a href="{{ url_for('booking.customers') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-user-plus me-2"></i>Add Customer
-                        </a>
-                        <a href="{{ url_for('booking.list') }}" class="btn btn-outline-info">
-                            <i class="fas fa-calendar-alt me-2"></i>Bookings
-                        </a>
-                        <a href="{{ url_for('quote.list_quotes') }}" class="btn btn-outline-warning">
-                            <i class="fas fa-file-alt me-2"></i>Quotes
-                        </a>
-                        <a href="{{ url_for('voucher.list') }}" class="btn btn-outline-success">
-                            <i class="fas fa-ticket-alt me-2"></i>Vouchers
-                        </a>
-                        <a href="{{ url_for('supplier.list_') }}" class="btn btn-outline-secondary">
-                            <i class="fas fa-truck-loading me-2"></i>Supplier
-                        </a>
-                    </div>
-                </div>
-            </div>
         </div>
-    </div>
-</div>
 
-<style>
-    .border-left-primary {
-        border-left: .25rem solid #4e73df !important;
-    }
+        <style>
+            .border-left-primary {
+                border-left: .25rem solid #4e73df !important;
+            }
 
-    .border-left-success {
-        border-left: .25rem solid #1cc88a !important;
-    }
+            .border-left-success {
+                border-left: .25rem solid #1cc88a !important;
+            }
 
-    .border-left-warning {
-        border-left: .25rem solid #f6c23e !important;
-    }
+            .border-left-warning {
+                border-left: .25rem solid #f6c23e !important;
+            }
 
-    .border-left-info {
-        border-left: .25rem solid #36b9cc !important;
-    }
+            .border-left-info {
+                border-left: .25rem solid #36b9cc !important;
+            }
 
-    .text-gray-800 {
-        color: #5a5c69 !important;
-    }
+            .text-gray-800 {
+                color: #5a5c69 !important;
+            }
 
-    .text-gray-300 {
-        color: #dddfeb !important;
-    }
-</style>
-{% endblock %}
+            .text-gray-300 {
+                color: #dddfeb !important;
+            }
+        </style>
+        {% endblock %}

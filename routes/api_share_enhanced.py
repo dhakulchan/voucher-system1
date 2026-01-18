@@ -40,26 +40,39 @@ def get_secure_share_url(booking_id):
         
                 logger.info(f"Generating secure share URL for booking {booking_id} by user {current_user.id}")
                 
-                # Generate secure token (expires departure_date + 120 days)
-                token = BookingEnhanced.generate_secure_token(booking_id)
+                # Try to use existing token from database first
+                token = booking.get('current_share_token')
+                
+                # Log token info for debugging
+                if token:
+                    token_preview = token[:20] + '...' if len(token) > 20 else token
+                    print(f"🔍 API Share: Using existing token for booking {booking_id}: {token_preview} (version={booking.get('share_token_version')})")
+                    logger.info(f"Using existing token for booking {booking_id}: {token_preview}")
+                
+                # If no token exists, generate a new one
                 if not token:
-                    logger.error(f"Failed to generate secure token for booking {booking_id}")
-                    return jsonify({'success': False, 'error': 'Failed to generate secure token'}), 500
+                    print(f"⚠️ API Share: No existing token found for booking {booking_id}, generating new one")
+                    logger.info(f"No existing token found for booking {booking_id}, generating new one")
+                    token = BookingEnhanced.generate_secure_token(booking_id)
+                    if not token:
+                        logger.error(f"Failed to generate secure token for booking {booking_id}")
+                        return jsonify({'success': False, 'error': 'Failed to generate secure token'}), 500
+                    
+                    # Save new token to database
+                    cursor.execute(
+                        "UPDATE bookings SET current_share_token = %s WHERE id = %s",
+                        (token, booking_id)
+                    )
+                    connection.commit()
+                    logger.info(f"Saved new token to database for booking {booking_id}")
                 
-                # Determine base URL (development vs production)
-                base_url = request.host_url.rstrip('/')
-                if 'localhost' in base_url or '127.0.0.1' in base_url:
-                    public_url = f"{base_url}/public/booking/{token}"
-                else:
-                    # Production URL
-                    public_url = f"https://service.dhakulchan.net/public/booking/{token}"
-                
-                # Get status-specific information
+                # Get document information based on booking status
                 document_title = BookingEnhanced.get_document_title_for_status(booking['status'])
                 document_emoji = BookingEnhanced.get_document_emoji_for_status(booking['status'])
                 generator_description = BookingEnhanced.get_generator_description_for_status(booking['status'])
                 
-                # Generate the complete message
+                # Use production URL for all environments
+                public_url = f"http://localhost:5001/public/booking/{token}"
                 message = BookingEnhanced.generate_share_message(
                     booking['booking_reference'],
                     public_url,
@@ -135,12 +148,8 @@ def reset_booking_token(booking_id):
                 # Update any stored token references if needed
                 # (In this implementation, tokens are stateless, so no DB update needed)
                 
-                # Determine base URL
-                base_url = request.host_url.rstrip('/')
-                if 'localhost' in base_url or '127.0.0.1' in base_url:
-                    public_url = f"{base_url}/public/booking/{new_token}"
-                else:
-                    public_url = f"https://service.dhakulchan.net/public/booking/{new_token}"
+                # Use localhost for all environments
+                public_url = f"http://localhost:5001/public/booking/{new_token}"
                 
                 # Get updated information
                 document_title = BookingEnhanced.get_document_title_for_status(booking['status'])
@@ -306,8 +315,8 @@ def send_email_link_message(booking_id):
             return jsonify({'success': False, 'error': 'Failed to generate secure access token'}), 500
         
         # Build secure URL
-        base_url = request.host_url.rstrip('/')
-        secure_url = f"{base_url}/public/booking/{token}"
+        # Use localhost for development
+        secure_url = f"http://localhost:5001/public/booking/{token}"
         
         # Determine document type and title
         if booking['status'] == 'quoted':
@@ -329,18 +338,34 @@ def send_email_link_message(booking_id):
         # Create message content (Thai message as requested)
         message = f"""สวัสดีค่ะ
 บริษัท ตระกูลเฉินฯ แจ้งรายละเอียดบริการหรือรายการทัวร์ หมายเลขอ้างอิง {booking['booking_reference']}
+
 กรุณาคลิกดูรายละเอียดตามด้านล่างค่ะ
 
 📋 Service Proposal: {secure_url}
 
-🖼️ Download PNG: {secure_url}/png
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
 
-📄 Download PDF: {secure_url}/pdf
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
 
 ติดต่อสอบถามข้อมูลเพิ่มเติม:
 📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
 📧 Email: booking@dhakulchan.com
-� Line OA: @dhakulchan | @changuru
+📱 Line OA: @dhakulchan | @changuru
 🏛️ รู้จักตระกูลเฉินฯ: https://www.dhakulchan.net/page/about-dhakulchan"""
         
         # Email configuration

@@ -53,19 +53,25 @@
                                     <label for="role" class="form-label">User Role <span
                                             class="text-danger">*</span></label>
                                     <select class="form-select" id="role" name="role" required>
-                                        <option value="staff" {% if request.form.get('role')=='staff' %}selected{% endif
+                                        <option value="Staff" {% if request.form.get('role')=='Staff' %}selected{% endif
                                             %}>Staff</option>
-                                        <option value="operation" {% if request.form.get('role')=='operation'
+                                        <option value="Operation" {% if request.form.get('role')=='Operation'
                                             %}selected{% endif %}>Operation User</option>
-                                        <option value="manager" {% if request.form.get('role')=='manager' %}selected{%
+                                        <option value="Hong Kong" {% if request.form.get('role')=='Hong Kong'
+                                            %}selected{% endif %}>Hong Kong</option>
+                                        <option value="Manager" {% if request.form.get('role')=='Manager' %}selected{%
                                             endif %}>Manager</option>
+                                        <option value="Internship" {% if request.form.get('role')=='Internship'
+                                            %}selected{% endif %}>Internship</option>
+                                        <option value="Freelance" {% if request.form.get('role')=='Freelance'
+                                            %}selected{% endif %}>Freelance</option>
                                         {% if current_user.role == 'Administrator' %}
-                                        <option value="admin" {% if request.form.get('role')=='admin' %}selected{% endif
-                                            %}>Administrator</option>
+                                        <option value="Administrator" {% if request.form.get('role')=='Administrator'
+                                            %}selected{% endif %}>Administrator</option>
                                         {% endif %}
                                     </select>
                                     <div class="form-text">
-                                        {% if current_user.role == 'admin' %}
+                                        {% if current_user.role == 'Administrator' %}
                                         Choose the appropriate role for this user
                                         {% else %}
                                         You can create Staff and Manager accounts
@@ -79,7 +85,7 @@
                         <div class="mb-4">
                             <h6>Role Permissions:</h6>
                             <div class="row">
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body py-2">
                                             <h6 class="text-primary mb-1">
@@ -93,7 +99,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body py-2">
                                             <h6 class="text-info mb-1">
@@ -108,7 +114,23 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
+                                <div class="col-md-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="mb-1">
+                                                <span class="badge"
+                                                    style="background-color: #dc143c; color: white;">Hong Kong</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • All Operation permissions<br>
+                                                • Quote management<br>
+                                                • Admin notes access<br>
+                                                • Financial data access
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body py-2">
                                             <h6 class="text-warning mb-1">
@@ -123,8 +145,38 @@
                                         </div>
                                     </div>
                                 </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="text-success mb-1">
+                                                <span class="badge bg-success">Internship</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • Queue Management<br>
+                                                • Own Bookings only<br>
+                                                • Own Customers only<br>
+                                                • Task List
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="card bg-light">
+                                        <div class="card-body py-2">
+                                            <h6 class="text-secondary mb-1">
+                                                <span class="badge bg-secondary">Freelance</span>
+                                            </h6>
+                                            <small class="text-muted">
+                                                • Queue Management<br>
+                                                • Own Bookings only<br>
+                                                • Own Customers only<br>
+                                                • Task List
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
                                 {% if current_user.role == 'Administrator' %}
-                                <div class="col-md-3">
+                                <div class="col-md-2">
                                     <div class="card bg-light">
                                         <div class="card-body py-2">
                                             <h6 class="text-danger mb-1">

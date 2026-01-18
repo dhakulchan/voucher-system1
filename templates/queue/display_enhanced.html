@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Display - Enhanced</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background: #1a1a2e;
+            color: white;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .display-container {
+            display: grid;
+            grid-template-columns: 60% 40%;
+            height: 100vh;
+            gap: 0;
+        }
+
+        /* Left Section - Queue Information */
+        .queue-section {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .display-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .header-title {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .datetime-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            font-size: 16px;
+        }
+
+        .digital-clock {
+            font-size: 22px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .current-queue {
+            background: #16213e;
+            margin: 20px;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .queue-number {
+            font-size: 100px;
+            font-weight: bold;
+            color: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .counter-number {
+            font-size: 50px;
+            color: #ffd700;
+        }
+
+        .waiting-list {
+            flex: 1;
+            margin: 0 20px 20px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .queue-item {
+            background: #16213e;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Right Section - Media Carousel */
+        .media-section {
+            background: #0f1419;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .media-carousel {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .media-item {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: none;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .media-item.active {
+            display: flex;
+            opacity: 1;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .media-item img,
+        .media-item video {
+            max-width: 100%;
+            max-height: 85%;
+            object-fit: contain;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .media-item iframe {
+            width: 100%;
+            height: 85%;
+            border-radius: 15px;
+            border: none;
+        }
+
+        .media-title {
+            margin-top: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #fff;
+        }
+
+        .media-description {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .media-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+
+        .indicator-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+
+        .indicator-dot.active {
+            background: #667eea;
+            width: 30px;
+            border-radius: 6px;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .footer-text {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            padding: 10px;
+            background: rgba(26, 26, 46, 0.95);
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 60%;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responsive - Single column on small screens */
+        @media (max-width: 1024px) {
+            .display-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: 70% 30%;
+            }
+
+            .footer-text {
+                width: 100%;
+            }
+        }
+
+        /* Hide scrollbar */
+        .waiting-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .waiting-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .waiting-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="display-container">
+        <!-- Left Section: Queue Information -->
+        <div class="queue-section">
+            <div class="display-header">
+                <div class="header-title">DHAKUL CHAN NICE HOLIDAYS - QUEUE SYSTEM</div>
+                <div class="datetime-display">
+                    <div class="digital-clock" id="digitalClock">00:00:00</div>
+                    <div class="thai-date" id="thaiDate">Loading...</div>
+                </div>
+            </div>
+
+            <div class="current-queue">
+                <h2>NOW SERVING / กำลังให้บริการ</h2>
+                <div class="queue-number" id="currentQueue">---</div>
+                <div class="counter-number">Counter: <span id="currentCounter">-</span></div>
+            </div>
+
+            <div class="waiting-list">
+                <h3 class="text-center mb-3">Waiting Queue / คิวรอ</h3>
+                <div id="waitingQueues"></div>
+            </div>
+
+            <div class="footer-text">
+                © 2025 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1
+            </div>
+        </div>
+
+        <!-- Right Section: Media Carousel -->
+        <div class="media-section">
+            <div class="media-carousel" id="mediaCarousel">
+                <!-- Media items will be loaded here -->
+            </div>
+            <div class="media-indicator" id="mediaIndicator">
+                <!-- Indicator dots will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Thai month and day names
+        const thaiMonths = [
+            'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+            'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
+        ];
+
+        const thaiDays = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const thaiTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+
+            const hours = String(thaiTime.getHours()).padStart(2, '0');
+            const minutes = String(thaiTime.getMinutes()).padStart(2, '0');
+            const seconds = String(thaiTime.getSeconds()).padStart(2, '0');
+            document.getElementById('digitalClock').textContent = `${hours}:${minutes}:${seconds}`;
+
+            const dayName = thaiDays[thaiTime.getDay()];
+            const day = thaiTime.getDate();
+            const month = thaiMonths[thaiTime.getMonth()];
+            const year = thaiTime.getFullYear() + 543;
+            document.getElementById('thaiDate').textContent = `วัน${dayName}ที่ ${day} ${month} ${year}`;
+        }
+
+        // Update queue display
+        async function updateDisplay() {
+            try {
+                const response = await fetch('/queue/api/queues');
+                const data = await response.json();
+
+                if (data.success) {
+                    const servingQueues = data.queues.filter(q => q.status === 'serving');
+
+                    if (servingQueues.length > 0) {
+                        servingQueues.sort((a, b) => {
+                            const dateA = new Date(a.called_at || 0);
+                            const dateB = new Date(b.called_at || 0);
+                            return dateB - dateA;
+                        });
+
+                        const serving = servingQueues[0];
+                        document.getElementById('currentQueue').textContent = serving.queue_number;
+                        document.getElementById('currentCounter').textContent = serving.counter || '-';
+                    } else {
+                        document.getElementById('currentQueue').textContent = '---';
+                        document.getElementById('currentCounter').textContent = '-';
+                    }
+
+                    const waiting = data.queues.filter(q => q.status === 'waiting');
+                    const waitingHtml = waiting.slice(0, 10).map(q => `
+                        <div class="queue-item">
+                            <span style="font-size: 22px; font-weight: bold;">${q.queue_number}</span>
+                            <span style="font-size: 16px;">${q.service_type}</span>
+                        </div>
+                    `).join('');
+
+                    document.getElementById('waitingQueues').innerHTML = waitingHtml ||
+                        '<p class="text-center text-muted">No waiting customers</p>';
+                }
+            } catch (error) {
+                console.error('Error updating display:', error);
+            }
+        }
+
+        // Media carousel management
+        let mediaList = [];
+        let currentMediaIndex = 0;
+        let mediaInterval = null;
+
+        // Extract YouTube video ID
+        function getYouTubeEmbedUrl(url) {
+            const videoId = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
+            return videoId ? `https://www.youtube.com/embed/${videoId[1]}?autoplay=1&mute=1&loop=1&playlist=${videoId[1]}` : '';
+        }
+
+        // Load media from API
+        async function loadMedia() {
+            try {
+                const response = await fetch('/queue/api/media');
+                const data = await response.json();
+
+                if (data.success && data.media.length > 0) {
+                    mediaList = data.media;
+                    renderMediaCarousel();
+                    startMediaRotation();
+                } else {
+                    // Show default message if no media
+                    document.getElementById('mediaCarousel').innerHTML = `
+                        <div class="media-item active">
+                            <div style="text-align: center;">
+                                <h2 style="color: #667eea; font-size: 48px; margin-bottom: 20px;">
+                                    ยินดีต้อนรับ
+                                </h2>
+                                <h3 style="font-size: 32px;">
+                                    Dhakul Chan Nice Holidays
+                                </h3>
+                                <p style="font-size: 20px; color: rgba(255,255,255,0.7); margin-top: 20px;">
+                                    บริษัททัวร์ชั้นนำของไทย
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading media:', error);
+            }
+        }
+
+        // Render media carousel
+        function renderMediaCarousel() {
+            const carousel = document.getElementById('mediaCarousel');
+            const indicator = document.getElementById('mediaIndicator');
+
+            carousel.innerHTML = mediaList.map((media, index) => {
+                let content = '';
+
+                if (media.media_type === 'image') {
+                    content = `<img src="${media.file_path}" alt="${media.title}">`;
+                } else if (media.media_type === 'video') {
+                    content = `<video src="${media.file_path}" autoplay muted loop></video>`;
+                } else if (media.media_type === 'youtube') {
+                    const embedUrl = getYouTubeEmbedUrl(media.youtube_url);
+                    content = `<iframe src="${embedUrl}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+                }
+
+                return `
+                    <div class="media-item ${index === 0 ? 'active' : ''}" data-index="${index}">
+                        ${content}
+                        <div class="media-title">${media.title}</div>
+                        ${media.description ? `<div class="media-description">${media.description}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            indicator.innerHTML = mediaList.map((_, index) =>
+                `<div class="indicator-dot ${index === 0 ? 'active' : ''}" data-index="${index}"></div>`
+            ).join('');
+        }
+
+        // Start media rotation
+        function startMediaRotation() {
+            if (mediaInterval) clearInterval(mediaInterval);
+
+            mediaInterval = setInterval(() => {
+                showNextMedia();
+            }, mediaList[currentMediaIndex]?.duration * 1000 || 10000);
+        }
+
+        // Show next media
+        function showNextMedia() {
+            const items = document.querySelectorAll('.media-item');
+            const dots = document.querySelectorAll('.indicator-dot');
+
+            items[currentMediaIndex].classList.remove('active');
+            dots[currentMediaIndex].classList.remove('active');
+
+            currentMediaIndex = (currentMediaIndex + 1) % mediaList.length;
+
+            items[currentMediaIndex].classList.add('active');
+            dots[currentMediaIndex].classList.add('active');
+
+            startMediaRotation(); // Restart interval with new duration
+        }
+
+        // Initialize
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        setInterval(updateDisplay, 3000);
+        updateDisplay();
+
+        loadMedia();
+
+        // Reload media every 5 minutes to get updates
+        setInterval(loadMedia, 300000);
+    </script>
+</body>
+
+</html>

@@ -34,7 +34,7 @@ class Config:
     
     # File upload configuration
     UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or '/opt/bitnami/projects/voucher-ro/static/uploads'
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file size for multiple images
     
     # PDF Generation settings
     PDF_TEMPLATE_FOLDER = os.environ.get('PDF_TEMPLATE_FOLDER') or '/opt/bitnami/projects/voucher-ro/templates/pdf'

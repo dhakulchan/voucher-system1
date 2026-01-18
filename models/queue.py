@@ -1,51 +1,88 @@
-from datetime import date
-from utils.datetime_utils import naive_utc_now
+"""
+Queue Management Model
+สำหรับระบบจัดการคิวลูกค้า
+"""
+from datetime import datetime
+import pytz
 from extensions import db
 
-class QueueSession(db.Model):
-    __tablename__ = 'queue_sessions'
-    id = db.Column(db.Integer, primary_key=True)
-    channel = db.Column(db.String(50), default='default', index=True)
-    session_date = db.Column(db.Date, default=date.today, index=True)
-    last_number = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=naive_utc_now)
-    updated_at = db.Column(db.DateTime, default=naive_utc_now, onupdate=naive_utc_now)
+# Bangkok timezone
+BANGKOK_TZ = pytz.timezone('Asia/Bangkok')
 
-    def next_number(self):
-        self.last_number += 1
-        return self.last_number
 
-class QueueTicket(db.Model):
-    __tablename__ = 'queue_tickets'
+class Queue(db.Model):
+    """Model สำหรับจัดการคิวลูกค้า"""
+    __tablename__ = 'queues'
+    
     id = db.Column(db.Integer, primary_key=True)
-    session_id = db.Column(db.Integer, db.ForeignKey('queue_sessions.id'), nullable=False, index=True)
-    number = db.Column(db.Integer, nullable=False)
-    display_code = db.Column(db.String(20), index=True)
-    status = db.Column(db.String(20), default='waiting', index=True)  # waiting|calling|serving|done|canceled
-    service_type = db.Column(db.String(50))
-    customer_name = db.Column(db.String(255))
-    phone = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=naive_utc_now)
-    updated_at = db.Column(db.DateTime, default=naive_utc_now, onupdate=naive_utc_now)
+    queue_number = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    customer_name = db.Column(db.String(100), nullable=False)
+    customer_phone = db.Column(db.String(20), nullable=False)
+    customer_email = db.Column(db.String(100))
+    service_type = db.Column(db.String(50), nullable=False)  # booking, inquiry, payment, document, change, cancel
+    status = db.Column(db.String(20), default='waiting', index=True)  # waiting, serving, completed, cancelled
+    priority = db.Column(db.Integer, default=0)  # 0=normal, 1=high priority/VIP
+    counter = db.Column(db.String(10))  # Counter/Booth number
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
     called_at = db.Column(db.DateTime)
-    started_at = db.Column(db.DateTime)
-    finished_at = db.Column(db.DateTime)
-
-    session = db.relationship('QueueSession', backref=db.backref('tickets', lazy='dynamic'))
-
+    completed_at = db.Column(db.DateTime)
+    notes = db.Column(db.Text)
+    
+    def __repr__(self):
+        return f'<Queue {self.queue_number} - {self.customer_name}>'
+    
     def to_dict(self):
+        """Convert to dictionary for JSON responses"""
+        def format_bangkok_time(dt):
+            """Convert UTC datetime to Bangkok time string"""
+            if not dt:
+                return None
+            # If datetime is naive, assume it's UTC
+            if dt.tzinfo is None:
+                dt = pytz.utc.localize(dt)
+            # Convert to Bangkok time
+            bangkok_time = dt.astimezone(BANGKOK_TZ)
+            return bangkok_time.strftime('%Y-%m-%d %H:%M:%S')
+        
         return {
             'id': self.id,
-            'session_id': self.session_id,
-            'number': self.number,
-            'display_code': self.display_code,
-            'status': self.status,
-            'service_type': self.service_type,
+            'queue_number': self.queue_number,
             'customer_name': self.customer_name,
-            'phone': self.phone,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'called_at': self.called_at.isoformat() if self.called_at else None,
-            'started_at': self.started_at.isoformat() if self.started_at else None,
-            'finished_at': self.finished_at.isoformat() if self.finished_at else None,
+            'customer_phone': self.customer_phone,
+            'customer_email': self.customer_email,
+            'service_type': self.service_type,
+            'status': self.status,
+            'priority': self.priority,
+            'counter': self.counter,
+            'created_at': format_bangkok_time(self.created_at),
+            'called_at': format_bangkok_time(self.called_at),
+            'completed_at': format_bangkok_time(self.completed_at),
+            'notes': self.notes,
+            'waiting_time_minutes': self.waiting_time,
+            'service_time_minutes': self.service_time,
+            'total_time_minutes': self.total_time
         }
+    
+    @property
+    def waiting_time(self):
+        """Calculate waiting time in minutes"""
+        if self.called_at and self.created_at:
+            delta = self.called_at - self.created_at
+            return int(delta.total_seconds() / 60)
+        return None
+    
+    @property
+    def service_time(self):
+        """Calculate service time in minutes"""
+        if self.completed_at and self.called_at:
+            delta = self.completed_at - self.called_at
+            return int(delta.total_seconds() / 60)
+        return None
+    
+    @property
+    def total_time(self):
+        """Calculate total time from creation to completion"""
+        if self.completed_at and self.created_at:
+            delta = self.completed_at - self.created_at
+            return int(delta.total_seconds() / 60)
+        return None

@@ -30,8 +30,12 @@ class QuotePDFGenerator:
 
     def __init__(self):
         # Adaptive output directory based on environment
-        if os.path.exists("/opt/bitnami"):
-            # Production environment
+        if os.path.exists("/home/ubuntu/voucher-ro_v1.0"):
+            # Production environment (Ubuntu server)
+            self.output_dir = "/home/ubuntu/voucher-ro_v1.0/static/generated/quotes"
+            self.static_dir = "/home/ubuntu/voucher-ro_v1.0/static"
+        elif os.path.exists("/opt/bitnami"):
+            # Alternative production environment (Bitnami)
             self.output_dir = "/opt/bitnami/apache/htdocs/static/generated/quotes"
             self.static_dir = "/opt/bitnami/apache/htdocs/static"
         else:

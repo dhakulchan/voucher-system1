@@ -1,0 +1,139 @@
+/* Thai Font Support CSS for WeasyPrint */
+/* Enhanced Thai and English font support for PDF generation */
+
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Font face definitions for offline fallback */
+@font-face {
+    font-family: 'ThaiFont';
+    src: local('Sarabun'), local('Noto Sans Thai'), local('TH Sarabun New'), local('Leelawadee UI');
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'ThaiFont';
+    src: local('Sarabun Medium'), local('Noto Sans Thai Medium'), local('TH Sarabun New Bold'), local('Leelawadee UI Semilight');
+    font-weight: 500;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'ThaiFont';
+    src: local('Sarabun SemiBold'), local('Noto Sans Thai SemiBold'), local('TH Sarabun New Bold'), local('Leelawadee UI Semilight');
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'ThaiFont';
+    src: local('Sarabun Bold'), local('Noto Sans Thai Bold'), local('TH Sarabun New Bold'), local('Leelawadee UI Bold');
+    font-weight: 700;
+    font-style: normal;
+}
+
+/* English font definitions */
+@font-face {
+    font-family: 'EnglishFont';
+    src: local('Inter'), local('-apple-system'), local('BlinkMacSystemFont'), local('Segoe UI'), local('Roboto');
+    font-weight: 400;
+    font-style: normal;
+}
+
+/* Global font stack for mixed content */
+* {
+    font-family: 'Sarabun', 'Noto Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol' !important;
+}
+
+/* Specific Thai text enhancement */
+.thai-text,
+.thai-content,
+[lang="th"] {
+    font-family: 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', 'Leelawadee UI', 'Tahoma', sans-serif !important;
+    font-feature-settings: "liga" 1, "kern" 1, "calt" 1 !important;
+    text-rendering: optimizeLegibility !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* English text enhancement */
+.english-text,
+.english-content,
+[lang="en"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+    font-feature-settings: "liga" 1, "kern" 1, "calt" 1, "tnum" 1 !important;
+    text-rendering: optimizeLegibility !important;
+}
+
+/* Price and numeric content */
+.price-amount,
+.numeric-content {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'SF Mono', 'Monaco', 'Consolas', monospace !important;
+    font-variant-numeric: tabular-nums !important;
+    font-feature-settings: "tnum" 1, "lnum" 1 !important;
+}
+
+/* Headers and titles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.header-text,
+.quote-text,
+.quote-number {
+    font-family: 'Sarabun', 'Noto Sans Thai', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em !important;
+}
+
+/* Table content optimization */
+table,
+th,
+td {
+    font-family: 'Sarabun', 'Noto Sans Thai', 'Inter', Arial, sans-serif !important;
+    text-rendering: optimizeLegibility !important;
+}
+
+/* Terms and conditions specific styling */
+.terms-content {
+    font-family: 'Sarabun', 'Noto Sans Thai', 'TH Sarabun New', Arial, sans-serif !important;
+    font-size: 9px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0.1px !important;
+    font-weight: 500 !important;
+}
+
+/* Print optimization */
+@media print {
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
+    }
+
+    body,
+    p,
+    div,
+    span {
+        text-rendering: optimizeLegibility !important;
+        -webkit-font-smoothing: antialiased !important;
+        -moz-osx-font-smoothing: grayscale !important;
+    }
+}
+
+/* WeasyPrint specific optimizations */
+@page {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+/* Ensure consistent font rendering across all elements */
+body {
+    font-synthesis: none !important;
+    font-variant-ligatures: common-ligatures !important;
+    font-kerning: normal !important;
+}

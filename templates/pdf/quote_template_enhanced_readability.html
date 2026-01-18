@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Quote - {{ booking.booking_reference }}</title>
+    <style>
+        /* Enhanced Thai Font CSS for Maximum Readability */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Primary Thai fonts with enhanced readability */
+        html,
+        body,
+        div,
+        span,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        p,
+        table,
+        thead,
+        tbody,
+        tr,
+        th,
+        td,
+        ul,
+        ol,
+        li {
+            font-family: "Sarabun", "Noto Sans Thai", "Leelawadee UI", "TH SarabunPSK", "Tahoma", Arial, sans-serif !important;
+            font-size: 15px;
+            line-height: 1.9;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            color: #2c3e50;
+        }
+
+        @page {
+            size: A4;
+            margin: 2.5cm 2cm;
+        }
+
+        body {
+            font-family: "Sarabun", "Noto Sans Thai", "Leelawadee UI", "TH SarabunPSK", "Tahoma", Arial, sans-serif;
+            color: #2c3e50;
+            background: #fff;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 20px;
+        }
+
+        .quote-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2c5aa0;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            line-height: 2.2;
+        }
+
+        .quote-number {
+            font-size: 18px;
+            color: #555;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+        }
+
+        .info-table td {
+            padding: 14px 16px;
+            border: 1.5px solid #bdc3c7;
+            vertical-align: top;
+            font-size: 15px;
+            line-height: 1.9;
+            letter-spacing: 0.3px;
+        }
+
+        .info-table .label {
+            background-color: #ecf0f1;
+            font-weight: 700;
+            width: 40%;
+            color: #2c3e50;
+            font-size: 15px;
+        }
+
+        .info-table .value {
+            background-color: #ffffff;
+            font-weight: 500;
+            color: #34495e;
+            font-size: 15px;
+        }
+
+        .price-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+        }
+
+        .price-table th {
+            background-color: #2c5aa0;
+            color: white;
+            padding: 16px 12px;
+            text-align: center;
+            border: 1px solid #1e4084;
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 2.0;
+        }
+
+        .price-table td {
+            padding: 16px 12px;
+            border: 1.5px solid #bdc3c7;
+            text-align: center;
+            font-size: 15px;
+            line-height: 1.9;
+            font-weight: 500;
+        }
+
+        .price-amount {
+            text-align: right !important;
+            font-weight: 700;
+            font-size: 16px;
+            color: #27ae60;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .terms {
+            margin-top: 35px;
+            font-size: 13px;
+            line-height: 1.8;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .terms-title {
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-decoration: underline;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .terms-content {
+            color: #34495e;
+            line-height: 1.9;
+            letter-spacing: 0.2px;
+        }
+
+        .footer {
+            margin-top: 45px;
+            text-align: center;
+            font-size: 13px;
+            color: #7f8c8d;
+            line-height: 2.0;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 20px;
+        }
+
+        /* Enhanced Thai text classes */
+        .thai-text {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 2.1;
+            letter-spacing: 0.4px;
+        }
+
+        .thai-content {
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.9;
+            letter-spacing: 0.3px;
+        }
+
+        /* Activity section styling */
+        .activity-header {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .activity-day {
+            background-color: #f5f5f5;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div class="quote-title thai-text">ใบเสนอราคา / QUOTE</div>
+        <div class="quote-number">{{ quote_number or 'Q-' + (booking.booking_reference or 'DRAFT') }}</div>
+    </div>
+
+    <table class="info-table">
+        <tr>
+            <td class="label thai-text">ชื่อลูกค้า / Customer Name:</td>
+            <td class="value thai-content">{{ booking.customer_name or 'ไม่ระบุ' }}</td>
+        </tr>
+        <tr>
+            <td class="label thai-text">อีเมล / Email:</td>
+            <td class="value">{{ booking.customer_email or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td class="label thai-text">เบอร์โทร / Phone:</td>
+            <td class="value">{{ booking.customer_phone or 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td class="label thai-text">จำนวนผู้โดยสาร / Passengers:</td>
+            <td class="value thai-content">{{ booking.total_guests or 0 }} คน</td>
+        </tr>
+        <tr>
+            <td class="label thai-text">วันที่เดินทาง / Travel Date:</td>
+            <td class="value thai-content">{{ booking.tour_date if booking.tour_date else 'ไม่ระบุ' }}</td>
+        </tr>
+        <tr>
+            <td class="label thai-text">โปรแกรมทัวร์ / Tour Program:</td>
+            <td class="value thai-content">{{ booking.tour_name or 'ไม่ระบุโปรแกรม' }}</td>
+        </tr>
+    </table>
+
+    {% if booking.tour_programs and booking.tour_programs|length > 0 %}
+    <table class="info-table">
+        <tr>
+            <td class="activity-header thai-text">รายการกิจกรรม / Activities</td>
+            <td class="activity-header">&nbsp;</td>
+        </tr>
+        {% for program in booking.tour_programs %}
+        <tr>
+            <td class="activity-day thai-text">วันที่ {{ loop.index }}</td>
+            <td class="thai-content">{{ program.description or 'ไม่ระบุรายละเอียด' }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <table class="price-table">
+        <thead>
+            <tr>
+                <th class="thai-text">รายการ / Description</th>
+                <th class="thai-text">จำนวน / Qty</th>
+                <th class="thai-text">ราคาต่อหน่วย / Unit Price</th>
+                <th class="thai-text">รวม / Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if quote and quote.quote_items %}
+            {% for item in quote.quote_items %}
+            <tr>
+                <td class="thai-content" style="text-align: left;">{{ item.description or 'รายการทัวร์' }}</td>
+                <td>{{ item.quantity or 1 }}</td>
+                <td class="price-amount">{{ '{:,.0f}'.format(item.unit_price or 0) }}</td>
+                <td class="price-amount">{{ '{:,.0f}'.format((item.unit_price or 0) * (item.quantity or 1)) }}</td>
+            </tr>
+            {% endfor %}
+            {% else %}
+            <tr>
+                <td class="thai-content" style="text-align: left;">{{ booking.tour_name or 'แพ็คเกจทัวร์' }}</td>
+                <td>{{ booking.total_guests or 1 }}</td>
+                <td class="price-amount">{{ '{:,.0f}'.format(booking.total_price_per_person or 0) }}</td>
+                <td class="price-amount">{{ '{:,.0f}'.format(booking.total_price or 0) }}</td>
+            </tr>
+            {% endif %}
+            <tr style="background-color: #f8f9fa;">
+                <td colspan="3" class="thai-text" style="font-weight: bold; text-align: left;">รวมทั้งสิ้น / Grand
+                    Total:</td>
+                <td class="price-amount" style="font-weight: bold; font-size: 18px;">฿ {{
+                    '{:,.0f}'.format(quote.total_amount if quote else booking.total_price or 0) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="terms">
+        <div class="terms-title thai-text">ข้อกำหนดและเงื่อนไข / Terms & Conditions</div>
+        <div class="terms-content thai-content">
+            • การจองจะสมบูรณ์เมื่อได้รับเงินมัดจำแล้วเท่านั้น / Booking is confirmed only upon receipt of deposit<br>
+            • เงินมัดจำ 50% ของราคาทัวร์ทั้งหมด / Deposit required: 50% of total tour price<br>
+            • ชำระเงินส่วนที่เหลือก่อนวันเดินทาง 7 วัน / Final payment due 7 days before departure<br>
+            • การยกเลิกก่อนเดินทาง 15 วัน หักค่าใช้จ่าย 25% / Cancellation 15+ days: 25% charge<br>
+            • การยกเลิกก่อนเดินทาง 7-14 วัน หักค่าใช้จ่าย 50% / Cancellation 7-14 days: 50% charge<br>
+            • การยกเลิกก่อนเดินทางน้อยกว่า 7 วัน หักค่าใช้จ่าย 100% / Cancellation &lt;7 days: 100% charge<br>
+            • ราคาไม่รวมค่าทิปไกด์และคนขับรถ / Price excludes guide and driver tips<br>
+            • บริษัทฯ ขอสงวนสิทธิ์ในการเปลี่ยนแปลงรายการโดยไม่แจ้งให้ทราบล่วงหน้า / Company reserves the right to modify
+            itinerary without prior notice
+        </div>
+    </div>
+
+    <div class="footer thai-content">
+        ขอบคุณที่ไว้วางใจในบริการของเรา<br>
+        Thank you for choosing our services
+    </div>
+</body>
+
+</html>

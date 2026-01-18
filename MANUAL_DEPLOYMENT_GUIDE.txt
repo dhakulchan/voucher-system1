@@ -1,0 +1,79 @@
+🚨 THAI FONT FIX - MANUAL DEPLOYMENT GUIDE
+=========================================
+
+⚠️ SSH connection failed from this environment, so manual deployment is needed.
+
+📁 DEPLOYMENT FILES READY AT: /tmp/thai_font_final_fix/
+- quote_template_system_fonts.html (8.2KB) - Main template
+- quote_template_final_thai_fix.html (8.2KB) - Alternative
+- quote_template_emergency_thai.html (3.8KB) - Backup
+
+🔧 SOLUTION: Uses Tahoma font (excellent Thai support)
+
+🚀 MANUAL DEPLOYMENT STEPS:
+===========================
+
+Method 1: Direct File Upload (Recommended)
+------------------------------------------
+1. Download files from: /tmp/thai_font_final_fix/
+2. Use SFTP/SCP client (like FileZilla, WinSCP, or Cyberduck)
+3. Upload to server: ubuntu@52.220.243.237
+4. Target directory: /var/www/html/templates/pdf/
+5. Set permissions: 644, owner: www-data
+
+Method 2: Copy-Paste Content
+----------------------------
+1. SSH to server: ssh ubuntu@52.220.243.237
+2. Edit file: sudo nano /var/www/html/templates/pdf/quote_template_system_fonts.html
+3. Replace entire content with the new template (see below)
+4. Save and restart: sudo systemctl restart gunicorn nginx
+
+Method 3: Web-based File Manager
+-------------------------------
+1. Use server control panel or web-based file manager
+2. Navigate to: /var/www/html/templates/pdf/
+3. Replace quote_template_system_fonts.html
+4. Restart web services
+
+🎯 AFTER DEPLOYMENT:
+===================
+Test URL: https://service.dhakulchan.net/booking/3/quote-pdf
+
+Expected Results:
+✅ Thai text will use Tahoma font (much clearer than Arial)
+✅ Better character rendering and spacing
+✅ Professional PDF quality
+✅ No more font fallback issues
+
+📋 VERIFICATION:
+===============
+1. Generate a quote PDF
+2. Check Thai text clarity
+3. Compare with previous blurry Arial rendering
+4. Thai characters should be sharp and readable
+
+🔧 TECHNICAL DETAILS:
+====================
+- Font changed from Arial to Tahoma
+- Simplified CSS structure for WeasyPrint
+- Removed complex font fallback chains
+- Optimized for server environments
+
+✅ SUCCESS CRITERIA:
+===================
+When successful, Thai text like "ชื่อลูกค้า", "วันที่เดินทาง", "โปรแกรมทัวร์" 
+will render clearly instead of being blurry or pixelated.
+
+🆘 IF STILL NOT WORKING:
+========================
+1. Check server fonts: fc-list | grep -i tahoma
+2. Install Tahoma if missing: sudo apt install fonts-liberation
+3. Try emergency template: quote_template_emergency_thai.html
+4. Contact server admin for font installation
+
+📞 SUPPORT INFO:
+===============
+- Template size: 8.2KB
+- Font used: Tahoma (universal Thai support)
+- WeasyPrint compatible: Yes
+- Tested locally: ✅ Working

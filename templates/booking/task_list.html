@@ -1,0 +1,368 @@
+{% extends "base.html" %}
+
+{% block title %}Task List - รายการงาน{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2><i class="fas fa-tasks me-2"></i>Task List - รายการงานทั้งหมด</h2>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">สถานะ</label>
+                    <select class="form-select" id="filterStatus" onchange="loadTasks()">
+                        <option value="">ทั้งหมด</option>
+                        <option value="pending">รอดำเนินการ</option>
+                        <option value="in_progress">กำลังดำเนินการ</option>
+                        <option value="completed">เสร็จสิ้น</option>
+                        <option value="on_hold">พักไว้ก่อน</option>
+                        <option value="cancelled">ยกเลิก</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">ผู้รับผิดชอบ</label>
+                    <select class="form-select" id="filterAssigned" onchange="loadTasks()">
+                        <option value="">ทั้งหมด</option>
+                        <option value="me">งานของฉัน</option>
+                        <option value="unassigned">ยังไม่มีผู้รับผิดชอบ</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">ความสำคัญ</label>
+                    <select class="form-select" id="filterPriority" onchange="loadTasks()">
+                        <option value="">ทั้งหมด</option>
+                        <option value="urgent">🔴 Urgent</option>
+                        <option value="high">🟠 High</option>
+                        <option value="normal">🔵 Normal</option>
+                        <option value="low">🟢 Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Deadline</label>
+                    <select class="form-select" id="filterDeadline" onchange="loadTasks()">
+                        <option value="">ทั้งหมด</option>
+                        <option value="overdue">เลยกำหนดแล้ว</option>
+                        <option value="today">วันนี้</option>
+                        <option value="this_week">สัปดาห์นี้</option>
+                        <option value="upcoming">กำลังจะถึง</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Summary -->
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body text-center">
+                    <h3 class="text-danger" id="overdueCount">0</h3>
+                    <p class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>เลยกำหนด</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h3 class="text-warning" id="todayCount">0</h3>
+                    <p class="mb-0"><i class="fas fa-clock me-2"></i>วันนี้</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h3 class="text-info" id="weekCount">0</h3>
+                    <p class="mb-0"><i class="fas fa-calendar-week me-2"></i>สัปดาห์นี้</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h3 class="text-primary" id="myTasksCount">0</h3>
+                    <p class="mb-0"><i class="fas fa-user me-2"></i>งานของฉัน</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list me-2"></i>รายการ Tasks
+                <span class="badge bg-secondary ms-2" id="totalTasksCount">0</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="tasksTable">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>หัวข้อ Task</th>
+                            <th>Booking</th>
+                            <th>ลูกค้า</th>
+                            <th>ผู้รับผิดชอบ</th>
+                            <th>ความสำคัญ</th>
+                            <th>Deadline</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasksTableBody">
+                        <!-- Tasks loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .overdue-row {
+        background-color: #fff0f0;
+    }
+
+    .today-row {
+        background-color: #fff8e1;
+    }
+
+    .task-row:hover {
+        cursor: pointer;
+        background-color: #f5f5f5;
+    }
+
+    /* Blinking animation for overdue/today deadlines */
+    @keyframes blink {
+
+        0%,
+        50%,
+        100% {
+            opacity: 1;
+        }
+
+        25%,
+        75% {
+            opacity: 0.3;
+        }
+    }
+
+    .deadline-blink {
+        animation: blink 2s infinite;
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+
+    .deadline-overdue {
+        color: #dc3545;
+    }
+
+    .deadline-today {
+        color: #ff9800;
+    }
+</style>
+
+<script>
+    let allTasks = [];
+    const currentUserId = {{ current_user.id }};
+
+    // Load tasks on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        loadTasks();
+
+        // Refresh every 5 minutes
+        setInterval(loadTasks, 5 * 60 * 1000);
+    });
+
+    function loadTasks() {
+        fetch('/booking/api/tasks/all')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    allTasks = data.tasks;
+                    filterAndRenderTasks();
+                    updateSummary();
+                }
+            })
+            .catch(error => console.error('Error loading tasks:', error));
+    }
+
+    function filterAndRenderTasks() {
+        const statusFilter = document.getElementById('filterStatus').value;
+        const assignedFilter = document.getElementById('filterAssigned').value;
+        const priorityFilter = document.getElementById('filterPriority').value;
+        const deadlineFilter = document.getElementById('filterDeadline').value;
+
+        let filtered = allTasks.filter(task => {
+            // Status filter
+            if (statusFilter && task.status !== statusFilter) return false;
+
+            // Assigned filter
+            if (assignedFilter === 'me' && task.assigned_to != currentUserId) return false;
+            if (assignedFilter === 'unassigned' && task.assigned_to) return false;
+
+            // Priority filter
+            if (priorityFilter && task.priority !== priorityFilter) return false;
+
+            // Deadline filter
+            if (deadlineFilter) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (task.deadline) {
+                    const deadline = new Date(task.deadline);
+                    deadline.setHours(0, 0, 0, 0);
+
+                    if (deadlineFilter === 'overdue' && deadline >= today) return false;
+                    if (deadlineFilter === 'today' && deadline.getTime() !== today.getTime()) return false;
+                    if (deadlineFilter === 'this_week') {
+                        const weekEnd = new Date(today);
+                        weekEnd.setDate(weekEnd.getDate() + 7);
+                        if (deadline < today || deadline > weekEnd) return false;
+                    }
+                    if (deadlineFilter === 'upcoming' && deadline <= today) return false;
+                } else if (deadlineFilter !== '') {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        renderTasksTable(filtered);
+    }
+
+    function renderTasksTable(tasks) {
+        const tbody = document.getElementById('tasksTableBody');
+        document.getElementById('totalTasksCount').textContent = tasks.length;
+
+        if (tasks.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">ไม่พบ tasks</td></tr>';
+            return;
+        }
+
+        let html = '';
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        tasks.forEach(task => {
+            let rowClass = 'task-row';
+            if (task.deadline) {
+                const deadline = new Date(task.deadline);
+                deadline.setHours(0, 0, 0, 0);
+                if (deadline < today && !task.is_completed) rowClass += ' overdue-row';
+                else if (deadline.getTime() === today.getTime()) rowClass += ' today-row';
+            }
+
+            const statusBadge = getStatusBadge(task.status);
+            const priorityBadge = getPriorityBadge(task.priority);
+
+            // Format deadline with blinking animation for overdue/today
+            let deadlineDisplay = '<span class="text-muted">-</span>';
+            if (task.deadline && !task.is_completed) {
+                const deadline = new Date(task.deadline);
+                deadline.setHours(0, 0, 0, 0);
+                const deadlineStr = deadline.toLocaleDateString('th-TH');
+
+                if (deadline < today) {
+                    // Overdue - red blinking
+                    deadlineDisplay = `<span class="deadline-blink deadline-overdue">⚠️ ${deadlineStr}</span>`;
+                } else if (deadline.getTime() === today.getTime()) {
+                    // Today - orange blinking
+                    deadlineDisplay = `<span class="deadline-blink deadline-today">🔔 ${deadlineStr}</span>`;
+                } else {
+                    // Future deadline
+                    deadlineDisplay = `<span>${deadlineStr}</span>`;
+                }
+            } else if (task.deadline && task.is_completed) {
+                deadlineDisplay = `<span class="text-success"><i class="fas fa-check"></i> ${new Date(task.deadline).toLocaleDateString('th-TH')}</span>`;
+            }
+
+            html += `
+                <tr class="${rowClass}" onclick="viewTask(${task.id})">
+                    <td>${statusBadge}</td>
+                    <td><strong>${escapeHtml(task.title)}</strong></td>
+                    <td><a href="/booking/view/${task.booking_id}" onclick="event.stopPropagation();">${task.booking_reference || '#' + task.booking_id}</a></td>
+                    <td>${task.customer_name || '-'}</td>
+                    <td>${task.assigned_to_name ? '<i class="fas fa-user me-1"></i>' + task.assigned_to_name : '<span class="text-muted">-</span>'}</td>
+                    <td>${priorityBadge}</td>
+                    <td>${deadlineDisplay}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); viewTask(${task.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    function updateSummary() {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const weekEnd = new Date(today);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+
+        let overdue = 0, todayCount = 0, weekCount = 0, myTasks = 0;
+
+        allTasks.forEach(task => {
+            if (task.assigned_to == currentUserId && !task.is_completed) myTasks++;
+
+            if (task.deadline && !task.is_completed) {
+                const deadline = new Date(task.deadline);
+                deadline.setHours(0, 0, 0, 0);
+
+                if (deadline < today) overdue++;
+                if (deadline.getTime() === today.getTime()) todayCount++;
+                if (deadline >= today && deadline <= weekEnd) weekCount++;
+            }
+        });
+
+        document.getElementById('overdueCount').textContent = overdue;
+        document.getElementById('todayCount').textContent = todayCount;
+        document.getElementById('weekCount').textContent = weekCount;
+        document.getElementById('myTasksCount').textContent = myTasks;
+    }
+
+    function getStatusBadge(status) {
+        const badges = {
+            'pending': '<span class="badge bg-warning">รอดำเนินการ</span>',
+            'in_progress': '<span class="badge bg-info">กำลังดำเนินการ</span>',
+            'completed': '<span class="badge bg-success">เสร็จสิ้น</span>',
+            'on_hold': '<span class="badge bg-secondary">พักไว้ก่อน</span>',
+            'cancelled': '<span class="badge bg-dark">ยกเลิก</span>'
+        };
+        return badges[status] || '<span class="badge bg-secondary">-</span>';
+    }
+
+    function getPriorityBadge(priority) {
+        const badges = {
+            'urgent': '<span class="badge bg-danger">🔴 Urgent</span>',
+            'high': '<span class="badge bg-warning">🟠 High</span>',
+            'normal': '<span class="badge bg-info">🔵 Normal</span>',
+            'low': '<span class="badge bg-secondary">🟢 Low</span>'
+        };
+        return badges[priority] || badges['normal'];
+    }
+
+    function viewTask(taskId) {
+        window.location.href = `/booking/calendar?task_id=${taskId}`;
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}

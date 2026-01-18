@@ -1,0 +1,508 @@
+{% extends "base.html" %}
+
+{% block title %}Daily Booking Report - Dhakul Chan{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+
+    .status-breakdown {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .status-badge {
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.85rem;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .date-filter {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .export-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+        padding-right: 25px !important;
+    }
+
+    .sortable:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .sortable::after {
+        content: '\2195';
+        /* Up-down arrow */
+        position: absolute;
+        right: 8px;
+        opacity: 0.5;
+        font-size: 0.8em;
+    }
+
+    .sortable.asc::after {
+        content: '\2191';
+        /* Up arrow */
+        opacity: 1;
+    }
+
+    .sortable.desc::after {
+        content: '\2193';
+        /* Down arrow */
+        opacity: 1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div
+        class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="fas fa-chart-bar me-2 text-primary"></i>Daily Booking Report
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('booking.list') }}" class="btn btn-outline-primary me-2">
+                <i class="fas fa-list me-2"></i>Booking List
+            </a>
+            <a href="{{ url_for('booking_calendar.calendar_view') }}" class="btn btn-outline-info">
+                <i class="fas fa-calendar-alt me-2"></i>Calendar View
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="date-filter">
+        <div class="row align-items-end">
+            <div class="col-md-3">
+                <label for="dateFrom" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="dateFrom" value="{{ report_date }}">
+            </div>
+            <div class="col-md-3">
+                <label for="dateTo" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="dateTo" value="{{ report_date }}">
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-primary" onclick="loadReport()">
+                    <i class="fas fa-search me-2"></i>Generate Report
+                </button>
+            </div>
+            <div class="col-md-3 text-end">
+                <div class="export-buttons">
+                    <button class="btn btn-success" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-2"></i>Export Excel
+                    </button>
+                    <button class="btn btn-secondary" onclick="printReport()">
+                        <i class="fas fa-print me-2"></i>Print
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row" id="statsCards">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stat-label">Total Bookings</div>
+                <div class="stat-value" id="totalBookings">-</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stat-label">Total Passengers</div>
+                <div class="stat-value" id="totalPassengers">-</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stat-label">Total Revenue</div>
+                <div class="stat-value" id="totalRevenue">-</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stat-label">Date Range</div>
+                <div class="stat-value" style="font-size: 1.2rem;" id="dateRange">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Breakdown -->
+    <div class="stats-card">
+        <h5>Status Breakdown</h5>
+        <div class="status-breakdown" id="statusBreakdown">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Type Breakdown -->
+    <div class="stats-card">
+        <h5>Booking Type Breakdown</h5>
+        <div class="status-breakdown" id="typeBreakdown">
+            <!-- Populated dynamically -->
+        </div>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="table-container">
+        <h5 class="mb-3">Booking Details</h5>
+        <div class="table-responsive">
+            <table class="table table-hover" id="bookingsTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="sortable" onclick="sortTable(0, 'string')" data-sort="">Reference</th>
+                        <th class="sortable" onclick="sortTable(1, 'string')" data-sort="">Type</th>
+                        <th class="sortable" onclick="sortTable(2, 'string')" data-sort="">Customer</th>
+                        <th class="sortable" onclick="sortTable(3, 'date')" data-sort="">Arrival</th>
+                        <th class="sortable" onclick="sortTable(4, 'date')" data-sort="">Departure</th>
+                        <th class="sortable" onclick="sortTable(5, 'number')" data-sort="">Pax</th>
+                        <th class="sortable" onclick="sortTable(6, 'number')" data-sort="">Amount</th>
+                        <th class="sortable" onclick="sortTable(7, 'string')" data-sort="">Status</th>
+                        <th class="sortable" onclick="sortTable(8, 'string')" data-sort="">Operation</th>
+                        <th class="sortable" onclick="sortTable(9, 'string')" data-sort="">Created By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsTableBody">
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+    // Global variables
+    let allBookings = [];
+    let currentSortColumn = -1;
+    let currentSortOrder = 'asc';
+
+    // Load report on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        loadReport();
+    });
+
+    // Load report data
+    function loadReport() {
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+
+        fetch(`/booking/api/daily-report/data?date_from=${dateFrom}&date_to=${dateTo}`)
+            .then(response => response.json())
+            .then(data => {
+                allBookings = data.bookings;  // Store globally
+                updateStatistics(data.stats);
+                updateBookingsTable(allBookings);
+                updateDateRange(data.date_range);
+                resetSortingState();
+            })
+            .catch(error => {
+                console.error('Error loading report:', error);
+                alert('Error loading report data');
+            });
+    }
+
+    // Update statistics
+    function updateStatistics(stats) {
+        document.getElementById('totalBookings').textContent = stats.total_bookings;
+        document.getElementById('totalPassengers').textContent = stats.total_passengers;
+        document.getElementById('totalRevenue').textContent = 'THB ' + stats.total_revenue.toLocaleString();
+
+        // Status breakdown
+        const statusColors = {
+            'draft': '#6c757d',
+            'pending': '#ffc107',
+            'confirmed': '#0dcaf0',
+            'quoted': '#fd7e14',
+            'paid': '#198754',
+            'vouchered': '#0dcaf0',
+            'completed': '#0d6efd',
+            'cancelled': '#dc3545'
+        };
+
+        let statusHtml = '';
+        for (const [status, count] of Object.entries(stats.by_status)) {
+            const color = statusColors[status] || '#6c757d';
+            statusHtml += `
+            <span class="status-badge" style="background-color: ${color}; color: white;">
+                ${status}: ${count}
+            </span>
+        `;
+        }
+        document.getElementById('statusBreakdown').innerHTML = statusHtml;
+
+        // Type breakdown
+        let typeHtml = '';
+        for (const [type, count] of Object.entries(stats.by_type)) {
+            typeHtml += `
+            <span class="badge bg-secondary">
+                ${type}: ${count}
+            </span>
+        `;
+        }
+        document.getElementById('typeBreakdown').innerHTML = typeHtml;
+
+        // Operation Status breakdown
+        if (stats.by_operation_status) {
+            const operationIcons = {
+                'No': '⏳',
+                'Yes': '✅',
+                'Cancel': '❌'
+            };
+            let operationHtml = '';
+            for (const [opStatus, count] of Object.entries(stats.by_operation_status)) {
+                const icon = operationIcons[opStatus] || '📋';
+                operationHtml += `
+                <span class="badge bg-secondary">
+                    ${icon} ${opStatus}: ${count}
+                </span>
+            `;
+            }
+            // Find or create operation breakdown element
+            let opElement = document.getElementById('operationBreakdown');
+            if (!opElement) {
+                opElement = document.createElement('div');
+                opElement.id = 'operationBreakdown';
+                opElement.className = 'mt-2';
+                const typeElement = document.getElementById('typeBreakdown');
+                if (typeElement && typeElement.parentNode) {
+                    typeElement.parentNode.insertBefore(opElement, typeElement.nextSibling);
+                }
+            }
+            opElement.innerHTML = '<strong>Operation Status:</strong> ' + operationHtml;
+        }
+    }
+
+    // Reset sorting state
+    function resetSortingState() {
+        currentSortColumn = -1;
+        currentSortOrder = 'asc';
+        document.querySelectorAll('.sortable').forEach(th => {
+            th.classList.remove('asc', 'desc');
+            th.setAttribute('data-sort', '');
+        });
+    }
+
+    // Sort table
+    function sortTable(columnIndex, dataType) {
+        const headers = document.querySelectorAll('.sortable');
+
+        // Determine sort order
+        if (currentSortColumn === columnIndex) {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortOrder = 'asc';
+        }
+        currentSortColumn = columnIndex;
+
+        // Update header classes
+        headers.forEach((th, idx) => {
+            th.classList.remove('asc', 'desc');
+            if (idx === columnIndex) {
+                th.classList.add(currentSortOrder);
+                th.setAttribute('data-sort', currentSortOrder);
+            } else {
+                th.setAttribute('data-sort', '');
+            }
+        });
+
+        // Sort the bookings array
+        const sortedBookings = [...allBookings].sort((a, b) => {
+            let valA, valB;
+
+            // Get values based on column index
+            switch (columnIndex) {
+                case 0: // Reference
+                    valA = a.reference;
+                    valB = b.reference;
+                    break;
+                case 1: // Type
+                    valA = a.type;
+                    valB = b.type;
+                    break;
+                case 2: // Customer
+                    valA = a.customer;
+                    valB = b.customer;
+                    break;
+                case 3: // Arrival
+                    valA = a.arrival_date;
+                    valB = b.arrival_date;
+                    break;
+                case 4: // Departure
+                    valA = a.departure_date;
+                    valB = b.departure_date;
+                    break;
+                case 5: // Pax
+                    valA = a.pax;
+                    valB = b.pax;
+                    break;
+                case 6: // Amount
+                    valA = a.amount;
+                    valB = b.amount;
+                    break;
+                case 7: // Status
+                    valA = a.status;
+                    valB = b.status;
+                    break;
+                case 8: // Operation Status
+                    valA = a.operation_status;
+                    valB = b.operation_status;
+                    break;
+                case 9: // Created By
+                    valA = a.created_by;
+                    valB = b.created_by;
+                    break;
+                default:
+                    return 0;
+            }
+
+            // Handle different data types
+            let comparison = 0;
+            if (dataType === 'number') {
+                comparison = (parseFloat(valA) || 0) - (parseFloat(valB) || 0);
+            } else if (dataType === 'date') {
+                const dateA = new Date(valA || '1900-01-01');
+                const dateB = new Date(valB || '1900-01-01');
+                comparison = dateA - dateB;
+            } else { // string
+                valA = String(valA || '').toLowerCase();
+                valB = String(valB || '').toLowerCase();
+                comparison = valA.localeCompare(valB);
+            }
+
+            return currentSortOrder === 'asc' ? comparison : -comparison;
+        });
+
+        // Update table with sorted data
+        updateBookingsTable(sortedBookings);
+    }
+
+    // Update bookings table
+    function updateBookingsTable(bookings) {
+        const tbody = document.getElementById('bookingsTableBody');
+
+        if (bookings.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="text-center">No bookings found</td></tr>';
+            return;
+        }
+
+        const statusColors = {
+            'draft': 'secondary',
+            'pending': 'warning text-dark',
+            'confirmed': 'info',
+            'quoted': 'warning text-dark',
+            'paid': 'success',
+            'vouchered': 'info',
+            'completed': 'primary',
+            'cancelled': 'danger'
+        };
+
+        let html = '';
+        bookings.forEach(booking => {
+            const statusClass = statusColors[booking.status] || 'secondary';
+            html += `
+            <tr>
+                <td><strong>${booking.reference}</strong></td>
+                <td><span class="badge bg-info">${booking.type}</span></td>
+                <td>${booking.customer}</td>
+                <td>${booking.arrival_date}</td>
+                <td>${booking.departure_date}</td>
+                <td>${booking.pax}</td>
+                <td><strong>${booking.currency} ${booking.amount.toLocaleString()}</strong></td>
+                <td><span class="badge bg-${statusClass}">${booking.status}</span></td>
+                <td><span style="font-size: 1.1em;">${booking.operation_icon} ${booking.operation_status}</span></td>
+                <td>
+                    <strong>${booking.created_by}</strong>
+                    <br><small class="text-muted">${booking.created_by_role}</small>
+                </td>
+                <td>
+                    <a href="/booking/view/${booking.id}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </td>
+            </tr>
+        `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // Update date range display
+    function updateDateRange(range) {
+        const from = new Date(range.from).toLocaleDateString();
+        const to = new Date(range.to).toLocaleDateString();
+        document.getElementById('dateRange').textContent = from === to ? from : `${from} - ${to}`;
+    }
+
+    // Export to Excel
+    function exportToExcel() {
+        const table = document.getElementById('bookingsTable');
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Bookings" });
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+        XLSX.writeFile(wb, `booking_report_${dateFrom}_to_${dateTo}.xlsx`);
+    }
+
+    // Print report
+    function printReport() {
+        window.print();
+    }
+</script>
+
+<style media="print">
+    .btn,
+    .export-buttons,
+    .date-filter input,
+    .date-filter button {
+        display: none !important;
+    }
+
+    .stats-card,
+    .table-container {
+        box-shadow: none !important;
+        page-break-inside: avoid;
+    }
+</style>
+{% endblock %}

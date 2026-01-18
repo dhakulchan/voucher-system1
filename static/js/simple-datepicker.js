@@ -90,7 +90,7 @@ class SimpleDatePicker {
             <div style="position: absolute; z-index: 9999; background: white; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; width: 280px; max-height: 350px; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
                     <button type="button" class="prev-month" style="background: none; border: none; cursor: pointer; font-size: 18px; color: #6c757d; padding: 4px 8px; border-radius: 4px;">‹</button>
-                    <span style="font-weight: 600; color: #495057;">${monthNames[currentMonthIndex]} ${currentYear}</span>
+                    <span class="month-year-display" style="font-weight: 600; color: #495057;">${monthNames[currentMonthIndex]} ${currentYear}</span>
                     <button type="button" class="next-month" style="background: none; border: none; cursor: pointer; font-size: 18px; color: #6c757d; padding: 4px 8px; border-radius: 4px;">›</button>
                 </div>
                 <div class="calendar-grid" style="background: white;">
@@ -171,6 +171,18 @@ class SimpleDatePicker {
     updateCalendar() {
         const calendarGrid = this.picker.querySelector('.calendar-grid');
         calendarGrid.innerHTML = this.generateDays();
+
+        // Update month/year display
+        const currentYear = this.currentMonth.getFullYear();
+        const currentMonthIndex = this.currentMonth.getMonth();
+        const monthNames = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+        const monthYearDisplay = this.picker.querySelector('.month-year-display');
+        if (monthYearDisplay) {
+            monthYearDisplay.textContent = `${monthNames[currentMonthIndex]} ${currentYear}`;
+        }
 
         // Re-bind day selection events
         this.picker.addEventListener('click', (e) => {

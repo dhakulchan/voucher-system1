@@ -1314,3 +1314,215 @@ def test_thai_support():
     except Exception as e:
         print(f"Error in Thai language test: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# ========== SHARE TOKEN MANAGEMENT APIS ==========
+# These APIs provide frontend-expected /api/booking/... paths
+
+@api_bp.route('/booking/<int:booking_id>/reset-share-token', methods=['POST'])
+@login_required  
+def api_reset_share_token_compat(booking_id):
+    """Reset/generate new share tokens (compatibility route for frontend)"""
+    try:
+        import time
+        import hashlib
+        import base64
+        from urllib.parse import quote_plus
+        from models.booking import Booking
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔄 API Reset share token for booking {booking_id}")
+        
+        # Get booking
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found'}), 404
+        
+        # Get booking model instance for database update
+        booking_model = Booking.query.get(booking_id)
+        if not booking_model:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found in database'}), 404
+        
+        # Refresh from database to get latest version
+        db.session.refresh(booking_model)
+        
+        # Increment token version to invalidate old tokens - Use ATOMIC SQL UPDATE
+        # This prevents race conditions when multiple resets happen
+        db.session.execute(
+            db.text("UPDATE bookings SET share_token_version = share_token_version + 1 WHERE id = :id"),
+            {"id": booking_id}
+        )
+        db.session.commit()
+        
+        # Get the new version from database
+        result = db.session.execute(
+            db.text("SELECT share_token_version FROM bookings WHERE id = :id"),
+            {"id": booking_id}
+        ).fetchone()
+        new_version = result[0] if result else 2
+        
+        logger.info(f"✅ Version updated to {new_version}")
+        
+        # Generate new token using BookingEnhanced with explicit version
+        from models.booking_enhanced import BookingEnhanced
+        new_token = BookingEnhanced.generate_secure_token(booking_id, expiry_days=120, token_version=new_version)
+        
+        if not new_token:
+            logger.error(f"❌ Failed to generate token for booking {booking_id}")
+            return jsonify({'success': False, 'error': 'Failed to generate token'}), 500
+        
+        # Timestamp format (for backward compatibility)
+        current_timestamp = int(time.time())
+        hash_token = hashlib.md5(f'{booking_id}_{current_timestamp}_{new_version}_reset'.encode()).hexdigest()[:10]
+        timestamp_token = f'{booking_id}_{current_timestamp}_{hash_token}'
+        
+        # Save new token to database using RAW SQL
+        db.session.execute(
+            db.text("UPDATE bookings SET current_share_token = :token WHERE id = :id"),
+            {"token": new_token, "id": booking_id}
+        )
+        db.session.commit()
+        
+        logger.info(f"✅ Token saved to database: version {new_version}, token: {new_token[:30]}...")
+        
+        # Unlock booking when resetting token (using global cache)
+        from routes.booking import _locked_bookings_global
+        _locked_bookings_global.discard(booking_id)
+        logger.info(f"🔓 Unlocked booking {booking_id} from global cache")
+        
+        # Generate response with URLs (URL encode tokens for query parameters)
+        base_url = request.host_url.rstrip('/')
+        
+        tokens_data = {
+            'backend_png': f"{base_url}/booking/{booking_id}/quote-png?v={quote_plus(new_token)}",
+            'base64_token': new_token,
+            'public_png_base64': f"{base_url}/public/booking/{new_token}/png",
+            'public_png_timestamp': f"{base_url}/public/booking/{timestamp_token}/png",
+            'public_pdf_base64': f"{base_url}/public/booking/{new_token}/pdf",
+            'timestamp_token': timestamp_token,
+            'timestamp': current_timestamp,
+            'token_version': new_version
+        }
+        
+        logger.info(f"✅ Generated new tokens for booking {booking_id} (version {new_version})")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Share token reset successfully for booking {booking_id}',
+            'booking_id': booking_id,
+            'booking_reference': getattr(booking, 'booking_reference', f'BK{booking_id}'),
+            'tokens': tokens_data,
+            'note': 'Old tokens have been invalidated'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ Error resetting share token for booking {booking_id}: {str(e)}")
+        db.session.rollback()
+        return jsonify({'success': False, 'error': f'Failed to reset share token: {str(e)}'}), 500
+
+@api_bp.route('/booking/<int:booking_id>/lock-share-token', methods=['POST'])
+@login_required  
+def api_lock_share_token_compat(booking_id):
+    """Lock share token to prevent public access (compatibility route for frontend)"""
+    try:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"🔒 API Lock share token for booking {booking_id}")
+        
+        # Get booking
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found'}), 404
+        
+        # Store locked booking in global cache
+        from routes.booking import _locked_bookings_global
+        _locked_bookings_global.add(booking_id)
+        
+        logger.info(f"✅ Share token locked for booking {booking_id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Share token locked successfully for booking {booking_id}',
+            'booking_id': booking_id,
+            'booking_reference': getattr(booking, 'booking_reference', f'BK{booking_id}'),
+            'status': 'locked',
+            'note': 'Public sharing has been disabled for this booking'
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ API Error locking share token for booking {booking_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to lock share token: {str(e)}'}), 500
+
+@api_bp.route('/booking/<int:booking_id>/share-info', methods=['GET'])
+@login_required
+def api_get_share_info_compat(booking_id):
+    """Get current share token information and URLs (compatibility route for frontend)"""
+    try:
+        import time
+        import hashlib
+        import base64
+        from urllib.parse import quote_plus
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        logger.info(f"📊 API Getting share info for booking {booking_id}")
+        
+        # Get booking
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            return jsonify({'success': False, 'error': f'Booking {booking_id} not found'}), 404
+        
+        # Check if sharing is locked
+        from routes.booking import _locked_bookings_global
+        sharing_enabled = booking_id not in _locked_bookings_global
+        
+        # Only generate tokens and URLs if sharing is enabled
+        if sharing_enabled:
+            current_timestamp = int(time.time())
+            token_string = f'{booking_id}|{current_timestamp}|{current_timestamp + 31536000}'
+            token_data = token_string.encode() + hashlib.sha256(token_string.encode()).digest()[:16] 
+            current_token = base64.b64encode(token_data).decode().rstrip('=')
+            
+            # Timestamp format
+            hash_token = hashlib.md5(f'{booking_id}_{current_timestamp}_info'.encode()).hexdigest()[:10]
+            timestamp_token = f'{booking_id}_{current_timestamp}_{hash_token}'
+            
+            # Create URLs
+            base_url = request.host_url.rstrip('/')
+            
+            tokens_info = {
+                'base64_token': current_token,
+                'timestamp_token': timestamp_token,
+                'generated_at': current_timestamp
+            }
+            
+            urls_info = {
+                'public_png_base64': f"{base_url}/public/booking/{current_token}/png",
+                'public_png_timestamp': f"{base_url}/public/booking/{timestamp_token}/png", 
+                'backend_png': f"{base_url}/booking/{booking_id}/quote-png?v={quote_plus(current_token)}",
+                'public_pdf_base64': f"{base_url}/public/booking/{current_token}/pdf"
+            }
+        else:
+            tokens_info = {}
+            urls_info = {}
+        
+        share_info = {
+            'booking_id': booking_id,
+            'booking_reference': getattr(booking, 'booking_reference', f'BK{booking_id}'),
+            'status': getattr(booking, 'status', 'unknown'),
+            'tokens': tokens_info,
+            'urls': urls_info,
+            'sharing_enabled': sharing_enabled
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': share_info
+        })
+        
+    except Exception as e:
+        logger.error(f"❌ API Error getting share info for booking {booking_id}: {str(e)}")
+        return jsonify({'success': False, 'error': f'Failed to get share info: {str(e)}'}), 500
