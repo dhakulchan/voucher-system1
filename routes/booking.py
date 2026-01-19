@@ -79,15 +79,26 @@ class SimpleCustomer:
         self.email = email
         self.phone = phone
 
+def get_db_connection_params():
+    """Extract database connection parameters from SQLAlchemy URI in Config"""
+    from config import Config
+    from urllib.parse import urlparse
+    
+    db_uri = Config.SQLALCHEMY_DATABASE_URI
+    parsed = urlparse(db_uri)
+    
+    return {
+        'host': parsed.hostname or 'localhost',
+        'user': parsed.username or 'voucher_user',
+        'password': parsed.password or 'VoucherSecure2026!',
+        'database': parsed.path.lstrip('/').split('?')[0] or 'voucher_enhanced',
+        'charset': 'utf8mb4'
+    }
+
 def get_mysql_connection():
     """Get direct MySQL connection for booking #45"""
-    return mysql.connector.connect(
-        host='localhost',
-        user='voucher_user', 
-        password='voucher_secure_2024',
-        database='voucher_enhanced',
-        charset='utf8mb4'
-    )
+    params = get_db_connection_params()
+    return mysql.connector.connect(**params)
 
 def handle_booking_45_edit(booking_id, request):
     """Special handler for booking #45 datetime corruption"""
@@ -958,7 +969,7 @@ def create():
                 connection = pymysql.connect(
                     host='localhost',
                     user='voucher_user',
-                    password='voucher_secure_2024',
+                    password='VoucherSecure2026!',
                     database='voucher_enhanced',
                     charset='utf8mb4'
                 )
@@ -1119,13 +1130,8 @@ def view(id):
         app.logger.info(f"🚀 Attempting direct database connection for booking {id}")
         # Use direct database connection to bypass SQLAlchemy datetime processor
         import pymysql
-        connection = pymysql.connect(
-            host='localhost',
-            user='voucher_user',
-            password='voucher_secure_2024',
-            database='voucher_enhanced',
-            charset='utf8mb4'
-        )
+        params = get_db_connection_params()
+        connection = pymysql.connect(**params)
         
         with connection.cursor() as cursor:
             # Get booking data with customer info
@@ -1397,13 +1403,8 @@ def view(id):
     try:
         import pymysql
         # Use direct database connection to avoid SQLAlchemy issues
-        connection = pymysql.connect(
-            host='localhost',
-            user='voucher_user',
-            password='voucher_secure_2024',
-            database='voucher_enhanced',
-            charset='utf8mb4'
-        )
+        params = get_db_connection_params()
+        connection = pymysql.connect(**params)
         
         with connection.cursor() as cursor:
             cursor.execute(
@@ -1481,7 +1482,7 @@ def update_status(id):
             connection = pymysql.connect(
                 host='localhost',
                 user='voucher_user',
-                password='voucher_secure_2024',
+                password='VoucherSecure2026!',
                 database='voucher_enhanced',
                 charset='utf8mb4'
             )
@@ -1605,13 +1606,8 @@ def mark_as_paid(booking_id):
             import pymysql
             from datetime import datetime
             
-            connection = pymysql.connect(
-                host='localhost',
-                user='voucher_user',
-                password='voucher_secure_2024',
-                database='voucher_enhanced',
-                charset='utf8mb4'
-            )
+            params = get_db_connection_params()
+            connection = pymysql.connect(**params)
             
             with connection.cursor() as cursor:
                 # Create activity log for status change if booking status changed
@@ -3142,13 +3138,8 @@ def apply_to_invoice_workflow(booking_id):
                 import pymysql
                 from datetime import datetime
                 
-                connection = pymysql.connect(
-                    host='localhost',
-                    user='voucher_user',
-                    password='voucher_secure_2024',
-                    database='voucher_enhanced',
-                    charset='utf8mb4'
-                )
+                params = get_db_connection_params()
+                connection = pymysql.connect(**params)
                 
                 with connection.cursor() as cursor:
                     # Create status change activity log if status changed
@@ -3349,13 +3340,8 @@ def api_mark_as_paid(booking_id):
         try:
             import pymysql
             
-            connection = pymysql.connect(
-                host='localhost',
-                user='voucher_user',
-                password='voucher_secure_2024',
-                database='voucher_enhanced',
-                charset='utf8mb4'
-            )
+            params = get_db_connection_params()
+            connection = pymysql.connect(**params)
             
             with connection.cursor() as cursor:
                 # Create status change activity log if status changed
@@ -3698,7 +3684,7 @@ def confirm_booking_enhanced(booking_id):
             connection = pymysql.connect(
                 host='localhost',
                 user='voucher_user',
-                password='voucher_secure_2024',
+                password='VoucherSecure2026!',
                 database='voucher_enhanced',
                 charset='utf8mb4'
             )
@@ -5113,7 +5099,7 @@ def pending_booking(booking_id):
             connection = pymysql.connect(
                 host='localhost',
                 user='voucher_user',
-                password='voucher_secure_2024',
+                password='VoucherSecure2026!',
                 database='voucher_enhanced',
                 charset='utf8mb4'
             )
@@ -5179,13 +5165,8 @@ def mark_as_completed(booking_id):
         try:
             import pymysql
             
-            connection = pymysql.connect(
-                host='localhost',
-                user='voucher_user',
-                password='voucher_secure_2024',
-                database='voucher_enhanced',
-                charset='utf8mb4'
-            )
+            params = get_db_connection_params()
+            connection = pymysql.connect(**params)
             
             with connection.cursor() as cursor:
                 # Create status change activity log
@@ -5252,13 +5233,8 @@ def sync_booking_to_invoice(booking_id):
             booking = booking_id  # booking object was passed directly
             booking_id = booking.id
         
-        connection = pymysql.connect(
-            host='localhost',
-            user='voucher_user',
-            password='voucher_secure_2024',
-            database='voucher_enhanced',
-            charset='utf8mb4'
-        )
+        params = get_db_connection_params()
+        connection = pymysql.connect(**params)
         
         with connection.cursor() as cursor:
             # Generate invoice number starting with QTA25106001
