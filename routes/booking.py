@@ -533,13 +533,21 @@ def list():
     
     # Use direct database connection to bypass SQLAlchemy datetime processor issues
     import pymysql
+    from urllib.parse import urlparse, parse_qs
+    
     try:
         current_app.logger.info("Attempting to connect to database for booking list")
+        
+        # Parse DATABASE_URL from config to get connection parameters
+        db_url = current_app.config['SQLALCHEMY_DATABASE_URI']
+        parsed = urlparse(db_url)
+        
         connection = pymysql.connect(
-            host='localhost',
-            user='voucher_user',
-            password='voucher_secure_2024',
-            database='voucher_enhanced',
+            host=parsed.hostname or 'localhost',
+            port=parsed.port or 3306,
+            user=parsed.username,
+            password=parsed.password,
+            database=parsed.path.lstrip('/').split('?')[0],
             charset='utf8mb4'
         )
         current_app.logger.info("Database connection established successfully")
