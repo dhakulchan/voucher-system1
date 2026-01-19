@@ -186,6 +186,7 @@ class WeasyPrintQuoteGenerator:
     def _load_template_with_fallback(self):
         """Load quote template with intelligent fallback system"""
         template_hierarchy = [
+            'quote_template_final_v2_production.html',
             'quote_template_final_v2.html',
             'quote_template_final_enhanced.html', 
             'quote_template_final_fixed.html',
@@ -301,20 +302,20 @@ class WeasyPrintQuoteGenerator:
             
             logger.info(f'📄 Generating Quote PDF with WeasyPrint: {filename}')
             
-            # Render HTML template - use FORCED Thai template for testing
+            # Render HTML template - use production template v2
             try:
-                template = self.jinja_env.get_template('quote_thai_forced.html')
-                logger.info('✅ Using quote_thai_forced.html for Thai content test')
+                template = self.jinja_env.get_template('quote_template_final_v2_production.html')
+                logger.info('✅ Using quote_template_final_v2_production.html for production')
             except Exception as e:
-                logger.warning(f'⚠️ Could not load quote_thai_forced.html: {e}, falling back to production template')
+                logger.warning(f'⚠️ Could not load quote_template_final_v2_production.html: {e}, falling back')
                 try:
                     template = self.jinja_env.get_template('quote_template_final_v2.html')
-                    logger.info('✅ Using quote_template_final_v2.html for production')
+                    logger.info('✅ Using quote_template_final_v2.html as fallback')
                 except Exception as e2:
-                    logger.warning(f'⚠️ Could not load quote_template_final_v2.html: {e2}, falling back to test template')
+                    logger.warning(f'⚠️ Could not load quote_template_final_v2.html: {e2}, trying test template')
                     try:
                         template = self.jinja_env.get_template('quote_test_simple.html')
-                        logger.info('✅ Using quote_test_simple.html as fallback')
+                        logger.info('✅ Using quote_test_simple.html as final fallback')
                     except Exception as e3:
                         logger.error(f'❌ Could not load any template: {e3}')
                         raise Exception(f"Template loading failed: {e3}")
