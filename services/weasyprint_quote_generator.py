@@ -819,13 +819,19 @@ class WeasyPrintQuoteGenerator:
         """ดึง quote_number จากตาราง quotes"""
         try:
             import mysql.connector
+            from config import Config
+            from urllib.parse import urlparse
+            
+            # Parse DATABASE_URL from config
+            db_uri = Config.SQLALCHEMY_DATABASE_URI
+            parsed = urlparse(db_uri)
             
             mariadb_config = {
-                'user': 'voucher_user',
-                'password': 'voucher_secure_2024',
-                'host': 'localhost',
-                'port': 3306,
-                'database': 'voucher_enhanced',
+                'user': parsed.username or 'voucher_user',
+                'password': parsed.password or 'VoucherSecure2026!',
+                'host': parsed.hostname or 'localhost',
+                'port': parsed.port or 3306,
+                'database': parsed.path.lstrip('/').split('?')[0] or 'voucher_enhanced',
                 'charset': 'utf8mb4'
             }
             

@@ -1057,7 +1057,7 @@ def check_booking_alerts():
                 connection = pymysql.connect(
                     host='localhost',
                     user='voucher_user',
-                    password='voucher_secure_2024',
+                    password='VoucherSecure2026!',
                     database='voucher_enhanced',
                     charset='utf8mb4'
                 )
@@ -1082,7 +1082,7 @@ def check_booking_alerts():
                 connection = pymysql.connect(
                     host='localhost',
                     user='voucher_user',
-                    password='voucher_secure_2024',
+                    password='VoucherSecure2026!',
                     database='voucher_enhanced',
                     charset='utf8mb4'
                 )
