@@ -368,84 +368,6 @@
             </div>
 
             <!-- Price & Info Column - Right Sidebar -->
-            <div class="col-lg-7">
-                <div class="hero-content bg-white shadow-lg h-100" style="border-radius: 24px; padding: 1.5rem;">
-
-                    <!-- Product Details (Moved to Sidebar Top) -->
-                    {% if campaign.product_details %}
-                    <div class="details-section mb-4">
-                        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                            <div class="card-header bg-white border-bottom py-4">
-                                <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
-                                    <i class="fas fa-plane me-2" style="color: #0ea5e9;"></i>รายละเอียดการเดินทาง
-                                </h5>
-                            </div>
-                            <div class="card-body p-4">
-                                <div class="product-details"
-                                    style="line-height: 2; font-size: 1.05rem; color: #4b5563;">
-                                    {{ campaign.product_details|safe }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Description (Moved to Sidebar) -->
-                    {% if campaign.description %}
-                    <div class="description-section mb-4">
-                        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                            <div class="card-header bg-white border-bottom py-4">
-                                <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
-                                    <i class="fas fa-info-circle me-2" style="color: #0ea5e9;"></i>รายละเอียดเพิ่มเติม
-                                </h5>
-                            </div>
-                            <div class="card-body p-4">
-                                <div style="line-height: 2; font-size: 1.05rem; color: #4b5563;">
-                                    {{ campaign.description|safe }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
-
-                    <!-- Group Rules -->
-                    <div class="rules-box p-4 hover-lift"
-                        style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none; border-radius: 16px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
-                        <div class="d-flex align-items-start">
-                            <div class="icon-circle-small me-3 flex-shrink-0"
-                                style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                <i class="fas fa-info-circle fs-4" style="color: #5e35b1;"></i>
-                            </div>
-                            <div>
-                                <strong class="d-block mb-3"
-                                    style="font-size: 1.1rem; color: #4527a0; font-weight: 700;">เงื่อนไขการรวมกลุ่ม</strong>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
-                                            class="fas fa-check-circle me-2"
-                                            style="color: #7e57c2;"></i>ต้องมีสมาชิกอย่างน้อย
-                                        <strong>{{ campaign.min_participants }} คน</strong>
-                                    </li>
-                                    <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
-                                            class="fas fa-plane-departure me-2"
-                                            style="color: #7e57c2;"></i>ยืนยันเดินทางขั้นต่ำ
-                                        <strong>10 ท่าน</strong>
-                                    </li>
-                                    <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
-                                            class="fas fa-info-circle me-2"
-                                            style="color: #7e57c2;"></i>บริษัทขอสงวนสิทธิ์ในการเปลี่ยนแปลง
-                                    </li>
-                                    <li style="font-size: 1rem; color: #5e35b1;"><i class="fas fa-check-circle me-2"
-                                            style="color: #7e57c2;"></i>จองภายในเวลา <strong>{{
-                                            campaign.duration_hours }} ชั่วโมง</strong></li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Price & Info Column - Right Sidebar -->
         <div class="col-lg-7">
             <div class="sidebar-sticky">
                 <!-- CTA Buttons Section -->
@@ -558,33 +480,30 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Trust Section - Moved Below Important Info -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <div class="trust-section">
-                        <div class="card border-0 shadow-lg hover-lift"
-                            style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px; overflow: hidden;">
-                            <div class="card-body p-4">
-                                <h5 class="mb-4 fw-bold text-white" style="font-size: 1.2rem;">
-                                    <i class="fas fa-shield-check me-2"></i>ทำไมต้องเลือกเรา?
-                                </h5>
-                                <div class="row g-4">
-                                    <div class="col-md-6">
-                                        <div class="trust-item p-3 rounded-3"
-                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
-                                            <div class="trust-icon-circle mb-3 mx-auto"
-                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-lock fs-3 text-white"></i>
-                                            </div>
-                                            <strong class="d-block mb-2 text-white text-center"
-                                                style="font-size: 1rem;">ชำระเงินปลอดภัย</strong>
-                                            <small class="text-white-50 d-block text-center"
-                                                style="font-size: 0.85rem;">รองรับหลายช่องทาง</small>
+                <!-- Trust Section - Why Choose Us -->
+                <div class="trust-section mt-4">
+                    <div class="card border-0 shadow-lg hover-lift"
+                        style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px; overflow: hidden;">
+                        <div class="card-body p-4">
+                            <h5 class="mb-4 fw-bold text-white" style="font-size: 1.2rem;">
+                                <i class="fas fa-shield-check me-2"></i>ทำไมต้องเลือกเรา?
+                            </h5>
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="trust-item p-3 rounded-3"
+                                        style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                        <div class="trust-icon-circle mb-3 mx-auto"
+                                            style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-lock fs-3 text-white"></i>
                                         </div>
+                                        <strong class="d-block mb-2 text-white text-center"
+                                            style="font-size: 1rem;">ชำระเงินปลอดภัย</strong>
+                                        <small class="text-white-50 d-block text-center"
+                                            style="font-size: 0.85rem;">รองรับหลายช่องทาง</small>
                                     </div>
-                                    <div class="col-md-6">
+                                </div>
+                                <div class="col-md-6">
                                         <div class="trust-item p-3 rounded-3"
                                             style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
                                             <div class="trust-icon-circle mb-3 mx-auto"
@@ -634,7 +553,6 @@
             </div>
         </div>
     </div>
-</div>
 </div>
 
 <!-- Lightbox CSS -->
