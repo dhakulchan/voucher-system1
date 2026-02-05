@@ -173,479 +173,463 @@
                         </div>
                     </div>
 
-                    <!-- Product Details -->
-                    {% if campaign.product_details %}
-                    <!-- Moved to Sidebar -->
+                    <!-- Countdown Timer -->
+                    {% if campaign.campaign_end_date %}
+                    <div class="countdown-timer mb-4">
+                        <div class="card border-0 shadow-lg hover-lift"
+                            style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 20px; overflow: hidden;">
+                            <div class="card-body p-4">
+                                <h5 class="mb-3 text-white fw-bold" style="font-size: 1.3rem;">
+                                    <i class="fas fa-hourglass-half me-2"></i>โปรโมชันสิ้นสุดใน
+                                </h5>
+                                <div id="campaign-countdown" class="fs-2 fw-bold text-white"
+                                    data-end-date="{{ campaign.campaign_end_date.isoformat() }}"
+                                    style="text-shadow: 2px 2px 6px rgba(0,0,0,0.2); font-weight: 900;">
+                                    กำลังคำนวณ...
+                                </div>
+                                <small class="text-white-50 d-block mt-3"
+                                    style="font-size: 0.9rem; font-weight: 600;">สิ้นสุดวันที่: <strong
+                                        class="text-white">{{
+                                        campaign.campaign_end_date.strftime('%d/%m/%Y') }}</strong></small>
+                            </div>
+                        </div>
+                    </div>
                     {% endif %}
 
-                    <!-- Description -->
-                    {% if campaign.description %}
-                    <!-- Moved to Sidebar -->
-                    {% endif %}
+                    <!-- Available Groups -->
+                    <div class="groups-section mb-4">
+                        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                            <div class="card-header text-white py-4"
+                                style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border: none;">
+                                <h4 class="mb-0 fw-bold" style="font-size: 1.4rem;">
+                                    <i class="fas fa-users me-2"></i>กลุ่มที่เปิดรับสมาชิกเพิ่ม
+                                </h4>
+                            </div>
+                            <div class="card-body p-4">
+                                {% if active_groups %}
+                                {% for group in active_groups %}
+                                {% if group.current_participants < group.required_participants %} <div
+                                    class="group-card rounded-4 p-4 mb-3 border-0 hover-lift"
+                                    style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
+                                    <div class="row g-3 align-items-center">
+                                        <div class="col-md-8">
+                                            <!-- Group Header -->
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <h6 class="fw-bold mb-2" style="font-size: 1.2rem; color: #1a202c;">
+                                                        {{ group.group_name }}</h6>
+                                                    <small class="text-muted"
+                                                        style="font-size: 0.9rem; font-weight: 600;">รหัส: {{
+                                                        group.group_code }}</small>
+                                                </div>
+                                                {% set remaining = group.required_participants -
+                                                group.current_participants %}
+                                                {% if remaining == 1 %}
+                                                <span class="badge fs-6 pulse-badge shadow"
+                                                    style="background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">
+                                                    <i class="fas fa-fire-alt me-1"></i> เหลือ 1 กลุ่ม!
+                                                </span>
+                                                {% elif remaining == 2 %}
+                                                <span class="badge fs-6 shadow"
+                                                    style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">เกือบเต็ม</span>
+                                                {% else %}
+                                                <span class="badge fs-6 shadow"
+                                                    style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">กลุ่มใหม่</span>
+                                                {% endif %}
+                                            </div>
+
+                                            <!-- Progress -->
+                                            <div class="mb-3">
+                                                <div class="d-flex justify-content-between mb-2">
+                                                    <small class="fw-bold"
+                                                        style="font-size: 1rem; color: #1a202c;">มีสมาชิก {{
+                                                        group.current_participants }}/{{ group.required_participants }}
+                                                        คน</small>
+                                                    <small class="fw-bold" style="font-size: 1rem; color: #10b981;">{{
+                                                        group.progress_percentage }}%</small>
+                                                </div>
+                                                <div class="progress"
+                                                    style="height: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.5);">
+                                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                                        style="width: {{ group.progress_percentage }}%; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); border-radius: 12px;">
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Time Remaining -->
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-clock me-2"
+                                                    style="color: #f59e0b; font-size: 1.1rem;"></i>
+                                                <small style="color: #6b7280; font-size: 0.95rem; font-weight: 600;">
+                                                    เวลาที่เหลือ: <strong style="color: #1a202c;">{{
+                                                        group.time_remaining_formatted }}</strong>
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-4 text-end">
+                                            {% if group.current_participants < group.required_participants %} <a
+                                                href="{{ url_for('public_group_buy.join_group', token=group.share_token) }}"
+                                                class="btn w-100 fw-bold py-3 shadow-lg hover-scale"
+                                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700;">
+                                                <i class="fas fa-user-plus me-2"></i>เข้าร่วม
+                                                </a>
+                                                {% else %}
+                                                <div class="alert alert-success mb-0" style="border-radius: 14px;">
+                                                    <i class="fas fa-check-circle me-2"></i>
+                                                    <strong>เต็มแล้ว</strong>
+                                                </div>
+                                                {% endif %}
+                                        </div>
+                                    </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            {% else %}
+                            <div class="empty-state text-center py-5">
+                                <div class="mb-4">
+                                    <i class="fas fa-users-slash fa-5x text-muted opacity-50"></i>
+                                </div>
+                                <h5 class="text-dark mb-3 fw-bold" style="font-size: 1.3rem;">
+                                    ยังไม่มีกลุ่มที่เปิดรับสมาชิกเพิ่ม</h5>
+                                <p class="text-muted mb-4" style="font-size: 1.05rem;">
+                                    เป็นคนแรกที่สร้างกลุ่มและรับราคาพิเศษ!</p>
+                                <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                    class="btn btn-lg px-5 py-3 shadow-lg"
+                                    style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-weight: 700;">
+                                    <i class="fas fa-plus-circle me-2"></i>สร้างกลุ่มใหม่
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Photo Gallery -->
+                {% if campaign.album_images %}
+                <div class="gallery-section mb-4">
+                    <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                        <div class="card-header bg-white border-bottom py-4">
+                            <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                                <i class="fas fa-images me-2" style="color: #0ea5e9;"></i>ภาพประกอบเพิ่มเติม
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                {% set album_list = campaign.album_images|from_json %}
+                                {% for item in album_list %}
+                                <div class="col-6 col-md-4">
+                                    <div class="gallery-item">
+                                        {% if item is mapping %}
+                                        <a href="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                            data-lightbox="gallery" data-title="{{ item.title or '' }}"
+                                            class="d-block position-relative overflow-hidden shadow-lg"
+                                            style="border-radius: 16px;">
+                                            <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                                class="img-fluid w-100 hover-zoom"
+                                                style="height: 200px; object-fit: cover;">
+                                            <div class="gallery-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                                style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);">
+                                                <i class="fas fa-search-plus text-white fs-1"></i>
+                                            </div>
+                                        </a>
+                                        {% if item.title %}
+                                        <p class="text-center mt-3 mb-0 fw-bold"
+                                            style="color: #6b7280; font-size: 0.95rem;">{{ item.title }}</p>
+                                        {% endif %}
+                                        {% else %}
+                                        <a href="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                            data-lightbox="gallery"
+                                            class="d-block position-relative overflow-hidden shadow-lg"
+                                            style="border-radius: 16px;">
+                                            <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                                class="img-fluid w-100 hover-zoom"
+                                                style="height: 200px; object-fit: cover;">
+                                            <div class="gallery-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                                                style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);">
+                                                <i class="fas fa-search-plus text-white fs-1"></i>
+                                            </div>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Terms -->
+                {% if campaign.terms_conditions %}
+                <div class="terms-section mb-4">
+                    <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                        <div class="card-header bg-white border-bottom py-4">
+                            <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                                <i class="fas fa-file-contract me-2" style="color: #0ea5e9;"></i>เงื่อนไขและข้อตกลง
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="terms-content"
+                                style="max-height: 450px; overflow-y: auto; white-space: pre-line; line-height: 2; font-size: 1rem; color: #6b7280;">
+                                {{ campaign.terms_conditions }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Product Details -->
+                {% if campaign.product_details %}
+                <!-- Moved to Sidebar -->
+                {% endif %}
+
+                <!-- Description -->
+                {% if campaign.description %}
+                <!-- Moved to Sidebar -->
+                {% endif %}
+            </div>
+
+            <!-- Price & Info Column - Right Sidebar -->
+            <div class="col-lg-7">
+                <div class="hero-content bg-white shadow-lg h-100" style="border-radius: 24px; padding: 1.5rem;">
+
+                    <!-- Product Details (Moved to Sidebar Top) -->
+                    {% if campaign.product_details %}
+                    <div class="details-section mb-4">
+                        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                            <div class="card-header bg-white border-bottom py-4">
+                                <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                                    <i class="fas fa-plane me-2" style="color: #0ea5e9;"></i>รายละเอียดการเดินทาง
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="product-details"
+                                    style="line-height: 2; font-size: 1.05rem; color: #4b5563;">
+                                    {{ campaign.product_details|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Description (Moved to Sidebar) -->
+                    {% if campaign.description %}
+                    <div class="description-section mb-4">
+                        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                            <div class="card-header bg-white border-bottom py-4">
+                                <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
+                                    <i class="fas fa-info-circle me-2" style="color: #0ea5e9;"></i>รายละเอียดเพิ่มเติม
+                                </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <div style="line-height: 2; font-size: 1.05rem; color: #4b5563;">
+                                    {{ campaign.description|safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Group Rules -->
+                    <div class="rules-box p-4 hover-lift"
+                        style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none; border-radius: 16px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
+                        <div class="d-flex align-items-start">
+                            <div class="icon-circle-small me-3 flex-shrink-0"
+                                style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-info-circle fs-4" style="color: #5e35b1;"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block mb-3"
+                                    style="font-size: 1.1rem; color: #4527a0; font-weight: 700;">เงื่อนไขการรวมกลุ่ม</strong>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
+                                            class="fas fa-check-circle me-2"
+                                            style="color: #7e57c2;"></i>ต้องมีสมาชิกอย่างน้อย
+                                        <strong>{{ campaign.min_participants }} คน</strong>
+                                    </li>
+                                    <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
+                                            class="fas fa-plane-departure me-2"
+                                            style="color: #7e57c2;"></i>ยืนยันเดินทางขั้นต่ำ
+                                        <strong>10 ท่าน</strong>
+                                    </li>
+                                    <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
+                                            class="fas fa-info-circle me-2"
+                                            style="color: #7e57c2;"></i>บริษัทขอสงวนสิทธิ์ในการเปลี่ยนแปลง
+                                    </li>
+                                    <li style="font-size: 1rem; color: #5e35b1;"><i class="fas fa-check-circle me-2"
+                                            style="color: #7e57c2;"></i>จองภายในเวลา <strong>{{
+                                            campaign.duration_hours }} ชั่วโมง</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
                 <!-- Price & Info Column - Right Sidebar -->
                 <div class="col-lg-7">
-                    <div class="hero-content bg-white shadow-lg h-100" style="border-radius: 24px; padding: 1.5rem;">
+        <div class="sidebar-sticky">
+            <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-4" style="font-size: 1.3rem; color: #1a202c;">ข้อมูลสำคัญ
+                    </h6>
 
-                        <!-- Product Details (Moved to Sidebar Top) -->
-                        {% if campaign.product_details %}
-                        <div class="details-section mb-4">
-                            <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                                <div class="card-header bg-white border-bottom py-4">
-                                    <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
-                                        <i class="fas fa-plane me-2" style="color: #0ea5e9;"></i>รายละเอียดการเดินทาง
-                                    </h5>
+                    <!-- Available Seats -->
+                    <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-bg me-3"
+                                    style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-layer-group text-white fs-4"></i>
                                 </div>
-                                <div class="card-body p-4">
-                                    <div class="product-details"
-                                        style="line-height: 2; font-size: 1.05rem; color: #4b5563;">
-                                        {{ campaign.product_details|safe }}
-                                    </div>
-                                </div>
+                                <span
+                                    style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">จำนวนกลุ่มคงเหลือ</span>
                             </div>
+                            <strong class="fs-3"
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
+                                {% if campaign.total_slots %}
+                                {{ campaign.inventory_remaining }}
+                                {% else %}
+                                <i class="fas fa-infinity"></i>
+                                {% endif %}
+                            </strong>
                         </div>
-                        {% endif %}
+                    </div>
 
-                        <!-- Description (Moved to Sidebar) -->
-                        {% if campaign.description %}
-                        <div class="description-section mb-4">
-                            <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                                <div class="card-header bg-white border-bottom py-4">
-                                    <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
-                                        <i class="fas fa-info-circle me-2"
-                                            style="color: #0ea5e9;"></i>รายละเอียดเพิ่มเติม
-                                    </h5>
+                    <!-- Remaining Seats -->
+                    {% if campaign.max_pax %}
+                    <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-bg me-3"
+                                    style="width: 50px; height: 50px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-users text-white fs-4"></i>
                                 </div>
-                                <div class="card-body p-4">
-                                    <div style="line-height: 2; font-size: 1.05rem; color: #4b5563;">
-                                        {{ campaign.description|safe }}
-                                    </div>
-                                </div>
+                                <span
+                                    style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">ที่นั่งที่เหลือ</span>
                             </div>
+                            <strong class="fs-3"
+                                style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
+                                {% set total_confirmed_pax = campaign.groups|selectattr('status',
+                                'equalto',
+                                'success')|sum(attribute='total_pax_count') %}
+                                {% set remaining_seats = campaign.max_pax - total_confirmed_pax %}
+                                {{ remaining_seats }}
+                            </strong>
                         </div>
-                        {% endif %}
+                    </div>
+                    {% endif %}
 
-                        <!-- Group Rules -->
-                        <div class="rules-box p-4 hover-lift"
-                            style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border: none; border-radius: 16px; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
-                            <div class="d-flex align-items-start">
-                                <div class="icon-circle-small me-3 flex-shrink-0"
-                                    style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-info-circle fs-4" style="color: #5e35b1;"></i>
+                    <!-- Min Participants -->
+                    <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-bg me-3"
+                                    style="width: 50px; height: 50px; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-users text-white fs-4"></i>
                                 </div>
-                                <div>
-                                    <strong class="d-block mb-3"
-                                        style="font-size: 1.1rem; color: #4527a0; font-weight: 700;">เงื่อนไขการรวมกลุ่ม</strong>
-                                    <ul class="list-unstyled mb-0">
-                                        <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
-                                                class="fas fa-check-circle me-2"
-                                                style="color: #7e57c2;"></i>ต้องมีสมาชิกอย่างน้อย
-                                            <strong>{{ campaign.min_participants }} คน</strong>
-                                        </li>
-                                        <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
-                                                class="fas fa-plane-departure me-2"
-                                                style="color: #7e57c2;"></i>ยืนยันเดินทางขั้นต่ำ
-                                            <strong>10 ท่าน</strong>
-                                        </li>
-                                        <li class="mb-2" style="font-size: 1rem; color: #5e35b1;"><i
-                                                class="fas fa-info-circle me-2"
-                                                style="color: #7e57c2;"></i>บริษัทขอสงวนสิทธิ์ในการเปลี่ยนแปลง
-                                        </li>
-                                        <li style="font-size: 1rem; color: #5e35b1;"><i class="fas fa-check-circle me-2"
-                                                style="color: #7e57c2;"></i>จองภายในเวลา <strong>{{
-                                                campaign.duration_hours }} ชั่วโมง</strong></li>
-                                    </ul>
-                                </div>
+                                <span style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">ขั้นต่ำ</span>
                             </div>
+                            <strong class="fs-3" style="color: #1a202c; font-weight: 800;">{{
+                                campaign.min_participants }} กลุ่ม/คณะ</strong>
                         </div>
+                    </div>
+
+                    <!-- Duration -->
+                    <div class="info-item mb-4 hover-lift" style="transition: all 0.3s ease;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="icon-bg me-3"
+                                    style="width: 50px; height: 50px; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-hourglass-half text-white fs-4"></i>
+                                </div>
+                                <span style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">เวลารวมกลุ่ม</span>
+                            </div>
+                            <strong class="fs-3" style="color: #1a202c; font-weight: 800;">{{
+                                campaign.duration_hours }} ชม.</strong>
+                        </div>
+                    </div>
+
+                    <!-- Desktop CTA Repeat -->
+                    <div class="d-none d-lg-block mt-4 pt-4 border-top">
+                        <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                            class="btn btn-lg w-100 fw-bold py-4 mb-3 pulse-btn shadow-lg"
+                            style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 800;">
+                            <i class="fas fa-bolt me-2"></i>สร้างกลุ่มใหม่ - จองแบบกลุ่ม
+                        </a>
+                        <p class="text-center text-muted small mb-0" style="font-size: 0.95rem; font-weight: 600;">
+                            <i class="fas fa-shield-alt me-2"></i> รับประกันคืนเงิน 100%
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Countdown Timer -->
-        {% if campaign.campaign_end_date %}
-        <div class="row mb-4">
-            <div class="col-lg-5">
-                <div class="countdown-timer">
+        <!-- Trust Section - Moved Below Important Info -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="trust-section">
                     <div class="card border-0 shadow-lg hover-lift"
-                        style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 20px; overflow: hidden;">
+                        style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px; overflow: hidden;">
                         <div class="card-body p-4">
-                            <h5 class="mb-3 text-white fw-bold" style="font-size: 1.3rem;">
-                                <i class="fas fa-hourglass-half me-2"></i>โปรโมชันสิ้นสุดใน
+                            <h5 class="mb-4 fw-bold text-white" style="font-size: 1.2rem;">
+                                <i class="fas fa-shield-check me-2"></i>ทำไมต้องเลือกเรา?
                             </h5>
-                            <div id="campaign-countdown" class="fs-2 fw-bold text-white"
-                                data-end-date="{{ campaign.campaign_end_date.isoformat() }}"
-                                style="text-shadow: 2px 2px 6px rgba(0,0,0,0.2); font-weight: 900;">
-                                กำลังคำนวณ...
-                            </div>
-                            <small class="text-white-50 d-block mt-3"
-                                style="font-size: 0.9rem; font-weight: 600;">สิ้นสุดวันที่: <strong
-                                    class="text-white">{{
-                                    campaign.campaign_end_date.strftime('%d/%m/%Y') }}</strong></small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="row g-4">
-
-            <!-- Main Content -->
-            <div class="col-lg-5">
-
-                <!-- Available Groups -->
-                <div class="groups-section mb-4">
-                    <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                        <div class="card-header text-white py-4"
-                            style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border: none;">
-                            <h4 class="mb-0 fw-bold" style="font-size: 1.4rem;">
-                                <i class="fas fa-users me-2"></i>กลุ่มที่เปิดรับสมาชิกเพิ่ม
-                            </h4>
-                        </div>
-                        <div class="card-body p-4">
-                            {% if active_groups %}
-                            {% for group in active_groups %}
-                            {% if group.current_participants < group.required_participants %} <div
-                                class="group-card rounded-4 p-4 mb-3 border-0 hover-lift"
-                                style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);">
-                                <div class="row g-3 align-items-center">
-                                    <div class="col-md-8">
-                                        <!-- Group Header -->
-                                        <div class="d-flex justify-content-between align-items-start mb-3">
-                                            <div>
-                                                <h6 class="fw-bold mb-2" style="font-size: 1.2rem; color: #1a202c;">{{
-                                                    group.group_name }}</h6>
-                                                <small class="text-muted"
-                                                    style="font-size: 0.9rem; font-weight: 600;">รหัส:
-                                                    {{
-                                                    group.group_code }}</small>
-                                            </div>
-                                            {% set remaining = group.required_participants -
-                                            group.current_participants
-                                            %}
-                                            {% if remaining == 1 %}
-                                            <span class="badge fs-6 pulse-badge shadow"
-                                                style="background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">
-                                                <i class="fas fa-fire-alt me-1"></i> เหลือ 1 กลุ่ม!
-                                            </span>
-                                            {% elif remaining == 2 %}
-                                            <span class="badge fs-6 shadow"
-                                                style="background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">เกือบเต็ม</span>
-                                            {% else %}
-                                            <span class="badge fs-6 shadow"
-                                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 12px; padding: 8px 16px; font-weight: 700;">กลุ่มใหม่</span>
-                                            {% endif %}
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="trust-item p-3 rounded-3"
+                                        style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                        <div class="trust-icon-circle mb-3 mx-auto"
+                                            style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-lock fs-3 text-white"></i>
                                         </div>
-
-                                        <!-- Progress -->
-                                        <div class="mb-3">
-                                            <div class="d-flex justify-content-between mb-2">
-                                                <small class="fw-bold" style="font-size: 1rem; color: #1a202c;">มีสมาชิก
-                                                    {{ group.current_participants }}/{{
-                                                    group.required_participants }} คน</small>
-                                                <small class="fw-bold" style="font-size: 1rem; color: #10b981;">{{
-                                                    group.progress_percentage
-                                                    }}%</small>
-                                            </div>
-                                            <div class="progress"
-                                                style="height: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.5);">
-                                                <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                                    style="width: {{ group.progress_percentage }}%; background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%); border-radius: 12px;">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Time Remaining -->
-                                        <div class="d-flex align-items-center">
-                                            <i class="fas fa-clock me-2" style="color: #f59e0b; font-size: 1.1rem;"></i>
-                                            <small style="color: #6b7280; font-size: 0.95rem; font-weight: 600;">
-                                                เวลาที่เหลือ: <strong style="color: #1a202c;">{{
-                                                    group.time_remaining_formatted }}</strong>
-                                            </small>
-                                        </div>
-                                    </div>
-
-                                    <div class="col-md-4 text-end">
-                                        {% if group.current_participants < group.required_participants %} <a
-                                            href="{{ url_for('public_group_buy.join_group', token=group.share_token) }}"
-                                            class="btn w-100 fw-bold py-3 shadow-lg hover-scale"
-                                            style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 700;">
-                                            <i class="fas fa-user-plus me-2"></i>เข้าร่วม
-                                            </a>
-                                            {% else %}
-                                            <div class="alert alert-success mb-0" style="border-radius: 14px;">
-                                                <i class="fas fa-check-circle me-2"></i>
-                                                <strong>เต็มแล้ว</strong>
-                                            </div>
-                                            {% endif %}
+                                        <strong class="d-block mb-2 text-white text-center"
+                                            style="font-size: 1rem;">ชำระเงินปลอดภัย</strong>
+                                        <small class="text-white-50 d-block text-center"
+                                            style="font-size: 0.85rem;">รองรับหลายช่องทาง</small>
                                     </div>
                                 </div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                        {% else %}
-                        <div class="empty-state text-center py-5">
-                            <div class="mb-4">
-                                <i class="fas fa-users-slash fa-5x text-muted opacity-50"></i>
-                            </div>
-                            <h5 class="text-dark mb-3 fw-bold" style="font-size: 1.3rem;">
-                                ยังไม่มีกลุ่มที่เปิดรับสมาชิกเพิ่ม</h5>
-                            <p class="text-muted mb-4" style="font-size: 1.05rem;">
-                                เป็นคนแรกที่สร้างกลุ่มและรับราคาพิเศษ!</p>
-                            <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
-                                class="btn btn-lg px-5 py-3 shadow-lg"
-                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-weight: 700;">
-                                <i class="fas fa-plus-circle me-2"></i>สร้างกลุ่มใหม่
-                            </a>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Photo Gallery -->
-            {% if campaign.album_images %}
-            <div class="gallery-section mb-4">
-                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                    <div class="card-header bg-white border-bottom py-4">
-                        <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
-                            <i class="fas fa-images me-2" style="color: #0ea5e9;"></i>ภาพประกอบเพิ่มเติม
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="row g-4">
-                            {% set album_list = campaign.album_images|from_json %}
-                            {% for item in album_list %}
-                            <div class="col-6 col-md-4">
-                                <div class="gallery-item">
-                                    {% if item is mapping %}
-                                    <a href="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
-                                        data-lightbox="gallery" data-title="{{ item.title or '' }}"
-                                        class="d-block position-relative overflow-hidden shadow-lg"
-                                        style="border-radius: 16px;">
-                                        <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
-                                            class="img-fluid w-100 hover-zoom"
-                                            style="height: 200px; object-fit: cover;">
-                                        <div class="gallery-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-                                            style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);">
-                                            <i class="fas fa-search-plus text-white fs-1"></i>
+                                <div class="col-md-6">
+                                    <div class="trust-item p-3 rounded-3"
+                                        style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                        <div class="trust-icon-circle mb-3 mx-auto"
+                                            style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-undo fs-3 text-white"></i>
                                         </div>
-                                    </a>
-                                    {% if item.title %}
-                                    <p class="text-center mt-3 mb-0 fw-bold"
-                                        style="color: #6b7280; font-size: 0.95rem;">{{ item.title }}</p>
-                                    {% endif %}
-                                    {% else %}
-                                    <a href="{{ url_for('static', filename=item.replace('static/', '')) }}"
-                                        data-lightbox="gallery"
-                                        class="d-block position-relative overflow-hidden shadow-lg"
-                                        style="border-radius: 16px;">
-                                        <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
-                                            class="img-fluid w-100 hover-zoom"
-                                            style="height: 200px; object-fit: cover;">
-                                        <div class="gallery-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-                                            style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);">
-                                            <i class="fas fa-search-plus text-white fs-1"></i>
-                                        </div>
-                                    </a>
-                                    {% endif %}
+                                        <strong class="d-block mb-2 text-white text-center"
+                                            style="font-size: 1rem;">คืนเงิน 100%</strong>
+                                        <small class="text-white-50 d-block text-center"
+                                            style="font-size: 0.85rem;">หากกลุ่มไม่สำเร็จ</small>
+                                    </div>
                                 </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Terms -->
-            {% if campaign.terms_conditions %}
-            <div class="terms-section mb-4">
-                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                    <div class="card-header bg-white border-bottom py-4">
-                        <h5 class="mb-0 fw-bold" style="font-size: 1.3rem; color: #1a202c;">
-                            <i class="fas fa-file-contract me-2" style="color: #0ea5e9;"></i>เงื่อนไขและข้อตกลง
-                        </h5>
-                    </div>
-                    <div class="card-body p-4">
-                        <div class="terms-content"
-                            style="max-height: 450px; overflow-y: auto; white-space: pre-line; line-height: 2; font-size: 1rem; color: #6b7280;">
-                            {{ campaign.terms_conditions }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-        </div>
-
-        <!-- Sidebar -->
-        <div class="col-lg-7">
-            <div class="sidebar-sticky">
-                <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                    <div class="card-body p-4">
-                        <h6 class="fw-bold mb-4" style="font-size: 1.3rem; color: #1a202c;">ข้อมูลสำคัญ
-                        </h6>
-
-                        <!-- Available Seats -->
-                        <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="icon-bg me-3"
-                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-layer-group text-white fs-4"></i>
-                                    </div>
-                                    <span
-                                        style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">จำนวนกลุ่มคงเหลือ</span>
-                                </div>
-                                <strong class="fs-3"
-                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
-                                    {% if campaign.total_slots %}
-                                    {{ campaign.inventory_remaining }}
-                                    {% else %}
-                                    <i class="fas fa-infinity"></i>
-                                    {% endif %}
-                                </strong>
-                            </div>
-                        </div>
-
-                        <!-- Remaining Seats -->
-                        {% if campaign.max_pax %}
-                        <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="icon-bg me-3"
-                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-users text-white fs-4"></i>
-                                    </div>
-                                    <span
-                                        style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">ที่นั่งที่เหลือ</span>
-                                </div>
-                                <strong class="fs-3"
-                                    style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 900;">
-                                    {% set total_confirmed_pax = campaign.groups|selectattr('status',
-                                    'equalto',
-                                    'success')|sum(attribute='total_pax_count') %}
-                                    {% set remaining_seats = campaign.max_pax - total_confirmed_pax %}
-                                    {{ remaining_seats }}
-                                </strong>
-                            </div>
-                        </div>
-                        {% endif %}
-
-                        <!-- Min Participants -->
-                        <div class="info-item mb-4 pb-4 border-bottom hover-lift" style="transition: all 0.3s ease;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="icon-bg me-3"
-                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-users text-white fs-4"></i>
-                                    </div>
-                                    <span style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">ขั้นต่ำ</span>
-                                </div>
-                                <strong class="fs-3" style="color: #1a202c; font-weight: 800;">{{
-                                    campaign.min_participants }} กลุ่ม/คณะ</strong>
-                            </div>
-                        </div>
-
-                        <!-- Duration -->
-                        <div class="info-item mb-4 hover-lift" style="transition: all 0.3s ease;">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <div class="icon-bg me-3"
-                                        style="width: 50px; height: 50px; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
-                                        <i class="fas fa-hourglass-half text-white fs-4"></i>
-                                    </div>
-                                    <span
-                                        style="font-size: 1.05rem; color: #4b5563; font-weight: 600;">เวลารวมกลุ่ม</span>
-                                </div>
-                                <strong class="fs-3" style="color: #1a202c; font-weight: 800;">{{
-                                    campaign.duration_hours }} ชม.</strong>
-                            </div>
-                        </div>
-
-                        <!-- Desktop CTA Repeat -->
-                        <div class="d-none d-lg-block mt-4 pt-4 border-top">
-                            <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
-                                class="btn btn-lg w-100 fw-bold py-4 mb-3 pulse-btn shadow-lg"
-                                style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); color: #fff; border: none; border-radius: 14px; font-size: 1.1rem; font-weight: 800;">
-                                <i class="fas fa-bolt me-2"></i>สร้างกลุ่มใหม่ - จองแบบกลุ่ม
-                            </a>
-                            <p class="text-center text-muted small mb-0" style="font-size: 0.95rem; font-weight: 600;">
-                                <i class="fas fa-shield-alt me-2"></i> รับประกันคืนเงิน 100%
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Trust Section - Moved Below Important Info -->
-            <div class="row mb-5">
-                <div class="col-12">
-                    <div class="trust-section">
-                        <div class="card border-0 shadow-lg hover-lift"
-                            style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px; overflow: hidden;">
-                            <div class="card-body p-4">
-                                <h5 class="mb-4 fw-bold text-white" style="font-size: 1.2rem;">
-                                    <i class="fas fa-shield-check me-2"></i>ทำไมต้องเลือกเรา?
-                                </h5>
-                                <div class="row g-4">
-                                    <div class="col-md-6">
-                                        <div class="trust-item p-3 rounded-3"
-                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
-                                            <div class="trust-icon-circle mb-3 mx-auto"
-                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-lock fs-3 text-white"></i>
-                                            </div>
-                                            <strong class="d-block mb-2 text-white text-center"
-                                                style="font-size: 1rem;">ชำระเงินปลอดภัย</strong>
-                                            <small class="text-white-50 d-block text-center"
-                                                style="font-size: 0.85rem;">รองรับหลายช่องทาง</small>
+                                <div class="col-md-6">
+                                    <div class="trust-item p-3 rounded-3"
+                                        style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                        <div class="trust-icon-circle mb-3 mx-auto"
+                                            style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-headset fs-3 text-white"></i>
                                         </div>
+                                        <strong class="d-block mb-2 text-white text-center"
+                                            style="font-size: 1rem;">บริการ 24 ชม.</strong>
+                                        <small class="text-white-50 d-block text-center"
+                                            style="font-size: 0.85rem;">ทีมงานพร้อมดูแล Line:
+                                            @DHAKULCHAN</small>
                                     </div>
-                                    <div class="col-md-6">
-                                        <div class="trust-item p-3 rounded-3"
-                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
-                                            <div class="trust-icon-circle mb-3 mx-auto"
-                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-undo fs-3 text-white"></i>
-                                            </div>
-                                            <strong class="d-block mb-2 text-white text-center"
-                                                style="font-size: 1rem;">คืนเงิน 100%</strong>
-                                            <small class="text-white-50 d-block text-center"
-                                                style="font-size: 0.85rem;">หากกลุ่มไม่สำเร็จ</small>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="trust-item p-3 rounded-3"
+                                        style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
+                                        <div class="trust-icon-circle mb-3 mx-auto"
+                                            style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-certificate fs-3 text-white"></i>
                                         </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="trust-item p-3 rounded-3"
-                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
-                                            <div class="trust-icon-circle mb-3 mx-auto"
-                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-headset fs-3 text-white"></i>
-                                            </div>
-                                            <strong class="d-block mb-2 text-white text-center"
-                                                style="font-size: 1rem;">บริการ 24 ชม.</strong>
-                                            <small class="text-white-50 d-block text-center"
-                                                style="font-size: 0.85rem;">ทีมงานพร้อมดูแล Line:
-                                                @DHAKULCHAN</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="trust-item p-3 rounded-3"
-                                            style="background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(10px);">
-                                            <div class="trust-icon-circle mb-3 mx-auto"
-                                                style="width: 60px; height: 60px; background: rgba(255, 255, 255, 0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                                                <i class="fas fa-certificate fs-3 text-white"></i>
-                                            </div>
-                                            <strong class="d-block mb-2 text-white text-center"
-                                                style="font-size: 1rem;">บริษัทฯท่องเที่ยวชั่นนำ</strong>
-                                            <small class="text-white-50 d-block text-center"
-                                                style="font-size: 0.85rem;">TAT License:
-                                                11/03589</small>
-                                        </div>
+                                        <strong class="d-block mb-2 text-white text-center"
+                                            style="font-size: 1rem;">บริษัทฯท่องเที่ยวชั่นนำ</strong>
+                                        <small class="text-white-50 d-block text-center" style="font-size: 0.85rem;">TAT
+                                            License:
+                                            11/03589</small>
                                     </div>
                                 </div>
                             </div>
@@ -655,6 +639,7 @@
             </div>
         </div>
     </div>
+</div>
 </div>
 </div>
 
