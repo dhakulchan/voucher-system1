@@ -150,6 +150,33 @@
                         </div>
                     </div>
 
+                    <!-- CTA Buttons Section -->
+                    <div class="cta-section mb-4" style="max-width: 60%; margin: 0 auto;">
+                        <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
+                            <div class="card-body p-4">
+                                <div class="d-grid gap-2">
+                                    <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                        class="btn btn-lg fw-bold py-3 pulse-btn shadow-lg"
+                                        style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border: none; color: #fff; font-size: 1.05rem; border-radius: 16px; font-weight: 800;">
+                                        <i class="fas fa-bolt me-2"></i>สร้างกลุ่มใหม่ - จองแบบกลุ่ม
+                                    </a>
+
+                                    {% if campaign.payment_stripe_enabled or campaign.payment_bank_enabled or
+                                    campaign.payment_qr_enabled %}
+                                    <a href="{{ url_for('group_buy_payment.select_method', campaign_id=campaign.id) }}"
+                                        class="btn btn-lg fw-bold py-3 shadow-lg"
+                                        style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #fff; font-size: 1rem; border-radius: 16px; font-weight: 700;">
+                                        <i class="fas fa-credit-card me-2"></i>ชำระเงินเลย
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                <p class="text-center text-muted small mb-0 mt-3" style="font-size: 0.85rem;">
+                                    <i class="fas fa-shield-alt me-2"></i> รับประกันคืนเงิน 100%
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Countdown Timer -->
                     {% if campaign.campaign_end_date %}
                     <div class="countdown-timer mb-4">
@@ -448,33 +475,6 @@
         <!-- Price & Info Column - Right Sidebar -->
         <div class="col-lg-7">
             <div class="sidebar-sticky">
-                <!-- CTA Buttons Section -->
-                <div class="cta-section mb-4">
-                    <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
-                        <div class="card-body p-4">
-                            <div class="d-grid gap-2">
-                                <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
-                                    class="btn btn-lg fw-bold py-3 pulse-btn shadow-lg"
-                                    style="background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%); border: none; color: #fff; font-size: 1.05rem; border-radius: 16px; font-weight: 800;">
-                                    <i class="fas fa-bolt me-2"></i>สร้างกลุ่มใหม่ - จองแบบกลุ่ม
-                                </a>
-
-                                {% if campaign.payment_stripe_enabled or campaign.payment_bank_enabled or
-                                campaign.payment_qr_enabled %}
-                                <a href="{{ url_for('group_buy_payment.select_method', campaign_id=campaign.id) }}"
-                                    class="btn btn-lg fw-bold py-3 shadow-lg"
-                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; color: #fff; font-size: 1rem; border-radius: 16px; font-weight: 700;">
-                                    <i class="fas fa-credit-card me-2"></i>ชำระเงินเลย
-                                </a>
-                                {% endif %}
-                            </div>
-                            <p class="text-center text-muted small mb-0 mt-3" style="font-size: 0.85rem;">
-                                <i class="fas fa-shield-alt me-2"></i> รับประกันคืนเงิน 100%
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="card border-0 shadow-lg" style="border-radius: 20px; overflow: hidden;">
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-4" style="font-size: 1.3rem; color: #1a202c;">ข้อมูลสำคัญ
