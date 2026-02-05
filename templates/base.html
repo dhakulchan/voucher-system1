@@ -12,6 +12,9 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+    <!-- Summernote CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.css" rel="stylesheet">
+
     <!-- Font Awesome - Using stable version 5.15.4 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"
         crossorigin="anonymous">
@@ -23,12 +26,7 @@
     <!-- Thai Fonts - multiple options for better compatibility -->
     <link
         href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript>
-        <link
-            href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap"
-            rel="stylesheet">
-    </noscript>
+        rel="stylesheet">
 
     <!-- TinyMCE WYSIWYG Editor (Always use jsDelivr to avoid read-only warnings) -->
     <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
@@ -87,199 +85,292 @@
             font-family: "Font Awesome 5 Free", "Font Awesome 5 Brands", sans-serif !important;
         }
 
-        .navbar-brand {
-            font-weight: bold;
-            color: #87ceeb !important;
-            transition: all 0.3s ease;
+        /* Summernote Modal Fix */
+        .modal-backdrop {
+            z-index: 1040 !important;
         }
 
-        .navbar-brand:hover {
-            color: #ffffff !important;
-            transform: scale(1.05);
+        .note-modal-backdrop {
+            z-index: 1040 !important;
         }
 
-        .navbar-brand .fas {
-            font-size: 1.2em;
-            color: #87ceeb !important;
+        .note-modal {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            z-index: 1050 !important;
+            overflow: auto !important;
         }
 
-        .navbar-brand:hover .fas {
-            color: #ffffff !important;
+        .note-modal .modal-dialog {
+            position: relative !important;
+            margin: 50px auto !important;
+            max-width: 600px !important;
+            z-index: 1060 !important;
         }
 
-        .sidebar {
-            background-color: #003366;
-            min-height: calc(100vh - 56px);
-        }
+        .note-modal .modal-content {
+            position: relative !important;
+            z-index: 1070 !important;
 
-        .sidebar .nav-link {
-            color: rgba(255, 255, 255, .8);
-            padding: 0.75rem 1rem;
-            border-radius: 0.375rem;
-            margin: 0.125rem 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .sidebar .nav-link:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, .1);
-            transform: translateX(5px);
-        }
-
-        .sidebar .nav-link.active {
-            color: #fff;
-            background-color: rgba(255, 255, 255, .2);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
-        }
-
-        .main-content {
-            background-color: #f8f9fa;
-            min-height: calc(100vh - 56px);
-        }
-
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border: none;
-            border-radius: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            transform: translateY(-2px);
-        }
-
-        .btn-primary {
-            background-color: #003366;
-            border-color: #003366;
-            transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            background-color: #002244;
-            border-color: #002244;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
-        }
-
-        .table th {
-            background-color: #003366;
-            color: white;
-            border: none;
-            font-weight: 500;
-        }
-
-        .badge-pending {
-            background-color: #ffc107 !important;
-            color: #000;
-        }
-
-        .badge-confirmed {
-            background-color: #28a745 !important;
-        }
-
-        .badge-cancelled {
-            background-color: #dc3545 !important;
-        }
-
-        .badge-completed {
-            background-color: #17a2b8 !important;
-        }
-
-        /* Thai Number Format */
-        .thai-number {
-            font-feature-settings: "tnum";
-        }
-
-        /* Loading Animation */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, .3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
+            .note-modal .modal-content {
+                position: relative !important;
+                z-index: 1070 !important;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                background-color: #fff !important;
             }
-        }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
+            .note-modal .modal-header {
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+                padding: 15px 20px;
+            }
 
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-        }
+            .note-modal .modal-title {
+                font-weight: 600;
+                color: #333;
+            }
 
-        ::-webkit-scrollbar-thumb {
-            background: #888;
-            border-radius: 4px;
-        }
+            .note-modal .modal-body {
+                padding: 20px;
+            }
 
-        ::-webkit-scrollbar-thumb:hover {
-            background: #555;
-        }
+            .note-modal .modal-footer {
+                background-color: #f8f9fa;
+                border-top: 1px solid #dee2e6;
+                padding: 15px 20px;
+            }
 
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
+            .note-modal .btn-primary {
+                background-color: #0d6efd !important;
+                border-color: #0d6efd !important;
+                color: #fff !important;
+                padding: 8px 20px;
+                font-weight: 500;
+            }
+
+            .note-modal .btn-primary:hover {
+                background-color: #0b5ed7 !important;
+                border-color: #0a58ca !important;
+            }
+
+            .note-modal .close {
+                opacity: 0.7;
+                font-size: 1.5rem;
+                font-weight: 300;
+            }
+
+            .note-modal .close:hover {
+                opacity: 1;
+            }
+
+            .note-modal .form-control {
+                border: 1px solid #ced4da;
+                border-radius: 4px;
+                padding: 8px 12px;
+            }
+
+            .note-modal .form-control:focus {
+                border-color: #0d6efd;
+                box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+            }
+
+            .navbar-brand {
+                font-weight: bold;
+                color: #87ceeb !important;
+                transition: all 0.3s ease;
+            }
+
+            .navbar-brand:hover {
+                color: #ffffff !important;
+                transform: scale(1.05);
+            }
+
+            .navbar-brand .fas {
+                font-size: 1.2em;
+                color: #87ceeb !important;
+            }
+
+            .navbar-brand:hover .fas {
+                color: #ffffff !important;
+            }
+
             .sidebar {
-                min-height: auto;
+                background-color: #003366;
+                min-height: calc(100vh - 56px);
+            }
+
+            .sidebar .nav-link {
+                color: rgba(255, 255, 255, .8);
+                padding: 0.75rem 1rem;
+                border-radius: 0.375rem;
+                margin: 0.125rem 0.5rem;
+                transition: all 0.3s ease;
+            }
+
+            .sidebar .nav-link:hover {
+                color: #fff;
+                background-color: rgba(255, 255, 255, .1);
+                transform: translateX(5px);
+            }
+
+            .sidebar .nav-link.active {
+                color: #fff;
+                background-color: rgba(255, 255, 255, .2);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, .1);
+            }
+
+            .main-content {
+                background-color: #f8f9fa;
+                min-height: calc(100vh - 56px);
             }
 
             .card {
-                margin-bottom: 1rem;
+                box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+                border: none;
+                border-radius: 0.5rem;
+                transition: all 0.3s ease;
             }
-        }
 
-        /* Fallback for Font Awesome loading issues */
-        .fa-fallback .fas:before,
-        .fa-fallback .far:before,
-        .fa-fallback .fab:before {
-            content: "•";
-            color: #666;
-        }
+            .card:hover {
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+                transform: translateY(-2px);
+            }
 
-        .fa-fallback .fa-home:before {
-            content: "🏠";
-        }
+            .btn-primary {
+                background-color: #003366;
+                border-color: #003366;
+                transition: all 0.3s ease;
+            }
 
-        .fa-fallback .fa-user:before {
-            content: "👤";
-        }
+            .btn-primary:hover {
+                background-color: #002244;
+                border-color: #002244;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 8px rgba(0, 51, 102, 0.3);
+            }
 
-        .fa-fallback .fa-building:before {
-            content: "🏢";
-        }
+            .table th {
+                background-color: #003366;
+                color: white;
+                border: none;
+                font-weight: 500;
+            }
 
-        .fa-fallback .fa-calendar-alt:before {
-            content: "📅";
-        }
+            .badge-pending {
+                background-color: #ffc107 !important;
+                color: #000;
+            }
 
-        .fa-fallback .fa-ticket-alt:before {
-            content: "🎫";
-        }
+            .badge-confirmed {
+                background-color: #28a745 !important;
+            }
 
-        .fa-fallback .fa-users:before {
-            content: "👥";
-        }
+            .badge-cancelled {
+                background-color: #dc3545 !important;
+            }
 
-        .fa-fallback .fa-receipt:before {
-            content: "🧾";
-        }
+            .badge-completed {
+                background-color: #17a2b8 !important;
+            }
 
-        .fa-fallback .fa-code:before {
-            content: "💻";
-        }
+            /* Thai Number Format */
+            .thai-number {
+                font-feature-settings: "tnum";
+            }
 
-        .fa-fallback .fa-tachometer-alt:before {
-            content: "📊";
-        }
+            /* Loading Animation */
+            .loading {
+                display: inline-block;
+                width: 20px;
+                height: 20px;
+                border: 3px solid rgba(255, 255, 255, .3);
+                border-radius: 50%;
+                border-top-color: #fff;
+                animation: spin 1s ease-in-out infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* Custom Scrollbar */
+            ::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 4px;
+            }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .sidebar {
+                    min-height: auto;
+                }
+
+                .card {
+                    margin-bottom: 1rem;
+                }
+            }
+
+            /* Fallback for Font Awesome loading issues */
+            .fa-fallback .fas:before,
+            .fa-fallback .far:before,
+            .fa-fallback .fab:before {
+                content: "•";
+                color: #666;
+            }
+
+            .fa-fallback .fa-home:before {
+                content: "🏠";
+            }
+
+            .fa-fallback .fa-user:before {
+                content: "👤";
+            }
+
+            .fa-fallback .fa-building:before {
+                content: "🏢";
+            }
+
+            .fa-fallback .fa-calendar-alt:before {
+                content: "📅";
+            }
+
+            .fa-fallback .fa-ticket-alt:before {
+                content: "🎫";
+            }
+
+            .fa-fallback .fa-users:before {
+                content: "👥";
+            }
+
+            .fa-fallback .fa-receipt:before {
+                content: "🧾";
+            }
+
+            .fa-fallback .fa-code:before {
+                content: "💻";
+            }
+
+            .fa-fallback .fa-tachometer-alt:before {
+                content: "📊";
+            }
     </style>
 
     <!-- Font Loading Optimization -->
@@ -398,70 +489,99 @@
             <nav class="col-md-3 col-lg-2 d-block sidebar show">
                 <div class="position-sticky pt-3">
                     <ul class="nav flex-column">
+                        {% if current_user.has_sidebar_menu('dashboard') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}"
                                 href="{{ url_for('dashboard.index') }}">
                                 <i class="fas fa-tachometer-alt me-2"></i>{{ t('dashboard') }}
                             </a>
                         </li>
+                        {% endif %}
 
                         <!-- Main Operations -->
+                        {% if current_user.has_sidebar_menu('bookings') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('booking') %}active{% endif %}"
                                 href="{{ url_for('booking.list') }}">
                                 <i class="fas fa-calendar-alt me-2"></i>{{ t('booking') }}
                             </a>
                         </li>
+                        {% endif %}
 
-                        {% if current_user.role not in ['Internship', 'Freelance'] %}
+                        {% if current_user.has_sidebar_menu('quotes') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('quote') %}active{% endif %}"
                                 href="{{ url_for('quote.list_quotes') }}">
                                 <i class="fas fa-file-invoice-dollar me-2"></i>Quotes
                             </a>
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('paid') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('paid') %}active{% endif %}"
                                 href="{{ url_for('paid.list_paid_bookings') }}">
                                 <i class="fas fa-receipt me-2"></i>Paid
                             </a>
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('pre_receipt') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('pre_receipt') %}active{% endif %}"
                                 href="{{ url_for('pre_receipt.list') }}">
                                 <i class="fas fa-file-invoice me-2"></i>Pre-Receipt
                             </a>
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('vouchers') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('voucher') and not request.endpoint.startswith('voucher_library') %}active{% endif %}"
                                 href="{{ url_for('voucher.list') }}">
                                 <i class="fas fa-ticket-alt me-2"></i>{{ t('voucher') }}
                             </a>
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('completed') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('completed') %}active{% endif %}"
                                 href="{{ url_for('completed.list_completed_bookings') }}">
                                 <i class="fas fa-flag-checkered me-2"></i>Completed
                             </a>
                         </li>
+                        {% endif %}
 
                         <!-- Library & Admin Tools -->
+                        {% if current_user.has_sidebar_menu('voucher_library') or
+                        current_user.has_sidebar_menu('short_itinerary') or
+                        current_user.has_sidebar_menu('flight_templates') or current_user.has_sidebar_menu('group_buy')
+                        %}
                         <li class="nav-item mt-2 mb-1">
                             <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('voucher_library') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('voucher_library') %}active{% endif %}"
                                 href="{{ url_for('voucher_library.list_albums') }}">
                                 <i class="fas fa-images me-2"></i>Voucher Library
                             </a>
                         </li>
-                        {% if current_user.is_admin %}
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('short_itinerary') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('short_itinerary_admin') %}active{% endif %}"
                                 href="{{ url_for('short_itinerary_admin.list_itineraries') }}">
                                 <i class="fas fa-list-ul me-2"></i>Short Itinerary
                             </a>
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('flight_templates') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('flight_template_admin') %}active{% endif %}"
                                 href="{{ url_for('flight_template_admin.list_templates') }}">
@@ -469,22 +589,51 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if current_user.has_permission('group_buy', 'view') %}
+
+                        {% if current_user.has_sidebar_menu('group_buy') %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('group_buy_admin') %}active{% endif %}"
+                            <a class="nav-link {% if request.endpoint.startswith('group_buy_admin') or request.endpoint.startswith('group_buy_payment_admin') %}active{% endif %}"
                                 href="{{ url_for('group_buy_admin.campaigns') }}">
                                 <i class="fas fa-users-cog me-2"></i>Group Buy Management
                             </a>
                         </li>
+                        {% if current_user.has_sidebar_menu('group_buy_campaigns') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'group_buy_admin.campaigns' %}active{% endif %}"
+                                href="{{ url_for('group_buy_admin.campaigns') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-bullhorn me-2"></i>Campaigns
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('group_buy_groups') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'group_buy_admin.groups' in request.endpoint %}active{% endif %}"
+                                href="{{ url_for('group_buy_admin.groups') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-layer-group me-2"></i>Groups
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('group_buy_bank_accounts') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'group_buy_payment_admin.bank_accounts' %}active{% endif %}"
+                                href="{{ url_for('group_buy_payment_admin.bank_accounts') }}"
+                                style="padding-left: 2.5rem;">
+                                <i class="fas fa-university me-2"></i>Bank Accounts
+                            </a>
+                        </li>
+                        {% endif %}
                         {% endif %}
 
                         <!-- Calendar & Management -->
+                        {% if current_user.has_sidebar_menu('booking_calendar') or
+                        current_user.has_sidebar_menu('queue_management') or current_user.has_sidebar_menu('task_list')
+                        or current_user.has_sidebar_menu('daily_report') %}
                         <li class="nav-item mt-2 mb-1">
                             <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
                         </li>
                         {% endif %}
 
-                        {% if current_user.role not in ['Internship', 'Freelance'] %}
+                        {% if current_user.has_sidebar_menu('booking_calendar') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'booking_calendar.calendar_view' %}active{% endif %}"
                                 href="{{ url_for('booking_calendar.calendar_view') }}">
@@ -493,12 +642,14 @@
                         </li>
                         {% endif %}
 
+                        {% if current_user.has_sidebar_menu('queue_management') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('queue') %}active{% endif %}"
                                 href="{{ url_for('queue.index') }}">
                                 <i class="fas fa-list-ol me-2"></i>Queue Management
                             </a>
                         </li>
+                        {% endif %}
 
                         {% if current_user.assigned_counter %}
                         <li class="nav-item">
@@ -509,20 +660,25 @@
                         </li>
                         {% endif %}
 
+                        {% if current_user.has_sidebar_menu('queue_media_manager') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'queue.media_manager' %}active{% endif %}"
                                 href="{{ url_for('queue.media_manager') }}" style="padding-left: 2.5rem;">
                                 <i class="fas fa-photo-video me-2"></i>Queue Media Manager
                             </a>
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('display_token_manager') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'queue.token_manager' %}active{% endif %}"
                                 href="{{ url_for('queue.token_manager') }}" style="padding-left: 2.5rem;">
                                 <i class="fas fa-key me-2"></i>Display Token Manager
                             </a>
                         </li>
+                        {% endif %}
 
-                        {% if current_user.is_admin %}
+                        {% if current_user.has_sidebar_menu('counter_assignments') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'queue.counter_assignments' %}active{% endif %}"
                                 href="{{ url_for('queue.counter_assignments') }}" style="padding-left: 2.5rem;">
@@ -530,6 +686,8 @@
                             </a>
                         </li>
                         {% endif %}
+
+                        {% if current_user.has_sidebar_menu('task_list') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'booking_calendar.task_list_view' %}active{% endif %}"
                                 href="{{ url_for('booking_calendar.task_list_view') }}">
@@ -537,47 +695,62 @@
                                 <span class="badge bg-danger ms-1" id="taskAlertBadge" style="display: none;"></span>
                             </a>
                         </li>
+                        {% endif %}
 
-                        {% if current_user.role not in ['Internship', 'Freelance'] %}
+                        {% if current_user.has_sidebar_menu('daily_report') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'booking_calendar.daily_report' %}active{% endif %}"
                                 href="{{ url_for('booking_calendar.daily_report') }}">
                                 <i class="fas fa-chart-bar me-2"></i>Daily Report
                             </a>
                         </li>
+                        {% endif %}
 
                         <!-- Master Data -->
+                        {% if current_user.has_sidebar_menu('customers') or current_user.has_sidebar_menu('suppliers')
+                        %}
                         <li class="nav-item mt-2 mb-1">
                             <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
                         </li>
                         {% endif %}
 
+                        {% if current_user.has_sidebar_menu('customers') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('customer') %}active{% endif %}"
                                 href="{{ url_for('booking.customers') }}">
                                 <i class="fas fa-users me-2"></i>{{ t('customer') }}
                             </a>
                         </li>
+                        {% endif %}
 
-                        {% if current_user.role not in ['Internship', 'Freelance'] %}
+                        {% if current_user.has_sidebar_menu('suppliers') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('supplier') %}active{% endif %}"
                                 href="{{ url_for('supplier.list_') }}">
                                 <i class="fas fa-truck-loading me-2"></i>Supplier
                             </a>
                         </li>
+                        {% endif %}
 
                         <!-- Financial & Settings -->
+                        {% if current_user.has_sidebar_menu('financial_management') or
+                        current_user.has_sidebar_menu('user_management') or
+                        current_user.has_sidebar_menu('permission_management') %}
                         <li class="nav-item mt-2 mb-1">
                             <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
                         </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('financial_management') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('account_report') %}active{% endif %}"
                                 href="{{ url_for('account_report.invoices_list') }}">
                                 <i class="fas fa-file-invoice-dollar me-2"></i>Financial Management
                             </a>
                         </li>
-                        {% if current_user.can_manage_users() %}
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('user_management') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('user_mgmt') %}active{% endif %}"
                                 href="{{ url_for('user_mgmt.list_users') }}">
@@ -585,14 +758,14 @@
                             </a>
                         </li>
                         {% endif %}
-                        {% if current_user.can_manage_permissions() %}
+
+                        {% if current_user.has_sidebar_menu('permission_management') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('permissions') %}active{% endif %}"
                                 href="{{ url_for('permissions.index') }}">
                                 <i class="fas fa-user-shield me-2"></i>Permission Management
                             </a>
                         </li>
-                        {% endif %}
                         {% endif %}
                     </ul>
 
@@ -667,15 +840,21 @@
                     </footer>
                 </main>
         </div>
-    </div> <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
+    </div>
+
+    <!-- jQuery (Must load first) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- DataTables -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Summernote JS (After jQuery and Bootstrap) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.20/summernote-bs5.min.js"></script>
 
     <!-- Font loading optimization -->
     <script>
@@ -692,6 +871,7 @@
         }
     </script>
 
+    {% block scripts %}{% endblock %}
     {% block extra_js %}{% endblock %}
 </body>
 
