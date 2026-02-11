@@ -40,11 +40,10 @@ def campaign_reviews(campaign_id):
     # Check if user can write review
     can_write = False
     if current_user.is_authenticated and current_user.customer_profile:
-        # Check if user has participated and hasn't reviewed
+        # Check if user has participated (ไม่บังคับว่าต้องชำระแล้ว)
         participant = GroupBuyParticipant.query.filter_by(
             campaign_id=campaign_id,
-            customer_id=current_user.customer_profile.id,
-            payment_status='paid'
+            customer_id=current_user.customer_profile.id
         ).first()
         
         existing_review = CampaignReview.query.filter_by(
@@ -70,11 +69,10 @@ def write_review(campaign_id):
         flash('กรุณาสร้างโปรไฟล์ลูกค้าก่อน', 'error')
         return redirect(url_for('public_group_buy.view_campaign', campaign_id=campaign_id))
     
-    # Check if user participated
+    # Check if user participated (ไม่บังคับว่าต้องชำระแล้ว)
     participant = GroupBuyParticipant.query.filter_by(
         campaign_id=campaign_id,
-        customer_id=current_user.customer_profile.id,
-        payment_status='paid'
+        customer_id=current_user.customer_profile.id
     ).first()
     
     if not participant:
