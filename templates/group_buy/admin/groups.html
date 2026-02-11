@@ -39,6 +39,7 @@
                             <th>ID</th>
                             <th>รหัสกลุ่ม</th>
                             <th>แคมเปญ</th>
+                            <th>วันที่เดินทาง</th>
                             <th>ชื่อกลุ่ม</th>
                             <th>หัวหน้า</th>
                             <th>สมาชิก</th>
@@ -59,6 +60,18 @@
                                 <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=group.campaign_id) }}">
                                     {{ group.campaign.name }}
                                 </a>
+                            </td>
+                            <td class="small">
+                                {% if group.campaign.start_date and group.campaign.end_date %}
+                                <i class="fas fa-calendar-alt text-primary"></i> 
+                                {{ group.campaign.start_date.strftime('%d/%m/%Y') }} - 
+                                {{ group.campaign.end_date.strftime('%d/%m/%Y') }}
+                                {% elif group.campaign.start_date %}
+                                <i class="fas fa-calendar-alt text-muted"></i> 
+                                {{ group.campaign.start_date.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                             <td>{{ group.group_name }}</td>
                             <td>
@@ -112,7 +125,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <!-- All Modals -->
             {% for group in groups %}
             <!-- Members Modal for Group #{{ group.id }} -->
@@ -145,8 +158,7 @@
                                             <td>
                                                 {{ p.join_order }}
                                                 {% if p.is_leader %}
-                                                <span class="badge bg-warning text-dark"
-                                                    title="หัวหน้ากลุ่ม">
+                                                <span class="badge bg-warning text-dark" title="หัวหน้ากลุ่ม">
                                                     <i class="fas fa-crown"></i>
                                                 </span>
                                                 {% endif %}
@@ -189,8 +201,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary"
-                                data-bs-dismiss="modal">ปิด</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
                             <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
                                 class="btn btn-primary">
                                 <i class="fas fa-eye"></i> ดูรายละเอียดเต็ม
