@@ -108,96 +108,98 @@
                                 </button>
                             </td>
                         </tr>
-
-                        <!-- Members Modal -->
-                        <div class="modal fade" id="membersModal{{ group.id }}" tabindex="-1">
-                            <div class="modal-dialog modal-lg">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title">
-                                            <i class="fas fa-users"></i> สมาชิกในกลุ่ม: {{ group.group_name or
-                                            group.group_code }}
-                                        </h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div class="table-responsive">
-                                            <table class="table table-sm">
-                                                <thead>
-                                                    <tr>
-                                                        <th>#</th>
-                                                        <th>ชื่อ</th>
-                                                        <th>ติดต่อ</th>
-                                                        <th>จำนวนคน</th>
-                                                        <th>ราคา</th>
-                                                        <th>สถานะ</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for p in group.participants.order_by('join_order') %}
-                                                    <tr>
-                                                        <td>
-                                                            {{ p.join_order }}
-                                                            {% if p.is_leader %}
-                                                            <span class="badge bg-warning text-dark"
-                                                                title="หัวหน้ากลุ่ม">
-                                                                <i class="fas fa-crown"></i>
-                                                            </span>
-                                                            {% endif %}
-                                                        </td>
-                                                        <td>{{ p.participant_name }}</td>
-                                                        <td>
-                                                            <small>
-                                                                {% if p.participant_email %}
-                                                                <i class="fas fa-envelope"></i> {{ p.participant_email
-                                                                }}<br>
-                                                                {% endif %}
-                                                                {% if p.participant_phone %}
-                                                                <i class="fas fa-phone"></i> {{ p.participant_phone }}
-                                                                {% endif %}
-                                                            </small>
-                                                        </td>
-                                                        <td><strong>{{ p.pax_count }}</strong> คน</td>
-                                                        <td>{{ "{:,.2f}".format(p.price_paid or 0) }} ฿</td>
-                                                        <td>
-                                                            {% if p.payment_status == 'paid' %}
-                                                            <span class="badge bg-success">ชำระแล้ว</span>
-                                                            {% elif p.payment_status == 'pending' %}
-                                                            <span class="badge bg-warning">รอชำระ</span>
-                                                            {% else %}
-                                                            <span class="badge bg-secondary">{{ p.payment_status
-                                                                }}</span>
-                                                            {% endif %}
-                                                        </td>
-                                                    </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                                <tfoot>
-                                                    <tr class="table-active">
-                                                        <td colspan="3"><strong>รวม</strong></td>
-                                                        <td><strong>{{ group.total_pax_count }}</strong> คน</td>
-                                                        <td colspan="2"></td>
-                                                    </tr>
-                                                </tfoot>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary"
-                                            data-bs-dismiss="modal">ปิด</button>
-                                        <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
-                                            class="btn btn-primary">
-                                            <i class="fas fa-eye"></i> ดูรายละเอียดเต็ม
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
+            
+            <!-- All Modals -->
+            {% for group in groups %}
+            <!-- Members Modal for Group #{{ group.id }} -->
+            <div class="modal fade" id="membersModal{{ group.id }}" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-users"></i> สมาชิกในกลุ่ม: {{ group.group_name or
+                                group.group_code }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>ชื่อ</th>
+                                            <th>ติดต่อ</th>
+                                            <th>จำนวนคน</th>
+                                            <th>ราคา</th>
+                                            <th>สถานะ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for p in group.participants.order_by('join_order') %}
+                                        <tr>
+                                            <td>
+                                                {{ p.join_order }}
+                                                {% if p.is_leader %}
+                                                <span class="badge bg-warning text-dark"
+                                                    title="หัวหน้ากลุ่ม">
+                                                    <i class="fas fa-crown"></i>
+                                                </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ p.participant_name }}</td>
+                                            <td>
+                                                <small>
+                                                    {% if p.participant_email %}
+                                                    <i class="fas fa-envelope"></i> {{ p.participant_email
+                                                    }}<br>
+                                                    {% endif %}
+                                                    {% if p.participant_phone %}
+                                                    <i class="fas fa-phone"></i> {{ p.participant_phone }}
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                            <td><strong>{{ p.pax_count }}</strong> คน</td>
+                                            <td>{{ "{:,.2f}".format(p.price_paid or 0) }} ฿</td>
+                                            <td>
+                                                {% if p.payment_status == 'paid' %}
+                                                <span class="badge bg-success">ชำระแล้ว</span>
+                                                {% elif p.payment_status == 'pending' %}
+                                                <span class="badge bg-warning">รอชำระ</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ p.payment_status
+                                                    }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr class="table-active">
+                                            <td colspan="3"><strong>รวม</strong></td>
+                                            <td><strong>{{ group.total_pax_count }}</strong> คน</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">ปิด</button>
+                            <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
+                                class="btn btn-primary">
+                                <i class="fas fa-eye"></i> ดูรายละเอียดเต็ม
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
 
             <!-- Pagination -->
             {% if pagination and pagination.pages > 1 %}
