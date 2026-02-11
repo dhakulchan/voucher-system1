@@ -1274,6 +1274,95 @@ def cancel_participant(participant_id):
     
     return redirect(url_for('group_buy_admin.view_group', group_id=participant.group_id))
 
+@bp.route('/participants/<int:participant_id>/move', methods=['POST'])
+@login_required
+@manager_required
+def move_participant(participant_id):
+    """ย้ายสมาชิกไปยังกลุ่มอื่น"""
+    try:
+        participant = GroupBuyParticipant.query.get_or_404(participant_id)
+        source_group = participant.group
+        target_group_id = request.form.get('target_group_id', type=int)
+        
+        if not target_group_id:
+            flash('กรุณาเลือกกลุ่มปลายทาง', 'warning')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        target_group = GroupBuyGroup.query.get_or_404(target_group_id)
+        
+        # ตรวจสอบเงื่อนไข
+        if participant.is_leader:
+            flash('ไม่สามารถย้าย Leader ของกลุ่มได้', 'danger')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        if participant.status == 'cancelled':
+            flash('ไม่สามารถย้ายสมาชิกที่ถูกยกเลิกแล้ว', 'danger')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        if source_group.campaign_id != target_group.campaign_id:
+            flash('ไม่สามารถย้ายไปยังแคมเปญที่ต่างกันได้', 'danger')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        if target_group.status != 'active':
+            flash('กลุ่มปลายทางไม่อยู่ในสถานะ active', 'danger')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        if target_group.is_expired:
+            flash('กลุ่มปลายทางหมดอายุแล้ว', 'danger')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        # ตรวจสอบที่ว่าง
+        available_slots = target_group.required_participants - target_group.current_participants
+        if available_slots < participant.pax_count:
+            flash(f'กลุ่มปลายทางมีที่ว่างไม่พอ (ต้องการ {participant.pax_count} ที่, มีว่าง {available_slots} ที่)', 'danger')
+            return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id))
+        
+        # บันทึกข้อมูลเดิม
+        old_group_id = source_group.id
+        old_group_name = source_group.group_name or source_group.group_code
+        new_group_name = target_group.group_name or target_group.group_code
+        
+        # ย้ายสมาชิก
+        participant.group_id = target_group_id
+        
+        # อัปเดตจำนวนสมาชิกในกลุ่มเดิม
+        source_group.current_participants -= participant.pax_count
+        
+        # อัปเดตจำนวนสมาชิกในกลุ่มใหม่
+        target_group.current_participants += participant.pax_count
+        
+        # เปลี่ยน join_order ในกลุ่มใหม่
+        max_join_order = db.session.query(db.func.max(GroupBuyParticipant.join_order))\
+            .filter_by(group_id=target_group_id).scalar() or 0
+        participant.join_order = max_join_order + 1
+        
+        # ตรวจสอบว่ากลุ่มใหม่ครบคนหรือไม่
+        if target_group.is_full and target_group.status == 'active':
+            target_group.status = 'success'
+            target_group.completed_at = naive_utc_now()
+            logger.info(f"Group #{target_group.id} is now full after moving participant #{participant_id}")
+            
+            # เรียก service เพื่อสร้าง booking
+            try:
+                service._handle_group_success(target_group)
+            except Exception as e:
+                logger.error(f"Error handling group success after move: {e}")
+        
+        db.session.commit()
+        
+        flash(f'✅ ย้าย {participant.participant_name} จาก "{old_group_name}" ไปยัง "{new_group_name}" เรียบร้อยแล้ว', 'success')
+        
+        # Log activity
+        logger.info(f"Participant #{participant_id} moved from group #{old_group_id} to #{target_group_id} by {current_user.username}")
+        
+        return redirect(url_for('group_buy_admin.view_group', group_id=target_group_id))
+        
+    except Exception as e:
+        logger.error(f"Error moving participant: {e}")
+        db.session.rollback()
+        flash(f'เกิดข้อผิดพลาด: {str(e)}', 'danger')
+        return redirect(url_for('group_buy_admin.view_group', group_id=source_group.id if 'source_group' in locals() else participant.group_id))
+
 @bp.route('/campaigns/<int:campaign_id>/quick-booking', methods=['GET', 'POST'])
 @login_required
 @manager_required

@@ -129,6 +129,109 @@
                 </div>
             </div>
 
+            <!-- Financial Summary -->
+            <div class="card mb-3">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-calculator text-primary"></i> สรุปยอดเงินของกลุ่ม</h5>
+                </div>
+                <div class="card-body">
+                    {% set ns = namespace(
+                    total_pax=0,
+                    total_original=0,
+                    total_discount=0,
+                    total_deposit=0,
+                    total_paid=0
+                    ) %}
+
+                    {% for p in participants %}
+                    {% set ns.total_pax = ns.total_pax + p.pax_count %}
+                    {% set tour_price = group.campaign.group_price * p.pax_count %}
+                    {% set ns.total_original = ns.total_original + tour_price %}
+                    {% if p.payment %}
+                    {% set ns.total_discount = ns.total_discount + (p.payment.discount_amount or 0) %}
+                    {% set ns.total_deposit = ns.total_deposit + p.payment.total_amount %}
+                    {% if p.payment.status == 'paid' or p.payment.payment_status == 'paid' %}
+                    {% set ns.total_paid = ns.total_paid + p.payment.total_amount %}
+                    {% endif %}
+                    {% else %}
+                    {% set ns.total_deposit = ns.total_deposit + (p.payment_amount or 0) %}
+                    {% endif %}
+                    {% endfor %}
+
+                    {% set total_after_discount = ns.total_original - ns.total_discount %}
+                    {% set total_remaining = ns.total_original - ns.total_deposit %}
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small mb-1">จำนวนผู้เดินทาง</div>
+                                <div class="fs-4 fw-bold text-primary">{{ ns.total_pax }} คน</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small mb-1">💰 ยอดค่าทัวร์เต็ม</div>
+                                <div class="fs-5 fw-bold">฿{{ "{:,.0f}".format(ns.total_original) }}</div>
+                                <small class="text-muted">ราคาเต็มก่อนหัก</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small mb-1">ส่วนลดรวม</div>
+                                <div class="fs-5 fw-bold text-success">- ฿{{ "{:,.0f}".format(ns.total_discount) }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100 bg-light">
+                                <div class="text-muted small mb-1">💳 ยอดหลังหักแต้ม/ส่วนลด</div>
+                                <div class="fs-5 fw-bold text-info">฿{{ "{:,.0f}".format(total_after_discount) }}</div>
+                                <small class="text-muted">= ฿{{ "{:,.0f}".format(ns.total_original) }} - ฿{{
+                                    "{:,.0f}".format(ns.total_discount) }}</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100 bg-warning bg-opacity-10">
+                                <div class="text-muted small mb-1"><i class="fas fa-coins"></i> มัดจำรวม</div>
+                                <div class="fs-5 fw-bold text-warning">฿{{ "{:,.0f}".format(ns.total_deposit) }}</div>
+                                <small class="text-muted">ที่ต้องชำระ</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100 bg-success bg-opacity-10">
+                                <div class="text-muted small mb-1"><i class="fas fa-check-circle"></i> ชำระแล้ว</div>
+                                <div class="fs-5 fw-bold text-success">฿{{ "{:,.0f}".format(ns.total_paid) }}</div>
+                                <small class="text-muted">จากมัดจำ</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small mb-1"><i class="fas fa-hourglass-half"></i> รอชำระ</div>
+                                <div class="fs-5 fw-bold text-danger">฿{{ "{:,.0f}".format(ns.total_deposit -
+                                    ns.total_paid)
+                                    }}</div>
+                                <small class="text-muted">มัดจำคงค้าง</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border rounded p-3 h-100 bg-primary bg-opacity-10">
+                                <div class="text-muted small mb-1"><i class="fas fa-money-bill-wave"></i> 💵
+                                    ยอดชำระหลังกลุ่มสำเร็จ
+                                </div>
+                                <div class="fs-5 fw-bold text-primary">฿{{ "{:,.0f}".format(total_remaining) }}</div>
+                                <small class="text-muted">= ยอดเต็ม - มัดจำ (฿{{ "{:,.0f}".format(ns.total_original) }}
+                                    - ฿{{ "{:,.0f}".format(ns.total_deposit) }})</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Participants -->
             <div class="card">
                 <div class="card-header">
@@ -144,6 +247,7 @@
                                     <th>ติดต่อ</th>
                                     <th>จำนวนคน</th>
                                     <th>ราคา</th>
+                                    <th>ส่วนลด</th>
                                     <th>วิธีชำระเงิน</th>
                                     <th>สถานะการชำระ</th>
                                     <th>Booking</th>
@@ -166,7 +270,36 @@
                                         {{ p.participant_phone }}
                                     </td>
                                     <td>{{ p.pax_count }}</td>
-                                    <td>฿{{ "{:,.2f}".format(p.payment_amount) }}</td>
+                                    <td>
+                                        {% if p.payment and p.payment.original_amount and p.payment.original_amount >
+                                        p.payment.total_amount %}
+                                        <div class="small">
+                                            <span class="text-decoration-line-through text-muted">฿{{
+                                                "{:,.2f}".format(p.payment.original_amount) }}</span><br>
+                                            <strong class="text-success">฿{{ "{:,.2f}".format(p.payment.total_amount)
+                                                }}</strong>
+                                        </div>
+                                        {% else %}
+                                        ฿{{ "{:,.2f}".format(p.payment_amount) }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.payment %}
+                                        {% if p.payment.coupon_code %}
+                                        <div class="small">
+                                            <span class="badge bg-success mb-1">
+                                                <i class="fas fa-ticket-alt"></i> {{ p.payment.coupon_code }}
+                                            </span><br>
+                                            <span class="text-success">-฿{{ "{:,.2f}".format(p.payment.discount_amount)
+                                                }}</span>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted small">-</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if p.payment and p.payment.payment_method %}
                                         {% if p.payment.payment_method == 'stripe' %}
@@ -237,6 +370,15 @@
                                             <i class="fas fa-image"></i> สลิป
                                         </button>
                                         {% endif %}
+                                        <!-- ปุ่มย้ายสมาชิก -->
+                                        {% if group.status == 'active' and not p.is_leader %}
+                                        <button type="button" class="btn btn-sm btn-warning ms-1" 
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#moveParticipantModal{{ p.id }}" 
+                                                title="ย้ายสมาชิกไปกลุ่มอื่น">
+                                            <i class="fas fa-exchange-alt"></i> ย้าย
+                                        </button>
+                                        {% endif %}
                                         <form method="POST"
                                             action="{{ url_for('group_buy_admin.cancel_participant', participant_id=p.id) }}"
                                             style="display: inline;">
@@ -253,6 +395,10 @@
                                             <i class="fas fa-image"></i> สลิป
                                         </button>
                                         {% endif %}
+                                        <a href="{{ url_for('customer_reviews.write_review', campaign_id=group.campaign_id) }}"
+                                            class="btn btn-sm btn-success ms-1" title="เขียนรีวิว" target="_blank">
+                                            <i class="fas fa-star"></i> รีวิว
+                                        </a>
                                         {% else %}
                                         <span class="text-muted">-</span>
                                         {% endif %}
@@ -264,11 +410,221 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Detailed Booking Summary -->
+            <div class="card mt-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-list-alt"></i> สรุปยอดเงินแต่ละ Booking</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-center">#</th>
+                                    <th>ชื่อผู้จอง</th>
+                                    <th class="text-center">จำนวนคน</th>
+                                    <th class="text-end">💰 ค่าทัวร์เต็ม</th>
+                                    <th class="text-end">🎫 ส่วนลด/แต้ม</th>
+                                    <th class="text-end">💳 ยอดหลังหัก</th>
+                                    <th class="text-end">💵 มัดจำที่ชำระ</th>
+                                    <th class="text-end">💵 ชำระหลังสำเร็จ</th>
+                                    <th class="text-center">Booking</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in participants %}
+                                {% set tour_price_per_booking = group.campaign.group_price * p.pax_count %}
+                                {% set discount_amt = (p.payment.discount_amount if p.payment and
+                                p.payment.discount_amount else 0) %}
+                                {% set after_discount = tour_price_per_booking - discount_amt %}
+                                {% set deposit_amt = (p.payment.total_amount if p.payment else (p.payment_amount or 0))
+                                %}
+                                {% set remaining_amt = tour_price_per_booking - deposit_amt %}
+                                <tr>
+                                    <td class="text-center">
+                                        {{ p.join_order }}
+                                        {% if p.is_leader %}
+                                        <span class="badge bg-warning text-dark">L</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong>{{ p.participant_name }}</strong>
+                                        {% if p.status == 'cancelled' %}
+                                        <span class="badge bg-secondary">ยกเลิก</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary">{{ p.pax_count }} คน</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>฿{{ "{:,.2f}".format(tour_price_per_booking) }}</strong>
+                                        <br><small class="text-muted">฿{{ "{:,.2f}".format(group.campaign.group_price)
+                                            }} x {{ p.pax_count }} คน</small>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if discount_amt > 0 %}
+                                        <span class="text-success">
+                                            <strong>- ฿{{ "{:,.2f}".format(discount_amt) }}</strong>
+                                            {% if p.payment and p.payment.coupon_code %}
+                                            <br><small class="badge bg-success">{{ p.payment.coupon_code }}</small>
+                                            {% endif %}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-info">฿{{ "{:,.2f}".format(after_discount) }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-warning">฿{{ "{:,.2f}".format(deposit_amt) }}</strong>
+                                        {% if p.payment_status == 'paid' %}
+                                        <br><small class="badge bg-success"><i class="fas fa-check"></i>
+                                            ชำระแล้ว</small>
+                                        {% elif p.payment_status == 'pending' %}
+                                        <br><small class="badge bg-warning"><i class="fas fa-clock"></i> รอชำระ</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <strong class="text-primary">฿{{ "{:,.2f}".format(remaining_amt) }}</strong>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if p.booking_id %}
+                                        <a href="{{ url_for('booking.edit', id=p.booking_id) }}"
+                                            class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="fas fa-external-link-alt"></i> #{{ p.booking_id }}
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted small">ยังไม่สร้าง</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot class="table-secondary">
+                                <tr>
+                                    <th colspan="2" class="text-end">รวมทั้งหมด:</th>
+                                    <th class="text-center">
+                                        <span class="badge bg-primary">{{ ns.total_pax }} คน</span>
+                                    </th>
+                                    <th class="text-end">
+                                        <strong>฿{{ "{:,.2f}".format(ns.total_original) }}</strong>
+                                    </th>
+                                    <th class="text-end">
+                                        <strong class="text-success">- ฿{{ "{:,.2f}".format(ns.total_discount)
+                                            }}</strong>
+                                    </th>
+                                    <th class="text-end">
+                                        <strong class="text-info">฿{{ "{:,.2f}".format(total_after_discount) }}</strong>
+                                    </th>
+                                    <th class="text-end">
+                                        <strong class="text-warning">฿{{ "{:,.2f}".format(ns.total_deposit) }}</strong>
+                                    </th>
+                                    <th class="text-end">
+                                        <strong class="text-primary">฿{{ "{:,.2f}".format(total_remaining) }}</strong>
+                                    </th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Legend -->
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <h6 class="mb-2"><i class="fas fa-info-circle"></i> คำอธิบาย:</h6>
+                        <div class="row small">
+                            <div class="col-md-6">
+                                <ul class="mb-0">
+                                    <li><strong>💰 ค่าทัวร์เต็ม:</strong> ราคาเต็มก่อนหักส่วนลด/แต้ม</li>
+                                    <li><strong>🎫 ส่วนลด/แต้ม:</strong> จำนวนส่วนลดหรือแต้มที่ใช้</li>
+                                    <li><strong>💳 ยอดหลังหัก:</strong> ยอดที่เหลือหลังหักส่วนลด/แต้ม</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="mb-0">
+                                    <li><strong>💵 มัดจำที่ชำระ:</strong> ยอดมัดจำที่ต้องชำระก่อน</li>
+                                    <li><strong>💵 ชำระหลังสำเร็จ:</strong> ยอดที่เหลือชำระหลังกลุ่มสำเร็จ (=
+                                        ค่าทัวร์เต็ม - มัดจำ)</li>
+                                    <li class="text-info"><i class="fas fa-lightbulb"></i> <strong>หมายเหตุ:</strong>
+                                        ยอดชำระหลังสำเร็จ = ค่าทัวร์เต็ม - เงินมัดจำ (ไม่หักส่วนลด/แต้ม
+                                        เพราะหักจากมัดจำแล้ว)</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Payment Modals -->
     {% for p in participants %}
+    
+    <!-- Move Participant Modal -->
+    <div class="modal fade" id="moveParticipantModal{{ p.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exchange-alt"></i> ย้ายสมาชิก: {{ p.participant_name }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('group_buy_admin.move_participant', participant_id=p.id) }}"
+                    onsubmit="return confirm('ยืนยันการย้าย {{ p.participant_name }} ไปกลุ่มใหม่?')">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <strong>ผู้จอง:</strong> {{ p.participant_name }}<br>
+                            <strong>จำนวนคน:</strong> {{ p.pax_count }} คน<br>
+                            <strong>แคมเปญ:</strong> {{ group.campaign.name }}<br>
+                            <strong>กลุ่มปัจจุบัน:</strong> {{ group.group_name or group.group_code }}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"><strong>เลือกกลุ่มปลายทาง:</strong></label>
+                            <select name="target_group_id" class="form-select" required>
+                                <option value="">-- เลือกกลุ่มที่ต้องการย้ายไป --</option>
+                                {% for other_group in group.campaign.groups if other_group.id != group.id and other_group.status == 'active' and not other_group.is_expired %}
+                                    {% set available_slots = other_group.required_participants - other_group.current_participants %}
+                                    {% if available_slots >= p.pax_count %}
+                                    <option value="{{ other_group.id }}">
+                                        {{ other_group.group_name or other_group.group_code }} 
+                                        - {{ other_group.current_participants }}/{{ other_group.required_participants }} 
+                                        (ว่าง {{ available_slots }} ที่) 
+                                        - {{ "{:.0f}".format(other_group.progress_percentage) }}%
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">
+                                * แสดงเฉพาะกลุ่มที่ยัง active และมีที่ว่างพอสำหรับ {{ p.pax_count }} คน
+                            </small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <strong>⚠️ คำเตือน:</strong>
+                            <ul class="mb-0">
+                                <li>สมาชิกจะถูกย้ายไปกลุ่มใหม่ทันที</li>
+                                <li>จำนวนสมาชิกในกลุ่มเดิมและกลุ่มใหม่จะอัปเดตอัตโนมัติ</li>
+                                <li>หากกลุ่มใหม่ครบคน จะถูกเปลี่ยนสถานะเป็น "สำเร็จ" อัตโนมัติ</li>
+                                <li>ไม่สามารถย้าย Leader ของกลุ่มได้</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times"></i> ยกเลิก
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-exchange-alt"></i> ยืนยันย้ายสมาชิก
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
     <div class="modal fade" id="paymentModal{{ p.id }}" tabindex="-1" aria-labelledby="paymentModalLabel{{ p.id }}"
         aria-hidden="true">
         <div class="modal-dialog">
