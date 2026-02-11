@@ -62,13 +62,13 @@
                                 </a>
                             </td>
                             <td class="small">
-                                {% if group.campaign.start_date and group.campaign.end_date %}
-                                <i class="fas fa-calendar-alt text-primary"></i> 
-                                {{ group.campaign.start_date.strftime('%d/%m/%Y') }} - 
-                                {{ group.campaign.end_date.strftime('%d/%m/%Y') }}
-                                {% elif group.campaign.start_date %}
-                                <i class="fas fa-calendar-alt text-muted"></i> 
-                                {{ group.campaign.start_date.strftime('%d/%m/%Y') }}
+                                {% if group.campaign.travel_date_from and group.campaign.travel_date_to %}
+                                <i class="fas fa-calendar-alt text-primary"></i>
+                                {{ group.campaign.travel_date_from.strftime('%d/%m/%Y') }} -
+                                {{ group.campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                                {% elif group.campaign.travel_date_from %}
+                                <i class="fas fa-calendar-alt text-muted"></i>
+                                {{ group.campaign.travel_date_from.strftime('%d/%m/%Y') }}
                                 {% else %}
                                 <span class="text-muted">-</span>
                                 {% endif %}
