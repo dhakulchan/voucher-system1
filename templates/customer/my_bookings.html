@@ -50,129 +50,131 @@
                 </div>
                 <div class="card-body p-4">
                     {% if participants %}
-                        {% for participant in participants %}
-                        <div class="booking-card mb-3 p-4 border rounded" style="background: #f8f9fa;">
-                            <div class="row align-items-center">
-                                <!-- Booking Info -->
-                                <div class="col-md-8">
-                                    <div class="d-flex align-items-start mb-2">
-                                        <div class="flex-grow-1">
-                                            <h5 class="mb-2 fw-bold">
-                                                {% if participant.campaign %}
-                                                    {{ participant.campaign.title }}
-                                                {% else %}
-                                                    Booking #{{ participant.id }}
-                                                {% endif %}
-                                                {% if participant.is_leader %}
-                                                    <span class="badge bg-warning text-dark ms-2">
-                                                        <i class="fas fa-crown"></i> Leader
-                                                    </span>
-                                                {% endif %}
-                                            </h5>
-                                            <div class="text-muted small mb-2">
-                                                <i class="far fa-calendar me-1"></i>
-                                                วันที่จอง: {{ participant.created_at.strftime('%d/%m/%Y %H:%M') if participant.created_at else '-' }}
-                                            </div>
-                                            <div class="text-muted small mb-2">
-                                                <i class="fas fa-users me-1"></i>
-                                                จำนวน: {{ participant.pax_count }} ท่าน
-                                            </div>
+                    {% for participant in participants %}
+                    <div class="booking-card mb-3 p-4 border rounded" style="background: #f8f9fa;">
+                        <div class="row align-items-center">
+                            <!-- Booking Info -->
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-start mb-2">
+                                    <div class="flex-grow-1">
+                                        <h5 class="mb-2 fw-bold">
                                             {% if participant.campaign %}
-                                            <div class="text-muted small mb-2">
-                                                <i class="far fa-calendar-alt me-1"></i>
-                                                วันเดินทาง: {{ participant.campaign.travel_date.strftime('%d/%m/%Y') if participant.campaign.travel_date else '-' }}
-                                            </div>
+                                            {{ participant.campaign.title }}
+                                            {% else %}
+                                            Booking #{{ participant.id }}
                                             {% endif %}
-                                            {% if participant.special_requests %}
-                                            <div class="text-muted small">
-                                                <i class="fas fa-comment me-1"></i>
-                                                {{ participant.special_requests }}
-                                            </div>
+                                            {% if participant.is_leader %}
+                                            <span class="badge bg-warning text-dark ms-2">
+                                                <i class="fas fa-crown"></i> Leader
+                                            </span>
                                             {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Status & Actions -->
-                                <div class="col-md-4 text-md-end">
-                                    <!-- Payment Status -->
-                                    <div class="mb-3">
-                                        {% if participant.payment_status == 'paid' %}
-                                            <span class="badge bg-success fs-6">
-                                                <i class="fas fa-check-circle"></i> ชำระแล้ว
-                                            </span>
-                                        {% elif participant.payment_status == 'pending' %}
-                                            <span class="badge bg-warning text-dark fs-6">
-                                                <i class="fas fa-clock"></i> รอชำระ
-                                            </span>
-                                        {% elif participant.payment_status == 'failed' %}
-                                            <span class="badge bg-danger fs-6">
-                                                <i class="fas fa-times-circle"></i> ล้มเหลว
-                                            </span>
-                                        {% elif participant.payment_status == 'refunded' %}
-                                            <span class="badge bg-secondary fs-6">
-                                                <i class="fas fa-undo"></i> คืนเงิน
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary fs-6">
-                                                <i class="fas fa-question-circle"></i> {{ participant.payment_status }}
-                                            </span>
-                                        {% endif %}
-                                    </div>
-
-                                    <!-- Booking Status -->
-                                    <div class="mb-3">
-                                        {% if participant.status == 'active' %}
-                                            <span class="badge bg-info fs-6">
-                                                <i class="fas fa-info-circle"></i> Active
-                                            </span>
-                                        {% elif participant.status == 'cancelled' %}
-                                            <span class="badge bg-dark fs-6">
-                                                <i class="fas fa-ban"></i> Cancelled
-                                            </span>
-                                        {% else %}
-                                            <span class="badge bg-secondary fs-6">{{ participant.status }}</span>
-                                        {% endif %}
-                                    </div>
-
-                                    <!-- Payment Amount -->
-                                    {% if participant.payment_amount %}
-                                    <div class="mb-3">
-                                        <h5 class="mb-0 text-primary fw-bold">
-                                            ฿{{ "{:,.2f}".format(participant.payment_amount) }}
                                         </h5>
-                                    </div>
-                                    {% endif %}
-
-                                    <!-- Action Buttons -->
-                                    <div class="d-flex flex-column gap-2">
-                                        {% if participant.campaign_id %}
-                                        <a href="{{ url_for('group_buy_public.campaign_detail', campaign_id=participant.campaign_id) }}" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> ดูรายละเอียด
-                                        </a>
+                                        <div class="text-muted small mb-2">
+                                            <i class="far fa-calendar me-1"></i>
+                                            วันที่จอง: {{ participant.created_at.strftime('%d/%m/%Y %H:%M') if
+                                            participant.created_at else '-' }}
+                                        </div>
+                                        <div class="text-muted small mb-2">
+                                            <i class="fas fa-users me-1"></i>
+                                            จำนวน: {{ participant.pax_count }} ท่าน
+                                        </div>
+                                        {% if participant.campaign %}
+                                        <div class="text-muted small mb-2">
+                                            <i class="far fa-calendar-alt me-1"></i>
+                                            วันเดินทาง: {{ participant.campaign.travel_date.strftime('%d/%m/%Y') if
+                                            participant.campaign.travel_date else '-' }}
+                                        </div>
                                         {% endif %}
-
-                                        <!-- Review Button -->
-                                        {% if participant.payment_status == 'paid' and participant.status == 'active' %}
-                                        <a href="{{ url_for('customer_reviews.create_review', campaign_id=participant.campaign_id, booking_id=participant.id) }}" 
-                                           class="btn btn-sm btn-success">
-                                            <i class="fas fa-star"></i> เขียนรีวิว
-                                        </a>
+                                        {% if participant.special_requests %}
+                                        <div class="text-muted small">
+                                            <i class="fas fa-comment me-1"></i>
+                                            {{ participant.special_requests }}
+                                        </div>
                                         {% endif %}
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Status & Actions -->
+                            <div class="col-md-4 text-md-end">
+                                <!-- Payment Status -->
+                                <div class="mb-3">
+                                    {% if participant.payment_status == 'paid' %}
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-check-circle"></i> ชำระแล้ว
+                                    </span>
+                                    {% elif participant.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark fs-6">
+                                        <i class="fas fa-clock"></i> รอชำระ
+                                    </span>
+                                    {% elif participant.payment_status == 'failed' %}
+                                    <span class="badge bg-danger fs-6">
+                                        <i class="fas fa-times-circle"></i> ล้มเหลว
+                                    </span>
+                                    {% elif participant.payment_status == 'refunded' %}
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="fas fa-undo"></i> คืนเงิน
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary fs-6">
+                                        <i class="fas fa-question-circle"></i> {{ participant.payment_status }}
+                                    </span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Booking Status -->
+                                <div class="mb-3">
+                                    {% if participant.status == 'active' %}
+                                    <span class="badge bg-info fs-6">
+                                        <i class="fas fa-info-circle"></i> Active
+                                    </span>
+                                    {% elif participant.status == 'cancelled' %}
+                                    <span class="badge bg-dark fs-6">
+                                        <i class="fas fa-ban"></i> Cancelled
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary fs-6">{{ participant.status }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Payment Amount -->
+                                {% if participant.payment_amount %}
+                                <div class="mb-3">
+                                    <h5 class="mb-0 text-primary fw-bold">
+                                        ฿{{ "{:,.2f}".format(participant.payment_amount) }}
+                                    </h5>
+                                </div>
+                                {% endif %}
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex flex-column gap-2">
+                                    {% if participant.campaign_id %}
+                                    <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=participant.campaign_id) }}"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> ดูรายละเอียด
+                                    </a>
+                                    {% endif %}
+
+                                    <!-- Review Button -->
+                                    {% if participant.payment_status == 'paid' and participant.status == 'active' %}
+                                    <a href="{{ url_for('customer_reviews.create_review', campaign_id=participant.campaign_id, booking_id=participant.id) }}"
+                                        class="btn btn-sm btn-success">
+                                        <i class="fas fa-star"></i> เขียนรีวิว
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
-                        {% endfor %}
+                    </div>
+                    {% endfor %}
                     {% else %}
-                        <div class="text-center py-5">
-                            <i class="fas fa-inbox fs-1 text-muted mb-3"></i>
-                            <h5 class="text-muted mb-3">ยังไม่มีประวัติการจอง</h5>
-                            <a href="https://booking.dhakulchan.net/group-buy/" class="btn btn-primary">
-                                <i class="fas fa-search me-2"></i>เลือกแคมเปญเดินทาง
-                            </a>
-                        </div>
+                    <div class="text-center py-5">
+                        <i class="fas fa-inbox fs-1 text-muted mb-3"></i>
+                        <h5 class="text-muted mb-3">ยังไม่มีประวัติการจอง</h5>
+                        <a href="https://booking.dhakulchan.net/group-buy/" class="btn btn-primary">
+                            <i class="fas fa-search me-2"></i>เลือกแคมเปญเดินทาง
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -181,36 +183,36 @@
 </div>
 
 <style>
-.booking-card {
-    transition: all 0.3s ease;
-}
+    .booking-card {
+        transition: all 0.3s ease;
+    }
 
-.booking-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-}
+    .booking-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    }
 
-.avatar-circle {
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-}
+    .avatar-circle {
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
 
-.nav-link {
-    border-radius: 10px;
-    margin-bottom: 5px;
-    transition: all 0.3s ease;
-}
+    .nav-link {
+        border-radius: 10px;
+        margin-bottom: 5px;
+        transition: all 0.3s ease;
+    }
 
-.nav-link:hover {
-    background: rgba(102, 126, 234, 0.1);
-}
+    .nav-link:hover {
+        background: rgba(102, 126, 234, 0.1);
+    }
 
-.nav-link.active {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white !important;
-}
+    .nav-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+    }
 
-.card {
-    transition: all 0.3s ease;
-}
+    .card {
+        transition: all 0.3s ease;
+    }
 </style>
 {% endblock %}
