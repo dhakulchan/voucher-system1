@@ -33,92 +33,124 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
                         <tr>
-                            <th>ID</th>
-                            <th>รหัสกลุ่ม</th>
-                            <th>แคมเปญ</th>
-                            <th>วันที่เดินทาง</th>
-                            <th>ชื่อกลุ่ม</th>
-                            <th>หัวหน้า</th>
-                            <th>สมาชิก</th>
-                            <th>จำนวนคน</th>
-                            <th>ความคืบหน้า</th>
-                            <th>สถานะ</th>
-                            <th>เวลาที่สร้าง</th>
-                            <th>เวลาที่หมดอายุ</th>
-                            <th>การดำเนินการ</th>
+                            <th style="width: 50px;">ID</th>
+                            <th style="width: 120px;">รหัสกลุ่ม</th>
+                            <th style="width: 200px;">แคมเปญ</th>
+                            <th style="width: 150px;">วันที่เดินทาง</th>
+                            <th style="width: 120px;">ชื่อกลุ่ม</th>
+                            <th style="width: 150px;">หัวหน้า</th>
+                            <th style="width: 80px;">สมาชิก</th>
+                            <th style="width: 80px;">จำนวนคน</th>
+                            <th style="width: 120px;">ความคืบหน้า</th>
+                            <th style="width: 100px;">สถานะ</th>
+                            <th style="width: 110px;">สร้างเมื่อ</th>
+                            <th style="width: 110px;">หมดอายุ</th>
+                            <th style="width: 120px;" class="text-center">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for group in groups %}
                         <tr>
-                            <td>{{ group.id }}</td>
-                            <td><code>{{ group.group_code }}</code></td>
+                            <td class="fw-bold">{{ group.id }}</td>
+                            <td><code class="text-primary">{{ group.group_code }}</code></td>
                             <td>
-                                <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=group.campaign_id) }}">
-                                    {{ group.campaign.name }}
+                                <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=group.campaign_id) }}" 
+                                   class="text-decoration-none" 
+                                   title="{{ group.campaign.name }}">
+                                    {{ group.campaign.name[:40] }}{% if group.campaign.name|length > 40 %}...{% endif %}
                                 </a>
                             </td>
                             <td class="small">
                                 {% if group.campaign.travel_date_from and group.campaign.travel_date_to %}
-                                <i class="fas fa-calendar-alt text-primary"></i>
-                                {{ group.campaign.travel_date_from.strftime('%d/%m/%Y') }} -
-                                {{ group.campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                                <div class="text-nowrap">
+                                    <i class="fas fa-plane-departure text-success"></i> 
+                                    <strong>{{ group.campaign.travel_date_from.strftime('%d/%m/%y') }}</strong>
+                                </div>
+                                <div class="text-nowrap text-muted">
+                                    <i class="fas fa-plane-arrival text-primary"></i> 
+                                    {{ group.campaign.travel_date_to.strftime('%d/%m/%y') }}
+                                </div>
                                 {% elif group.campaign.travel_date_from %}
-                                <i class="fas fa-calendar-alt text-muted"></i>
-                                {{ group.campaign.travel_date_from.strftime('%d/%m/%Y') }}
+                                <i class="fas fa-calendar-day text-muted"></i>
+                                {{ group.campaign.travel_date_from.strftime('%d/%m/%y') }}
                                 {% else %}
                                 <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
-                            <td>{{ group.group_name }}</td>
                             <td>
-                                {{ group.leader_name }}<br>
-                                <small class="text-muted">{{ group.leader_phone or group.leader_email }}</small>
+                                <span title="{{ group.group_name }}">
+                                    {{ group.group_name[:15] }}{% if group.group_name and group.group_name|length > 15 %}...{% endif %}
+                                </span>
                             </td>
-                            <td>{{ group.current_participants }}/{{ group.required_participants }}</td>
-                            <td><strong>{{ group.total_pax_count }}</strong> คน</td>
+                            <td class="small">
+                                <div class="fw-semibold">{{ group.leader_name }}</div>
+                                <small class="text-muted">
+                                    {% if group.leader_phone %}
+                                    <i class="fas fa-phone"></i> {{ group.leader_phone }}
+                                    {% elif group.leader_email %}
+                                    <i class="fas fa-envelope"></i> {{ group.leader_email[:20] }}
+                                    {% endif %}
+                                </small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ group.current_participants }}/{{ group.required_participants }}</span>
+                            </td>
+                            <td class="text-center">
+                                <strong class="text-primary">{{ group.total_pax_count }}</strong> 
+                                <small class="text-muted">คน</small>
+                            </td>
                             <td>
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar bg-success"
+                                <div class="progress" style="height: 22px;">
+                                    <div class="progress-bar 
+                                        {% if group.progress_percentage >= 100 %}bg-success
+                                        {% elif group.progress_percentage >= 75 %}bg-info
+                                        {% elif group.progress_percentage >= 50 %}bg-warning
+                                        {% else %}bg-secondary{% endif %}"
                                         style="width: {{ group.progress_percentage }}%">
-                                        {{ "{:.0f}".format(group.progress_percentage) }}%
+                                        <small class="fw-bold">{{ "{:.0f}".format(group.progress_percentage) }}%</small>
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td class="text-center">
                                 {% if group.status == 'success' %}
-                                <span class="badge bg-success">สำเร็จ</span>
+                                <span class="badge bg-success"><i class="fas fa-check-circle"></i> สำเร็จ</span>
                                 {% elif group.status == 'active' %}
                                 {% if group.is_expired %}
-                                <span class="badge bg-warning">หมดเวลา</span>
+                                <span class="badge bg-warning text-dark"><i class="fas fa-clock"></i> หมดเวลา</span>
                                 {% else %}
-                                <span class="badge bg-info">กำลังรอ</span>
+                                <span class="badge bg-info"><i class="fas fa-hourglass-half"></i> กำลังรอ</span>
                                 {% endif %}
                                 {% elif group.status == 'failed' %}
-                                <span class="badge bg-danger">ล้มเหลว</span>
+                                <span class="badge bg-danger"><i class="fas fa-times-circle"></i> ล้มเหลว</span>
                                 {% else %}
                                 <span class="badge bg-secondary">{{ group.status }}</span>
                                 {% endif %}
                             </td>
-                            <td class="small">{{ group.created_at.strftime('%d/%m/%Y<br>%H:%M') | safe }}</td>
+                            <td class="small text-muted">
+                                {{ group.created_at.strftime('%d/%m/%y') }}<br>
+                                <small>{{ group.created_at.strftime('%H:%M') }}</small>
+                            </td>
                             <td class="small">
-                                {{ group.expires_at.strftime('%d/%m/%Y<br>%H:%M') | safe }}
+                                <div class="text-muted">{{ group.expires_at.strftime('%d/%m/%y') }}</div>
+                                <div><small>{{ group.expires_at.strftime('%H:%M') }}</small></div>
                                 {% if group.status == 'active' and not group.is_expired %}
-                                <br><span class="text-info">{{ group.time_remaining_formatted }}</span>
+                                <small class="badge bg-info mt-1">{{ group.time_remaining_formatted }}</small>
                                 {% endif %}
                             </td>
-                            <td>
-                                <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
-                                    class="btn btn-sm btn-primary">
-                                    <i class="fas fa-eye"></i> ดู
-                                </a>
-                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal"
-                                    data-bs-target="#membersModal{{ group.id }}">
-                                    <i class="fas fa-users"></i> สมาชิก
-                                </button>
+                            <td class="text-center">
+                                <div class="btn-group-vertical btn-group-sm" role="group">
+                                    <a href="{{ url_for('group_buy_admin.view_group', group_id=group.id) }}"
+                                        class="btn btn-primary btn-sm">
+                                        <i class="fas fa-eye"></i> ดู
+                                    </a>
+                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal"
+                                        data-bs-target="#membersModal{{ group.id }}">
+                                        <i class="fas fa-users"></i> สมาชิก
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
