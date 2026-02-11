@@ -13,6 +13,7 @@ from utils.datetime_utils import naive_utc_now
 from utils.timezone_helper import now_thailand, get_thailand_timestamp
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
+from werkzeug.exceptions import RequestEntityTooLarge
 import logging
 import os
 import json
@@ -20,6 +21,13 @@ import json
 bp = Blueprint('group_buy_admin', __name__, url_prefix='/backoffice/group-buy')
 logger = logging.getLogger(__name__)
 service = GroupBuyService()
+
+# Error handler for request too large
+@bp.errorhandler(RequestEntityTooLarge)
+def handle_file_too_large(e):
+    """จัดการ error เมื่อข้อมูลที่ส่งมาใหญ่เกินไป"""
+    flash('ข้อมูลที่ส่งมามีขนาดใหญ่เกินไป กรุณาลดขนาดรูปภาพหรือเนื้อหา', 'danger')
+    return redirect(request.referrer or url_for('group_buy_admin.list_campaigns')), 413
 
 # Permission-based Decorators
 def group_buy_permission_required(action):
@@ -324,7 +332,15 @@ def view_campaign(campaign_id):
     active_groups = sum(1 for g in groups if g.status == 'active')
     failed_groups = sum(1 for g in groups if g.status == 'failed')
     
-    total_participants = sum(g.current_participants for g in groups)
+    # นับจำนวนผู้เข้าร่วมจริงจาก GroupBuyParticipant ที่ชำระเงินแล้ว
+    from models.group_buy import GroupBuyParticipant
+    total_participants = db.session.query(db.func.sum(GroupBuyParticipant.pax_count)).join(
+        GroupBuyGroup, GroupBuyParticipant.group_id == GroupBuyGroup.id
+    ).filter(
+        GroupBuyGroup.campaign_id == campaign_id,
+        GroupBuyParticipant.payment_status.in_(['paid', 'authorized'])
+    ).scalar() or 0
+    
     total_revenue = sum(
         float(g.campaign.group_price) * g.current_participants 
         for g in groups if g.status == 'success'
@@ -335,7 +351,7 @@ def view_campaign(campaign_id):
         'successful_groups': successful_groups,
         'active_groups': active_groups,
         'failed_groups': failed_groups,
-        'total_participants': total_participants,
+        'total_participants': int(total_participants),
         'total_revenue': total_revenue,
         'success_rate': (successful_groups / total_groups * 100) if total_groups > 0 else 0
     }
@@ -354,9 +370,12 @@ def edit_campaign(campaign_id):
     
     if request.method == 'POST':
         try:
+            # Log request size for debugging
+            content_length = request.content_length
             print("=" * 60)
             print(f"EDIT CAMPAIGN #{campaign_id}")
-            print(f"Form data: {dict(request.form)}")
+            print(f"Content-Length: {content_length} bytes ({content_length / 1024 / 1024:.2f} MB)")
+            print(f"Form keys: {list(request.form.keys())}")
             
             # Update fields
             campaign.name = request.form.get('name')
@@ -372,6 +391,9 @@ def edit_campaign(campaign_id):
             
             campaign.regular_price = float(regular_price_str)
             campaign.group_price = float(group_price_str)
+            
+            # Price description (NEW)
+            campaign.price_description = request.form.get('price_description', '').strip() or None
             
             # Recalculate discount
             discount_pct = ((campaign.regular_price - campaign.group_price) / campaign.regular_price) * 100
@@ -534,10 +556,45 @@ def edit_campaign(campaign_id):
                     campaign.album_images = json.dumps(all_items)
                     print(f"Album images updated: {len(all_items)} total files")
             
+            # Handle album order (NEW - for reordering)
+            album_order = request.form.get('album_order', '').strip()
+            if album_order:
+                try:
+                    ordered_paths = json.loads(album_order)
+                    existing_album = campaign.album_images
+                    if existing_album:
+                        existing_items = json.loads(existing_album)
+                        # Ensure format
+                        if existing_items and isinstance(existing_items[0], str):
+                            existing_items = [{'path': path, 'title': ''} for path in existing_items]
+                        
+                        # Reorder based on ordered_paths
+                        path_to_item = {item['path'] if isinstance(item, dict) else item: item for item in existing_items}
+                        reordered_items = []
+                        for path in ordered_paths:
+                            if path in path_to_item:
+                                item = path_to_item[path]
+                                if isinstance(item, str):
+                                    reordered_items.append({'path': item, 'title': ''})
+                                else:
+                                    reordered_items.append(item)
+                        
+                        if reordered_items:
+                            campaign.album_images = json.dumps(reordered_items)
+                            print(f"Album reordered: {len(reordered_items)} items")
+                except Exception as e:
+                    print(f"Error processing album order: {e}")
+            
             # Flags
             campaign.is_active = 'is_active' in request.form
             campaign.is_public = 'is_public' in request.form
             campaign.featured = 'featured' in request.form
+            
+            # Display order
+            try:
+                campaign.display_order = int(request.form.get('display_order', 0))
+            except (ValueError, TypeError):
+                campaign.display_order = 0
             
             # Handle partial payment configuration
             campaign.allow_partial_payment = 'allow_partial_payment' in request.form
@@ -586,6 +643,86 @@ def edit_campaign(campaign_id):
     
     return render_template('group_buy/admin/edit_campaign.html', campaign=campaign)
 
+@bp.route('/campaigns/<int:campaign_id>/clone', methods=['GET'])
+@login_required
+@group_buy_permission_required('create_campaign')
+def clone_campaign(campaign_id):
+    """คัดลอกแคมเปญ"""
+    try:
+        # Get original campaign
+        original = GroupBuyCampaign.query.get_or_404(campaign_id)
+        
+        # Create new campaign with copied data
+        new_campaign = GroupBuyCampaign(
+            name=f"{original.name} (Copy)",
+            product_type=original.product_type,
+            product_details=original.product_details,
+            description=original.description,
+            terms_conditions=original.terms_conditions,
+            admin_notes=original.admin_notes,
+            
+            # Pricing
+            regular_price=original.regular_price,
+            group_price=original.group_price,
+            
+            # Requirements
+            min_participants=original.min_participants,
+            max_participants=original.max_participants,
+            duration_hours=original.duration_hours,
+            
+            # Dates - set new dates (1 month from now)
+            campaign_start_date=datetime.now() + timedelta(days=30),
+            campaign_end_date=datetime.now() + timedelta(days=60),
+            travel_date_from=original.travel_date_from + timedelta(days=30) if original.travel_date_from else None,
+            travel_date_to=original.travel_date_to + timedelta(days=30) if original.travel_date_to else None,
+            
+            # Pax
+            max_pax=original.max_pax,
+            
+            # Inventory
+            total_slots=original.total_slots,
+            available_slots=original.total_slots,  # Reset to full
+            
+            # Status - set as draft
+            status='draft',
+            is_active=False,
+            is_public=False,
+            featured=False,
+            
+            # Images
+            product_image=original.product_image,
+            image_title=original.image_title,
+            image_title_position=getattr(original, 'image_title_position', None),
+            
+            # Special codes
+            special_booker_codes=original.special_booker_codes,
+            
+            # Partial payment
+            allow_partial_payment=getattr(original, 'allow_partial_payment', False),
+            partial_payment_type=getattr(original, 'partial_payment_type', None),
+            partial_payment_value=getattr(original, 'partial_payment_value', None),
+            
+            # Auto cancel
+            auto_cancel_enabled=getattr(original, 'auto_cancel_enabled', False),
+            auto_cancel_hours=getattr(original, 'auto_cancel_hours', 4),
+            
+            # Timestamps
+            created_at=naive_utc_now(),
+            updated_at=naive_utc_now()
+        )
+        
+        db.session.add(new_campaign)
+        db.session.commit()
+        
+        flash(f'คัดลอกแคมเปญสำเร็จ! กรุณาตรวจสอบและแก้ไขข้อมูลก่อนเปิดใช้งาน', 'success')
+        return redirect(url_for('group_buy_admin.edit_campaign', campaign_id=new_campaign.id))
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error cloning campaign: {e}")
+        flash(f'เกิดข้อผิดพลาดในการคัดลอกแคมเปญ: {str(e)}', 'danger')
+        return redirect(url_for('group_buy_admin.campaigns'))
+
 @bp.route('/campaigns/<int:campaign_id>/toggle-status', methods=['POST'])
 @login_required
 @group_buy_permission_required('edit_campaign')
@@ -593,6 +730,13 @@ def toggle_campaign_status(campaign_id):
     """เปิด/ปิดแคมเปญ"""
     campaign = GroupBuyCampaign.query.get_or_404(campaign_id)
     campaign.is_active = not campaign.is_active
+    
+    # Update status field to match is_active
+    if campaign.is_active:
+        campaign.status = 'active'
+    else:
+        campaign.status = 'inactive'
+    
     db.session.commit()
     
     status = "เปิดใช้งาน" if campaign.is_active else "ปิดใช้งาน"
@@ -607,6 +751,8 @@ def groups():
     """รายการกลุ่มทั้งหมด"""
     status_filter = request.args.get('status', 'all')
     campaign_id = request.args.get('campaign_id', type=int)
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 50, type=int)  # แสดง 50 รายการต่อหน้า
     
     query = GroupBuyGroup.query
     
@@ -616,12 +762,18 @@ def groups():
     if campaign_id:
         query = query.filter_by(campaign_id=campaign_id)
     
-    groups = query.order_by(GroupBuyGroup.created_at.desc()).all()
+    # ใช้ paginate แทน all() เพื่อแบ่งหน้า
+    pagination = query.order_by(GroupBuyGroup.created_at.desc()).paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
     
     campaigns = GroupBuyCampaign.query.all()
     
     return render_template('group_buy/admin/groups.html',
-                         groups=groups,
+                         groups=pagination.items,
+                         pagination=pagination,
                          campaigns=campaigns,
                          status_filter=status_filter)
 
@@ -1312,3 +1464,48 @@ def remove_special_code(campaign_id):
     db.session.commit()
     
     return jsonify({'success': True, 'message': 'ลบรหัสสำเร็จ'})
+
+
+@bp.route('/upload-editor-image', methods=['POST'])
+@login_required
+@group_buy_permission_required('edit_campaign')
+def upload_editor_image():
+    """อัปโหลดรูปภาพสำหรับ WYSIWYG editor"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        # Validate file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        filename = secure_filename(file.filename)
+        if '.' not in filename or filename.rsplit('.', 1)[1].lower() not in allowed_extensions:
+            return jsonify({'error': 'Invalid file type. Allowed: PNG, JPG, GIF, WEBP'}), 400
+        
+        # Generate unique filename
+        import uuid
+        from datetime import datetime
+        ext = filename.rsplit('.', 1)[1].lower()
+        unique_filename = f"editor_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+        
+        # Save to uploads/group_buy/editor directory
+        upload_dir = os.path.join('static', 'uploads', 'group_buy', 'editor')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, unique_filename)
+        file.save(file_path)
+        
+        # Return URL for the uploaded image
+        image_url = f"/static/uploads/group_buy/editor/{unique_filename}"
+        
+        logger.info(f"Editor image uploaded: {image_url} by user {current_user.id}")
+        
+        return jsonify({'url': image_url}), 200
+        
+    except Exception as e:
+        logger.error(f"Error uploading editor image: {str(e)}")
+        return jsonify({'error': 'Upload failed'}), 500
+
