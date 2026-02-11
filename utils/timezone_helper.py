@@ -34,16 +34,17 @@ def to_thailand_time(dt):
 def format_thai_datetime(dt, format_str='%d/%m/%Y %H:%M'):
     """
     Format datetime in Thailand timezone
+    If datetime is naive, assumes it's UTC (from database)
     """
     if dt is None:
         return ''
     
     if dt.tzinfo is None:
-        # Assume it's already in Thailand time if naive
-        return dt.strftime(format_str)
+        # Assume UTC if naive (from database)
+        dt = pytz.utc.localize(dt)
     
-    # Convert to Thailand timezone first
-    thailand_dt = to_thailand_time(dt)
+    # Convert to Thailand timezone
+    thailand_dt = dt.astimezone(Config.TIMEZONE)
     return thailand_dt.strftime(format_str)
 
 def get_thailand_timestamp():

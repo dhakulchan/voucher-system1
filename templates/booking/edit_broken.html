@@ -424,7 +424,7 @@
                                         current_language == 'en' else 'เวลารับ' }}
                                     </label>
                                     <input type="time" class="form-control" id="pickup_time" name="pickup_time"
-                                        value="{{ booking.pickup_time.strftime('%H:%M') if booking.pickup_time }}">
+                                        value="{{ booking.pickup_time|thai_datetime('%H:%M') if booking.pickup_time }}">
                                     <small class="text-muted">{{ 'Time to pickup guests' if current_language == 'en'
                                         else 'เวลาที่จะรับผู้เดินทาง' }}</small>
                                 </div>

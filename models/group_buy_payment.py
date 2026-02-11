@@ -63,6 +63,12 @@ class GroupBuyPayment(db.Model):
     stripe_payment_intent_id = db.Column(db.String(200))
     stripe_charge_id = db.Column(db.String(200))
     
+    # Coupon/Discount fields
+    coupon_id = db.Column(db.Integer, db.ForeignKey('group_buy_coupons.id', ondelete='SET NULL'))
+    coupon_code = db.Column(db.String(50))
+    discount_amount = db.Column(db.Numeric(10, 2), default=0.00)
+    original_amount = db.Column(db.Numeric(10, 2), default=0.00)
+    
     # Admin verification
     admin_verified_by = db.Column(db.Integer)
     admin_verified_at = db.Column(db.DateTime)

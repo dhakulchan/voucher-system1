@@ -25,14 +25,14 @@
 
                         <div class="mb-3">
                             <label class="form-label">Flights & Hotels (เที่ยวบิน / โรงแรม):</label>
-                            <textarea name="product_details" class="form-control" rows="3"
+                            <textarea name="product_details" class="form-control summernote-editor" rows="3"
                                 placeholder="รายละเอียดสินค้า เช่น รหัสทัวร์, ชื่อโรงแรม, เที่ยวบิน ฯลฯ"></textarea>
                             <small class="text-muted">ระบุรายละเอียดสินค้าเพิ่มเติม</small>
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label">Description - รายละเอียด:</label>
-                            <textarea name="description" class="form-control" rows="4"></textarea>
+                            <textarea name="description" class="form-control summernote-editor" rows="4"></textarea>
                         </div>
 
                         <div class="row">
@@ -115,6 +115,14 @@
                                     required>
                                 <small class="text-muted">ส่วนลดจะคำนวณอัตโนมัติ</small>
                             </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">คำอธิบายราคา (แสดงด้านล่างราคา)</label>
+                            <input type="text" name="price_description" class="form-control"
+                                value="ราคาต่อท่าน พัก 3 หรือ 2 ท่าน ต่อห้องตามเงื่อนไข" maxlength="500"
+                                placeholder="เช่น ราคาต่อท่าน พัก 3 หรือ 2 ท่าน ต่อห้องตามเงื่อนไข">
+                            <small class="text-muted">ระบุข้อความที่ต้องการแสดงด้านล่างราคา (ไม่เกิน 500
+                                ตัวอักษร)</small>
                         </div>
                     </div>
                 </div>
@@ -341,6 +349,71 @@
                 }
             }
         });
+
+        // Initialize Summernote WYSIWYG Editor
+        $('.summernote-editor').each(function () {
+            var editor = $(this);
+            editor.summernote({
+                height: 250,
+                toolbar: [
+                    ['style', ['style', 'bold', 'italic', 'underline', 'clear']],
+                    ['font', ['strikethrough', 'superscript', 'subscript']],
+                    ['fontsize', ['fontsize']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['height', ['height']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+                placeholder: 'พิมพ์ข้อความที่นี่...',
+                callbacks: {
+                    onImageUpload: function (files) {
+                        for (var i = 0; i < files.length; i++) {
+                            if (files[i].size > 5242880) {  // 5MB
+                                alert('ไฟล์รูปภาพต้องไม่เกิน 5MB');
+                                continue;
+                            }
+                            uploadImage(files[i], editor);
+                        }
+                    }
+                }
+            });
+        });
+
+        function uploadImage(file, editor) {
+            // Upload file to server instead of base64
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '{{ url_for("group_buy_admin.upload_editor_image") }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data.url) {
+                        var img = $('<img>')
+                            .attr('src', data.url)
+                            .css({
+                                'max-width': '100%',
+                                'height': 'auto'
+                            });
+                        editor.summernote('insertNode', img[0]);
+                    } else {
+                        alert('อัปโหลดรูปภาพล้มเหลว');
+                    }
+                },
+                error: function (xhr) {
+                    var errorMsg = xhr.responseJSON && xhr.responseJSON.error ?
+                        xhr.responseJSON.error : 'อัปโหลดรูปภาพล้มเหลว';
+                    alert(errorMsg);
+                    console.error('Upload error:', xhr);
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

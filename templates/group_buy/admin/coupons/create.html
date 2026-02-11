@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}สร้างคูปองใหม่ - Group Buy{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <div class="mb-4">
+        <h2><i class="fas fa-ticket-alt text-primary me-2"></i>สร้างคูปองส่วนลดใหม่</h2>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="card shadow-sm">
+        <div class="card-body">
+            <!-- Coupon Code -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">รหัสคูปอง <span class="text-danger">*</span></label>
+                <input type="text" name="code" class="form-control" required placeholder="เช่น WELCOME2026"
+                    style="text-transform: uppercase;">
+                <small class="form-text text-muted">ใช้ตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น</small>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">คำอธิบาย</label>
+                <textarea name="description" class="form-control" rows="2"
+                    placeholder="เช่น ส่วนลดสำหรับสมาชิกใหม่"></textarea>
+            </div>
+
+            <!-- Discount Type & Value -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">ประเภทส่วนลด <span class="text-danger">*</span></label>
+                    <select name="discount_type" id="discountType" class="form-select" required>
+                        <option value="fixed">ลดเงินสด (บาท)</option>
+                        <option value="percentage">ลดเปอร์เซ็นต์ (%)</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">มูลค่าส่วนลด <span class="text-danger">*</span></label>
+                    <input type="number" name="discount_value" class="form-control" required min="0" step="0.01"
+                        placeholder="100">
+                    <small id="discountHint" class="form-text text-muted">ใส่จำนวนเงิน เช่น 500</small>
+                </div>
+            </div>
+
+            <!-- Date Range -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">วันเริ่มต้น <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="start_date" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">วันสิ้นสุด <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="end_date" class="form-control" required>
+                </div>
+            </div>
+
+            <!-- Usage Limits -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">จำนวนครั้งสูงสุด (ทั้งหมด)</label>
+                    <input type="number" name="max_uses" class="form-control" min="1" placeholder="เว้นว่างถ้าไม่จำกัด">
+                    <small class="form-text text-muted">เว้นว่างถ้าใช้ได้ไม่จำกัด</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">จำนวนครั้งต่อคน</label>
+                    <input type="number" name="max_uses_per_user" class="form-control" min="1" value="1" required>
+                </div>
+            </div>
+
+            <!-- Conditions -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">ยอดซื้อขั้นต่ำ (บาท)</label>
+                    <input type="number" name="min_purchase_amount" class="form-control" min="0" step="0.01" value="0"
+                        placeholder="0">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">จำกัดแคมเปญ</label>
+                    <select name="campaign_id" class="form-select">
+                        <option value="">ทุกแคมเปญ</option>
+                        {% for campaign in campaigns %}
+                        <option value="{{ campaign.id }}">{{ campaign.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+            <a href="{{ url_for('group_buy_coupon.list_coupons') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>ยกเลิก
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>สร้างคูปอง
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('discountType').addEventListener('change', function () {
+        const hint = document.getElementById('discountHint');
+        if (this.value === 'percentage') {
+            hint.textContent = 'ใส่เปอร์เซ็นต์ เช่น 10 (หมายถึง 10%)';
+        } else {
+            hint.textContent = 'ใส่จำนวนเงิน เช่น 500';
+        }
+    });
+</script>
+{% endblock %}

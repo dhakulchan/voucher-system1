@@ -31,7 +31,8 @@
                             <th>ระยะเวลา</th>
                             <th>Inventory</th>
                             <th>สถานะ</th>
-                            <th>วันที่เริ่ม-สิ้นสุด</th>
+                            <th>วันที่เริ่ม-สิ้นสุดแคมเปญ</th>
+                            <th>วันที่เดินทาง</th>
                             <th>การดำเนินการ</th>
                         </tr>
                     </thead>
@@ -80,6 +81,16 @@
                                 {{ campaign.campaign_start_date.strftime('%d/%m/%Y') }}<br>
                                 - {{ campaign.campaign_end_date.strftime('%d/%m/%Y') }}
                             </td>
+                            <td class="small">
+                                {% if campaign.travel_date_from and campaign.travel_date_to %}
+                                <i class="fas fa-plane-departure text-primary"></i> {{
+                                campaign.travel_date_from.strftime('%d/%m/%Y') }}<br>
+                                <i class="fas fa-plane-arrival text-success"></i> {{
+                                campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="btn-group">
                                     <a href="{{ url_for('group_buy_admin.view_campaign', campaign_id=campaign.id) }}"
@@ -89,6 +100,11 @@
                                     <a href="{{ url_for('group_buy_admin.edit_campaign', campaign_id=campaign.id) }}"
                                         class="btn btn-sm btn-warning" title="แก้ไข">
                                         <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('group_buy_admin.clone_campaign', campaign_id=campaign.id) }}"
+                                        class="btn btn-sm btn-info" title="คัดลอกแคมเปญ"
+                                        onclick="return confirm('คัดลอกแคมเปญนี้หรือไม่?')">
+                                        <i class="fas fa-copy"></i>
                                     </a>
                                     <form method="POST"
                                         action="{{ url_for('group_buy_admin.toggle_campaign_status', campaign_id=campaign.id) }}"

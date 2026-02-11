@@ -75,33 +75,41 @@ class ClassicPDFGenerator:
             from reportlab.pdfbase.ttfonts import TTFont
             from reportlab.pdfbase import pdfmetrics
             
-            # Try different font paths
+            # Try different font paths (including static/fonts directory)
             font_paths = [
+                'static/fonts/NotoSansThai-Regular.ttf',  # Production path
                 'NotoSansThai-Regular.ttf',  # Current directory
                 '../NotoSansThai-Regular.ttf',  # Parent directory
+                os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'NotoSansThai-Regular.ttf'),
                 os.path.join(os.path.dirname(__file__), '..', 'NotoSansThai-Regular.ttf')
             ]
             
             bold_font_paths = [
+                'static/fonts/NotoSansThai-Bold.ttf',  # Production path
                 'NotoSansThai-Bold.ttf',
-                '../NotoSansThai-Bold.ttf', 
+                '../NotoSansThai-Bold.ttf',
+                os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'NotoSansThai-Bold.ttf'),
                 os.path.join(os.path.dirname(__file__), '..', 'NotoSansThai-Bold.ttf')
             ]
             
             # Register regular font
             regular_registered = False
+            regular_font_path = None
             for font_path in font_paths:
                 if os.path.exists(font_path):
                     pdfmetrics.registerFont(TTFont('NotoSansThai-Regular', font_path))
+                    regular_font_path = font_path
                     logger.info(f"✅ Registered NotoSansThai-Regular from: {font_path}")
                     regular_registered = True
                     break
             
             # Register bold font
             bold_registered = False
+            bold_font_path = None
             for font_path in bold_font_paths:
                 if os.path.exists(font_path):
                     pdfmetrics.registerFont(TTFont('NotoSansThai-Bold', font_path))
+                    bold_font_path = font_path
                     logger.info(f"✅ Registered NotoSansThai-Bold from: {font_path}")
                     bold_registered = True
                     break
@@ -120,6 +128,17 @@ class ClassicPDFGenerator:
                         italic='NotoSansThai-Regular',
                         boldItalic='NotoSansThai-Bold')
                     logger.info("✅ Registered NotoSansThai font family")
+                    
+                    # Also register as lowercase variant for reportlab compatibility
+                    pdfmetrics.registerFont(TTFont('notosansthai-regular', regular_font_path))
+                    pdfmetrics.registerFont(TTFont('notosansthai-bold', bold_font_path))
+                    pdfmetrics.registerFontFamily('notosansthai',
+                        normal='notosansthai-regular',
+                        bold='notosansthai-bold',
+                        italic='notosansthai-regular',
+                        boldItalic='notosansthai-bold')
+                    logger.info("✅ Registered notosansthai lowercase font family for compatibility")
+                    
                 except Exception as e:
                     logger.warning(f"Font family registration failed: {e}")
                     

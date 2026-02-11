@@ -52,9 +52,10 @@ def get_writable_output_dir(subdirs=''):
 class ClassicPDFGenerator:
     def __init__(self):
         """Initialize the Classic PDF Generator for Quote documents with Thai font support"""
+        self.thai_font_available = False  # Track if Thai fonts are actually available
         self.setup_thai_fonts()
         self.styles = self.create_styles()
-        logger.info("🚀 Classic Quote PDF Generator UPDATED VERSION initialized with Thai fonts")
+        logger.info(f"🚀 Classic Quote PDF Generator initialized - Thai fonts available: {self.thai_font_available}")
 
     def decode_unicode_string(self, text):
         """Decode Unicode escape sequences in text"""
@@ -131,13 +132,19 @@ class ClassicPDFGenerator:
             font_paths = [
                 'NotoSansThai-Regular.ttf',  # Current directory
                 '../NotoSansThai-Regular.ttf',  # Parent directory
-                os.path.join(os.path.dirname(__file__), '..', 'NotoSansThai-Regular.ttf')
+                os.path.join(os.path.dirname(__file__), '..', 'NotoSansThai-Regular.ttf'),
+                'static/fonts/NotoSansThai-Regular.ttf',  # Static fonts directory
+                os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'NotoSansThai-Regular.ttf'),
+                '/var/www/booking/static/fonts/NotoSansThai-Regular.ttf'  # Absolute path for production
             ]
             
             bold_font_paths = [
                 'NotoSansThai-Bold.ttf',
                 '../NotoSansThai-Bold.ttf', 
-                os.path.join(os.path.dirname(__file__), '..', 'NotoSansThai-Bold.ttf')
+                os.path.join(os.path.dirname(__file__), '..', 'NotoSansThai-Bold.ttf'),
+                'static/fonts/NotoSansThai-Bold.ttf',  # Static fonts directory
+                os.path.join(os.path.dirname(__file__), '..', 'static', 'fonts', 'NotoSansThai-Bold.ttf'),
+                '/var/www/booking/static/fonts/NotoSansThai-Bold.ttf'  # Absolute path for production
             ]
             
             # Register regular font
@@ -147,7 +154,10 @@ class ClassicPDFGenerator:
                     pdfmetrics.registerFont(TTFont('NotoSansThai-Regular', font_path))
                     logger.info(f"✅ Registered NotoSansThai-Regular from: {font_path}")
                     regular_registered = True
+                    self.thai_font_available = True  # Mark that Thai font is available
                     break
+                else:
+                    logger.debug(f"Font not found at: {font_path}")
             
             # Register bold font
             bold_registered = False
@@ -160,20 +170,60 @@ class ClassicPDFGenerator:
             
             if not regular_registered:
                 logger.warning("⚠️ NotoSansThai-Regular.ttf not found - Thai text may not display correctly")
+                logger.warning("⚠️ Searched paths: " + ", ".join(font_paths))
             if not bold_registered:
                 logger.warning("⚠️ NotoSansThai-Bold.ttf not found - Bold Thai text may not display correctly")
                 
-            # Register font family for automatic bold handling
-            if regular_registered and bold_registered:
+            # Register font family and all variants for ReportLab compatibility
+            if regular_registered or bold_registered:
                 try:
-                    pdfmetrics.registerFontFamily('NotoSansThai',
-                        normal='NotoSansThai-Regular',
-                        bold='NotoSansThai-Bold',
-                        italic='NotoSansThai-Regular',
-                        boldItalic='NotoSansThai-Bold')
-                    logger.info("✅ Registered NotoSansThai font family")
+                    # Find the registered font paths
+                    regular_font_path = None
+                    bold_font_path = None
+                    
+                    for font_path in font_paths:
+                        if os.path.exists(font_path):
+                            regular_font_path = font_path
+                            break
+                    
+                    for font_path in bold_font_paths:
+                        if os.path.exists(font_path):
+                            bold_font_path = font_path
+                            break
+                    
+                    # Register all possible font name variants to avoid lookup issues
+                    if regular_font_path:
+                        # Register lowercase variants that ReportLab might look for
+                        pdfmetrics.registerFont(TTFont('notosansthai-regular', regular_font_path))
+                        pdfmetrics.registerFont(TTFont('NotoSansThai', regular_font_path))  # Base name
+                        logger.info("✅ Registered NotoSansThai variants (regular)")
+                        
+                    if bold_font_path:
+                        pdfmetrics.registerFont(TTFont('notosansthai-bold', bold_font_path))
+                        pdfmetrics.registerFont(TTFont('NotoSansThai-B', bold_font_path))  # Alternative bold name
+                        logger.info("✅ Registered NotoSansThai variants (bold)")
+                    
+                    # Register font families only if both fonts are available
+                    if regular_font_path and bold_font_path:
+                        # Main font family
+                        pdfmetrics.registerFontFamily('NotoSansThai',
+                            normal='NotoSansThai-Regular',
+                            bold='NotoSansThai-Bold',
+                            italic='NotoSansThai-Regular',
+                            boldItalic='NotoSansThai-Bold')
+                        
+                        # Lowercase font family for ReportLab's case-insensitive lookup
+                        pdfmetrics.registerFontFamily('notosansthai',
+                            normal='notosansthai-regular',
+                            bold='notosansthai-bold',
+                            italic='notosansthai-regular',
+                            boldItalic='notosansthai-bold')
+                        logger.info("✅ Registered NotoSansThai font families (uppercase and lowercase)")
+                    
                 except Exception as e:
                     logger.warning(f"Font family registration failed: {e}")
+                    import traceback
+                    logger.warning(f"Font family registration traceback: {traceback.format_exc()}")
                     
         except Exception as e:
             logger.error(f"❌ Error registering Thai fonts: {e}")
@@ -275,11 +325,11 @@ class ClassicPDFGenerator:
                 alignment=TA_JUSTIFY
             ))
             
-            # Terms & Conditions style with readable spacing
+            # Terms & Conditions style with readable spacing - using Helvetica for compatibility
             styles.add(ParagraphStyle(
                 name='ModernThaiTerms',
                 parent=styles['Normal'],
-                fontName=thai_font,
+                fontName='Helvetica',  # Use Helvetica base font with inline font tags
                 fontSize=7.5,  # Compact but readable
                 leading=11,   # Increased line spacing for readability
                 textColor=text_color,
@@ -310,6 +360,18 @@ class ClassicPDFGenerator:
                 textColor=primary_color,
                 spaceBefore=0,
                 spaceAfter=4
+            ))
+            
+            # Mixed content style fallback - IMPORTANT for pre-receipt generation
+            styles.add(ParagraphStyle(
+                name='ModernMixed',
+                parent=styles['Normal'],
+                fontName='Helvetica',
+                fontSize=10,
+                leading=12,
+                textColor=text_color,
+                spaceBefore=0,
+                spaceAfter=2
             ))
             
             # Compact Terms style fallback
@@ -448,6 +510,10 @@ class ClassicPDFGenerator:
         # Use text as-is (should already be cleaned by caller)
         clean_text = str(text)
         
+        # If Thai fonts are not available, just use Helvetica for everything
+        if not self.thai_font_available:
+            return f'<font name="Helvetica">{clean_text}</font>'
+        
         # If text has Thai characters, use proper Thai font handling
         if self.has_thai_text(clean_text):
             # Split text into Thai and non-Thai segments more precisely
@@ -478,10 +544,10 @@ class ClassicPDFGenerator:
             # Pure English/numbers - use Helvetica
             return f'<font name="Helvetica">{clean_text}</font>'
 
-    def create_mixed_paragraph(self, text, style_name='ModernThai'):
+    def create_mixed_paragraph(self, text, style_name='ModernMixed'):
         """Create paragraph with mixed font support and proper line break handling"""
         if not text:
-            return Paragraph("", self.styles['ModernThai'])
+            return Paragraph("", self.styles['ModernMixed'])
         
         # First clean HTML tags and convert to newlines
         cleaned_text = self.clean_html_tags(text)
@@ -494,8 +560,11 @@ class ClassicPDFGenerator:
         # Ensure <br /> tags are properly processed
         cleaned_text = cleaned_text.replace('<br /><br />', '<br />&nbsp;<br />')  # Add space for double breaks
         
-        # Apply font mixing
+        # Apply font mixing - this adds explicit <font name="..."> tags
         mixed_text = self.format_mixed_text(cleaned_text)
+        
+        # Use ModernMixed style which uses Helvetica as base font
+        # This works better with explicit inline font tags from format_mixed_text
         return Paragraph(mixed_text, self.styles[style_name])
     
     def create_preformatted_paragraph(self, text, style_name='ModernThai', font_size=None):
@@ -525,14 +594,15 @@ class ClassicPDFGenerator:
         if not text:
             return Paragraph("", self.styles['ModernThaiTerms'])
         
-        # Use ModernThaiTerms style with improved spacing
+        # Use ModernThaiTerms style with mixed font support
+        # format_mixed_text adds explicit font tags, ModernThaiTerms provides the base style
         mixed_text = self.format_mixed_text(text)
         return Paragraph(mixed_text, self.styles['ModernThaiTerms'])
 
     def format_text_with_font(self, text, style_type='normal'):
         """Format text with appropriate font and return Paragraph object"""
         if not text:
-            return Paragraph("", self.styles['ModernThai'])  # Use Thai font as default
+            return Paragraph("", self.styles['ModernMixed'])  # Use mixed font as default
         
         style_name = self.get_appropriate_style(text, style_type)
         
@@ -543,8 +613,8 @@ class ClassicPDFGenerator:
             return Paragraph(clean_text, self.styles[style_name])
         except Exception as e:
             logger.warning(f"Error creating paragraph with style {style_name}: {e}")
-            # Fallback to Thai style for better mixed content support
-            return Paragraph(clean_text, self.styles['ModernThai'])
+            # Fallback to ModernMixed style for better compatibility
+            return Paragraph(clean_text, self.styles['ModernMixed'])
 
     def clean_html_tags(self, text):
         """Clean HTML tags from text and handle line breaks properly"""
@@ -1118,7 +1188,7 @@ class ClassicPDFGenerator:
                 product_name = product.get('name', 'N/A')
                 mixed_product_text = self.format_mixed_text(product_name)
                 small_product_text = f'<font size="10">{mixed_product_text}</font>'
-                product_paragraph = Paragraph(small_product_text, self.styles['ModernThai'])
+                product_paragraph = Paragraph(small_product_text, self.styles['ModernMixed'])
                 
                 payment_data.append([
                     Paragraph(f"<font color='#2C3E50' size='10'><b>{i}</b></font>", self.styles['ModernEnglishSmall']),
@@ -1149,9 +1219,10 @@ class ClassicPDFGenerator:
             
             for item in real_items:
                 row_color = '#E74C3C' if item[4].startswith('-') else '#27AE60'
-                # Create Thai font paragraph for product names
+                # Create mixed font paragraph for product names with explicit font tags
                 product_name = item[1]
-                product_paragraph = Paragraph(f"<font color='#2C3E50' size='10'>{product_name}</font>", self.styles['ModernThai'])
+                mixed_product_text = self.format_mixed_text(product_name)
+                product_paragraph = Paragraph(f"<font color='#2C3E50' size='10'>{mixed_product_text}</font>", self.styles['ModernMixed'])
                 
                 payment_data.append([
                     Paragraph(f"<font color='#2C3E50'><b>{item[0]}</b></font>", self.styles['ModernEnglishSmall']),
@@ -1426,7 +1497,7 @@ class ClassicPDFGenerator:
                             for i, name in enumerate(valid_names, 1):
                                 guest_line = f"{i}. {name}"
                                 formatted_line = self.format_mixed_text(guest_line)
-                                guest_paragraph = Paragraph(formatted_line, self.styles['ModernThai'])
+                                guest_paragraph = Paragraph(formatted_line, self.styles['ModernMixed'])
                                 story.append(guest_paragraph)
                         else:
                             guest_paragraph = self.create_preformatted_paragraph(decoded_text, font_size=6)
@@ -1437,31 +1508,44 @@ class ClassicPDFGenerator:
         # Flight Information Section - moved after Name List
         story.append(Paragraph("<font color='#2C3E50' size=9><b>Flight Information:</b></font>", self.styles['ModernSubtitle']))
         raw_flight_info = booking_data.get('flight_info', '')
-        logger.info(f"🔍 Flight Info Debug: type={type(raw_flight_info)}, content='{raw_flight_info[:100] if raw_flight_info else 'None'}...', length={len(str(raw_flight_info)) if raw_flight_info else 0}")
+        logger.info(f"🔍 Flight Info Debug: type={type(raw_flight_info)}, content='{raw_flight_info[:200] if raw_flight_info else 'None'}...', length={len(str(raw_flight_info)) if raw_flight_info else 0}")
         
         # Use enhanced flight info handling
         cleaned_flight_info = self._enhance_flight_info_handling(raw_flight_info)
-        logger.info(f"🔍 Cleaned Flight Info: '{cleaned_flight_info[:100] if cleaned_flight_info else 'None'}...'")
+        logger.info(f"🔍 Cleaned Flight Info: '{cleaned_flight_info[:200] if cleaned_flight_info else 'None'}...'")
         
         if cleaned_flight_info and str(cleaned_flight_info).strip() and str(cleaned_flight_info).strip() not in ['None', 'none', '', 'null']:
             # Split into lines and create paragraphs
             flight_lines = [line.strip() for line in cleaned_flight_info.split('\n') if line.strip()]
             
+            # Remove duplicate lines (case-insensitive)
+            seen_lines = set()
+            deduplicated_lines = []
+            for line in flight_lines:
+                line_lower = line.lower().strip()
+                if line_lower not in seen_lines:
+                    seen_lines.add(line_lower)
+                    deduplicated_lines.append(line)
+                else:
+                    logger.info(f"🔄 Removed duplicate flight line: '{line}'")
+            
+            flight_lines = deduplicated_lines
+            
             # Filter out invalid flight info (like repeated characters or meaningless patterns)
             valid_flight_lines = []
             for line in flight_lines:
-                # Skip if line is just repeated characters (more than 80% same character)
+                # Skip if line is just repeated characters (more than 70% same character - lowered threshold)
                 if line and len(line) > 3:
                     # Count most common character
                     from collections import Counter
                     char_counts = Counter(line.upper())
                     most_common_char, most_common_count = char_counts.most_common(1)[0]
                     
-                    # If more than 80% is the same character, it's likely invalid
-                    if most_common_count / len(line) < 0.8:
+                    # If more than 70% is the same character, it's likely invalid (lowered from 80%)
+                    if most_common_count / len(line) < 0.70:
                         valid_flight_lines.append(line)
                     else:
-                        logger.info(f"❌ Filtered out invalid flight line (repeated chars): '{line}'")
+                        logger.info(f"❌ Filtered out invalid flight line (repeated chars {most_common_count}/{len(line)}={most_common_count/len(line)*100:.1f}%): '{line}'")
             
             if valid_flight_lines:
                 try:

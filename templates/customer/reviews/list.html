@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}รีวิวของฉัน{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3><i class="fas fa-star"></i> รีวิวของฉัน</h3>
+                {% if points %}
+                <div class="text-end">
+                    <small class="text-muted">คะแนนสะสมของคุณ</small>
+                    <h4 class="text-primary mb-0">{{ "{:,.0f}".format(points.total_points|float) }} คะแนน</h4>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Reviews List -->
+            {% if reviews %}
+            <div class="row">
+                {% for review in reviews %}
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6>{{ review.campaign.name if review.campaign else 'แคมเปญ' }}</h6>
+                                    <small class="text-muted">{{ review.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                                <div>
+                                    {% if review.status == 'pending' %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> รอตรวจสอบ</span>
+                                    {% elif review.status == 'approved' %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> อนุมัติ</span>
+                                    {% elif review.status == 'rejected' %}
+                                    <span class="badge bg-danger"><i class="fas fa-times"></i> ไม่อนุมัติ</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="rating mb-2">
+                                {% for i in range(review.rating) %}
+                                <i class="fas fa-star text-warning"></i>
+                                {% endfor %}
+                                {% for i in range(5 - review.rating) %}
+                                <i class="far fa-star text-warning"></i>
+                                {% endfor %}
+                            </div>
+
+                            <p class="card-text">{{ review.review_text }}</p>
+
+                            {% if review.images %}
+                            <div class="review-images mb-3">
+                                {% for img in review.images %}
+                                <img src="{{ img.image_url or img.image_path }}" class="img-thumbnail me-2"
+                                    style="width: 60px; height: 60px; object-fit: cover;">
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <div class="alert alert-success py-2 px-3 mb-3" style="display: none;">
+                                <i class="fas fa-gift"></i> ได้รับ คะแนน
+                            </div>
+
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=review.campaign_id) }}"
+                                    class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> ดูแคมเปญ
+                                </a>
+                                {% if review.status == 'pending' %}
+                                <a href="{{ url_for('customer_reviews.edit_review', review_id=review.id) }}"
+                                    class="btn btn-outline-secondary">
+                                    <i class="fas fa-edit"></i> แก้ไข
+                                </a>
+                                <button class="btn btn-outline-danger" onclick="deleteReview({{ review.id }})">
+                                    <i class="fas fa-trash"></i> ลบ
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center py-5">
+                <i class="fas fa-comment-slash fa-3x mb-3"></i>
+                <h5>ยังไม่มีรีวิว</h5>
+                <p class="text-muted">เมื่อคุณเข้าร่วมแคมเปญ คุณสามารถเขียนรีวิวเพื่อรับคะแนนได้</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<form id="deleteForm" method="POST" style="display: none;">
+</form>
+
+<script>
+    function deleteReview(reviewId) {
+        if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรีวิวนี้?')) {
+            const form = document.getElementById('deleteForm');
+            form.action = '/customer/reviews/delete/' + reviewId;
+            form.submit();
+        }
+    }
+</script>
+{% endblock %}

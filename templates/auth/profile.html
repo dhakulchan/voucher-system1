@@ -194,31 +194,6 @@
                                 </form>
                             </div>
                         </div>
-
-                        <!-- Quick Actions -->
-                        <div class="card mt-4">
-                            <div class="card-header">
-                                <h6 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h6>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-grid gap-2">
-                                    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline-primary">
-                                        <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                                    </a>
-                                    <a href="{{ url_for('booking.list') }}" class="btn btn-outline-secondary">
-                                        <i class="fas fa-calendar-alt me-2"></i>Bookings
-                                    </a>
-                                    <a href="{{ url_for('voucher.list') }}" class="btn btn-outline-info">
-                                        <i class="fas fa-ticket-alt me-2"></i>Vouchers
-                                    </a>
-                                    {% if current_user.can_manage_users() %}
-                                    <a href="{{ url_for('user_mgmt.list_users') }}" class="btn btn-outline-warning">
-                                        <i class="fas fa-users-cog me-2"></i>User Management
-                                    </a>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

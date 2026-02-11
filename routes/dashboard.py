@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, current_app, session
+from flask import Blueprint, render_template, request, jsonify, current_app, session, flash, redirect, url_for
 from flask_login import login_required, current_user
 from models.customer import Customer
 from models.user import User
@@ -41,6 +41,11 @@ class BookingDisplay:
 @dashboard_bp.route('/')
 @login_required
 def index():
+    # Check if user is Customer role - redirect to customer page
+    if current_user.role == 'Customer':
+        flash('ยินดีต้อนรับ! คุณสามารถดูแต้มสะสมและรีวิวของคุณได้', 'info')
+        return redirect(url_for('customer_reviews.list_reviews'))
+    
     try:
         # Use direct database connection to bypass SQLAlchemy datetime processor
         connection = pymysql.connect(

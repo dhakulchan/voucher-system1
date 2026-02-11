@@ -97,8 +97,9 @@
             <span><i class="fas fa-users me-1"></i> Guest Names / Rooming List</span>
         </div>
         <div class="card-body small" id="guest-list-editor">
-            <textarea class="form-control tinymce-editor" id="guest-list-textarea" name="guest_list" rows="6"
-                placeholder="Enter guest information, table, or notes...">{{ booking.get_guest_list_for_edit()|replace('\n', '<br>')|safe }}</textarea>
+            <textarea class="form-control" id="guest-list-textarea" name="guest_list" rows="6"
+                style="white-space: pre-wrap; font-family: inherit;"
+                placeholder="Enter guest information, table, or notes...">{{ booking.get_guest_list_for_edit() }}</textarea>
             <div class="form-text mt-2">
                 Enter each guest name on a separate line
             </div>
@@ -189,10 +190,6 @@
                         <div class="voucher-image-item position-relative border rounded p-2"
                             data-image-id="{{ img.id or 'img_' + loop.index0|string }}" draggable="true"
                             style="width: 200px;">
-                            <!-- Order Badge -->
-                            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
-                                <span class="badge bg-primary image-order-badge">{{ loop.index }}</span>
-                            </div>
 
                             <!-- Title Input -->
                             <div class="mb-2">
@@ -203,6 +200,10 @@
 
                             <!-- Image Display -->
                             <div class="position-relative">
+                                <!-- Order Badge -->
+                                <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                                    <span class="badge bg-primary image-order-badge">{{ loop.index }}</span>
+                                </div>
                                 <img src="{{ img.url }}"
                                     style="width:100%;height:auto;border:1px solid #ddd;padding:4px;background:#fafafa;cursor:zoom-in;" />
                                 <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
@@ -223,10 +224,6 @@
                         {% elif booking.voucher_image_path %}
                         <div class="voucher-image-item position-relative border rounded p-2" data-image-id="main"
                             draggable="true" style="width: 200px;">
-                            <!-- Order Badge -->
-                            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
-                                <span class="badge bg-primary image-order-badge">1</span>
-                            </div>
 
                             <!-- Title Input for legacy image -->
                             <div class="mb-2">
@@ -237,6 +234,10 @@
 
                             <!-- Image Display -->
                             <div class="position-relative">
+                                <!-- Order Badge -->
+                                <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                                    <span class="badge bg-primary image-order-badge">1</span>
+                                </div>
                                 <img src="{{ url_for('static', filename=booking.voucher_image_path.split('?')[0]) }}"
                                     style="width:100%;height:auto;border:1px solid #ddd;padding:4px;background:#fafafa;cursor:zoom-in;" />
                                 <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
@@ -323,8 +324,25 @@
         <div class="card h-100 shadow-sm">
             <div class="card-header bg-light fw-semibold">Flight Info</div>
             <div class="card-body small p-0">
+                <!-- Display Mode -->
+                <div id="flightInfoDisplay" class="p-3 thai-text"
+                    style="font-size:.8rem; line-height: 1.8; white-space: pre-wrap; background-color: #f9f9f9; min-height: 80px;">
+                    {{ booking.flight_info | safe if booking.flight_info else '' }}
+                </div>
+                <!-- Edit Mode (hidden by default) -->
                 <textarea id="flightInfoText" class="form-control border-0 rounded-0 thai-text" rows="4"
-                    style="resize:vertical; font-size:.8rem; white-space: pre-wrap;">{{ (booking.flight_info or '') | flight_info_to_text }}</textarea>
+                    style="resize:vertical; font-size:.8rem; white-space: pre-wrap; display: none;">{{ booking.flight_info or '' }}</textarea>
+
+                <!-- Toggle button -->
+                <div class="p-2 bg-light border-top">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleFlightInfoEdit()">
+                        <i class="fas fa-edit me-1"></i>Edit Flight Info
+                    </button>
+                    <button type="button" class="btn btn-sm btn-success ms-2" onclick="saveFlightInfo()"
+                        id="save-flight-info-btn" style="display: none;">
+                        <i class="fas fa-save me-1"></i>Save
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -335,7 +353,7 @@
             <div class="card-header bg-light fw-semibold">Service Detail / Itinerary</div>
             <div class="card-body small p-0">
                 <textarea id="itineraryText" class="form-control border-0 rounded-0 thai-text" readonly
-                    style="min-height:200px; resize:vertical; font-size:.8rem; white-space: pre-wrap; line-height: 1.8; background-color: #f9f9f9;">{{ (booking.description or booking.internal_note or '') | service_detail_to_text }}</textarea>
+                    style="min-height:200px; resize:vertical; font-size:.8rem; white-space: pre-wrap; line-height: 1.8; background-color: #f9f9f9;">{{ booking.description or booking.internal_note or '' }}</textarea>
 
                 <!-- Toggle button -->
                 <div class="p-2 bg-light border-top">
@@ -483,157 +501,183 @@
         // Show loading indicator
         const button = document.getElementById('copyMessage');
         if (button) {
-            const originalText = button.innerHTML;
-            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
-            button.disabled = true;
+            button.textContent = 'Copying...';
+        }
 
-            // Generate share token for 120 days (172800 minutes)
-            fetch(`{{ url_for('voucher.generate_share_token', id=booking.id) }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({ minutes: 172800 }) // 120 days = 120 * 24 * 60 = 172800 minutes
-            })
-                .then(r => {
-                    if (!r.ok) {
-                        throw new Error(`HTTP ${r.status}: ${r.statusText}`);
-                    }
-                    return r.json();
-                })
-                .then(data => {
-                    if (data.success && data.token) {
-                        // Create the exact Thai message format with share links
-                        const baseUrl = window.location.origin;
-                        const shareUrl = `${baseUrl}/public/booking/${data.token}`;
+        const bookingReference = {{ booking.booking_reference | tojson
+    }};
+    const shareTokenUrl = {{ url_for("voucher.generate_share_token", id = booking.id) | tojson }};
 
-                        const thaiMessage = `ทีมงานตระกูลเฉินฯ แจ้งรายละเอียดตามด้านล่าง กรุณาคลิกลิงค์ตามที่แนบมา
-📋 Service Proposal: {{ booking.booking_reference }}
+    // Fetch share token first
+    fetch(shareTokenUrl, { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.token) {
+                const voucherUrl = `${window.location.origin}/public/booking/${data.token}?view=voucher`;
 
-🔗 View Booking: ${shareUrl}
+                const message = `สวัสดีค่ะ
+บริษัท ตระกูลเฉินฯ ขอขอบคุณที่ให้เราดูแลการเดินทางของท่าน หมายเลขอ้างอิง ${bookingReference}
 
-🖼️ Download PNG: ${shareUrl}/png
+🎫 Tour Voucher: 
+${voucherUrl}
 
-📄 Download PDF: ${shareUrl}/pdf
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
 
-ขอบพระคุณอย่างสูง
-บริษัท ตระกูลเฉินฯ 
-📞 Tel: +662 2744216
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
+
+ติดต่อสอบถามข้อมูลเพิ่มเติม:
+📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
 📧 Email: booking@dhakulchan.com
-📱 Line OA: @dhakulchan
-🔒 Secure link (expires in 120 days)`;
+📱 Line OA: @dhakulchan | @changuru
+🏛️ รู้จักตระกูลเฉินฯ: https://www.dhakulchan.net/page/about-dhakulchan`;
 
-                        // Copy to clipboard
-                        return navigator.clipboard.writeText(thaiMessage).then(() => {
-                            button.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
-                            setTimeout(() => {
-                                button.innerHTML = originalText;
-                                button.disabled = false;
-                            }, 2000);
-
-                            // Show success toast
-                            const toast = document.createElement('div');
-                            toast.className = 'alert alert-success position-fixed';
-                            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; opacity: 0.9; max-width: 400px;';
-                            toast.innerHTML = '<i class="fas fa-check-circle me-2"></i>ข้อความพร้อมลิงค์แชร์ถูกคัดลอกแล้ว!';
-                            document.body.appendChild(toast);
-                            setTimeout(() => toast.remove(), 3000);
-                        });
-                    } else {
-                        throw new Error('Failed to generate share token');
-                    }
-                })
-                .catch(error => {
-                    console.error('❌ Share token generation failed:', error);
-
-                    // Fallback: use basic Thai message without share links
-                    const fallbackMessage = `ทีมงานตระกูลเฉินฯ แจ้งรายละเอียดตามด้านล่าง กรุณาคลิกลิงค์ตามที่แนบมา
-📋 Service Proposal: {{ booking.booking_reference }}
-
-🔗 View Booking: {{ url_for('voucher.view', id=booking.id, _external=True) }}
-
-ขอบพระคุณอย่างสูง
-บริษัท ตระกูลเฉินฯ 
-📞 Tel: +662 2744216
-📧 Email: booking@dhakulchan.com
-📱 Line OA: @dhakulchan`;
-
-                    navigator.clipboard.writeText(fallbackMessage).then(() => {
-                        button.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
-                        setTimeout(() => {
-                            button.innerHTML = originalText;
-                            button.disabled = false;
-                        }, 2000);
-
-                        // Show fallback success toast
-                        const toast = document.createElement('div');
-                        toast.className = 'alert alert-warning position-fixed';
-                        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; opacity: 0.9; max-width: 400px;';
-                        toast.innerHTML = '<i class="fas fa-info-circle me-2"></i>ข้อความถูกคัดลอกแล้ว (รูปแบบพื้นฐาน)';
-                        document.body.appendChild(toast);
-                        setTimeout(() => toast.remove(), 3000);
-                    }).catch(() => {
-                        // Final fallback: show in alert
-                        button.innerHTML = originalText;
-                        button.disabled = false;
-                        alert('ข้อความ:\n\n' + fallbackMessage);
-                    });
-                });
-        } else {
-            // If no button found, just copy basic message
-            const basicMessage = `ทีมงานตระกูลเฉินฯ แจ้งรายละเอียดตามด้านล่าง กรุณาคลิกลิงค์ตามที่แนบมา
-📋 Service Proposal: {{ booking.booking_reference }}
-
-🔗 View Booking: {{ url_for('voucher.view', id=booking.id, _external=True) }}
-
-ขอบพระคุณอย่างสูง
-บริษัท ตระกูลเฉินฯ 
-📞 Tel: +662 2744216
-📧 Email: booking@dhakulchan.com
-📱 Line OA: @dhakulchan`;
-
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(basicMessage).then(() => {
-                    console.log('✅ Thai message copied!');
-                    alert('✅ ข้อความภาษาไทยถูกคัดลอกแล้ว!');
+                navigator.clipboard.writeText(message).then(() => {
+                    console.log('✅ Message copied!');
+                    if (button) button.textContent = 'Copy Message';
+                    alert('✅ Thai message copied to clipboard!');
                 }).catch(err => {
-                    console.error('❌ Clipboard failed:', err);
-                    alert('ข้อความ:\n\n' + basicMessage);
+                    console.error('❌ Failed to copy:', err);
+                    if (button) button.textContent = 'Copy Message';
+                    alert('Message:\n\n' + message);
                 });
             } else {
-                alert('ข้อความ:\n\n' + basicMessage);
+                console.error('❌ Failed to get share token');
+                if (button) button.textContent = 'Copy Message';
+                alert('❌ Failed to generate share link');
             }
-        }
+        })
+        .catch(err => {
+            console.error('❌ Error fetching share token:', err);
+            if (button) button.textContent = 'Copy Message';
+            alert('❌ Error generating share link');
+        });
     };
 
     // Define Enhanced Booking View function
     window.openEnhancedBookingView = function () {
         console.log('🔗 Enhanced Booking View clicked!');
 
-        const shareTokenUrl = '{{ url_for("voucher.generate_share_token", id=booking.id) }}';
-        fetch(shareTokenUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ minutes: 43200 }) // 30 days
+        const shareTokenUrl = {{ url_for("voucher.generate_share_token", id = booking.id) | tojson
+    }};
+    fetch(shareTokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ minutes: 43200 }) // 30 days
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && (data.url || data.token)) {
+                const shareUrl = data.url || `${window.location.origin}/public/booking/${data.token}?view=voucher`;
+                console.log('✅ Opening enhanced booking view:', shareUrl);
+                window.open(shareUrl, '_blank');
+            } else {
+                console.error('❌ Token generation failed:', data.message);
+                alert('Error: ' + (data.message || 'Could not generate share link'));
+            }
         })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success && data.token) {
-                    const baseUrl = window.location.origin;
-                    const shareUrl = `${baseUrl}/public/booking/${data.token}`;
-                    console.log('✅ Opening enhanced booking view:', shareUrl);
-                    window.open(shareUrl, '_blank');
-                } else {
-                    console.error('❌ Token generation failed:', data.message);
-                    alert('Error: ' + (data.message || 'Could not generate share link'));
-                }
-            })
-            .catch(err => {
-                console.error('❌ Network error:', err);
-                alert('Network error: ' + err.message);
-            });
+        .catch(err => {
+            console.error('❌ Network error:', err);
+            alert('Network error: ' + err.message);
+        });
+    };
+
+    // Open Email Message Modal
+    window.openEmailMessageModal = function () {
+        console.log('📧 Opening Email Message Modal...');
+        const modal = new bootstrap.Modal(document.getElementById('emailMessageModal'));
+        modal.show();
+    };
+
+    // Send Booking Message Email
+    window.sendBookingMessageEmail = function () {
+        const emailInput = document.getElementById('recipientEmail');
+        const email = emailInput.value.trim();
+
+        if (!email) {
+            alert('Please enter an email address');
+            emailInput.focus();
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert('Please enter a valid email address');
+            emailInput.focus();
+            return;
+        }
+
+        const sendButton = event.target;
+        const originalText = sendButton.innerHTML;
+        sendButton.disabled = true;
+        sendButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+
+        // Send email via API
+        const emailUrl = {{ url_for('voucher.send_email_api', id = booking.id) | tojson
+    }};
+
+    fetch(emailUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+            'email': email,
+            'subject': 'Tour Voucher - {{ booking.booking_reference }}',
+            'message': 'Please find attached your tour voucher.'
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Email sent successfully');
+
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('emailMessageModal'));
+                modal.hide();
+
+                // Show success alert
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-check-circle me-2"></i>
+                    ${data.message || 'Voucher link sent successfully to ' + email + '!'}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.body.appendChild(alertDiv);
+
+                // Auto dismiss after 5 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            } else {
+                throw new Error(data.error || 'Failed to send email');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error sending email:', error);
+            alert('Error sending email: ' + error.message);
+        })
+        .finally(() => {
+            sendButton.disabled = false;
+            sendButton.innerHTML = originalText;
+        });
     };
 
     // PNG Multi-page function - define before DOMContentLoaded
@@ -642,15 +686,32 @@
         console.log('🔍 Function called, preparing URL...');
 
         // Direct URL to voucher PNG combined route
-        const pngUrl = `{{ url_for('voucher.voucher_png_combined', id=booking.id) }}`;
-        console.log('✅ Opening PNG Combined URL:', pngUrl);
+        const pngUrl = {{ url_for('voucher.voucher_png_combined', id = booking.id) | tojson
+    }};
+    console.log('✅ Opening PNG Combined URL:', pngUrl);
 
-        try {
-            window.open(pngUrl, '_blank');
-            console.log('✅ Window.open executed successfully');
-        } catch (error) {
-            console.error('❌ Error opening window:', error);
-        }
+    try {
+        window.open(pngUrl, '_blank');
+        console.log('✅ Window.open executed successfully');
+    } catch (error) {
+        console.error('❌ Error opening window:', error);
+    }
+    };
+    window.openPngMultiPage = function () {
+        console.log('🖼️ PNG Multi-page clicked!');
+        console.log('🔍 Function called, preparing URL...');
+
+        // Direct URL to voucher PNG combined route
+        const pngUrl = {{ url_for('voucher.voucher_png_combined', id = booking.id) | tojson
+    }};
+    console.log('✅ Opening PNG Combined URL:', pngUrl);
+
+    try {
+        window.open(pngUrl, '_blank');
+        console.log('✅ Window.open executed successfully');
+    } catch (error) {
+        console.error('❌ Error opening window:', error);
+    }
     };
 
     // Attach event listener when DOM is ready
@@ -706,56 +767,143 @@
         console.log('Saving itinerary content:', content);
 
         // Save directly to server
-        fetch(`{{ url_for('voucher.save_rows_api', id=booking.id) }}`, {
-            method: 'POST',
+        fetch({{ url_for('voucher.save_rows_api', id = booking.id) | tojson }}, {
+        method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                description: content,
-                rows: [],  // Empty rows array since we're only updating description
-                flight_info: document.getElementById('flightInfoText')?.value || '',
-                guest_list: [],
-                supplier_id: document.getElementById('supplierSelect')?.value || '',
-                voucher_images: []
-            })
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            description: content,
+            rows: [],  // Empty rows array since we're only updating description
+            flight_info: document.getElementById('flightInfoText')?.value || '',
+            guest_list: [],
+            supplier_id: document.getElementById('supplierSelect')?.value || '',
+            voucher_images: []
         })
+    })
             .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    console.log('✅ Itinerary saved successfully');
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Itinerary saved successfully');
 
-                    // Switch back to view mode
-                    const saveBtn = document.getElementById('save-itinerary-btn');
-                    const toggleBtn = document.querySelector('button[onclick="toggleItineraryEdit()"]');
+                // Switch back to view mode
+                const saveBtn = document.getElementById('save-itinerary-btn');
+                const toggleBtn = document.querySelector('button[onclick="toggleItineraryEdit()"]');
 
-                    editTextarea.setAttribute('readonly', 'readonly');
-                    editTextarea.style.backgroundColor = '#f9f9f9';
-                    saveBtn.style.display = 'none';
-                    toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit Itinerary';
+                editTextarea.setAttribute('readonly', 'readonly');
+                editTextarea.style.backgroundColor = '#f9f9f9';
+                saveBtn.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit Itinerary';
 
-                    // Show success message
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
-                    alertDiv.innerHTML = `
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = `
                     <i class="fas fa-check me-1"></i>Service Detail saved successfully!
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 `;
-                    document.querySelector('.voucher-wrapper').insertBefore(alertDiv, document.querySelector('.voucher-wrapper').firstChild);
+                document.querySelector('.voucher-wrapper').insertBefore(alertDiv, document.querySelector('.voucher-wrapper').firstChild);
 
-                    // Auto dismiss after 3 seconds
-                    setTimeout(() => {
-                        alertDiv?.remove();
-                    }, 3000);
-                } else {
-                    console.error('❌ Failed to save itinerary:', data.error);
-                    alert('Failed to save: ' + (data.error || 'Unknown error'));
-                }
-            })
-            .catch(error => {
-                console.error('❌ Error saving itinerary:', error);
-                alert('Error saving itinerary: ' + error.message);
-            });
+                // Auto dismiss after 3 seconds
+                setTimeout(() => {
+                    alertDiv?.remove();
+                }, 3000);
+            } else {
+                console.error('❌ Failed to save itinerary:', data.error);
+                alert('Failed to save: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error saving itinerary:', error);
+            alert('Error saving itinerary: ' + error.message);
+        });
+    };
+
+    // Toggle function for flight info edit mode
+    window.toggleFlightInfoEdit = function () {
+        const displayDiv = document.getElementById('flightInfoDisplay');
+        const editTextarea = document.getElementById('flightInfoText');
+        const toggleBtn = event.target;
+        const saveBtn = document.getElementById('save-flight-info-btn');
+
+        if (displayDiv.style.display !== 'none') {
+            // Switch to edit mode
+            displayDiv.style.display = 'none';
+            editTextarea.style.display = 'block';
+            saveBtn.style.display = 'inline-block';
+            toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i>View Mode';
+            editTextarea.focus();
+        } else {
+            // Switch to view mode (without saving)
+            displayDiv.style.display = 'block';
+            editTextarea.style.display = 'none';
+            saveBtn.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit Flight Info';
+        }
+    };
+
+    // Save flight info function
+    window.saveFlightInfo = function () {
+        const editTextarea = document.getElementById('flightInfoText');
+        const displayDiv = document.getElementById('flightInfoDisplay');
+        const content = editTextarea.value.trim();
+
+        console.log('Saving flight info content:', content);
+
+        // Save directly to server
+        fetch({{ url_for('voucher.save_rows_api', id = booking.id) | tojson }}, {
+        method: 'POST',
+            headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            description: document.getElementById('itineraryText')?.value || '',
+            rows: [],
+            flight_info: content,
+            guest_list: [],
+            supplier_id: document.getElementById('supplierSelect')?.value || '',
+            voucher_images: []
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Flight Info saved successfully');
+
+                // Update display div with new content (render HTML)
+                displayDiv.innerHTML = content;
+
+                // Switch back to view mode
+                const saveBtn = document.getElementById('save-flight-info-btn');
+                const toggleBtn = document.querySelector('button[onclick="toggleFlightInfoEdit()"]');
+
+                displayDiv.style.display = 'block';
+                editTextarea.style.display = 'none';
+                saveBtn.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit Flight Info';
+
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="fas fa-check me-1"></i>Flight Info saved successfully!
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.voucher-wrapper').insertBefore(alertDiv, document.querySelector('.voucher-wrapper').firstChild);
+
+                // Auto dismiss after 3 seconds
+                setTimeout(() => {
+                    alertDiv?.remove();
+                }, 3000);
+            } else {
+                console.error('❌ Failed to save flight info:', data.error);
+                alert('Failed to save: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error saving flight info:', error);
+            alert('Error saving flight info: ' + error.message);
+        });
     };
 </script>
 
@@ -771,34 +919,17 @@
             <i class="fas fa-share-alt me-1"></i>Share Options
         </button>
         <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#" id="sendToLineOA"><i class="fab fa-line me-2"></i>Send to Line OA</a>
-            </li>
-            <li><a class="dropdown-item" href="#" id="copyLineMessage"><i class="fas fa-copy me-2"></i>Copy Line
-                    Message</a></li>
-            <li>
-                <hr class="dropdown-divider">
-            </li>
-            <li>
-                <h6 class="dropdown-header">Social Media</h6>
-            </li>
-            <li><a class="dropdown-item" href="#" id="shareWhatsApp"><i class="fab fa-whatsapp me-2"></i>WhatsApp</a>
-            </li>
-            <li><a class="dropdown-item" href="#" id="shareLine"><i class="fab fa-line me-2"></i>Line</a></li>
-            <li><a class="dropdown-item" href="#" id="shareFacebook"><i class="fab fa-facebook me-2"></i>Facebook</a>
-            </li>
-            <li><a class="dropdown-item" href="#" id="shareEmail"><i class="fas fa-envelope me-2"></i>Email</a></li>
-            <li><a class="dropdown-item" href="#" id="shareTelegram"><i class="fab fa-telegram me-2"></i>Telegram</a>
-            </li>
-            <li><a class="dropdown-item" href="#" id="shareTwitter"><i class="fab fa-twitter me-2"></i>Twitter</a></li>
-            <li>
-                <hr class="dropdown-divider">
-            </li>
             <li><a class="dropdown-item" href="#" id="copyMessage" onclick="copyThaiMessage(); return false;"><i
                         class="fas fa-clipboard me-2"></i>Copy Message</a>
             </li>
             <li><a class="dropdown-item" href="#" id="openSharePage"
                     onclick="window.openEnhancedBookingView(); return false;">
                     <i class="fas fa-external-link-alt me-2"></i>Open Share Page</a></li>
+            <li>
+                <hr class="dropdown-divider">
+            </li>
+            <li><a class="dropdown-item" href="#" onclick="openEmailMessageModal(); return false;">
+                    <i class="fas fa-envelope me-2"></i>Send Email Message</a></li>
         </ul>
     </div>
 
@@ -849,11 +980,114 @@
     </div>
 </div>
 
+<!-- Email Message Modal -->
+<div class="modal fade" id="emailMessageModal" tabindex="-1" aria-labelledby="emailMessageModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="emailMessageModalLabel">
+                    <i class="fas fa-envelope me-2"></i>Send Tour Voucher Link via Email
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Booking Information -->
+                <div class="mb-3 p-3 bg-light rounded">
+                    <h6 class="mb-2">Booking Information:</h6>
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <strong>Reference:</strong><br>
+                            <span class="text-primary">{{ booking.booking_reference }}</span>
+                        </div>
+                        <div class="col-sm-6">
+                            <strong>Customer:</strong><br>
+                            {{ booking.customer.full_name if booking.customer else booking.customer.name if
+                            booking.customer else 'N/A' }}
+                        </div>
+                    </div>
+                    {% if booking.customer and booking.customer.email %}
+                    <div>
+                        <strong>Customer Email:</strong>
+                        <span class="text-info">{{ booking.customer.email }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Email Form -->
+                <form id="emailMessageForm">
+                    <div class="mb-3">
+                        <label for="recipientEmail" class="form-label">
+                            <i class="fas fa-envelope"></i> Recipient Email Address
+                        </label>
+                        <input type="email" class="form-control" id="recipientEmail" name="email" {% if booking.customer
+                            and booking.customer.email %} value="{{ booking.customer.email }}" {% endif %}
+                            placeholder="customer@email.com" required>
+                        <div class="form-text">
+                            A public voucher link will be sent to this email address (no attachment, link only)
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Info Box -->
+                <div class="alert alert-info mb-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>ข้อมูลที่จะส่ง:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Public link พร้อม token (หมดอายุ 120 วัน)</li>
+                        <li>คำแนะนำการใช้งานภาษาไทย</li>
+                        <li>ไม่มีไฟล์แนบ (ลิงก์เท่านั้น)</li>
+                    </ul>
+                </div>
+
+                <!-- Quick Actions -->
+                {% if booking.customer and booking.customer.email %}
+                <div class="card bg-light border-0">
+                    <div class="card-body py-2">
+                        <h6 class="card-title mb-2">
+                            <i class="fas fa-zap"></i> Quick Actions
+                        </h6>
+                        <button type="button" class="btn btn-outline-primary btn-sm w-100"
+                            onclick="document.getElementById('recipientEmail').value='{{ booking.customer.email }}'">
+                            <i class="fas fa-user me-1"></i>
+                            Use Customer Email: {{ booking.customer.email }}
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="sendBookingMessageEmail()">
+                    <i class="fas fa-paper-plane me-1"></i>Send Voucher Link
+                </button>
+            </div>
+            </button>
+        </div>
+    </div>
+</div>
+</div>
+
 {% endblock %}
 {% block scripts %}
 <script>
     // DEBUG: Test if script is loaded
     console.log('🔧 Voucher page JavaScript loaded!');
+
+    // Ensure jQuery is loaded
+    if (typeof jQuery === 'undefined') {
+        console.error('❌ jQuery not loaded yet!');
+    } else {
+        console.log('✅ jQuery loaded:', jQuery.fn.jquery);
+    }
+
+    const bookingReference = {{ booking.booking_reference | tojson }};
+    const viewBookingUrl = {{ url_for('voucher.view', id = booking.id, _external = True) | tojson }};
+    const shareTokenEndpoint = {{ url_for('voucher.generate_share_token', id = booking.id) | tojson }};
+    const loginUrl = {{ url_for("auth.login") | tojson }};
 
     // Test if Copy Message button exists
     document.addEventListener('DOMContentLoaded', function () {
@@ -873,7 +1107,7 @@
     // Generate share token and URL
     function generateShareToken() {
         console.log('🔗 Generating share token...');
-        return fetch(`{{ url_for('voucher.generate_share_token', id=booking.id) }}`, {
+        return fetch(shareTokenEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -911,7 +1145,7 @@
                 // Special handling for authentication errors
                 if (error.message === 'AUTHENTICATION_REQUIRED') {
                     if (confirm('🔐 Login required to generate share link. Redirect to login page?')) {
-                        window.location.href = '{{ url_for("auth.login") }}';
+                        window.location.href = loginUrl;
                     }
                 }
 
@@ -919,298 +1153,107 @@
             });
     }
 
-    // Single PNG share
-    document.getElementById('shareImageSingle')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                window.open(data.url, '_blank');
-            })
-            .catch(err => alert('Error generating share link: ' + err.message));
-    });
-
-    // Multi-page PNG share
-    document.getElementById('shareImageMulti')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const multiPageUrl = data.url + '&all=1';
-                window.open(multiPageUrl, '_blank');
-            })
-            .catch(err => alert('Error generating share link: ' + err.message));
-    });
-
-    // Send to Line OA
-    document.getElementById('sendToLineOA')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const lineMessage = `Tour Voucher - {{ booking.booking_reference }}\n${data.url}`;
-                // You can customize this URL based on your Line OA setup
-                alert('Line OA integration needed. Message ready:\n' + lineMessage);
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    // Copy Line Message
-    document.getElementById('copyLineMessage')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const lineMessage = `🎫 Tour Voucher\n📋 Reference: {{ booking.booking_reference }}\n👥 Customer: {{ booking.customer_name or booking.party_name }}\n🔗 View: ${data.url}\n⏰ Link expires in 30 days`;
-                navigator.clipboard.writeText(lineMessage).then(() => {
-                    alert('Line message copied to clipboard!');
-                }).catch(() => {
-                    alert('Message: ' + lineMessage);
-                });
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    // Social Media Shares
-    document.getElementById('shareWhatsApp')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const message = `Tour Voucher - {{ booking.booking_reference }}\n${data.url}`;
-                const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    document.getElementById('shareLine')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const message = `Tour Voucher - {{ booking.booking_reference }}\n${data.url}`;
-                const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(data.url)}&text=${encodeURIComponent(message)}`;
-                window.open(lineUrl, '_blank');
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    document.getElementById('shareFacebook')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(data.url)}`;
-                window.open(facebookUrl, '_blank');
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    document.getElementById('shareEmail')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const subject = `Tour Voucher - {{ booking.booking_reference }}`;
-                const body = `Please find your tour voucher at the following link:\n\n${data.url}\n\nThis link will expire in 30 days.`;
-                const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                window.location.href = emailUrl;
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    document.getElementById('shareTelegram')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const message = `Tour Voucher - {{ booking.booking_reference }}\n${data.url}`;
-                const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(data.url)}&text=${encodeURIComponent(message)}`;
-                window.open(telegramUrl, '_blank');
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    document.getElementById('shareTwitter')?.addEventListener('click', function (e) {
-        e.preventDefault();
-        generateShareToken()
-            .then(data => {
-                const message = `Tour Voucher - {{ booking.booking_reference }}`;
-                const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(data.url)}`;
-                window.open(twitterUrl, '_blank');
-            })
-            .catch(err => alert('Error: ' + err.message));
-    });
-
-    // Copy Message - SIMPLIFIED AND ROBUST VERSION
-    console.log('🔧 Copy Message script is running...');
-    console.log('🎯 Document ready state:', document.readyState);
-
-    // IMMEDIATE TEST - This should always work
-    alert('🔧 Copy Message script loaded successfully!');
-
-    // Function to setup copy message
-    function setupCopyMessage() {
-        console.log('🔧 Setting up Copy Message...');
-
-        // Find all elements with copyMessage ID
-        const copyBtn = document.getElementById('copyMessage');
-        const allCopyButtons = document.querySelectorAll('#copyMessage, [id="copyMessage"]');
-
-        console.log('🎯 Copy button by ID:', copyBtn);
-        console.log('🎯 All copy buttons found:', allCopyButtons.length);
-
-        allCopyButtons.forEach((btn, index) => {
-            console.log(`🎯 Button ${index}:`, btn);
+    // Wait for DOM to be ready before attaching event listeners
+    document.addEventListener('DOMContentLoaded', function () {
+        // Single PNG share
+        document.getElementById('shareImageSingle')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            generateShareToken()
+                .then(data => {
+                    window.open(data.url, '_blank');
+                })
+                .catch(err => alert('Error generating share link: ' + err.message));
         });
 
-        if (copyBtn) {
-            console.log('✅ Setting up copy message handler');
+        // Multi-page PNG share
+        document.getElementById('shareImageMulti')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            generateShareToken()
+                .then(data => {
+                    const multiPageUrl = data.url + '&all=1';
+                    window.open(multiPageUrl, '_blank');
+                })
+                .catch(err => alert('Error generating share link: ' + err.message));
+        });
 
-            // Remove any existing handlers
-            copyBtn.onclick = null;
-            copyBtn.removeAttribute('onclick');
+        // Social Media Shares
+        document.getElementById('shareWhatsApp')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const bookingRef = bookingReference;
+            generateShareToken()
+                .then(data => {
+                    const message = `Tour Voucher - ${bookingRef}\n${data.url}`;
+                    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+                    window.open(whatsappUrl, '_blank');
+                })
+                .catch(err => alert('Error: ' + err.message));
+        });
 
-            // Add new handler
-            copyBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🎯 COPY MESSAGE CLICKED!');
+        document.getElementById('shareLine')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const bookingRef = bookingReference;
+            generateShareToken()
+                .then(data => {
+                    const message = `Tour Voucher - ${bookingRef}\n${data.url}`;
+                    const lineUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(data.url)}&text=${encodeURIComponent(message)}`;
+                    window.open(lineUrl, '_blank');
+                })
+                .catch(err => alert('Error: ' + err.message));
+        });
 
-                // Simple Thai message for now
-                const message = `ทีมงานตระกูลเฉินฯ แจ้งรายละเอียดตามด้านล่าง กรุณาคลิกลิงค์ตามที่แนบมา
-📋 Service Proposal: {{ booking.booking_reference }}
+        document.getElementById('shareFacebook')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            generateShareToken()
+                .then(data => {
+                    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(data.url)}`;
+                    window.open(facebookUrl, '_blank');
+                })
+                .catch(err => alert('Error: ' + err.message));
+        });
 
-🔗 View Booking: {{ url_for('voucher.view', id=booking.id, _external=True) }}
+        document.getElementById('shareEmail')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const bookingRef = bookingReference;
+            generateShareToken()
+                .then(data => {
+                    const subject = `Tour Voucher - ${bookingRef}`;
+                    const body = `Please find your tour voucher at the following link:\n\n${data.url}\n\nThis link will expire in 30 days.`;
+                    const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    window.location.href = emailUrl;
+                })
+                .catch(err => alert('Error: ' + err.message));
+        });
 
-📞 Tel: +662 2744216
-📧 Email: booking@dhakulchan.com
-📱 Line OA: @dhakulchan`;
+        document.getElementById('shareTelegram')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const bookingRef = bookingReference;
+            generateShareToken()
+                .then(data => {
+                    const message = `Tour Voucher - ${bookingRef}\n${data.url}`;
+                    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(data.url)}&text=${encodeURIComponent(message)}`;
+                    window.open(telegramUrl, '_blank');
+                })
+                .catch(err => alert('Error: ' + err.message));
+        });
 
-                // Copy to clipboard
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(message).then(() => {
-                        console.log('✅ Message copied successfully!');
-                        alert('✅ Thai message copied to clipboard!');
-                    }).catch(err => {
-                        console.error('❌ Clipboard failed:', err);
-                        alert('Message:\n\n' + message);
-                    });
-                } else {
-                    alert('Message:\n\n' + message);
-                }
-            });
+        document.getElementById('shareTwitter')?.addEventListener('click', function (e) {
+            e.preventDefault();
+            const bookingRef = bookingReference;
+            generateShareToken()
+                .then(data => {
+                    const message = `Tour Voucher - ${bookingRef}`;
+                    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}&url=${encodeURIComponent(data.url)}`;
+                    window.open(twitterUrl, '_blank');
+                })
+                .catch(err => alert('Error: ' + err.message));
+        });
+    }); // Close DOMContentLoaded
 
-            console.log('✅ Copy message handler attached successfully');
-            return true;
-        } else {
-            console.error('❌ Copy Message button not found!');
-            return false;
-        }
-    }
+    // Function to setup copy message
+    // Copy Message functionality is handled by window.copyThaiMessage() defined above
+    // which is called via onclick="copyThaiMessage(); return false;" in the HTML
 
-    // Try setup immediately
-    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setupCopyMessage();
-    } else {
-        document.addEventListener('DOMContentLoaded', setupCopyMessage);
-    }
 
-    // Also try with a timeout as backup
-    setTimeout(setupCopyMessage, 500);
-    setTimeout(setupCopyMessage, 1000);
-
-    copyBtn.onclick = function (e) {
-        e.preventDefault();
-        console.log('🎯 Copy Message button clicked via onclick!');
-
-        // Show loading indicator
-        const button = document.getElementById('copyMessage');
-        const originalText = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
-        button.disabled = true;
-
-        // Generate share token first
-        fetch(`{{ url_for('voucher.generate_share_token', id=booking.id) }}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({ minutes: 172800 }) // 120 days = 120 * 24 * 60 = 172800 minutes
-        })
-            .then(r => {
-                if (!r.ok) {
-                    throw new Error(`HTTP ${r.status}: ${r.statusText}`);
-                }
-                return r.json();
-            })
-            .then(data => {
-                if (data.success && data.token) {
-                    // Create the Thai message with actual share links
-                    const baseUrl = window.location.origin;
-                    const shareUrl = `${baseUrl}/public/booking/${data.token}`;
-
-                    const thaiMessage = `ทีมงานตระกูลเฉินฯ แจ้งรายละเอียดตามด้านล่าง กรุณาคลิกลิงค์ตามที่แนบมา
-� Service Proposal: {{ booking.booking_reference }}
-
-🔗 View Booking: ${shareUrl}
-
-🖼️ Download PNG: ${shareUrl}/png
-
-📄 Download PDF: ${shareUrl}/pdf
-
-📞 Tel: +662 2744216
-📧 Email: booking@dhakulchan.com
-📱 Line OA: @dhakulchan
-� Secure link (expires in 120 days)`;
-
-                    return navigator.clipboard.writeText(thaiMessage).then(() => {
-                        button.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
-                        setTimeout(() => {
-                            button.innerHTML = originalText;
-                            button.disabled = false;
-                        }, 2000);
-
-                        // Show success toast
-                        const toast = document.createElement('div');
-                        toast.className = 'alert alert-success position-fixed';
-                        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; opacity: 0.9; max-width: 400px;';
-                        toast.innerHTML = '<i class="fas fa-check-circle me-2"></i>Thai message with share links copied!';
-                        document.body.appendChild(toast);
-                        setTimeout(() => toast.remove(), 3000);
-                    });
-                } else {
-                    throw new Error('Failed to generate share token');
-                }
-            })
-            .catch((error) => {
-                console.error('❌ Share token generation failed:', error);
-
-                // Fallback: use basic Thai message without share links
-                const fallbackMessage = `ทีมงานตระกูลเฉินฯ แจ้งรายละเอียดตามด้านล่าง กรุณาคลิกลิงค์ตามที่แนบมา
-📋 Service Proposal: {{ booking.booking_reference }}
-
-🔗 View Booking: {{ url_for('voucher.view', id=booking.id, _external=True) }}
-
-📞 Tel: +662 2744216
-📧 Email: booking@dhakulchan.com
-📱 Line OA: @dhakulchan`;
-
-                navigator.clipboard.writeText(fallbackMessage).then(() => {
-                    button.innerHTML = '<i class="fas fa-check me-2"></i>Copied!';
-                    setTimeout(() => {
-                        button.innerHTML = originalText;
-                        button.disabled = false;
-                    }, 2000);
-
-                    // Show fallback success toast
-                    const toast = document.createElement('div');
-                    toast.className = 'alert alert-warning position-fixed';
-                    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; opacity: 0.9; max-width: 400px;';
-                    toast.innerHTML = '<i class="fas fa-info-circle me-2"></i>Thai message copied (basic version)!';
-                    document.body.appendChild(toast);
-                    setTimeout(() => toast.remove(), 3000);
-                }).catch(() => {
-                    // Final fallback: show in alert
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                    alert('Message:\n\n' + fallbackMessage);
-                });
-            });
 
 </script>
 {% endblock %}
@@ -1540,232 +1583,211 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/th.js"></script>
 <!-- TinyMCE is already loaded in base.html -->
 <script>
-        // TinyMCE disabled for itineraryText - using plain textarea with line breaks
-        // Init TinyMCE for guest list only
-        tinymce.init({
-            selector: '#guest-list-textarea',
-            menubar: false,
-            statusbar: false,
-            height: 150,
-            plugins: 'lists link table',
-            toolbar: 'bold italic underline | bullist numlist | link | table | removeformat',
-            content_style: 'body { font-size:12px; }',
-            placeholder: 'Enter each guest name on a separate line',
-            readonly: false
-        });
-        // Guest list functions
-        function addGuest() {
-            // Since we're using TinyMCE textarea, we can focus on the textarea
-            const textarea = document.getElementById('guest-list-textarea');
-            if (textarea) {
-                textarea.focus();
-            }
+    // TinyMCE disabled for both itineraryText and guest-list-textarea
+    // Using plain textarea with line breaks for better control
+
+    // Guest list functions
+    function addGuest() {
+        const textarea = document.getElementById('guest-list-textarea');
+        if (textarea) {
+            textarea.focus();
         }
-        function removeGuest(btn) {
-            // Not applicable for textarea approach
-        }
-        function collectGuests() {
-            // Get text from TinyMCE editor or fallback to textarea
-            let guest_text = '';
-            if (tinymce.get('guest-list-textarea')) {
-                guest_text = tinymce.get('guest-list-textarea').getContent({ format: 'text' });
-            } else {
-                const textarea = document.getElementById('guest-list-textarea');
-                guest_text = textarea ? textarea.value : '';
-            }
-            return guest_text.split('\n').map(line => line.trim()).filter(line => line);
-        }
-        // Override saveRows to include guest list & TinyMCE content
-        const origSaveRows = window.saveRows;
-        function saveRows() {
-            const rows = collectRows();
-            // itineraryText is now plain textarea (no TinyMCE)
-            const description = document.getElementById('itineraryText').value.trim();
-            const flight_info = document.getElementById('flightInfoText').value.trim();
+    }
+    function removeGuest(btn) {
+        // Not applicable for textarea approach
+    }
+    function collectGuests() {
+        // Get text from plain textarea
+        const textarea = document.getElementById('guest-list-textarea');
+        const guest_text = textarea ? textarea.value : '';
+        return guest_text.split('\n').map(line => line.trim()).filter(line => line);
+    }
+    // Override saveRows to include guest list content
+    const origSaveRows = window.saveRows;
+    function saveRows() {
+        const rows = collectRows();
+        // itineraryText is now plain textarea (no TinyMCE)
+        const description = document.getElementById('itineraryText').value.trim();
+        const flight_info = document.getElementById('flightInfoText').value.trim();
 
-            // Get guest list from TinyMCE or fallback to textarea
-            let guest_list_text = '';
-            if (tinymce.get('guest-list-textarea')) {
-                guest_list_text = tinymce.get('guest-list-textarea').getContent({ format: 'text' });
-            } else {
-                const guest_list_textarea = document.getElementById('guest-list-textarea');
-                guest_list_text = guest_list_textarea ? guest_list_textarea.value.trim() : '';
-            }
-            const guest_list = guest_list_text ? guest_list_text.split('\n').map(line => line.trim()).filter(line => line) : [];
+        // Get guest list from plain textarea
+        const guest_list_textarea = document.getElementById('guest-list-textarea');
+        const guest_list_text = guest_list_textarea ? guest_list_textarea.value.trim() : '';
+        const guest_list = guest_list_text ? guest_list_text.split('\n').map(line => line.trim()).filter(line => line) : [];
 
-            // Collect voucher images data
-            const voucher_images = collectVoucherImages();
-            console.log('saveRows: about to send voucher_images:', voucher_images);
-
-            // Collect selected voucher album IDs from library
-            const voucher_album_ids = collectVoucherAlbumIds();
-            console.log('saveRows: about to send voucher_album_ids:', voucher_album_ids);
-
-            const supplier_id = document.getElementById('supplierSelect')?.value || '';
-
-            const payload = {
-                rows,
-                description,
-                flight_info,
-                guest_list,
-                supplier_id,
-                voucher_images,
-                voucher_album_ids
-            };
-            console.log('saveRows: full payload:', payload);
-
-            fetch(`{{ url_for('voucher.save_rows_api', id=booking.id) }}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            })
-                .then(r => r.json())
-                .then(d => {
-                    if (d.success) {
-                        location.reload();
-                    } else {
-                        alert(d.message || 'Save failed');
-                    }
-                })
-                .catch(() => alert('Error'));
-        }
-        window.saveRows = saveRows;
-
-        // Collect voucher images data for saving
-        function collectVoucherImages() {
-            const container = document.getElementById('voucherImagesContainer');
-            if (!container) {
-                console.log('collectVoucherImages: container not found');
-                return [];
-            }
-
-            const imageItems = container.querySelectorAll('.voucher-image-item');
-            const images = [];
-
-            imageItems.forEach((item, index) => {
-                const img = item.querySelector('img');
-                const imageId = item.getAttribute('data-image-id');
-                const titleInput = item.querySelector('.image-title-input');
-
-                if (img && img.src) {
-                    images.push({
-                        id: imageId || `img_${Date.now()}_${index}`,
-                        url: img.src,
-                        title: titleInput ? titleInput.value.trim() : '',
-                        order: index
-                    });
-                }
-            });
-
-            console.log('collectVoucherImages: collected', images.length, 'images:', images);
-            return images;
-        }
+        // Collect voucher images data
+        const voucher_images = collectVoucherImages();
+        console.log('saveRows: about to send voucher_images:', voucher_images);
 
         // Collect selected voucher album IDs from library
-        function collectVoucherAlbumIds() {
-            const select = document.getElementById('voucherAlbumsSelect');
-            if (!select) {
-                console.log('collectVoucherAlbumIds: select not found');
-                return [];
+        const voucher_album_ids = collectVoucherAlbumIds();
+        console.log('saveRows: about to send voucher_album_ids:', voucher_album_ids);
+
+        const supplier_id = document.getElementById('supplierSelect')?.value || '';
+
+        const payload = {
+            rows,
+            description,
+            flight_info,
+            guest_list,
+            supplier_id,
+            voucher_images,
+            voucher_album_ids
+        };
+        console.log('saveRows: full payload:', payload);
+
+        fetch(`{{ url_for('voucher.save_rows_api', id=booking.id) }}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(r => r.json())
+            .then(d => {
+                if (d.success) {
+                    location.reload();
+                } else {
+                    alert(d.message || 'Save failed');
+                }
+            })
+            .catch(() => alert('Error'));
+    }
+    window.saveRows = saveRows;
+
+    // Collect voucher images data for saving
+    function collectVoucherImages() {
+        const container = document.getElementById('voucherImagesContainer');
+        if (!container) {
+            console.log('collectVoucherImages: container not found');
+            return [];
+        }
+
+        const imageItems = container.querySelectorAll('.voucher-image-item');
+        const images = [];
+
+        imageItems.forEach((item, index) => {
+            const img = item.querySelector('img');
+            const imageId = item.getAttribute('data-image-id');
+            const titleInput = item.querySelector('.image-title-input');
+
+            if (img && img.src) {
+                images.push({
+                    id: imageId || `img_${Date.now()}_${index}`,
+                    url: img.src,
+                    title: titleInput ? titleInput.value.trim() : '',
+                    order: index
+                });
             }
+        });
 
-            const selectedOptions = Array.from(select.selectedOptions);
-            const albumIds = selectedOptions.map(option => parseInt(option.value)).filter(id => !isNaN(id));
+        console.log('collectVoucherImages: collected', images.length, 'images:', images);
+        return images;
+    }
 
-            console.log('collectVoucherAlbumIds: collected', albumIds.length, 'album IDs:', albumIds);
-            return albumIds;
+    // Collect selected voucher album IDs from library
+    function collectVoucherAlbumIds() {
+        const select = document.getElementById('voucherAlbumsSelect');
+        if (!select) {
+            console.log('collectVoucherAlbumIds: select not found');
+            return [];
         }
 
-        // Update image title function with immediate save
-        function updateImageTitle(input, imageId) {
-            const title = input.value.trim();
-            console.log('📝 Image title updated for', imageId, ':', title);
+        const selectedOptions = Array.from(select.selectedOptions);
+        const albumIds = selectedOptions.map(option => parseInt(option.value)).filter(id => !isNaN(id));
 
-            // Show feedback
-            const originalBorder = input.style.border;
-            input.style.border = '2px solid #28a745';
-            setTimeout(() => {
-                input.style.border = originalBorder;
-            }, 500);
-        }
+        console.log('collectVoucherAlbumIds: collected', albumIds.length, 'album IDs:', albumIds);
+        return albumIds;
+    }
 
-        // Declare SUPPLIERS variable globally
-        let SUPPLIERS = [];
+    // Update image title function with immediate save
+    function updateImageTitle(input, imageId) {
+        const title = input.value.trim();
+        console.log('📝 Image title updated for', imageId, ':', title);
 
-        function loadSuppliers(cb) {
-            fetch("{{ url_for('supplier.api_list') }}")
-                .then(r => r.json())
-                .then(j => { SUPPLIERS = j.suppliers || []; buildMainSupplierSelect(); updateRowSupplierSelects(); cb && cb(); })
-                .catch(() => { document.getElementById('supplierStatus').textContent = 'Load suppliers failed'; document.getElementById('supplierStatus').style.display = 'block'; });
-        }
-        function buildMainSupplierSelect() {
-            const sel = document.getElementById('supplierSelect'); if (!sel) return;
-            const current = sel.dataset.current || '';
-            sel.innerHTML = '<option value="">-- Select Supplier --</option>' + SUPPLIERS.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-            if (current) sel.value = current;
-        }
-        function supplierOptionsHTML() {
-            return '<option value="">-- Select Supplier --</option>' + SUPPLIERS.map(s => `<option value="${s.id}" data-sname="${s.name}">${s.name}</option>`).join('') + '<option value="__custom__">Other / Custom</option>' + '<option value="__add_new__">+ Add New Supplier</option>';
-        }
-        function updateRowSupplierSelects() {
-            document.querySelectorAll('select[name="service_by_supplier"]').forEach(sel => {
-                const currentText = sel.getAttribute('data-current');
-                const prevVal = sel.value; // Store current selected value
-                sel.innerHTML = supplierOptionsHTML();
+        // Show feedback
+        const originalBorder = input.style.border;
+        input.style.border = '2px solid #28a745';
+        setTimeout(() => {
+            input.style.border = originalBorder;
+        }, 500);
+    }
 
-                // Get associated textarea
-                const ta = sel.parentElement.querySelector('textarea[name="service_by"]');
+    // Declare SUPPLIERS variable globally
+    let SUPPLIERS = [];
 
-                // Try to restore the selection
-                if (currentText && currentText.trim()) {
-                    // First check if current text matches any supplier name exactly
-                    const supplierOpt = Array.from(sel.options).find(o => o.dataset.sname && o.dataset.sname.trim() === currentText.trim());
-                    if (supplierOpt) {
-                        // Found matching supplier - select it and hide textarea
-                        supplierOpt.selected = true;
-                        if (ta) {
-                            ta.style.display = 'none';
-                            ta.value = currentText; // Keep the text in textarea too
-                        }
-                    } else {
-                        // No supplier match - check if text contains supplier name (multi-line case)
-                        let foundSupplier = null;
-                        for (const option of sel.options) {
-                            if (option.dataset.sname && currentText.includes(option.dataset.sname)) {
-                                foundSupplier = option;
-                                break;
-                            }
-                        }
+    function loadSuppliers(cb) {
+        fetch("{{ url_for('supplier.api_list') }}")
+            .then(r => r.json())
+            .then(j => { SUPPLIERS = j.suppliers || []; buildMainSupplierSelect(); updateRowSupplierSelects(); cb && cb(); })
+            .catch(() => { document.getElementById('supplierStatus').textContent = 'Load suppliers failed'; document.getElementById('supplierStatus').style.display = 'block'; });
+    }
+    function buildMainSupplierSelect() {
+        const sel = document.getElementById('supplierSelect'); if (!sel) return;
+        const current = sel.dataset.current || '';
+        sel.innerHTML = '<option value="">-- Select Supplier --</option>' + SUPPLIERS.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        if (current) sel.value = current;
+    }
+    function supplierOptionsHTML() {
+        return '<option value="">-- Select Supplier --</option>' + SUPPLIERS.map(s => `<option value="${s.id}" data-sname="${s.name}">${s.name}</option>`).join('') + '<option value="__custom__">Other / Custom</option>' + '<option value="__add_new__">+ Add New Supplier</option>';
+    }
+    function updateRowSupplierSelects() {
+        document.querySelectorAll('select[name="service_by_supplier"]').forEach(sel => {
+            const currentText = sel.getAttribute('data-current');
+            const prevVal = sel.value; // Store current selected value
+            sel.innerHTML = supplierOptionsHTML();
 
-                        if (foundSupplier) {
-                            // Found supplier name in text - select supplier and show full text
-                            foundSupplier.selected = true;
-                            if (ta) {
-                                ta.style.display = 'block';
-                                ta.value = currentText;
-                            }
-                        } else {
-                            // No supplier found - use custom field
-                            sel.value = '__custom__';
-                            if (ta) {
-                                ta.style.display = 'block';
-                                ta.value = currentText;
-                            }
+            // Get associated textarea
+            const ta = sel.parentElement.querySelector('textarea[name="service_by"]');
+
+            // Try to restore the selection
+            if (currentText && currentText.trim()) {
+                // First check if current text matches any supplier name exactly
+                const supplierOpt = Array.from(sel.options).find(o => o.dataset.sname && o.dataset.sname.trim() === currentText.trim());
+                if (supplierOpt) {
+                    // Found matching supplier - select it and hide textarea
+                    supplierOpt.selected = true;
+                    if (ta) {
+                        ta.style.display = 'none';
+                        ta.value = currentText; // Keep the text in textarea too
+                    }
+                } else {
+                    // No supplier match - check if text contains supplier name (multi-line case)
+                    let foundSupplier = null;
+                    for (const option of sel.options) {
+                        if (option.dataset.sname && currentText.includes(option.dataset.sname)) {
+                            foundSupplier = option;
+                            break;
                         }
                     }
-                } else if (prevVal) {
-                    sel.value = prevVal;
+
+                    if (foundSupplier) {
+                        // Found supplier name in text - select supplier and show full text
+                        foundSupplier.selected = true;
+                        if (ta) {
+                            ta.style.display = 'block';
+                            ta.value = currentText;
+                        }
+                    } else {
+                        // No supplier found - use custom field
+                        sel.value = '__custom__';
+                        if (ta) {
+                            ta.style.display = 'block';
+                            ta.value = currentText;
+                        }
+                    }
                 }
-            });
-        }
-        // Inline quick add supplier (no popup)
-        function showInlineSupplierForm() {
-            if (document.getElementById('inlineSupplierForm')) return;
-            const cardBody = document.querySelector('#supplierSelect').closest('.card-body');
-            const div = document.createElement('div');
-            div.id = 'inlineSupplierForm';
-            div.className = 'border p-2 rounded bg-light mb-2';
-            div.innerHTML = `
+            } else if (prevVal) {
+                sel.value = prevVal;
+            }
+        });
+    }
+    // Inline quick add supplier (no popup)
+    function showInlineSupplierForm() {
+        if (document.getElementById('inlineSupplierForm')) return;
+        const cardBody = document.querySelector('#supplierSelect').closest('.card-body');
+        const div = document.createElement('div');
+        div.id = 'inlineSupplierForm';
+        div.className = 'border p-2 rounded bg-light mb-2';
+        div.innerHTML = `
             <div class="row g-2 align-items-end mb-2">
                 <div class="col-4"><label class="form-label small mb-1">Name *</label><input type="text" id="newSupplierName" class="form-control form-control-sm" placeholder="Supplier name" /></div>
                 <div class="col-2"><label class="form-label small mb-1">Phone</label><input type="text" id="newSupplierPhone" class="form-control form-control-sm" /></div>
@@ -1776,158 +1798,159 @@
                 <button type="button" class="btn btn-sm btn-success" onclick="createSupplierInline()"><i class="fas fa-save me-1"></i>Save</button>
                 <button type="button" class="btn btn-sm btn-outline-secondary" onclick="cancelInlineSupplier()">Cancel</button>
             </div>`;
-            cardBody.insertBefore(div, cardBody.firstChild);
-            document.getElementById('newSupplierName').focus();
-        }
-        function cancelInlineSupplier() { const f = document.getElementById('inlineSupplierForm'); if (f) f.remove(); }
-        function createSupplierInline() {
-            const name = document.getElementById('newSupplierName').value.trim();
-            const phone = document.getElementById('newSupplierPhone').value.trim();
-            const email = document.getElementById('newSupplierEmail').value.trim();
-            const real_group_email = document.getElementById('newSupplierGroupEmail')?.value.trim();
-            if (!name) { alert('Name required'); return; }
-            fetch("{{ url_for('supplier.api_create') }}", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, email, real_group_email }) })
-                .then(r => r.json()).then(j => { if (j.success) { cancelInlineSupplier(); refreshSuppliers(); setTimeout(() => { const sel = document.getElementById('supplierSelect'); sel.value = j.supplier.id; updateRowSupplierSelects(); }, 200); } else { alert(j.message || 'Error'); } })
-                .catch(() => alert('Error'));
-        }
-        function updateDataCurrentAttributes() {
-            document.querySelectorAll('select[name="service_by_supplier"]').forEach(sel => {
-                const currentValue = sel.value;
-                const ta = sel.parentElement.querySelector('textarea[name="service_by"]');
+        cardBody.insertBefore(div, cardBody.firstChild);
+        document.getElementById('newSupplierName').focus();
+    }
+    function cancelInlineSupplier() { const f = document.getElementById('inlineSupplierForm'); if (f) f.remove(); }
+    function createSupplierInline() {
+        const name = document.getElementById('newSupplierName').value.trim();
+        const phone = document.getElementById('newSupplierPhone').value.trim();
+        const email = document.getElementById('newSupplierEmail').value.trim();
+        const real_group_email = document.getElementById('newSupplierGroupEmail')?.value.trim();
+        if (!name) { alert('Name required'); return; }
+        fetch("{{ url_for('supplier.api_create') }}", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, phone, email, real_group_email }) })
+            .then(r => r.json()).then(j => { if (j.success) { cancelInlineSupplier(); refreshSuppliers(); setTimeout(() => { const sel = document.getElementById('supplierSelect'); sel.value = j.supplier.id; updateRowSupplierSelects(); }, 200); } else { alert(j.message || 'Error'); } })
+            .catch(() => alert('Error'));
+    }
+    function updateDataCurrentAttributes() {
+        document.querySelectorAll('select[name="service_by_supplier"]').forEach(sel => {
+            const currentValue = sel.value;
+            const ta = sel.parentElement.querySelector('textarea[name="service_by"]');
 
-                if (currentValue === '__custom__') {
-                    // For custom entries, use textarea value
-                    if (ta) {
-                        sel.setAttribute('data-current', ta.value.trim());
-                    }
-                } else if (currentValue) {
-                    // For supplier selection, decide what to store in data-current
-                    const supplier = SUPPLIERS.find(s => s.id == currentValue);
-                    if (supplier) {
-                        // If supplier has additional info, store full textarea content
-                        if (supplier.address || supplier.phone || supplier.notes) {
-                            sel.setAttribute('data-current', ta.value.trim());
-                        } else {
-                            // For simple suppliers, store just the name
-                            sel.setAttribute('data-current', supplier.name);
-                        }
-                    } else {
-                        // Fallback to supplier name from option
-                        const selectedOption = sel.options[sel.selectedIndex];
-                        if (selectedOption && selectedOption.dataset.sname) {
-                            sel.setAttribute('data-current', selectedOption.dataset.sname);
-                        }
-                    }
+            if (currentValue === '__custom__') {
+                // For custom entries, use textarea value
+                if (ta) {
+                    sel.setAttribute('data-current', ta.value.trim());
                 }
-            });
-        }
-
-        function refreshSuppliers() { loadSuppliers(() => { /* refreshed */ }); }
-
-        // Format supplier text to show first line bold, rest normal
-        function formatSupplierText(textarea) {
-            const cell = textarea.closest('.supplier-cell');
-            if (!cell) return;
-
-            const display = cell.querySelector('.supplier-display');
-            const nameDiv = cell.querySelector('.supplier-name');
-            const detailsDiv = cell.querySelector('.supplier-details');
-
-            if (!display || !nameDiv || !detailsDiv) return;
-
-            const text = textarea.value;
-            const lines = text.split('\n');
-
-            if (lines.length > 0) {
-                nameDiv.textContent = lines[0]; // First line bold
-                detailsDiv.textContent = lines.slice(1).join('\n'); // Rest normal
-            }
-        }
-
-        function handleSupplierChange(sel) {
-            const cell = sel.closest('.supplier-cell');
-            const ta = cell.querySelector('textarea[name="service_by"]');
-            const display = cell.querySelector('.supplier-display');
-            const nameDiv = cell.querySelector('.supplier-name');
-            const detailsDiv = cell.querySelector('.supplier-details');
-
-            if (sel.value === '__custom__') {
-                ta.style.display = 'block';
-                if (display) display.style.display = 'none';
-                ta.focus();
-            }
-            else if (sel.value === '__add_new__') {
-                sel.value = '';
-                showInlineSupplierForm();
-            }
-            else if (sel.value) {
-                // Find supplier data and populate fields with line breaks
-                const supplier = SUPPLIERS.find(s => s.id == sel.value);
+            } else if (currentValue) {
+                // For supplier selection, decide what to store in data-current
+                const supplier = SUPPLIERS.find(s => s.id == currentValue);
                 if (supplier) {
-                    let supplierText = supplier.name || '';
-                    const details = [];
-
-                    if (supplier.address) {
-                        details.push(supplier.address);
-                    }
-                    if (supplier.phone) {
-                        details.push(supplier.phone);
-                    }
-                    if (supplier.notes) {
-                        details.push(supplier.notes);
-                    }
-                    if (supplier.remarks) {
-                        details.push(supplier.remarks);
-                    }
-
-                    // Set textarea value (for form submission)
-                    if (details.length > 0) {
-                        supplierText += '\n' + details.join('\n');
-                    }
-                    ta.value = supplierText;
-
-                    // Show formatted display
-                    if (nameDiv && detailsDiv && display) {
-                        nameDiv.textContent = supplier.name || '';
-                        detailsDiv.textContent = details.join('\n');
-                        display.style.display = 'block';
-                        ta.style.display = 'none';
+                    // If supplier has additional info, store full textarea content
+                    if (supplier.address || supplier.phone || supplier.notes) {
+                        sel.setAttribute('data-current', ta.value.trim());
                     } else {
-                        // Fallback to textarea
-                        ta.style.display = details.length > 0 ? 'block' : 'none';
+                        // For simple suppliers, store just the name
+                        sel.setAttribute('data-current', supplier.name);
                     }
                 } else {
-                    // Simple supplier name only
-                    ta.value = sel.options[sel.selectedIndex]?.dataset.sname || '';
-                    if (display) display.style.display = 'none';
-                    ta.style.display = 'none';
+                    // Fallback to supplier name from option
+                    const selectedOption = sel.options[sel.selectedIndex];
+                    if (selectedOption && selectedOption.dataset.sname) {
+                        sel.setAttribute('data-current', selectedOption.dataset.sname);
+                    }
                 }
             }
-            else {
-                ta.style.display = 'none';
-                if (display) display.style.display = 'none';
-                ta.value = '';
-            }
+        });
+    }
 
-            // Update data-current attribute
-            updateDataCurrentAttributes();
+    function refreshSuppliers() { loadSuppliers(() => { /* refreshed */ }); }
+
+    // Format supplier text to show first line bold, rest normal
+    function formatSupplierText(textarea) {
+        const cell = textarea.closest('.supplier-cell');
+        if (!cell) return;
+
+        const display = cell.querySelector('.supplier-display');
+        const nameDiv = cell.querySelector('.supplier-name');
+        const detailsDiv = cell.querySelector('.supplier-details');
+
+        if (!display || !nameDiv || !detailsDiv) return;
+
+        const text = textarea.value;
+        const lines = text.split('\n');
+
+        if (lines.length > 0) {
+            nameDiv.textContent = lines[0]; // First line bold
+            detailsDiv.textContent = lines.slice(1).join('\n'); // Rest normal
         }
-        function renumber() {
-            document.querySelectorAll('#voucher-body tr').forEach((tr, i) => {
-                const numberSpan = tr.querySelector('.row-number');
-                if (numberSpan) {
-                    numberSpan.textContent = i + 1;
-                } else {
-                    tr.querySelector('.index-col').textContent = i + 1;
+    }
+
+    function handleSupplierChange(sel) {
+        const cell = sel.closest('.supplier-cell');
+        const ta = cell.querySelector('textarea[name="service_by"]');
+        const display = cell.querySelector('.supplier-display');
+        const nameDiv = cell.querySelector('.supplier-name');
+        const detailsDiv = cell.querySelector('.supplier-details');
+
+        if (sel.value === '__custom__') {
+            ta.style.display = 'block';
+            if (display) display.style.display = 'none';
+            ta.focus();
+        }
+        else if (sel.value === '__add_new__') {
+            sel.value = '';
+            showInlineSupplierForm();
+        }
+        else if (sel.value) {
+            // Find supplier data and populate fields with line breaks
+            const supplier = SUPPLIERS.find(s => s.id == sel.value);
+            if (supplier) {
+                let supplierText = supplier.name || '';
+                const details = [];
+
+                if (supplier.address) {
+                    details.push(supplier.address);
                 }
-            });
+                if (supplier.phone) {
+                    details.push(supplier.phone);
+                }
+                if (supplier.notes) {
+                    details.push(supplier.notes);
+                }
+                if (supplier.remarks) {
+                    details.push(supplier.remarks);
+                }
+
+                // Set textarea value (for form submission)
+                if (details.length > 0) {
+                    supplierText += '\n' + details.join('\n');
+                }
+                ta.value = supplierText;
+
+                // Show formatted display
+                if (nameDiv && detailsDiv && display) {
+                    nameDiv.textContent = supplier.name || '';
+                    detailsDiv.textContent = details.join('\n');
+                    display.style.display = 'block';
+                    ta.style.display = 'none';
+                } else {
+                    // Fallback to textarea
+                    ta.style.display = details.length > 0 ? 'block' : 'none';
+                }
+            } else {
+                // Simple supplier name only
+                ta.value = sel.options[sel.selectedIndex]?.dataset.sname || '';
+                if (display) display.style.display = 'none';
+                ta.style.display = 'none';
+            }
         }
-        function addRow(autoFromMain) {
-            const tbody = document.getElementById('voucher-body');
-            const tr = document.createElement('tr');
-            tr.className = 'sortable-row';
-            tr.draggable = true;
-            tr.innerHTML = `<td class="text-center index-col"><i class="fas fa-grip-vertical text-muted me-1" style="cursor:move"></i><span class="row-number"></span></td>
+        else {
+            ta.style.display = 'none';
+            if (display) display.style.display = 'none';
+            ta.value = '';
+        }
+
+        // Update data-current attribute
+        updateDataCurrentAttributes();
+    }
+    function renumber() {
+        document.querySelectorAll('#voucher-body tr').forEach((tr, i) => {
+            const numberSpan = tr.querySelector('.row-number');
+            if (numberSpan) {
+                numberSpan.textContent = i + 1;
+            } else {
+                tr.querySelector('.index-col').textContent = i + 1;
+            }
+        });
+    }
+    // Make addRow global so onclick can access it
+    window.addRow = function (autoFromMain) {
+        const tbody = document.getElementById('voucher-body');
+        const tr = document.createElement('tr');
+        tr.className = 'sortable-row';
+        tr.draggable = true;
+        tr.innerHTML = `<td class="text-center index-col"><i class="fas fa-grip-vertical text-muted me-1" style="cursor:move"></i><span class="row-number"></span></td>
 <td><input type="text" name="arrival" class="form-control form-control-sm date-input" placeholder="DD/MM/YYYY"/></td>
 <td><input type="text" name="departure" class="form-control form-control-sm date-input" placeholder="DD/MM/YYYY"/></td>
 <td class="supplier-cell">
@@ -1940,200 +1963,197 @@
 </td>
 <td><textarea name="type" rows="3" class="form-control form-control-sm thai-text"></textarea></td>
 <td class="text-center"><button class="btn btn-link text-danger p-0" onclick="removeRow(this)"><i class='fas fa-times'></i></button></td>`;
-            tbody.appendChild(tr); renumber(); initDatePickers(tr.querySelectorAll('.date-input'));
-            // populate supplier options
-            const sel = tr.querySelector('select[name="service_by_supplier"]'); sel.innerHTML = supplierOptionsHTML();
-            if (autoFromMain) {
-                const mainSel = document.getElementById('supplierSelect');
-                if (mainSel && mainSel.value) sel.value = mainSel.value;
-            }
-            // Re-initialize sortable after adding new row
-            initSortable();
+        tbody.appendChild(tr); renumber(); initDatePickers(tr.querySelectorAll('.date-input'));
+        // populate supplier options
+        const sel = tr.querySelector('select[name="service_by_supplier"]'); sel.innerHTML = supplierOptionsHTML();
+        if (autoFromMain) {
+            const mainSel = document.getElementById('supplierSelect');
+            if (mainSel && mainSel.value) sel.value = mainSel.value;
         }
-        // toggleCustomSupplier logic replaced by handleSupplierChange
-        function removeRow(btn) { btn.closest('tr').remove(); renumber(); }
-        function collectRows() { return Array.from(document.querySelectorAll('#voucher-body tr')).map(tr => { const sel = tr.querySelector('select[name="service_by_supplier"]'); const ta = tr.querySelector('textarea[name="service_by"]'); let serviceBy = ''; if (sel) { if (sel.value === '__custom__') serviceBy = ta.value.trim(); else if (sel.value) serviceBy = sel.options[sel.selectedIndex].dataset.sname || ''; else serviceBy = ta.value.trim(); } else { serviceBy = ta.value.trim(); } return { arrival: tr.querySelector('input[name="arrival"]').value.trim(), departure: tr.querySelector('input[name="departure"]').value.trim(), service_by: serviceBy, type: tr.querySelector('textarea[name="type"]').value.trim() }; }); }
-        function initDatePickers(scopeEls) {
-            const opts = { dateFormat: 'd/m/Y', allowInput: true, locale: flatpickr.l10ns.th };
-            if (scopeEls) {
-                scopeEls.forEach(el => { if (!el._flatpickr) { flatpickr(el, opts); } });
-            } else {
-                document.querySelectorAll('.date-input').forEach(el => { if (!el._flatpickr) { flatpickr(el, opts); } });
-            }
+        // Re-initialize sortable after adding new row
+        initSortable();
+    }
+    // toggleCustomSupplier logic replaced by handleSupplierChange
+    function removeRow(btn) { btn.closest('tr').remove(); renumber(); }
+    function collectRows() { return Array.from(document.querySelectorAll('#voucher-body tr')).map(tr => { const sel = tr.querySelector('select[name="service_by_supplier"]'); const ta = tr.querySelector('textarea[name="service_by"]'); let serviceBy = ''; if (sel) { if (sel.value === '__custom__') serviceBy = ta.value.trim(); else if (sel.value) serviceBy = sel.options[sel.selectedIndex].dataset.sname || ''; else serviceBy = ta.value.trim(); } else { serviceBy = ta.value.trim(); } return { arrival: tr.querySelector('input[name="arrival"]').value.trim(), departure: tr.querySelector('input[name="departure"]').value.trim(), service_by: serviceBy, type: tr.querySelector('textarea[name="type"]').value.trim() }; }); }
+    function initDatePickers(scopeEls) {
+        const opts = { dateFormat: 'd/m/Y', allowInput: true, locale: flatpickr.l10ns.th };
+        if (scopeEls) {
+            scopeEls.forEach(el => { if (!el._flatpickr) { flatpickr(el, opts); } });
+        } else {
+            document.querySelectorAll('.date-input').forEach(el => { if (!el._flatpickr) { flatpickr(el, opts); } });
         }
-        window.addEventListener('DOMContentLoaded', () => {
-            loadSuppliers();
-            updateRowSupplierSelects();
-            renumber();
-            initSortable();
-            initImageSortable();
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+        loadSuppliers();
+        updateRowSupplierSelects();
+        renumber();
+        initSortable();
+        // initImageSortable will be called after it's defined
 
-            // Add event listeners for custom supplier textarea changes
-            document.addEventListener('input', function (e) {
-                if (e.target.matches('textarea[name="service_by"]')) {
-                    // Update data-current attribute when custom supplier text changes
-                    const select = e.target.parentElement.querySelector('select[name="service_by_supplier"]');
-                    if (select && select.value === '__custom__') {
-                        select.setAttribute('data-current', e.target.value.trim());
-                    }
+        // Add event listeners for custom supplier textarea changes
+        document.addEventListener('input', function (e) {
+            if (e.target.matches('textarea[name="service_by"]')) {
+                // Update data-current attribute when custom supplier text changes
+                const select = e.target.parentElement.querySelector('select[name="service_by_supplier"]');
+                if (select && select.value === '__custom__') {
+                    select.setAttribute('data-current', e.target.value.trim());
                 }
-            });
-
-            // Auto fill signature dates with today (DD/MM/YY)
-            const today = new Date();
-            const dd = String(today.getDate()).padStart(2, '0');
-            const mm = String(today.getMonth() + 1).padStart(2, '0');
-            const yy = String(today.getFullYear()).slice(-2);
-            document.querySelectorAll('.sig-date').forEach(span => span.textContent = `${dd}/${mm}/${yy}`);
-            // Convert any existing ISO (YYYY-MM-DD) values into DD/MM/YYYY
-            document.querySelectorAll('.date-input').forEach(inp => {
-                const v = inp.value.trim();
-                if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
-                    const [y, m, d] = v.split('-');
-                    inp.value = `${d}/${m}/${y}`;
-                }
-            });
-            // Basic input mask / validation on blur
-            document.querySelectorAll('.date-input').forEach(inp => {
-                inp.addEventListener('blur', () => {
-                    let v = inp.value.trim();
-                    if (!v) return;
-                    const m = v.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})$/);
-                    if (!m) { inp.classList.add('is-invalid'); return; } else { inp.classList.remove('is-invalid'); }
-                    let d = m[1].padStart(2, '0'); let mo = m[2].padStart(2, '0'); let y = m[3];
-                    if (+d < 1 || +d > 31 || +mo < 1 || +mo > 12) { inp.classList.add('is-invalid'); return; }
-                    inp.value = `${d}/${mo}/${y}`;
-                });
-            });
-            initDatePickers();
+            }
         });
 
-        // Initialize sortable functionality for table rows
-        function initSortable() {
-            const tbody = document.getElementById('voucher-body');
-            if (!tbody) return;
-
-            // Simple drag and drop without external library
-            let draggedElement = null;
-
-            tbody.addEventListener('dragstart', function (e) {
-                if (e.target.closest('.sortable-row')) {
-                    draggedElement = e.target.closest('.sortable-row');
-                    e.dataTransfer.effectAllowed = 'move';
-                    draggedElement.style.opacity = '0.5';
-                }
+        // Auto fill signature dates with today (DD/MM/YY)
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yy = String(today.getFullYear()).slice(-2);
+        document.querySelectorAll('.sig-date').forEach(span => span.textContent = `${dd}/${mm}/${yy}`);
+        // Convert any existing ISO (YYYY-MM-DD) values into DD/MM/YYYY
+        document.querySelectorAll('.date-input').forEach(inp => {
+            const v = inp.value.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+                const [y, m, d] = v.split('-');
+                inp.value = `${d}/${m}/${y}`;
+            }
+        });
+        // Basic input mask / validation on blur
+        document.querySelectorAll('.date-input').forEach(inp => {
+            inp.addEventListener('blur', () => {
+                let v = inp.value.trim();
+                if (!v) return;
+                const m = v.match(/^(\d{1,2})[\/](\d{1,2})[\/](\d{4})$/);
+                if (!m) { inp.classList.add('is-invalid'); return; } else { inp.classList.remove('is-invalid'); }
+                let d = m[1].padStart(2, '0'); let mo = m[2].padStart(2, '0'); let y = m[3];
+                if (+d < 1 || +d > 31 || +mo < 1 || +mo > 12) { inp.classList.add('is-invalid'); return; }
+                inp.value = `${d}/${mo}/${y}`;
             });
+        });
+        initDatePickers();
+    });
 
-            tbody.addEventListener('dragover', function (e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-            });
+    // Initialize sortable functionality for table rows
+    function initSortable() {
+        const tbody = document.getElementById('voucher-body');
+        if (!tbody) return;
 
-            tbody.addEventListener('dragenter', function (e) {
-                e.preventDefault();
-            });
+        // Simple drag and drop without external library
+        let draggedElement = null;
 
-            tbody.addEventListener('drop', function (e) {
-                e.preventDefault();
-                const targetRow = e.target.closest('.sortable-row');
-                if (targetRow && draggedElement && targetRow !== draggedElement) {
-                    const rect = targetRow.getBoundingClientRect();
-                    const nextSibling = (e.clientY - rect.top) > (rect.height / 2) ? targetRow.nextSibling : targetRow;
-                    tbody.insertBefore(draggedElement, nextSibling);
-                    renumber();
-                }
-            });
+        tbody.addEventListener('dragstart', function (e) {
+            if (e.target.closest('.sortable-row')) {
+                draggedElement = e.target.closest('.sortable-row');
+                e.dataTransfer.effectAllowed = 'move';
+                draggedElement.style.opacity = '0.5';
+            }
+        });
 
-            tbody.addEventListener('dragend', function (e) {
-                if (draggedElement) {
-                    draggedElement.style.opacity = '';
-                    draggedElement = null;
-                }
-            });
-        }
-        // collectRows simplified after supplier select removal (date values kept as entered DD/MM/YYYY)
-        function collectRows() {
-            return Array.from(document.querySelectorAll('#voucher-body tr')).map(tr => ({
-                arrival: tr.querySelector('input[name="arrival"]').value.trim(),
-                departure: tr.querySelector('input[name="departure"]').value.trim(),
-                service_by: tr.querySelector('textarea[name="service_by"]').value.trim(),
-                type: tr.querySelector('textarea[name="type"]').value.trim()
-            }));
-        }
+        tbody.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+
+        tbody.addEventListener('dragenter', function (e) {
+            e.preventDefault();
+        });
+
+        tbody.addEventListener('drop', function (e) {
+            e.preventDefault();
+            const targetRow = e.target.closest('.sortable-row');
+            if (targetRow && draggedElement && targetRow !== draggedElement) {
+                const rect = targetRow.getBoundingClientRect();
+                const nextSibling = (e.clientY - rect.top) > (rect.height / 2) ? targetRow.nextSibling : targetRow;
+                tbody.insertBefore(draggedElement, nextSibling);
+                renumber();
+            }
+        });
+
+        tbody.addEventListener('dragend', function (e) {
+            if (draggedElement) {
+                draggedElement.style.opacity = '';
+                draggedElement = null;
+            }
+        });
+    }
+    // collectRows simplified after supplier select removal (date values kept as entered DD/MM/YYYY)
+    function collectRows() {
+        return Array.from(document.querySelectorAll('#voucher-body tr')).map(tr => ({
+            arrival: tr.querySelector('input[name="arrival"]').value.trim(),
+            departure: tr.querySelector('input[name="departure"]').value.trim(),
+            service_by: tr.querySelector('textarea[name="service_by"]').value.trim(),
+            type: tr.querySelector('textarea[name="type"]').value.trim()
+        }));
+    }
 </script>
 
 <script>
-        // Voucher Images Upload & Delete Logic (Multi-upload with sorting)
-        function uploadVoucherImages() {
-            const fileInput = document.getElementById('voucherImagesInput');
-            if (!fileInput.files.length) {
-                alert('กรุณาเลือกรูปภาพก่อน');
-                return;
-            }
-
-            const files = Array.from(fileInput.files);
-            const max = 1048576; // 1MB limit
-
-            // Check file sizes
-            for (const file of files) {
-                if (file.size > max) {
-                    alert(`รูปภาพ ${file.name} มีขนาดเกิน ${Math.round(max / 1024)} KB`);
-                    return;
-                }
-            }
-
-            const formData = new FormData();
-            files.forEach(file => {
-                formData.append('voucher_images', file);
-            });
-
-            fetch(window.location.pathname + '/upload-images', {
-                method: 'POST',
-                body: formData
-            }).then(r => r.json())
-                .then(data => {
-                    if (data.success && data.images) {
-                        const container = document.getElementById('voucherImagesContainer');
-                        data.images.forEach((imageData, index) => {
-                            const imageItem = createImageItem(imageData.url, imageData.id || `img_${Date.now()}_${index}`);
-                            container.appendChild(imageItem);
-                        });
-
-                        // Clear input and preview
-                        fileInput.value = '';
-                        document.getElementById('voucherImagePreview').innerHTML = '';
-
-                        // Re-initialize sortable
-                        initImageSortable();
-
-                        // Re-initialize image click events for new images
-                        if (window.addImageClickEvents) {
-                            window.addImageClickEvents();
-                        }
-                    } else {
-                        alert(data.error || 'Upload failed');
-                    }
-                }).catch(e => {
-                    console.error(e);
-                    alert('Upload error');
-                });
+    // Voucher Images Upload & Delete Logic (Multi-upload with sorting)
+    function uploadVoucherImages() {
+        const fileInput = document.getElementById('voucherImagesInput');
+        if (!fileInput.files.length) {
+            alert('กรุณาเลือกรูปภาพก่อน');
+            return;
         }
 
-        function createImageItem(imageSrc, imageId, title = '') {
-            const div = document.createElement('div');
-            div.className = 'voucher-image-item position-relative border rounded p-2';
-            div.setAttribute('data-image-id', imageId);
-            div.draggable = true;
-            div.style.width = '200px';
+        const files = Array.from(fileInput.files);
+        const max = 1048576; // 1MB limit
 
-            // Get current count for order badge
-            const container = document.getElementById('voucherImagesContainer');
-            const currentCount = container ? container.querySelectorAll('.voucher-image-item').length + 1 : 1;
+        // Check file sizes
+        for (const file of files) {
+            if (file.size > max) {
+                alert(`รูปภาพ ${file.name} มีขนาดเกิน ${Math.round(max / 1024)} KB`);
+                return;
+            }
+        }
 
-            div.innerHTML = `
-            <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
-                <span class="badge bg-primary image-order-badge">${currentCount}</span>
-            </div>
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('voucher_images', file);
+        });
+
+        fetch(window.location.pathname + '/upload-images', {
+            method: 'POST',
+            body: formData
+        }).then(r => r.json())
+            .then(data => {
+                if (data.success && data.images) {
+                    const container = document.getElementById('voucherImagesContainer');
+                    data.images.forEach((imageData, index) => {
+                        const imageItem = createImageItem(imageData.url, imageData.id || `img_${Date.now()}_${index}`);
+                        container.appendChild(imageItem);
+                    });
+
+                    // Clear input and preview
+                    fileInput.value = '';
+                    document.getElementById('voucherImagePreview').innerHTML = '';
+
+                    // Re-initialize sortable
+                    initImageSortable();
+
+                    // Re-initialize image click events for new images
+                    if (window.addImageClickEvents) {
+                        window.addImageClickEvents();
+                    }
+                } else {
+                    alert(data.error || 'Upload failed');
+                }
+            }).catch(e => {
+                console.error(e);
+                alert('Upload error');
+            });
+    }
+
+    function createImageItem(imageSrc, imageId, title = '') {
+        const div = document.createElement('div');
+        div.className = 'voucher-image-item position-relative border rounded p-2';
+        div.setAttribute('data-image-id', imageId);
+        div.draggable = true;
+        div.style.width = '200px';
+
+        // Get current count for order badge
+        const container = document.getElementById('voucherImagesContainer');
+        const currentCount = container ? container.querySelectorAll('.voucher-image-item').length + 1 : 1;
+
+        div.innerHTML = `
             <div class="mb-2">
                 <input type="text" class="form-control form-control-sm image-title-input" 
                        placeholder="ชื่อรูป (ไม่จำเป็น)"
@@ -2141,6 +2161,9 @@
                        onchange="updateImageTitle(this, '${imageId}')">
             </div>
             <div class="position-relative">
+                <div class="position-absolute top-0 start-0 m-2" style="z-index: 10;">
+                    <span class="badge bg-primary image-order-badge">${currentCount}</span>
+                </div>
                 <img src="${imageSrc}" style="width:100%;height:auto;border:1px solid #ddd;padding:4px;background:#fafafa;cursor:zoom-in;" />
                 <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0"
                     style="transform:translate(40%, -40%);" onclick="deleteVoucherImage(this, '${imageId}')">
@@ -2155,469 +2178,480 @@
             </div>
         `;
 
-            return div;
-        }
+        return div;
+    }
 
-        function deleteVoucherImage(btn, imageId) {
-            if (!confirm('ลบรูปภาพ Voucher นี้?')) return;
+    window.deleteVoucherImage = function (btn, imageId) {
+        console.log('🗑️ deleteVoucherImage called with imageId:', imageId);
+        if (!confirm('ลบรูปภาพ Voucher นี้?')) return;
 
-            fetch(window.location.pathname + '/delete-image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image_id: imageId })
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    const imageItem = btn.closest('.voucher-image-item');
-                    if (imageItem) imageItem.remove();
-                } else {
-                    alert(data.error || 'Delete failed');
-                }
-            }).catch(e => {
-                console.error(e);
-                alert('Delete error');
-            });
-        }
+        fetch(window.location.pathname + '/delete-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_id: imageId })
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                const imageItem = btn.closest('.voucher-image-item');
+                if (imageItem) imageItem.remove();
+                showMessage('ลบรูปภาพสำเร็จ', 'success');
+            } else {
+                alert(data.error || 'Delete failed');
+            }
+        }).catch(e => {
+            console.error(e);
+            alert('Delete error');
+        });
+    };
 
-        // Initialize sortable for images with improved visual feedback
-        function initImageSortable() {
-            const container = document.getElementById('voucherImagesContainer');
-            if (!container) return;
+    // Initialize sortable for images with improved visual feedback
+    function initImageSortable() {
+        const container = document.getElementById('voucherImagesContainer');
+        if (!container) return;
 
-            let draggedElement = null;
+        let draggedElement = null;
 
-            container.addEventListener('dragstart', function (e) {
-                const item = e.target.closest('.voucher-image-item');
-                if (item) {
-                    draggedElement = item;
-                    e.dataTransfer.effectAllowed = 'move';
-                    item.classList.add('dragging');
+        container.addEventListener('dragstart', function (e) {
+            const item = e.target.closest('.voucher-image-item');
+            if (item) {
+                draggedElement = item;
+                e.dataTransfer.effectAllowed = 'move';
+                item.classList.add('dragging');
 
-                    // Show visual feedback
-                    setTimeout(() => {
-                        item.style.opacity = '0.5';
-                    }, 0);
-                }
-            });
+                // Show visual feedback
+                setTimeout(() => {
+                    item.style.opacity = '0.5';
+                }, 0);
+            }
+        });
 
-            container.addEventListener('dragover', function (e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
+        container.addEventListener('dragover', function (e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
 
-                const afterElement = getDragAfterElement(container, e.clientX);
-                const targetItem = e.target.closest('.voucher-image-item');
+            const afterElement = getDragAfterElement(container, e.clientX);
+            const targetItem = e.target.closest('.voucher-image-item');
 
-                // Remove previous drag-over highlights
-                container.querySelectorAll('.drag-over').forEach(el => {
-                    el.classList.remove('drag-over');
-                });
-
-                // Highlight the target
-                if (targetItem && targetItem !== draggedElement) {
-                    targetItem.classList.add('drag-over');
-                }
+            // Remove previous drag-over highlights
+            container.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
             });
 
-            container.addEventListener('dragenter', function (e) {
-                e.preventDefault();
+            // Highlight the target
+            if (targetItem && targetItem !== draggedElement) {
+                targetItem.classList.add('drag-over');
+            }
+        });
+
+        container.addEventListener('dragenter', function (e) {
+            e.preventDefault();
+        });
+
+        container.addEventListener('dragleave', function (e) {
+            const item = e.target.closest('.voucher-image-item');
+            if (item) {
+                item.classList.remove('drag-over');
+            }
+        });
+
+        container.addEventListener('drop', function (e) {
+            e.preventDefault();
+
+            // Remove all drag-over highlights
+            container.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
             });
 
-            container.addEventListener('dragleave', function (e) {
-                const item = e.target.closest('.voucher-image-item');
-                if (item) {
-                    item.classList.remove('drag-over');
-                }
+            const targetItem = e.target.closest('.voucher-image-item');
+            if (targetItem && draggedElement && targetItem !== draggedElement) {
+                const rect = targetItem.getBoundingClientRect();
+                const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? targetItem.nextSibling : targetItem;
+                container.insertBefore(draggedElement, nextSibling);
+
+                // Save new order immediately
+                saveImageOrder();
+
+                // Show success feedback
+                showToast('Image order updated!', 'success');
+            }
+        });
+
+        container.addEventListener('dragend', function (e) {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement.style.opacity = '';
+                draggedElement = null;
+            }
+
+            // Clean up any remaining highlights
+            container.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over');
             });
+        });
+    }
 
-            container.addEventListener('drop', function (e) {
-                e.preventDefault();
+    // Helper function to determine the element after which to insert
+    function getDragAfterElement(container, x) {
+        const draggableElements = [...container.querySelectorAll('.voucher-image-item:not(.dragging)')];
 
-                // Remove all drag-over highlights
-                container.querySelectorAll('.drag-over').forEach(el => {
-                    el.classList.remove('drag-over');
-                });
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = x - box.left - box.width / 2;
 
-                const targetItem = e.target.closest('.voucher-image-item');
-                if (targetItem && draggedElement && targetItem !== draggedElement) {
-                    const rect = targetItem.getBoundingClientRect();
-                    const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? targetItem.nextSibling : targetItem;
-                    container.insertBefore(draggedElement, nextSibling);
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
 
-                    // Save new order immediately
-                    saveImageOrder();
-
-                    // Show success feedback
-                    showToast('Image order updated!', 'success');
-                }
-            });
-
-            container.addEventListener('dragend', function (e) {
-                if (draggedElement) {
-                    draggedElement.classList.remove('dragging');
-                    draggedElement.style.opacity = '';
-                    draggedElement = null;
-                }
-
-                // Clean up any remaining highlights
-                container.querySelectorAll('.drag-over').forEach(el => {
-                    el.classList.remove('drag-over');
-                });
-            });
-        }
-
-        // Helper function to determine the element after which to insert
-        function getDragAfterElement(container, x) {
-            const draggableElements = [...container.querySelectorAll('.voucher-image-item:not(.dragging)')];
-
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = x - box.left - box.width / 2;
-
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
-                }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-        // Toast notification helper
-        function showToast(message, type = 'info') {
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
-            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px; animation: slideInRight 0.3s ease;';
-            toast.innerHTML = `
+    // Toast notification helper
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px; animation: slideInRight 0.3s ease;';
+        toast.innerHTML = `
                 <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
                 ${message}
             `;
-            document.body.appendChild(toast);
+        document.body.appendChild(toast);
 
-            setTimeout(() => {
-                toast.style.animation = 'slideOutRight 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
-        }
+        setTimeout(() => {
+            toast.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
 
-        function saveImageOrder() {
-            const container = document.getElementById('voucherImagesContainer');
-            const imageIds = Array.from(container.querySelectorAll('.voucher-image-item')).map(item =>
-                item.getAttribute('data-image-id')
-            );
+    function saveImageOrder() {
+        const container = document.getElementById('voucherImagesContainer');
+        const imageIds = Array.from(container.querySelectorAll('.voucher-image-item')).map(item =>
+            item.getAttribute('data-image-id')
+        );
 
-            // Update order badges
-            updateOrderBadges();
+        // Update order badges
+        updateOrderBadges();
 
-            console.log('💾 Saving image order:', imageIds);
+        console.log('💾 Saving image order:', imageIds);
 
-            fetch(window.location.pathname + '/reorder-images', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image_order: imageIds })
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    console.log('✅ Image order saved successfully');
-                } else {
-                    console.warn('⚠️ Failed to save image order:', data.error);
-                    showToast('Failed to save image order', 'error');
-                }
-            }).catch(e => {
-                console.error('❌ Error saving image order:', e);
-                showToast('Error saving image order', 'error');
-            });
-        }
+        fetch(window.location.pathname + '/reorder-images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_order: imageIds })
+        }).then(r => r.json()).then(data => {
+            if (data.success) {
+                console.log('✅ Image order saved successfully');
+            } else {
+                console.warn('⚠️ Failed to save image order:', data.error);
+                showToast('Failed to save image order', 'error');
+            }
+        }).catch(e => {
+            console.error('❌ Error saving image order:', e);
+            showToast('Error saving image order', 'error');
+        });
+    }
 
-        // Update order badges after reordering
-        function updateOrderBadges() {
-            const container = document.getElementById('voucherImagesContainer');
-            const items = container.querySelectorAll('.voucher-image-item');
-            items.forEach((item, index) => {
-                const badge = item.querySelector('.image-order-badge');
-                if (badge) {
-                    badge.textContent = index + 1;
-                }
-            });
-        }
+    // Update order badges after reordering
+    function updateOrderBadges() {
+        const container = document.getElementById('voucherImagesContainer');
+        const items = container.querySelectorAll('.voucher-image-item');
+        items.forEach((item, index) => {
+            const badge = item.querySelector('.image-order-badge');
+            if (badge) {
+                badge.textContent = index + 1;
+            }
+        });
+    }
 
-        document.getElementById('voucherImagesInput')?.addEventListener('change', function () {
-            const preview = document.getElementById('voucherImagePreview');
-            preview.innerHTML = '';
+    document.getElementById('voucherImagesInput')?.addEventListener('change', function () {
+        const preview = document.getElementById('voucherImagePreview');
+        preview.innerHTML = '';
 
-            Array.from(this.files).forEach(file => {
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = e => {
-                        const div = document.createElement('div');
-                        div.className = 'position-relative d-inline-block me-2 mb-2';
-                        div.innerHTML = `
+        Array.from(this.files).forEach(file => {
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const div = document.createElement('div');
+                    div.className = 'position-relative d-inline-block me-2 mb-2';
+                    div.innerHTML = `
                         <img src="${e.target.result}" style="width:150px;height:auto;border:1px solid #ddd;padding:4px;background:#fafafa;" />
                         <div class="small text-center mt-1">${file.name}</div>
                     `;
-                        preview.appendChild(div);
-                    };
-                    reader.readAsDataURL(file);
-                }
+                    preview.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+
+    // Initialize image sortable on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        initImageSortable();
+        initImageZoom();
+        initSupplierDisplays();
+    });
+
+    // Initialize supplier displays for existing rows
+    function initSupplierDisplays() {
+        document.querySelectorAll('#voucher-body tr').forEach(tr => {
+            const select = tr.querySelector('select[name="service_by_supplier"]');
+            if (select && select.value) {
+                // Trigger handleSupplierChange to format display
+                handleSupplierChange(select);
+            }
+        });
+    }
+
+    // Image Zoom Modal Functions
+    function initImageZoom() {
+        let currentZoom = 1;
+        let isDragging = false;
+        let startX, startY, scrollLeft, scrollTop;
+
+        const modal = document.getElementById('imageZoomModal');
+        const zoomedImage = document.getElementById('zoomedImage');
+        const modalBody = modal.querySelector('.modal-body');
+
+        // Add click event to all voucher images
+        function addImageClickEvents() {
+            document.querySelectorAll('.voucher-image-item img').forEach(img => {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    openImageModal(this.src);
+                });
             });
+        }
+
+        function openImageModal(imageSrc) {
+            zoomedImage.src = imageSrc;
+            currentZoom = 1;
+            zoomedImage.style.transform = 'scale(1)';
+            modalBody.scrollTop = 0;
+            modalBody.scrollLeft = 0;
+
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+        }
+
+        // Zoom controls
+        document.getElementById('zoomIn').addEventListener('click', () => {
+            currentZoom = Math.min(currentZoom * 1.2, 5);
+            zoomedImage.style.transform = `scale(${currentZoom})`;
+            zoomedImage.style.cursor = currentZoom > 1 ? 'grab' : 'zoom-in';
         });
 
-        // Initialize image sortable on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            initImageSortable();
-            initImageZoom();
-            initSupplierDisplays();
+        document.getElementById('zoomOut').addEventListener('click', () => {
+            currentZoom = Math.max(currentZoom / 1.2, 0.5);
+            zoomedImage.style.transform = `scale(${currentZoom})`;
+            zoomedImage.style.cursor = currentZoom > 1 ? 'grab' : 'zoom-in';
         });
 
-        // Initialize supplier displays for existing rows
-        function initSupplierDisplays() {
-            document.querySelectorAll('#voucher-body tr').forEach(tr => {
-                const select = tr.querySelector('select[name="service_by_supplier"]');
-                if (select && select.value) {
-                    // Trigger handleSupplierChange to format display
-                    handleSupplierChange(select);
-                }
-            });
-        }
+        document.getElementById('zoomReset').addEventListener('click', () => {
+            currentZoom = 1;
+            zoomedImage.style.transform = 'scale(1)';
+            zoomedImage.style.cursor = 'zoom-in';
+            modalBody.scrollTop = 0;
+            modalBody.scrollLeft = 0;
+        });
 
-        // Image Zoom Modal Functions
-        function initImageZoom() {
-            let currentZoom = 1;
-            let isDragging = false;
-            let startX, startY, scrollLeft, scrollTop;
+        // Mouse wheel zoom
+        modalBody.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            currentZoom = Math.max(0.5, Math.min(5, currentZoom * delta));
+            zoomedImage.style.transform = `scale(${currentZoom})`;
+            zoomedImage.style.cursor = currentZoom > 1 ? 'grab' : 'zoom-in';
+        });
 
-            const modal = document.getElementById('imageZoomModal');
-            const zoomedImage = document.getElementById('zoomedImage');
-            const modalBody = modal.querySelector('.modal-body');
-
-            // Add click event to all voucher images
-            function addImageClickEvents() {
-                document.querySelectorAll('.voucher-image-item img').forEach(img => {
-                    img.style.cursor = 'zoom-in';
-                    img.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        openImageModal(this.src);
-                    });
-                });
+        // Pan functionality
+        zoomedImage.addEventListener('mousedown', (e) => {
+            if (currentZoom > 1) {
+                isDragging = true;
+                zoomedImage.style.cursor = 'grabbing';
+                startX = e.pageX - modalBody.offsetLeft;
+                startY = e.pageY - modalBody.offsetTop;
+                scrollLeft = modalBody.scrollLeft;
+                scrollTop = modalBody.scrollTop;
             }
+        });
 
-            function openImageModal(imageSrc) {
-                zoomedImage.src = imageSrc;
-                currentZoom = 1;
-                zoomedImage.style.transform = 'scale(1)';
-                modalBody.scrollTop = 0;
-                modalBody.scrollLeft = 0;
-
-                const bootstrapModal = new bootstrap.Modal(modal);
-                bootstrapModal.show();
+        modalBody.addEventListener('mouseleave', () => {
+            isDragging = false;
+            if (currentZoom > 1) {
+                zoomedImage.style.cursor = 'grab';
             }
+        });
 
-            // Zoom controls
-            document.getElementById('zoomIn').addEventListener('click', () => {
-                currentZoom = Math.min(currentZoom * 1.2, 5);
-                zoomedImage.style.transform = `scale(${currentZoom})`;
-                zoomedImage.style.cursor = currentZoom > 1 ? 'grab' : 'zoom-in';
-            });
-
-            document.getElementById('zoomOut').addEventListener('click', () => {
-                currentZoom = Math.max(currentZoom / 1.2, 0.5);
-                zoomedImage.style.transform = `scale(${currentZoom})`;
-                zoomedImage.style.cursor = currentZoom > 1 ? 'grab' : 'zoom-in';
-            });
-
-            document.getElementById('zoomReset').addEventListener('click', () => {
-                currentZoom = 1;
-                zoomedImage.style.transform = 'scale(1)';
-                zoomedImage.style.cursor = 'zoom-in';
-                modalBody.scrollTop = 0;
-                modalBody.scrollLeft = 0;
-            });
-
-            // Mouse wheel zoom
-            modalBody.addEventListener('wheel', (e) => {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? 0.9 : 1.1;
-                currentZoom = Math.max(0.5, Math.min(5, currentZoom * delta));
-                zoomedImage.style.transform = `scale(${currentZoom})`;
-                zoomedImage.style.cursor = currentZoom > 1 ? 'grab' : 'zoom-in';
-            });
-
-            // Pan functionality
-            zoomedImage.addEventListener('mousedown', (e) => {
-                if (currentZoom > 1) {
-                    isDragging = true;
-                    zoomedImage.style.cursor = 'grabbing';
-                    startX = e.pageX - modalBody.offsetLeft;
-                    startY = e.pageY - modalBody.offsetTop;
-                    scrollLeft = modalBody.scrollLeft;
-                    scrollTop = modalBody.scrollTop;
-                }
-            });
-
-            modalBody.addEventListener('mouseleave', () => {
-                isDragging = false;
-                if (currentZoom > 1) {
-                    zoomedImage.style.cursor = 'grab';
-                }
-            });
-
-            modalBody.addEventListener('mouseup', () => {
-                isDragging = false;
-                if (currentZoom > 1) {
-                    zoomedImage.style.cursor = 'grab';
-                }
-            });
-
-            modalBody.addEventListener('mousemove', (e) => {
-                if (!isDragging) return;
-                e.preventDefault();
-                const x = e.pageX - modalBody.offsetLeft;
-                const y = e.pageY - modalBody.offsetTop;
-                const walkX = (x - startX) * 2;
-                const walkY = (y - startY) * 2;
-                modalBody.scrollLeft = scrollLeft - walkX;
-                modalBody.scrollTop = scrollTop - walkY;
-            });
-
-            // Initialize click events for existing images
-            addImageClickEvents();
-
-            // Re-initialize when new images are added
-            window.addImageClickEvents = addImageClickEvents;
-        }
-
-        // File Sharing Functions
-        function toggleFileSharing() {
-            const uploadArea = document.getElementById('file-upload-area');
-            const toggleBtn = document.getElementById('toggle-file-btn');
-
-            if (uploadArea.style.display === 'none') {
-                uploadArea.style.display = 'block';
-                toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i>View';
-                loadFiles();
-            } else {
-                uploadArea.style.display = 'none';
-                toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit';
+        modalBody.addEventListener('mouseup', () => {
+            isDragging = false;
+            if (currentZoom > 1) {
+                zoomedImage.style.cursor = 'grab';
             }
+        });
+
+        modalBody.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            const x = e.pageX - modalBody.offsetLeft;
+            const y = e.pageY - modalBody.offsetTop;
+            const walkX = (x - startX) * 2;
+            const walkY = (y - startY) * 2;
+            modalBody.scrollLeft = scrollLeft - walkX;
+            modalBody.scrollTop = scrollTop - walkY;
+        });
+
+        // Initialize click events for existing images
+        addImageClickEvents();
+
+        // Re-initialize when new images are added
+        window.addImageClickEvents = addImageClickEvents;
+    }
+
+    // File Sharing Functions
+    function toggleFileSharing() {
+        const uploadArea = document.getElementById('file-upload-area');
+        const toggleBtn = document.getElementById('toggle-file-btn');
+
+        if (uploadArea.style.display === 'none') {
+            uploadArea.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i>View';
+            loadFiles();
+        } else {
+            uploadArea.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit';
+        }
+    }
+
+    function toggleLinkSharing() {
+        const linkArea = document.getElementById('link-add-area');
+        const toggleBtn = document.getElementById('toggle-link-btn');
+
+        if (linkArea.style.display === 'none') {
+            linkArea.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i>View';
+            loadLinks();
+        } else {
+            linkArea.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit';
+        }
+    }
+
+    // Drag and Drop handlers
+    function dragOverHandler(ev) {
+        ev.preventDefault();
+        ev.currentTarget.classList.add('border-success');
+    }
+
+    function dragEnterHandler(ev) {
+        ev.preventDefault();
+        ev.currentTarget.classList.add('border-success');
+    }
+
+    function dragLeaveHandler(ev) {
+        ev.preventDefault();
+        ev.currentTarget.classList.remove('border-success');
+    }
+
+    function dropHandler(ev) {
+        ev.preventDefault();
+        ev.currentTarget.classList.remove('border-success');
+
+        const files = ev.dataTransfer.files;
+        uploadFiles(files);
+    }
+
+    function handleFileSelect(event) {
+        const files = event.target.files;
+        uploadFiles(files);
+    }
+
+    function uploadFiles(files) {
+        if (files.length === 0) return;
+
+        const formData = new FormData();
+        const title = document.getElementById('file-title').value;
+
+        for (let file of files) {
+            formData.append('files', file);
+        }
+        if (title) {
+            formData.append('title', title);
         }
 
-        function toggleLinkSharing() {
-            const linkArea = document.getElementById('link-add-area');
-            const toggleBtn = document.getElementById('toggle-link-btn');
+        const progressDiv = document.getElementById('upload-progress');
+        const progressBar = progressDiv.querySelector('.progress-bar');
 
-            if (linkArea.style.display === 'none') {
-                linkArea.style.display = 'block';
-                toggleBtn.innerHTML = '<i class="fas fa-eye me-1"></i>View';
-                loadLinks();
-            } else {
-                linkArea.style.display = 'none';
-                toggleBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Edit';
-            }
-        }
+        progressDiv.style.display = 'block';
+        progressBar.style.width = '0%';
 
-        // Drag and Drop handlers
-        function dragOverHandler(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.add('border-success');
-        }
-
-        function dragEnterHandler(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.add('border-success');
-        }
-
-        function dragLeaveHandler(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.remove('border-success');
-        }
-
-        function dropHandler(ev) {
-            ev.preventDefault();
-            ev.currentTarget.classList.remove('border-success');
-
-            const files = ev.dataTransfer.files;
-            uploadFiles(files);
-        }
-
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            uploadFiles(files);
-        }
-
-        function uploadFiles(files) {
-            if (files.length === 0) return;
-
-            const formData = new FormData();
-            const title = document.getElementById('file-title').value;
-
-            for (let file of files) {
-                formData.append('files', file);
-            }
-            if (title) {
-                formData.append('title', title);
-            }
-
-            const progressDiv = document.getElementById('upload-progress');
-            const progressBar = progressDiv.querySelector('.progress-bar');
-
-            progressDiv.style.display = 'block';
-            progressBar.style.width = '0%';
-
-            fetch(`/voucher/api/{{ booking.id }}/files`, {
-                method: 'POST',
-                body: formData
+        fetch(`/voucher/api/{{ booking.id }}/files`, {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => {
+                progressBar.style.width = '100%';
+                return response.json();
             })
-                .then(response => {
-                    progressBar.style.width = '100%';
-                    return response.json();
-                })
-                .then(data => {
-                    progressDiv.style.display = 'none';
-                    document.getElementById('file-title').value = '';
-                    document.getElementById('file-input').value = '';
+            .then(data => {
+                progressDiv.style.display = 'none';
+                document.getElementById('file-title').value = '';
+                document.getElementById('file-input').value = '';
 
-                    if (data.success) {
-                        showMessage('Files uploaded successfully!', 'success');
-                        loadFiles();
-                    } else {
-                        showMessage('Error uploading files: ' + data.error, 'error');
-                    }
-                })
-                .catch(error => {
-                    progressDiv.style.display = 'none';
-                    console.error('Error:', error);
-                    showMessage('Error uploading files', 'error');
-                });
-        }
-
-        function loadFiles() {
-            // First, generate booking share token
-            fetch(`{{ url_for('voucher.generate_share_token', id=booking.id) }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({ minutes: 172800 }) // 120 days
+                if (data.success) {
+                    showMessage('Files uploaded successfully!', 'success');
+                    loadFiles();
+                } else {
+                    showMessage('Error uploading files: ' + data.error, 'error');
+                }
             })
-                .then(r => r.json())
-                .then(tokenData => {
-                    if (!tokenData.success || !tokenData.token) {
-                        throw new Error('Failed to generate share token');
-                    }
-                    const bookingToken = tokenData.token;
+            .catch(error => {
+                progressDiv.style.display = 'none';
+                console.error('Error:', error);
+                showMessage('Error uploading files', 'error');
+            });
+    }
 
-                    // Now load files with the token
-                    return fetch(`/voucher/api/{{ booking.id }}/files`)
-                        .then(response => response.json())
-                        .then(data => {
-                            const filesList = document.getElementById('files-list');
+    function loadFiles() {
+        // First, generate booking share token
+        fetch(`{{ url_for('voucher.generate_share_token', id=booking.id) }}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ minutes: 172800 }) // 120 days
+        })
+            .then(r => r.json())
+            .then(tokenData => {
+                if (!tokenData.success || !tokenData.token) {
+                    throw new Error('Failed to generate share token');
+                }
+                const bookingToken = tokenData.token;
 
-                            if (data.files && data.files.length > 0) {
-                                console.log('📁 Loading files with booking token:', bookingToken);
-                                let html = '<div class="row g-2">';
-                                data.files.forEach(file => {
-                                    // Use booking token for file download URL
-                                    const shareUrl = `${window.location.origin}/public/voucher/file/${file.id}/${bookingToken}`;
-                                    console.log('🔗 Generated share URL for file', file.id, ':', shareUrl);
-                                    html += `
+                // Now load files with the token
+                return fetch(`/voucher/api/{{ booking.id }}/files`)
+                    .then(response => response.json())
+                    .then(data => {
+                        const filesList = document.getElementById('files-list');
+
+                        if (data.files && data.files.length > 0) {
+                            console.log('📁 Loading files with booking token:', bookingToken);
+                            let html = '<div class="row g-2">';
+                            data.files.forEach(file => {
+                                // Use booking token for file download URL
+                                const shareUrl = `${window.location.origin}/public/voucher/file/${file.id}/${bookingToken}`;
+                                console.log('🔗 Generated share URL for file', file.id, ':', shareUrl);
+
+                                // Prepare onclick attributes
+                                const editOnclick = `editFileTitle(${file.id}, ${JSON.stringify(file.title || file.original_filename)})`;
+                                const deleteOnclick = `deleteFile(${file.id})`;
+                                const copyOnclick = `copyFileUrl(${file.id})`;
+
+                                console.log('🔍 Edit onclick:', editOnclick);
+                                console.log('🔍 Delete onclick:', deleteOnclick);
+
+                                html += `
                         <div class="col-12">
                             <div class="card mb-2">
                                 <div class="card-body p-3">
@@ -2635,11 +2669,11 @@
                                                     <input type="text" class="form-control form-control-sm" 
                                                            value="${shareUrl}" readonly id="file-url-${file.id}">
                                                     <button class="btn btn-sm btn-outline-secondary" 
-                                                            onclick="copyFileUrl(${file.id})" title="Copy Share URL">
+                                                            onclick='${copyOnclick}' title="Copy Share URL">
                                                         <i class="fas fa-copy"></i>
                                                     </button>
                                                 </div>
-                                                <button onclick="editFileTitle(${file.id}, '${(file.title || file.original_filename).replace(/'/g, "\\'")}')" 
+                                                <button onclick='${editOnclick}' 
                                                         class="btn btn-sm btn-outline-info" title="Edit Title">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
@@ -2647,7 +2681,7 @@
                                                    class="btn btn-sm btn-outline-primary" title="Download">
                                                     <i class="fas fa-download"></i>
                                                 </a>
-                                                <button onclick="deleteFile(${file.id})" 
+                                                <button onclick='${deleteOnclick}' 
                                                         class="btn btn-sm btn-outline-danger" title="Delete">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -2658,86 +2692,96 @@
                             </div>
                         </div>
                     `;
-                                });
-                                html += '</div>';
-                                filesList.innerHTML = html;
-                            } else {
-                                filesList.innerHTML = `
+                            });
+                            html += '</div>';
+                            filesList.innerHTML = html;
+                        } else {
+                            filesList.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-folder-open fa-2x mb-2"></i>
                         <p>No files shared yet</p>
                     </div>
                 `;
-                            }
-                        });
-                })
-                .catch(error => {
-                    console.error('Error loading files:', error);
-                    showMessage('Error loading files', 'error');
-                });
-        }
-
-        function deleteFile(fileId) {
-            if (confirm('Are you sure you want to delete this file?')) {
-                fetch(`/voucher/api/{{ booking.id }}/files/${fileId}`, {
-                    method: 'DELETE'
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showMessage('File deleted successfully!', 'success');
-                            loadFiles();
-                        } else {
-                            showMessage('Error deleting file', 'error');
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showMessage('Error deleting file', 'error');
                     });
-            }
-        }
+            })
+            .catch(error => {
+                console.error('Error loading files:', error);
+                showMessage('Error loading files', 'error');
+            });
+    }
 
-        function addExternalLink(event) {
-            event.preventDefault();
-
-            const url = document.getElementById('link-url').value;
-            const title = document.getElementById('link-title').value;
-
-            fetch(`/voucher/api/{{ booking.id }}/links`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ url, title })
+    window.deleteFile = function (fileId) {
+        console.log('🗑️ deleteFile called with fileId:', fileId);
+        if (confirm('Are you sure you want to delete this file?')) {
+            fetch(`/voucher/api/{{ booking.id }}/files/${fileId}`, {
+                method: 'DELETE'
             })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showMessage('Link added successfully!', 'success');
-                        document.getElementById('add-link-form').reset();
-                        loadLinks();
+                        showMessage('File deleted successfully!', 'success');
+                        loadFiles();
                     } else {
-                        showMessage('Error adding link: ' + data.error, 'error');
+                        showMessage('Error deleting file', 'error');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    showMessage('Error adding link', 'error');
+                    showMessage('Error deleting file', 'error');
                 });
         }
+    };
 
-        function loadLinks() {
-            fetch(`/voucher/api/{{ booking.id }}/links`)
-                .then(response => response.json())
-                .then(data => {
-                    const linksList = document.getElementById('links-list');
+    function addExternalLink(event) {
+        event.preventDefault();
 
-                    if (data.links && data.links.length > 0) {
-                        let html = '<div class="row g-2">';
-                        data.links.forEach(link => {
-                            const shareUrl = `${window.location.origin}/voucher/public/${link.public_token}/links`;
-                            html += `
+        const url = document.getElementById('link-url').value;
+        const title = document.getElementById('link-title').value;
+
+        fetch(`/voucher/api/{{ booking.id }}/links`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url, title })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('Link added successfully!', 'success');
+                    document.getElementById('add-link-form').reset();
+                    loadLinks();
+                } else {
+                    showMessage('Error adding link: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showMessage('Error adding link', 'error');
+            });
+    }
+
+    function loadLinks() {
+        fetch(`/voucher/api/{{ booking.id }}/links`)
+            .then(response => response.json())
+            .then(data => {
+                const linksList = document.getElementById('links-list');
+
+                if (data.links && data.links.length > 0) {
+                    let html = '<div class="row g-2">';
+                    data.links.forEach(link => {
+                        const shareUrl = `${window.location.origin}/voucher/public/${link.public_token}/links`;
+
+                        // Prepare onclick attributes
+                        const editOnclick = `editLinkTitle(${link.id}, ${JSON.stringify(link.title)}, ${JSON.stringify(link.description || "")})`;
+                        const deleteOnclick = `deleteLink(${link.id})`;
+                        const copyOnclick = `copyLinkUrl(${link.id})`;
+
+                        console.log('🔍 Link edit onclick:', editOnclick);
+                        console.log('🔍 Link delete onclick:', deleteOnclick);
+
+                        html += `
                         <div class="col-12">
                             <div class="card mb-2">
                                 <div class="card-body p-3">
@@ -2758,11 +2802,11 @@
                                                     <input type="text" class="form-control form-control-sm" 
                                                            value="${shareUrl}" readonly id="link-url-${link.id}">
                                                     <button class="btn btn-sm btn-outline-secondary" 
-                                                            onclick="copyLinkUrl(${link.id})" title="Copy Share URL">
+                                                            onclick='${copyOnclick}' title="Copy Share URL">
                                                         <i class="fas fa-copy"></i>
                                                     </button>
                                                 </div>
-                                                <button onclick="editLinkTitle(${link.id}, '${link.title.replace(/'/g, "\\'")}', '${(link.description || '').replace(/'/g, "\\'")}')" 
+                                                <button onclick='${editOnclick}' 
                                                         class="btn btn-sm btn-outline-info" title="Edit Title">
                                                     <i class="fas fa-edit"></i>
                                                 </button>
@@ -2770,7 +2814,7 @@
                                                    class="btn btn-sm btn-outline-primary" title="Visit Link">
                                                     <i class="fas fa-external-link-alt"></i>
                                                 </a>
-                                                <button onclick="deleteLink(${link.id})" 
+                                                <button onclick='${deleteOnclick}' 
                                                         class="btn btn-sm btn-outline-danger" title="Delete">
                                                     <i class="fas fa-trash"></i>
                                                 </button>
@@ -2781,108 +2825,111 @@
                             </div>
                         </div>
                     `;
-                        });
-                        html += '</div>';
-                        linksList.innerHTML = html;
-                    } else {
-                        linksList.innerHTML = `
+                    });
+                    html += '</div>';
+                    linksList.innerHTML = html;
+                } else {
+                    linksList.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="fas fa-link fa-2x mb-2"></i>
                         <p>No external links added yet</p>
                     </div>
                 `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading links:', error);
+            });
+    }
+
+    window.deleteLink = function (linkId) {
+        console.log('🗑️ deleteLink called with linkId:', linkId);
+        if (confirm('Are you sure you want to delete this link?')) {
+            fetch(`/voucher/api/{{ booking.id }}/links/${linkId}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('Link deleted successfully!', 'success');
+                        loadLinks();
+                    } else {
+                        showMessage('Error deleting link', 'error');
                     }
                 })
                 .catch(error => {
-                    console.error('Error loading links:', error);
+                    console.error('Error:', error);
+                    showMessage('Error deleting link', 'error');
                 });
         }
+    };
 
-        function deleteLink(linkId) {
-            if (confirm('Are you sure you want to delete this link?')) {
-                fetch(`/voucher/api/{{ booking.id }}/links/${linkId}`, {
-                    method: 'DELETE'
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showMessage('Link deleted successfully!', 'success');
-                            loadLinks();
-                        } else {
-                            showMessage('Error deleting link', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showMessage('Error deleting link', 'error');
-                    });
-            }
-        }
+    window.copyFileUrl = function (fileId) {
+        const input = document.getElementById(`file-url-${fileId}`);
+        input.select();
+        document.execCommand('copy');
+        showMessage('File share URL copied to clipboard!', 'success');
+    };
 
-        function copyFileUrl(fileId) {
-            const input = document.getElementById(`file-url-${fileId}`);
-            input.select();
-            document.execCommand('copy');
-            showMessage('File share URL copied to clipboard!', 'success');
-        }
+    window.copyLinkUrl = function (linkId) {
+        const input = document.getElementById(`link-url-${linkId}`);
+        input.select();
+        document.execCommand('copy');
+        showMessage('Link share URL copied to clipboard!', 'success');
+    };
 
-        function copyLinkUrl(linkId) {
-            const input = document.getElementById(`link-url-${linkId}`);
-            input.select();
-            document.execCommand('copy');
-            showMessage('Link share URL copied to clipboard!', 'success');
-        }
-
-        function showMessage(message, type) {
-            // Create toast message
-            const toast = document.createElement('div');
-            toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            toast.innerHTML = `
+    function showMessage(message, type) {
+        // Create toast message
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
             ${message}
             <button type="button" class="btn-close ms-2" onclick="this.parentElement.remove()"></button>
         `;
-            document.body.appendChild(toast);
+        document.body.appendChild(toast);
 
-            // Auto remove after 3 seconds
-            setTimeout(() => {
-                if (toast.parentElement) {
-                    toast.remove();
-                }
-            }, 3000);
-        }
-
-        // Edit file title function
-        function editFileTitle(fileId, currentTitle) {
-            const newTitle = prompt('Edit file title:', currentTitle);
-            if (newTitle !== null && newTitle.trim() !== currentTitle) {
-                fetch(`/voucher/api/{{ booking.id }}/files/${fileId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ title: newTitle.trim() })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showMessage('File title updated successfully!', 'success');
-                            loadFiles(); // Reload files list
-                        } else {
-                            showMessage('Error updating file title: ' + data.error, 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error updating file title:', error);
-                        showMessage('Error updating file title', 'error');
-                    });
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
             }
-        }
+        }, 3000);
+    }
 
-        // Edit link title and description function
-        function editLinkTitle(linkId, currentTitle, currentDescription) {
-            // Create a more sophisticated modal for editing
-            const modalHtml = `
+    // Edit file title function
+    window.editFileTitle = function (fileId, currentTitle) {
+        console.log('✏️ editFileTitle called with fileId:', fileId, 'currentTitle:', currentTitle);
+        const newTitle = prompt('Edit file title:', currentTitle);
+        if (newTitle !== null && newTitle.trim() !== currentTitle) {
+            fetch(`/voucher/api/{{ booking.id }}/files/${fileId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title: newTitle.trim() })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('File title updated successfully!', 'success');
+                        loadFiles(); // Reload files list
+                    } else {
+                        showMessage('Error updating file title: ' + data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating file title:', error);
+                    showMessage('Error updating file title', 'error');
+                });
+        }
+    };
+
+    // Edit link title and description function
+    window.editLinkTitle = function (linkId, currentTitle, currentDescription) {
+        console.log('✏️ editLinkTitle called with linkId:', linkId, 'currentTitle:', currentTitle, 'currentDescription:', currentDescription);
+        // Create a more sophisticated modal for editing
+        const modalHtml = `
             <div class="modal fade" id="editLinkModal" tabindex="-1">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -2909,122 +2956,123 @@
             </div>
         `;
 
-            // Remove any existing modal
-            const existingModal = document.getElementById('editLinkModal');
-            if (existingModal) {
-                existingModal.remove();
-            }
-
-            // Add modal to page
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-            // Show modal
-            const modal = new bootstrap.Modal(document.getElementById('editLinkModal'));
-            modal.show();
+        // Remove any existing modal
+        const existingModal = document.getElementById('editLinkModal');
+        if (existingModal) {
+            existingModal.remove();
         }
 
-        // Update link function
-        function updateLink(linkId) {
-            const title = document.getElementById('editLinkTitle').value.trim();
-            const description = document.getElementById('editLinkDescription').value.trim();
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-            if (!title) {
-                alert('Title is required');
-                return;
-            }
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('editLinkModal'));
+        modal.show();
+    }
 
-            fetch(`/voucher/api/{{ booking.id }}/links/${linkId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    description: description
-                })
+    // Update link function
+    function updateLink(linkId) {
+        const title = document.getElementById('editLinkTitle').value.trim();
+        const description = document.getElementById('editLinkDescription').value.trim();
+
+        if (!title) {
+            alert('Title is required');
+            return;
+        }
+
+        fetch(`/voucher/api/{{ booking.id }}/links/${linkId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                description: description
             })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage('Link updated successfully!', 'success');
-                        loadLinks(); // Reload links list
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('Link updated successfully!', 'success');
+                    loadLinks(); // Reload links list
 
-                        // Hide modal
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('editLinkModal'));
-                        modal.hide();
-                    } else {
-                        showMessage('Error updating link: ' + data.error, 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating link:', error);
-                    showMessage('Error updating link', 'error');
-                });
-        }
+                    // Hide modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editLinkModal'));
+                    modal.hide();
+                } else {
+                    showMessage('Error updating link: ' + data.error, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error updating link:', error);
+                showMessage('Error updating link', 'error');
+            });
+    };
 
-        // Initialize sharing features on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            console.log('🚀 Voucher page loaded - Version: 2025-11-29-v2');
-            console.log('📋 Loading files and links...');
-            loadFiles();
-            loadLinks();
-            loadVoucherAlbums(); // Load voucher library albums
-        });
+    // Initialize sharing features on page load
+    document.addEventListener('DOMContentLoaded', function () {
+        console.log('🚀 Voucher page loaded - Version: 2025-11-29-v2');
+        console.log('📋 Loading files and links...');
+        loadFiles();
+        loadLinks();
+        loadVoucherAlbums(); // Load voucher library albums
+    });
 
-        // Load voucher albums from library
-        function loadVoucherAlbums() {
-            console.log('🔄 Loading voucher albums...');
-            fetch('/voucher-library/api/list')
-                .then(response => response.json())
-                .then(data => {
-                    console.log('📦 Voucher albums data received:', data);
-                    const select = document.getElementById('voucherAlbumsSelect');
-                    if (!select) {
-                        console.warn('⚠️ voucherAlbumsSelect not found');
-                        return;
-                    }
+    // Load voucher albums from library
+    function loadVoucherAlbums() {
+        console.log('🔄 Loading voucher albums...');
+        fetch('/voucher-library/api/list')
+            .then(response => response.json())
+            .then(data => {
+                console.log('📦 Voucher albums data received:', data);
+                const select = document.getElementById('voucherAlbumsSelect');
+                if (!select) {
+                    console.warn('⚠️ voucherAlbumsSelect not found');
+                    return;
+                }
 
-                    select.innerHTML = ''; // Clear existing options
+                select.innerHTML = ''; // Clear existing options
 
-                    if (data.success && data.albums && data.albums.length > 0) {
-                        console.log('✅ Found', data.albums.length, 'albums');
-                        data.albums.forEach(album => {
-                            const option = document.createElement('option');
-                            option.value = album.id;
-                            option.textContent = `${album.title} (${album.file_size_mb} MB)`;
-                            option.dataset.imagePath = album.image_path;
-                            select.appendChild(option);
-                        });
+                if (data.success && data.albums && data.albums.length > 0) {
+                    console.log('✅ Found', data.albums.length, 'albums');
+                    data.albums.forEach(album => {
+                        const option = document.createElement('option');
+                        option.value = album.id;
+                        option.textContent = `${album.title} (${album.file_size_mb} MB)`;
+                        option.dataset.imagePath = album.image_path;
+                        select.appendChild(option);
+                    });
 
-                        // Pre-select albums if booking has selected albums
-                        const selectedIds = {{ booking.get_voucher_album_ids() | tojson if booking else '[]' }};
-            console.log('🔍 Selected album IDs from booking:', selectedIds);
-
-            if (selectedIds && selectedIds.length > 0) {
-                Array.from(select.options).forEach(option => {
-                    if (selectedIds.includes(parseInt(option.value))) {
-                        option.selected = true;
-                    }
-                });
-                console.log('📌 Pre-selecting albums:', selectedIds);
-                updateAlbumPreview();
+                    // Pre-select albums if booking has selected albums
+                    const selectedIds = {{ (booking.get_voucher_album_ids() if booking else[]) | tojson
+    }};
+    console.log('🔍 Selected album IDs from booking:', selectedIds);
+    if (selectedIds && selectedIds.length > 0) {
+        Array.from(select.options).forEach(option => {
+            if (selectedIds.includes(parseInt(option.value))) {
+                option.selected = true;
             }
-        } else {
-            console.log('ℹ️ No albums available');
-            const option = document.createElement('option');
-            option.textContent = 'No albums available - Upload in Voucher Library';
-            option.disabled = true;
-            select.appendChild(option);
-        }
-    })
-                .catch (error => {
+        });
+        console.log('📌 Pre-selecting albums:', selectedIds);
+        updateAlbumPreview();
+    }
+                } else {
+        const option = document.createElement('option');
+        option.textContent = 'No albums available - Upload in Voucher Library';
+        option.disabled = true;
+        select.appendChild(option);
+    }
+            })
+            .catch (error => {
         console.error('Error loading voucher albums:', error);
     });
-        }
+    }
 
     // Update preview when selection changes
     document.addEventListener('DOMContentLoaded', function () {
         const select = document.getElementById('voucherAlbumsSelect');
+        const preview = document.getElementById('selectedAlbumsPreview');
+
         if (select) {
             console.log('✅ Adding change listener to voucher albums select');
             select.addEventListener('change', function () {
@@ -3034,16 +3082,9 @@
         } else {
             console.warn('⚠️ voucherAlbumsSelect not found');
         }
-    });
 
-    function updateAlbumPreview() {
-        const select = document.getElementById('voucherAlbumsSelect');
-        const preview = document.getElementById('selectedAlbumsPreview');
-
-        console.log('🎨 updateAlbumPreview called');
-
-        if (!select || !preview) {
-            console.warn('⚠️ Select or preview not found', { select, preview });
+        if (!preview) {
+            console.warn('⚠️ selectedAlbumsPreview not found');
             return;
         }
 
@@ -3098,138 +3139,140 @@
             preview.innerHTML = '';
             console.log('ℹ️ No options selected, hiding preview');
         }
-    }
 
-    // Initialize sortable for library images
-    function initLibraryImageSortable() {
-        const container = document.getElementById('selectedAlbumsPreview');
-        if (!container) {
-            console.warn('⚠️ Library preview container not found');
-            return;
-        }
-
-        console.log('🔧 Initializing library image sortable...');
-        console.log('📦 Container has', container.children.length, 'items');
-
-        // Check if already initialized
-        if (container.dataset.sortableInit === 'true') {
-            console.log('ℹ️ Sortable already initialized, skipping');
-            return;
-        }
-        container.dataset.sortableInit = 'true';
-
-        let draggedElement = null;
-
-        container.addEventListener('dragstart', function (e) {
-            const item = e.target.closest('.voucher-library-item');
-            if (item) {
-                console.log('🎯 Drag started for library image');
-                draggedElement = item;
-                e.dataTransfer.effectAllowed = 'move';
-                item.classList.add('dragging');
-                setTimeout(() => {
-                    item.style.opacity = '0.5';
-                }, 0);
+        // Initialize sortable for library images
+        function initLibraryImageSortable() {
+            const container = document.getElementById('selectedAlbumsPreview');
+            if (!container) {
+                console.warn('⚠️ Library preview container not found');
+                return;
             }
-        });
 
-        container.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
+            console.log('🔧 Initializing library image sortable...');
+            console.log('📦 Container has', container.children.length, 'items');
 
-            const targetItem = e.target.closest('.voucher-library-item');
-
-            container.querySelectorAll('.drag-over').forEach(el => {
-                el.classList.remove('drag-over');
-            });
-
-            if (targetItem && targetItem !== draggedElement) {
-                targetItem.classList.add('drag-over');
+            // Check if already initialized
+            if (container.dataset.sortableInit === 'true') {
+                console.log('ℹ️ Sortable already initialized, skipping');
+                return;
             }
-        });
+            container.dataset.sortableInit = 'true';
 
-        container.addEventListener('dragenter', function (e) {
-            e.preventDefault();
-        });
+            let draggedElement = null;
 
-        container.addEventListener('dragleave', function (e) {
-            const item = e.target.closest('.voucher-library-item');
-            if (item) {
-                item.classList.remove('drag-over');
-            }
-        });
-
-        container.addEventListener('drop', function (e) {
-            e.preventDefault();
-
-            console.log('📦 Drop event on library image');
-
-            container.querySelectorAll('.drag-over').forEach(el => {
-                el.classList.remove('drag-over');
-            });
-
-            const targetItem = e.target.closest('.voucher-library-item');
-            if (targetItem && draggedElement && targetItem !== draggedElement) {
-                const rect = targetItem.getBoundingClientRect();
-                const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? targetItem.nextSibling : targetItem;
-                container.insertBefore(draggedElement, nextSibling);
-
-                // Update order badges and select element
-                updateLibraryOrderBadgesAndSelect();
-
-                if (typeof showToast === 'function') {
-                    showToast('เรียงลำดับรูปภาพแล้ว!', 'success');
+            container.addEventListener('dragstart', function (e) {
+                const item = e.target.closest('.voucher-library-item');
+                if (item) {
+                    console.log('🎯 Drag started for library image');
+                    draggedElement = item;
+                    e.dataTransfer.effectAllowed = 'move';
+                    item.classList.add('dragging');
+                    setTimeout(() => {
+                        item.style.opacity = '0.5';
+                    }, 0);
                 }
-                console.log('✅ Library image order updated');
-            }
-        });
-
-        container.addEventListener('dragend', function (e) {
-            if (draggedElement) {
-                draggedElement.classList.remove('dragging');
-                draggedElement.style.opacity = '';
-                draggedElement = null;
-            }
-
-            container.querySelectorAll('.drag-over').forEach(el => {
-                el.classList.remove('drag-over');
             });
-        });
 
-        console.log('✅ Library sortable initialized with', container.children.length, 'draggable items');
-    }    // Update order badges and reorder select element
-    function updateLibraryOrderBadgesAndSelect() {
-        const container = document.getElementById('selectedAlbumsPreview');
-        const select = document.getElementById('voucherAlbumsSelect');
-        if (!container || !select) return;
+            container.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
 
-        const items = container.querySelectorAll('.voucher-library-item');
-        const newOrder = [];
+                const targetItem = e.target.closest('.voucher-library-item');
 
-        items.forEach((item, index) => {
-            const badge = item.querySelector('.library-order-badge');
-            if (badge) {
-                badge.textContent = index + 1;
-            }
+                container.querySelectorAll('.drag-over').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
 
-            const albumId = item.getAttribute('data-album-id');
-            if (albumId) {
-                newOrder.push(albumId);
-            }
-        });
+                if (targetItem && targetItem !== draggedElement) {
+                    targetItem.classList.add('drag-over');
+                }
+            });
 
-        // Reorder select element options to match visual order
-        Array.from(select.options).forEach(option => {
-            option.selected = false;
-        });
+            container.addEventListener('dragenter', function (e) {
+                e.preventDefault();
+            });
 
-        newOrder.forEach(albumId => {
-            const option = select.querySelector(`option[value="${albumId}"]`);
-            if (option) {
-                option.selected = true;
-            }
-        });
-    }
+            container.addEventListener('dragleave', function (e) {
+                const item = e.target.closest('.voucher-library-item');
+                if (item) {
+                    item.classList.remove('drag-over');
+                }
+            });
+
+            container.addEventListener('drop', function (e) {
+                e.preventDefault();
+
+                console.log('📦 Drop event on library image');
+
+                container.querySelectorAll('.drag-over').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
+
+                const targetItem = e.target.closest('.voucher-library-item');
+                if (targetItem && draggedElement && targetItem !== draggedElement) {
+                    const rect = targetItem.getBoundingClientRect();
+                    const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? targetItem.nextSibling : targetItem;
+                    container.insertBefore(draggedElement, nextSibling);
+
+                    // Update order badges and select element
+                    updateLibraryOrderBadgesAndSelect();
+
+                    if (typeof showToast === 'function') {
+                        showToast('เรียงลำดับรูปภาพแล้ว!', 'success');
+                    }
+                    console.log('✅ Library image order updated');
+                }
+            });
+
+            container.addEventListener('dragend', function (e) {
+                if (draggedElement) {
+                    draggedElement.classList.remove('dragging');
+                    draggedElement.style.opacity = '';
+                    draggedElement = null;
+                }
+
+                container.querySelectorAll('.drag-over').forEach(el => {
+                    el.classList.remove('drag-over');
+                });
+            });
+
+            console.log('✅ Library sortable initialized with', container.children.length, 'draggable items');
+        }
+
+        // Update order badges and reorder select element
+        function updateLibraryOrderBadgesAndSelect() {
+            const container = document.getElementById('selectedAlbumsPreview');
+            const select = document.getElementById('voucherAlbumsSelect');
+            if (!container || !select) return;
+
+            const items = container.querySelectorAll('.voucher-library-item');
+            const newOrder = [];
+
+            items.forEach((item, index) => {
+                const badge = item.querySelector('.library-order-badge');
+                if (badge) {
+                    badge.textContent = index + 1;
+                }
+
+                const albumId = item.getAttribute('data-album-id');
+                if (albumId) {
+                    newOrder.push(albumId);
+                }
+            });
+
+            // Reorder select element options to match visual order
+            Array.from(select.options).forEach(option => {
+                option.selected = false;
+            });
+
+            newOrder.forEach(albumId => {
+                const option = select.querySelector(`option[value="${albumId}"]`);
+                if (option) {
+                    option.selected = true;
+                }
+            });
+        }
+    }); // Close DOMContentLoaded for updateAlbumPreview function
 
 </script>
 {% endblock %}

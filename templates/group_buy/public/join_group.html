@@ -71,6 +71,28 @@
                         </div>
                     </div>
 
+                    {% if campaign.allow_partial_payment and campaign.partial_payment_value %}
+                    <!-- Deposit Info -->
+                    <div class="alert alert-info mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-coins fa-2x me-3"></i>
+                            <div>
+                                <strong>จ่ายมัดจำก่อน:</strong>
+                                {% if campaign.partial_payment_type == 'fixed' %}
+                                <span class="fs-5 fw-bold text-primary">฿{{
+                                    "{:,.0f}".format(campaign.partial_payment_value) }}</span>
+                                <span class="text-muted">บาท/คน</span>
+                                {% elif campaign.partial_payment_type == 'percentage' %}
+                                <span class="fs-5 fw-bold text-primary">{{ campaign.partial_payment_value }}%</span>
+                                <span class="text-muted">ของราคากลุ่ม</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">ส่วนที่เหลือชำระหลังกลุ่มสำเร็จ</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Join Form -->
                     <form method="POST" action="{{ url_for('public_group_buy.submit_join', token=group.share_token) }}">
                         <h5 class="mb-3">ข้อมูลของคุณ</h5>

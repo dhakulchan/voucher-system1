@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}รายละเอียดรีวิว #{{ review.id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <a href="{{ url_for('admin_reviews.list_reviews') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> กลับ
+            </a>
+            <h2 class="mt-3"><i class="fas fa-star"></i> รายละเอียดรีวิว #{{ review.id }}</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Review Content -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white d-flex justify-content-between">
+                    <span><i class="fas fa-comment"></i> เนื้อหารีวิว</span>
+                    <span>
+                        {% if review.is_approved %}
+                        <span class="badge bg-success"><i class="fas fa-check"></i> อนุมัติ</span>
+                        {% else %}
+                        <span class="badge bg-warning"><i class="fas fa-clock"></i> รออนุมัติ</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <!-- Rating -->
+                    <div class="mb-3">
+                        <h5>คะแนน:</h5>
+                        <div class="stars-display fs-4">
+                            {% for i in range(5) %}
+                            <i
+                                class="fas fa-star {% if i < review.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                            {% endfor %}
+                            <span class="ms-2">({{ review.rating }}/5)</span>
+                        </div>
+                    </div>
+
+                    <!-- Comment -->
+                    <div class="mb-3">
+                        <h5>ความคิดเห็น:</h5>
+                        {% if review.comment %}
+                        <p class="border p-3 bg-light">{{ review.comment }}</p>
+                        {% else %}
+                        <p class="text-muted">- ไม่มีความคิดเห็น -</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Images -->
+                    {% if review.images.count() > 0 %}
+                    <div class="mb-3">
+                        <h5>รูปภาพ ({{ review.images.count() }} รูป):</h5>
+                        <div class="row">
+                            {% for image in review.images %}
+                            <div class="col-md-4 mb-3">
+                                <a href="{{ image.image_url }}" target="_blank">
+                                    <img src="{{ image.image_url }}" class="img-fluid rounded" alt="Review Image">
+                                </a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Actions -->
+                    <div class="mt-4">
+                        {% if not review.is_approved %}
+                        <form method="POST" action="{{ url_for('admin_reviews.approve_review', review_id=review.id) }}"
+                            style="display:inline;">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> อนุมัติรีวิวนี้
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="POST" action="{{ url_for('admin_reviews.reject_review', review_id=review.id) }}"
+                            style="display:inline;">
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-times"></i> ปฏิเสธรีวิวนี้
+                            </button>
+                        </form>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('admin_reviews.delete_review', review_id=review.id) }}"
+                            style="display:inline;" onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบรีวิวนี้?')">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> ลบรีวิว
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Campaign Info -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <i class="fas fa-calendar-alt"></i> ข้อมูลแคมเปญ
+                </div>
+                <div class="card-body">
+                    <h6>{{ review.campaign.name }}</h6>
+                    <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=review.campaign_id) }}"
+                        target="_blank" class="btn btn-sm btn-info w-100 mt-2">
+                        <i class="fas fa-external-link-alt"></i> ดูแคมเปญ
+                    </a>
+                </div>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <i class="fas fa-user"></i> ข้อมูลลูกค้า
+                </div>
+                <div class="card-body">
+                    {% if review.customer %}
+                    <p><strong>ชื่อ:</strong> {{ review.customer.name }}</p>
+                    <p><strong>อีเมล:</strong> {{ review.customer.email }}</p>
+                    {% if review.customer.phone %}
+                    <p><strong>โทร:</strong> {{ review.customer.phone }}</p>
+                    {% endif %}
+                    <a href="{{ url_for('admin_points.customer_detail', customer_id=review.customer_id) }}"
+                        class="btn btn-sm btn-success w-100 mt-2">
+                        <i class="fas fa-coins"></i> ดูแต้มลูกค้า
+                    </a>
+                    {% else %}
+                    <p class="text-muted">- ไม่มีข้อมูลลูกค้า -</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Booking Info -->
+            {% if review.booking %}
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-white">
+                    <i class="fas fa-ticket-alt"></i> ข้อมูลการจอง
+                </div>
+                <div class="card-body">
+                    <p><strong>Booking ID:</strong> #{{ review.booking_id }}</p>
+                    <p><strong>สถานะ:</strong> {{ review.booking.status }}</p>
+                    {% if review.booking.travel_date %}
+                    <p><strong>วันเดินทาง:</strong> {{ review.booking.travel_date.strftime('%d/%m/%Y') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <i class="fas fa-info-circle"></i> ข้อมูลเพิ่มเติม
+                </div>
+                <div class="card-body">
+                    <p><strong>รีวิวเมื่อ:</strong><br>{{ review.created_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                    {% if review.updated_at != review.created_at %}
+                    <p><strong>แก้ไขล่าสุด:</strong><br>{{ review.updated_at.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

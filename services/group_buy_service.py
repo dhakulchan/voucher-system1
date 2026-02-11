@@ -185,7 +185,16 @@ class GroupBuyService:
             # ตรวจสอบ max_pax ของแคมเปญก่อนเพิ่มสมาชิก
             pax_count = participant_info.get('pax_count', 1)
             if group.campaign.max_pax:
-                current_total_pax = group.total_pax_for_campaign
+                # นับเฉพาะ pax ในกลุ่มที่สำเร็จแล้ว (ไม่รวมกลุ่ม active)
+                from sqlalchemy import func
+                current_total_pax = db.session.query(func.sum(GroupBuyParticipant.pax_count))\
+                    .join(GroupBuyGroup)\
+                    .filter(
+                        GroupBuyGroup.campaign_id == group.campaign_id,
+                        GroupBuyGroup.status == 'success',  # เฉพาะกลุ่มที่สำเร็จแล้ว
+                        GroupBuyParticipant.status == 'active'
+                    ).scalar() or 0
+                
                 if current_total_pax + pax_count > group.campaign.max_pax:
                     return None, f"ไม่สามารถจองได้ เนื่องจากจะเกินจำนวนผู้เดินทางสูงสุดของแคมเปญ ({group.campaign.max_pax} คน)"
             
@@ -478,8 +487,15 @@ class GroupBuyService:
         if featured_only:
             query = query.filter_by(featured=True)
         
-        return query.order_by(GroupBuyCampaign.featured.desc(), 
-                             GroupBuyCampaign.created_at.desc()).all()
+        # เรียงลำดับ: display_order (เล็กสุดก่อน) -> Featured -> วันเดินทางใกล้ที่สุด -> ID น้อยสุด
+        # Note: MariaDB doesn't support NULLS LAST, so we use COALESCE
+        from sqlalchemy import func
+        return query.order_by(
+            GroupBuyCampaign.display_order.asc(),
+            GroupBuyCampaign.featured.desc(),
+            func.coalesce(GroupBuyCampaign.travel_date_from, '9999-12-31').asc(),
+            GroupBuyCampaign.id.asc()
+        ).all()
     
     def get_group_by_code(self, group_code):
         """ค้นหากลุ่มจากรหัส"""

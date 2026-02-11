@@ -223,7 +223,7 @@
                         <td>
                             <span class="thai-number">{{ voucher.created_at.strftime('%d/%m/%Y') }}</span>
                             <br>
-                            <small class="text-muted">{{ voucher.created_at.strftime('%H:%M') }}</small>
+                            <small class="text-muted">{{ voucher.created_at|thai_datetime('%H:%M') }}</small>
                         </td>
                         <td>
                             {% if voucher.valid_until %}

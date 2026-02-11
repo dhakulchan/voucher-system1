@@ -314,6 +314,11 @@ def confirm_booking(campaign_id):
                     session['pending_payment_campaign'] = campaign_id
                     session.pop('pending_booking', None)
                     flash('ยืนยันการจองสำเร็จ! กรุณาชำระเงินเพื่อยืนยันการเข้าร่วม', 'success')
+                    
+                    # Redirect ไป My Bookings ถ้า auto-login สำเร็จ
+                    if current_user.is_authenticated and current_user.role == 'Customer':
+                        return redirect(url_for('customer.my_bookings'))
+                    
                     return redirect(url_for('group_buy_payment.select_method', 
                                           campaign_id=campaign_id))
                 else:
@@ -373,6 +378,11 @@ def confirm_booking(campaign_id):
                     session.pop('pending_booking', None)
                     session.pop('join_token', None)
                     flash('ยืนยันการจองสำเร็จ! กรุณาชำระเงินเพื่อยืนยันการเข้าร่วม', 'success')
+                    
+                    # Redirect ไป My Bookings ถ้า auto-login สำเร็จ
+                    if current_user.is_authenticated and current_user.role == 'Customer':
+                        return redirect(url_for('customer.my_bookings'))
+                    
                     return redirect(url_for('group_buy_payment.select_method', 
                                           campaign_id=campaign_id))
                 else:

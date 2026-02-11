@@ -171,6 +171,7 @@ def calendar_events():
                     'status': booking.status,
                     'description': booking.description or '',
                     'partyName': booking.party_name or '',
+                    'partyCode': booking.party_code or '',
                     'timeLimitAlert': time_limit_alert,
                     'dueDateAlert': due_date_alert
                 }

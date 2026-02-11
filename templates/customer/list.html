@@ -122,7 +122,7 @@ t('tour_voucher_system') if current_language == 'en' else 'ระบบจัด
                                     <td>
                                         <span class="thai-number">{{ customer.created_at.strftime('%d/%m/%Y') }}</span>
                                         <br>
-                                        <small class="text-muted">{{ customer.created_at.strftime('%H:%M') }}</small>
+                                        <small class="text-muted">{{ customer.created_at|thai_datetime('%H:%M') }}</small>
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">

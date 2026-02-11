@@ -5,6 +5,7 @@ from flask import Blueprint, render_template, request, jsonify, flash, redirect,
 from extensions import db
 from models.group_buy import GroupBuyCampaign
 from models.group_buy_payment import GroupBuyBankAccount, GroupBuyPayment
+from services.coupon_service import CouponService
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime
@@ -85,16 +86,36 @@ def bank_transfer(campaign_id):
         GroupBuyBankAccount.display_order
     ).all()
     
-    # ดึง pax_count จาก session หรือ participant ที่เพิ่งสร้าง/join
+    # ดึง pax_count และข้อมูลลูกค้าจาก session หรือ participant ที่เพิ่งสร้าง/join
     pax_count = 1  # default
+    customer_name = ''
+    customer_email = ''
+    customer_phone = ''
+    
     if 'participant_id' in session:
         from models.group_buy import GroupBuyParticipant
         participant = GroupBuyParticipant.query.get(session['participant_id'])
         if participant:
             pax_count = participant.pax_count or 1
+            # ดึงข้อมูลลูกค้าจาก participant
+            customer_name = participant.participant_name or ''
+            customer_email = participant.participant_email or ''
+            customer_phone = participant.participant_phone or ''
     
     # คำนวณยอดมัดจำ
     payment_amount = campaign.calculate_partial_payment(pax_count)
+    
+    # Debug logging
+    print("=" * 80)
+    print(f"🌐 GET /bank/{campaign_id}")
+    print(f"Campaign: {campaign.name}")
+    print(f"allow_partial_payment: {campaign.allow_partial_payment}")
+    print(f"partial_payment_type: {campaign.partial_payment_type}")
+    print(f"partial_payment_value: {campaign.partial_payment_value}")
+    print(f"group_price: {campaign.group_price}")
+    print(f"pax_count: {pax_count}")
+    print(f"payment_amount (calculated): ฿{payment_amount:,.2f}")
+    print("=" * 80)
     
     if request.method == 'POST':
         print("=" * 80)
@@ -133,10 +154,69 @@ def bank_transfer(campaign_id):
             
             # ใช้ payment_amount ที่คำนวณไว้แล้ว (ไม่ใช้จาก form)
             amount = Decimal(str(payment_amount))
+            original_amount = amount  # เก็บยอดเดิมไว้
             
-            # Parse transfer datetime
+            # Handle coupon discount
+            coupon_code = request.form.get('coupon_code', '').strip()
+            discount_amount = Decimal('0')
+            coupon_obj = None
+            
+            if coupon_code:
+                success, message, discount, coupon = CouponService.validate_and_apply_coupon(
+                    code=coupon_code,
+                    campaign_id=campaign_id,
+                    amount=float(amount),
+                    customer_email=request.form.get('customer_email')
+                )
+                
+                if success:
+                    discount_amount = Decimal(str(discount))
+                    amount = amount - discount_amount
+                    coupon_obj = coupon
+                    print(f"🎟️ Coupon {coupon_code} applied: -฿{discount_amount}")
+                else:
+                    print(f"❌ Coupon validation failed: {message}")
+                    flash(f'ไม่สามารถใช้คูปองได้: {message}', 'warning')
+            
+            # Parse transfer datetime - support DD/MM/YYYY, HH:MM format
             transfer_datetime_str = request.form.get('transfer_datetime')
-            transfer_dt = datetime.fromisoformat(transfer_datetime_str)
+            print(f"📅 Received transfer_datetime: '{transfer_datetime_str}'")
+            
+            if not transfer_datetime_str:
+                flash('กรุณาระบุวันที่-เวลาที่โอนเงิน', 'error')
+                return render_template(
+                    'group_buy/public/payment_bank.html',
+                    campaign=campaign,
+                    bank_accounts=bank_accounts,
+                    pax_count=pax_count,
+                    payment_amount=payment_amount,
+                    customer_name=customer_name,
+                    customer_email=customer_email,
+                    customer_phone=customer_phone
+                )
+            
+            try:
+                # Try parsing DD/MM/YYYY, HH:MM format first
+                transfer_dt = datetime.strptime(transfer_datetime_str, '%d/%m/%Y, %H:%M')
+                print(f"✅ Parsed datetime (DD/MM/YYYY format): {transfer_dt}")
+            except ValueError:
+                try:
+                    # Fallback to ISO format
+                    transfer_dt = datetime.fromisoformat(transfer_datetime_str)
+                    print(f"✅ Parsed datetime (ISO format): {transfer_dt}")
+                except ValueError as e:
+                    print(f"❌ Failed to parse datetime: {e}")
+                    flash(f'รูปแบบวันที่-เวลาไม่ถูกต้อง: {transfer_datetime_str}', 'error')
+                    return render_template(
+                        'group_buy/public/payment_bank.html',
+                        campaign=campaign,
+                        bank_accounts=bank_accounts,
+                        pax_count=pax_count,
+                        payment_amount=payment_amount,
+                        customer_name=customer_name,
+                        customer_email=customer_email,
+                        customer_phone=customer_phone
+                    )
             
             # Get bank account ID with validation
             bank_account_id_str = request.form.get('bank_account_id', '').strip()
@@ -161,11 +241,32 @@ def bank_transfer(campaign_id):
                 bank_account_id=bank_account_id,
                 transfer_date=transfer_dt.date(),
                 transfer_time=transfer_dt.time(),
-                slip_image=slip_image
+                slip_image=slip_image,
+                coupon_id=coupon_obj.id if coupon_obj else None,
+                coupon_code=coupon_code if coupon_obj else None,
+                discount_amount=discount_amount,
+                original_amount=original_amount
             )
             
             db.session.add(payment)
             db.session.flush()  # เพื่อให้ได้ payment.id
+            print(f"💾 Payment created: ID={payment.id}, Amount={payment.total_amount}, Coupon={payment.coupon_code}")
+            
+            # Record coupon usage if applied
+            if coupon_obj:
+                print(f"🎟️ Recording coupon usage: {coupon_code} (ID={coupon_obj.id}) for payment #{payment.id}")
+                usage = CouponService.record_usage(
+                    coupon=coupon_obj,
+                    participant_id=participant.id if participant else None,
+                    campaign_id=campaign_id,
+                    original_amount=float(original_amount),
+                    discount_amount=float(discount_amount),
+                    customer_email=request.form.get('customer_email'),
+                    payment_id=payment.id
+                )
+                print(f"✅ Coupon usage recorded: ID={usage.id if usage else 'None'}")
+            else:
+                print("ℹ️ No coupon applied to this payment")
             
             # อัปเดต participant ถ้ามี
             if participant:
@@ -199,12 +300,16 @@ def bank_transfer(campaign_id):
             db.session.rollback()
             flash(f'เกิดข้อผิดพลาด: {str(e)}', 'error')
     
+    # GET request - แสดงฟอร์มพร้อมข้อมูลที่ pre-fill
     return render_template(
         'group_buy/public/payment_bank.html',
         campaign=campaign,
         bank_accounts=bank_accounts,
         pax_count=pax_count,
-        payment_amount=payment_amount
+        payment_amount=payment_amount,
+        customer_name=customer_name,
+        customer_email=customer_email,
+        customer_phone=customer_phone
     )
 
 @bp.route('/qr/<int:campaign_id>', methods=['GET', 'POST'])
@@ -451,12 +556,12 @@ def send_booking_confirmation_email(payment, campaign):
                     
                     <div class="section">
                         <h3>✈️ Flights & Hotels (เที่ยวบิน / โรงแรม)</h3>
-                        <p style="white-space: pre-line;">{campaign.product_details or 'ไม่มีข้อมูล'}</p>
+                        <p style="white-space: pre-line;">{campaign.product_details.replace('<br>', chr(10)).replace('<br/>', chr(10)).replace('<br />', chr(10)) if campaign.product_details else 'ไม่มีข้อมูล'}</p>
                     </div>
                     
                     <div class="section">
                         <h3>📝 Description - รายละเอียด</h3>
-                        <p style="white-space: pre-line;">{campaign.description or 'ไม่มีข้อมูล'}</p>
+                        <p style="white-space: pre-line;">{campaign.description.replace('<br>', chr(10)).replace('<br/>', chr(10)).replace('<br />', chr(10)) if campaign.description else 'ไม่มีข้อมูล'}</p>
                     </div>
                     
                     <div class="section">

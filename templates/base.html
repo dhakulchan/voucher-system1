@@ -458,6 +458,29 @@
                         </span>
                     </li>
                     {% if current_user.is_authenticated %}
+                    <!-- Customer Points Menu for Customer Role -->
+                    {% if current_user.role == 'Customer' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://booking.dhakulchan.net/group-buy/">
+                            <i class="fas fa-bullhorn me-1"></i>แคมเปญ แนะนำ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer.my_bookings') }}">
+                            <i class="fas fa-list-alt me-1"></i>My Booking
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_reviews.list_reviews') }}">
+                            <i class="fas fa-star me-1"></i>รีวิวของฉัน
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/points">
+                            <i class="fas fa-coins me-1"></i>แต้มสะสม
+                        </a>
+                    </li>
+                    {% endif %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                             data-bs-toggle="dropdown">
@@ -474,6 +497,13 @@
                                     <i class="fas fa-sign-out-alt me-2"></i>{{ t('logout') }}
                                 </a></li>
                         </ul>
+                    </li>
+                    {% else %}
+                    <!-- Guest Menu - Not Logged In -->
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-outline-light btn-sm" href="/customer/login">
+                            <i class="fas fa-sign-in-alt me-1"></i>Customer Login
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -619,6 +649,30 @@
                                 href="{{ url_for('group_buy_payment_admin.bank_accounts') }}"
                                 style="padding-left: 2.5rem;">
                                 <i class="fas fa-university me-2"></i>Bank Accounts
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('group_buy_coupons') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('group_buy_coupon') %}active{% endif %}"
+                                href="{{ url_for('group_buy_coupon.list_coupons') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-ticket-alt me-2"></i>Coupons - Discount
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('customer_reviews') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('admin_reviews') %}active{% endif %}"
+                                href="{{ url_for('admin_reviews.list_reviews') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-star me-2"></i>Customer Reviews
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('customer_points') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('admin_points') %}active{% endif %}"
+                                href="{{ url_for('admin_points.list_customers') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-coins me-2"></i>Customer Points
                             </a>
                         </li>
                         {% endif %}
@@ -798,37 +852,30 @@
                     </div>
 
                     <!-- Footer -->
-                    <footer class="mt-5 py-4 border-top bg-light">
+                    <footer class="mt-5 py-3 border-top bg-white">
                         <div class="container-fluid">
                             <div class="row">
-                                <div class="col-12 text-center mb-3">
-                                    <p class="text-muted mb-2" style="font-weight: 600;">
-                                        &copy; 2026 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1
-                                        |
+                                <div class="col-12 text-center">
+                                    <p class="mb-3 text-muted" style="font-size: 0.75rem;">
+                                        © 2026 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1 |
                                         <a href="https://www.dhakulchan.net/page/about-dhakulchan" target="_blank"
-                                            rel="noopener noreferrer" class="text-primary text-decoration-none">
+                                            rel="noopener noreferrer" class="text-decoration-none">
                                             <i class="fas fa-info-circle me-1"></i>รู้จักเรา
                                         </a>
                                     </p>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <p class="text-muted small mb-1"><strong>HKG:</strong> Flat C13, 21/F, Mai Wah
-                                        Industrial Bldg., No. 1–7 Wah Shing Street, Kwai Chung, NT.</p>
-                                    <p class="text-muted small mb-0"><strong>Tel:</strong> +852 23921155, +852 23921177
-                                        | <strong>Fax:</strong> +852 23929845</p>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <p class="text-muted small mb-1"><strong>BKK:</strong> 710, 716, 704, 706 Prachautid
-                                        Road, Samsennok, Huai Kwang, Bangkok 10320 Thailand.</p>
-                                    <p class="text-muted small mb-0"><strong>Tel:</strong> +66 020266525, 022744216, +66
-                                        0818453303, 0846763332 | <strong>Fax:</strong> +66 020266525 Ext. 5</p>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12 text-center mt-2">
-                                    <p class="text-muted small mb-0" style="font-size: 0.85rem;">
+                                    <p class="mb-2" style="font-size: 0.8rem; line-height: 1.5;">
+                                        <strong>HKG:</strong> Flat C13, 21/F, Mai Wah Industrial Bldg., No. 1–7 Wah
+                                        Shing Street, Kwai Chung, NT. Hong Kong<br>
+                                        <strong>Tel:</strong> +852 23921155, +852 23921177 | <strong>Fax:</strong> +852
+                                        23929845
+                                    </p>
+                                    <p class="mb-3" style="font-size: 0.8rem; line-height: 1.5;">
+                                        <strong>BKK:</strong> 710, 716, 704, 706 Prachautid Road, Samsennok, Huai Kwang,
+                                        Bangkok 10320 Thailand.<br>
+                                        <strong>Tel:</strong> +66 020266525, 022744216, +66 0818453303, 0846763332 |
+                                        <strong>Fax:</strong> +66 020266525 Ext. 5
+                                    </p>
+                                    <p class="mb-0" style="font-size: 0.75rem;">
                                         บริษัทตระกูลเฉินฯ
                                         ได้รับการอนุญาตอย่างเป็นทางการจากสมาคมขนส่งทางอากาศระหว่างประเทศ <strong>IATA
                                             License 3530464</strong> โดยมีสมาชิกรวมกันมากว่า 112 สายการบินทั่วโลก
@@ -837,6 +884,11 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Custom Footer Styles -->
+                        <style>
+                            /* Footer simple styling */
+                        </style>
                     </footer>
                 </main>
         </div>

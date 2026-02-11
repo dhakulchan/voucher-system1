@@ -3,6 +3,9 @@ import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
+from email.header import Header
+from email.utils import formataddr
+from email import policy
 from config import Config
 import os
 from utils.logging_config import get_logger
@@ -50,8 +53,13 @@ class EmailService:
                     cc_recipients = msg['Cc'].split(',')
                     recipients.extend([r.strip() for r in cc_recipients])
                 
-                text = msg.as_string()
-                server.sendmail(msg['From'], recipients, text)
+                # Ensure UTF-8 safe email sending
+                try:
+                    data = msg.as_bytes(policy=policy.SMTPUTF8)
+                    server.sendmail(msg['From'], recipients, data, mail_options=['SMTPUTF8'])
+                except smtplib.SMTPNotSupportedError:
+                    data = msg.as_bytes(policy=policy.SMTP)
+                    server.sendmail(msg['From'], recipients, data)
             
             logger.info("Email sent successfully to %s", msg['To'])
             if msg.get('Cc'):
@@ -75,7 +83,7 @@ class EmailService:
                 msg['Cc'] = cc_email
             
             # Attach HTML body
-            msg.attach(MIMEText(body, 'html'))
+            msg.attach(MIMEText(body, 'html', 'utf-8'))
             
             # Attach files if provided
             if attachments:
@@ -126,7 +134,7 @@ Email: {self.company_email}
 Phone: {Config.COMPANY_PHONE}
             """
             
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
             
             # Attach PDF if exists
             if pdf_path and os.path.exists(pdf_path):
@@ -222,7 +230,7 @@ Phone: {Config.COMPANY_PHONE}
 Address: {Config.COMPANY_ADDRESS}
             """
             
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
             
             # Send email
             self._send_email(msg)
@@ -262,7 +270,7 @@ Email: {self.company_email}
 Phone: {Config.COMPANY_PHONE}
             """
             
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
             
             # Send email
             self._send_email(msg)
@@ -307,7 +315,7 @@ Time: {booking.created_at.strftime('%Y-%m-%d %H:%M:%S') if booking else 'N/A'}
 System: Dhakul Chan Management System
                 """
                 
-                msg.attach(MIMEText(body, 'plain'))
+                msg.attach(MIMEText(body, 'plain', 'utf-8'))
                 self._send_email(msg)
             
             return True
@@ -326,9 +334,18 @@ System: Dhakul Chan Management System
                 server.starttls(context=context)
                 server.login(self.username, self.password)
                 
-                # Send email
-                text = msg.as_string()
-                server.sendmail(msg['From'], msg['To'], text)
+                recipients = [msg['To']]
+                if msg.get('Cc'):
+                    cc_recipients = msg['Cc'].split(',')
+                    recipients.extend([r.strip() for r in cc_recipients])
+                
+                # UTF-8 safe send (use SMTPUTF8 if supported)
+                try:
+                    data = msg.as_bytes(policy=policy.SMTPUTF8)
+                    server.sendmail(msg['From'], recipients, data, mail_options=['SMTPUTF8'])
+                except smtplib.SMTPNotSupportedError:
+                    data = msg.as_bytes(policy=policy.SMTP)
+                    server.sendmail(msg['From'], recipients, data)
             
             logger.info("Email sent successfully to %s", msg['To'])
             
@@ -486,7 +503,7 @@ Edit Booking: http://localhost:5001/booking/edit/{booking.id}
 This is an automated alert from {self.company_name} Booking System
             """
             
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
             
             # Send email
             if not self.smtp_configured:
@@ -568,7 +585,7 @@ Edit Booking: http://localhost:5001/booking/edit/{booking.id}
 This is an automated alert from {self.company_name} Booking System
             """
             
-            msg.attach(MIMEText(body, 'plain'))
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
             
             # Send email
             if not self.smtp_configured:

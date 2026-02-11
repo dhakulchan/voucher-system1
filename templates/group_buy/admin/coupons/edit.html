@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}แก้ไขคูปอง - {{ coupon.code }}{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 800px;">
+    <div class="mb-4">
+        <h2><i class="fas fa-edit text-primary me-2"></i>แก้ไขคูปอง: <strong>{{ coupon.code }}</strong></h2>
+
+        {% if stats %}
+        <div class="alert alert-info">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>ใช้งานแล้ว:</strong> {{ stats.total_uses }} ครั้ง
+                </div>
+                <div class="col-md-4">
+                    <strong>ส่วนลดรวม:</strong> ฿{{ "{:,.2f}".format(stats.total_discount) }}
+                </div>
+                <div class="col-md-4">
+                    <strong>ผู้ใช้:</strong> {{ stats.unique_users }} คน
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" class="card shadow-sm">
+        <div class="card-body">
+            <!-- Coupon Code (Read-only) -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">รหัสคูปอง</label>
+                <input type="text" class="form-control" value="{{ coupon.code }}" disabled>
+                <small class="form-text text-muted">ไม่สามารถแก้ไขรหัสคูปองได้</small>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-3">
+                <label class="form-label fw-bold">คำอธิบาย</label>
+                <textarea name="description" class="form-control" rows="2">{{ coupon.description or '' }}</textarea>
+            </div>
+
+            <!-- Discount Type & Value -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">ประเภทส่วนลด <span class="text-danger">*</span></label>
+                    <select name="discount_type" id="discountType" class="form-select" required>
+                        <option value="fixed" {% if coupon.discount_type=='fixed' %}selected{% endif %}>ลดเงินสด (บาท)
+                        </option>
+                        <option value="percentage" {% if coupon.discount_type=='percentage' %}selected{% endif %}>
+                            ลดเปอร์เซ็นต์ (%)</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">มูลค่าส่วนลด <span class="text-danger">*</span></label>
+                    <input type="number" name="discount_value" class="form-control" required min="0" step="0.01"
+                        value="{{ coupon.discount_value }}">
+                </div>
+            </div>
+
+            <!-- Date Range -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">วันเริ่มต้น <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="start_date" class="form-control" required
+                        value="{{ coupon.start_date.strftime('%Y-%m-%dT%H:%M') }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">วันสิ้นสุด <span class="text-danger">*</span></label>
+                    <input type="datetime-local" name="end_date" class="form-control" required
+                        value="{{ coupon.end_date.strftime('%Y-%m-%dT%H:%M') }}">
+                </div>
+            </div>
+
+            <!-- Usage Limits -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">จำนวนครั้งสูงสุด (ทั้งหมด)</label>
+                    <input type="number" name="max_uses" class="form-control" min="1"
+                        value="{{ coupon.max_uses or '' }}" placeholder="เว้นว่างถ้าไม่จำกัด">
+                    <small class="form-text text-muted">เว้นว่างถ้าใช้ได้ไม่จำกัด</small>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">จำนวนครั้งต่อคน</label>
+                    <input type="number" name="max_uses_per_user" class="form-control" min="1"
+                        value="{{ coupon.max_uses_per_user }}" required>
+                </div>
+            </div>
+
+            <!-- Conditions -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">ยอดซื้อขั้นต่ำ (บาท)</label>
+                    <input type="number" name="min_purchase_amount" class="form-control" min="0" step="0.01"
+                        value="{{ coupon.min_purchase_amount }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">จำกัดแคมเปญ</label>
+                    <select name="campaign_id" class="form-select">
+                        <option value="">ทุกแคมเปญ</option>
+                        {% for campaign in campaigns %}
+                        <option value="{{ campaign.id }}" {% if coupon.campaign_id==campaign.id %}selected{% endif %}>
+                            {{ campaign.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Active Status -->
+            <div class="mb-3">
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="isActive" name="is_active" {% if
+                        coupon.is_active %}checked{% endif %}>
+                    <label class="form-check-label" for="isActive">
+                        เปิดใช้งานคูปอง
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer d-flex justify-content-between">
+            <a href="{{ url_for('group_buy_coupon.list_coupons') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>ยกเลิก
+            </a>
+            <div>
+                <a href="{{ url_for('group_buy_coupon.view_usage', coupon_id=coupon.id) }}" class="btn btn-info me-2">
+                    <i class="fas fa-chart-bar me-2"></i>ดูการใช้งาน
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>บันทึก
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

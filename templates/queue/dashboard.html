@@ -127,7 +127,7 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ queue.counter or '-' }}</td>
-                                    <td>{{ queue.created_at.strftime('%H:%M') }}</td>
+                                    <td>{{ queue.created_at|thai_datetime('%H:%M') }}</td>
                                     <td>
                                         {% if queue.waiting_time %}
                                         {{ queue.waiting_time }} min
@@ -137,11 +137,18 @@
                                     </td>
                                     <td>
                                         <a href="{{ url_for('queue.track', queue_number=queue.queue_number) }}"
-                                            class="btn btn-sm btn-info" target="_blank">
+                                            class="btn btn-sm btn-info" target="_blank" title="View Queue">
                                             <i class="fas fa-eye"></i>
                                         </a>
+                                        {% if queue.status in ['serving', 'waiting'] %}
+                                        <a href="{{ url_for('booking.create') }}?queue_id={{ queue.id }}"
+                                            class="btn btn-sm btn-primary" target="_blank" title="Apply to Booking">
+                                            <i class="fas fa-ticket-alt"></i>
+                                        </a>
+                                        {% endif %}
                                         {% if queue.status == 'waiting' %}
-                                        <button class="btn btn-sm btn-danger" onclick="cancelQueue({{ queue.id }})">
+                                        <button class="btn btn-sm btn-danger" onclick="cancelQueue({{ queue.id }})"
+                                            title="Cancel Queue">
                                             <i class="fas fa-times"></i>
                                         </button>
                                         {% endif %}

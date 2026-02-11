@@ -65,6 +65,35 @@
                     </div>
 
                     <div class="row mb-3">
+                        <div class="col-md-12">
+                            <strong><i class="fas fa-plane-departure text-success"></i> วันที่เดินทาง:</strong>
+                            {% if group.campaign.travel_date_from and group.campaign.travel_date_to %}
+                            <div class="alert alert-info mt-2 mb-0">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <i class="fas fa-plane-departure"></i>
+                                        <strong>วันไป:</strong>
+                                        {{ group.campaign.travel_date_from.strftime('%d/%m/%Y (%A)') }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <i class="fas fa-plane-arrival"></i>
+                                        <strong>วันกลับ:</strong>
+                                        {{ group.campaign.travel_date_to.strftime('%d/%m/%Y (%A)') }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% elif group.campaign.travel_date_from %}
+                            <div class="alert alert-info mt-2 mb-0">
+                                <i class="fas fa-calendar-day"></i>
+                                {{ group.campaign.travel_date_from.strftime('%d/%m/%Y (%A)') }}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">ไม่ระบุวันที่เดินทาง</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>หัวหน้ากลุ่ม:</strong><br>
                             {{ group.leader_name }}<br>
@@ -372,10 +401,9 @@
                                         {% endif %}
                                         <!-- ปุ่มย้ายสมาชิก -->
                                         {% if group.status == 'active' and not p.is_leader %}
-                                        <button type="button" class="btn btn-sm btn-warning ms-1" 
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#moveParticipantModal{{ p.id }}" 
-                                                title="ย้ายสมาชิกไปกลุ่มอื่น">
+                                        <button type="button" class="btn btn-sm btn-warning ms-1" data-bs-toggle="modal"
+                                            data-bs-target="#moveParticipantModal{{ p.id }}"
+                                            title="ย้ายสมาชิกไปกลุ่มอื่น">
                                             <i class="fas fa-exchange-alt"></i> ย้าย
                                         </button>
                                         {% endif %}
@@ -560,7 +588,7 @@
 
     <!-- Payment Modals -->
     {% for p in participants %}
-    
+
     <!-- Move Participant Modal -->
     <div class="modal fade" id="moveParticipantModal{{ p.id }}" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -585,16 +613,18 @@
                             <label class="form-label"><strong>เลือกกลุ่มปลายทาง:</strong></label>
                             <select name="target_group_id" class="form-select" required>
                                 <option value="">-- เลือกกลุ่มที่ต้องการย้ายไป --</option>
-                                {% for other_group in group.campaign.groups if other_group.id != group.id and other_group.status == 'active' and not other_group.is_expired %}
-                                    {% set available_slots = other_group.required_participants - other_group.current_participants %}
-                                    {% if available_slots >= p.pax_count %}
-                                    <option value="{{ other_group.id }}">
-                                        {{ other_group.group_name or other_group.group_code }} 
-                                        - {{ other_group.current_participants }}/{{ other_group.required_participants }} 
-                                        (ว่าง {{ available_slots }} ที่) 
-                                        - {{ "{:.0f}".format(other_group.progress_percentage) }}%
-                                    </option>
-                                    {% endif %}
+                                {% for other_group in group.campaign.groups if other_group.id != group.id and
+                                other_group.status == 'active' and not other_group.is_expired %}
+                                {% set available_slots = other_group.required_participants -
+                                other_group.current_participants %}
+                                {% if available_slots >= p.pax_count %}
+                                <option value="{{ other_group.id }}">
+                                    {{ other_group.group_name or other_group.group_code }}
+                                    - {{ other_group.current_participants }}/{{ other_group.required_participants }}
+                                    (ว่าง {{ available_slots }} ที่)
+                                    - {{ "{:.0f}".format(other_group.progress_percentage) }}%
+                                </option>
+                                {% endif %}
                                 {% endfor %}
                             </select>
                             <small class="text-muted">
@@ -624,7 +654,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="modal fade" id="paymentModal{{ p.id }}" tabindex="-1" aria-labelledby="paymentModalLabel{{ p.id }}"
         aria-hidden="true">
         <div class="modal-dialog">

@@ -201,9 +201,11 @@
                         <label class="form-label">Select New Role:</label>
                         <select name="role" class="form-select" required>
                             <option value="staff" {% if user.role=='Staff' %}selected{% endif %}>Staff</option>
-                            <option value="operation" {% if user.role=='Operation' %}selected{% endif %}>Operation User
+                            <option value="operation" {% if user.role=='Operation' %}selected{% endif %}>Operation
                             </option>
                             <option value="manager" {% if user.role=='Manager' %}selected{% endif %}>Manager</option>
+                            <option value="agency" {% if user.role=='Agency' %}selected{% endif %}>Agency</option>
+                            <option value="customer" {% if user.role=='Customer' %}selected{% endif %}>Customer</option>
                             <option value="internship" {% if user.role=='Internship' %}selected{% endif %}>Internship
                             </option>
                             <option value="freelance" {% if user.role=='Freelance' %}selected{% endif %}>Freelance

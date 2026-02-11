@@ -655,7 +655,7 @@
                                     </button>
                                     <button class="btn btn-primary"
                                         onclick="copyEnhancedMessage(getCurrentBookingId())">
-                                        <i class="fas fa-copy me-2"></i>Copy Link-Message
+                                        <i class="fas fa-copy me-2"></i>Copy Message-INFO
                                     </button>
                                     <button class="btn btn-info" onclick="openPublicSharePage(getCurrentBookingId())">
                                         <i class="fas fa-external-link-alt me-2"></i>Open Public Share Page
@@ -664,13 +664,17 @@
                             </div>
                             <div class="col-lg-6 mb-3">
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-dark" onclick="emailLinkMessage(getCurrentBookingId())">
-                                        <i class="fas fa-envelope me-2"></i>Email Link-Message
-                                    </button>
-                                    <button class="btn btn-secondary"
-                                        onclick="shareToSocialMedia(getCurrentBookingId())">
-                                        <i class="fas fa-share-nodes me-2"></i>Share Public Page-App
-                                    </button>
+                                    {% if booking.status == 'quoted' %}
+                                    <a href="{{ url_for('booking.email_quote_pdf', booking_id=booking.id) }}"
+                                        class="btn btn-dark">
+                                        <i class="fas fa-envelope me-2"></i>Email Quote PDF
+                                    </a>
+                                    {% else %}
+                                    <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}"
+                                        class="btn btn-dark">
+                                        <i class="fas fa-envelope me-2"></i>Email Service Proposal
+                                    </a>
+                                    {% endif %}
                                     <button class="btn btn-outline-primary"
                                         onclick="getShareStatus(getCurrentBookingId())">
                                         <i class="fas fa-info-circle me-2"></i>Share Status
@@ -680,25 +684,6 @@
                         </div>
                     </div>
 
-                    <!-- Legacy Email Actions -->
-                    <div>
-                        <h6 class="text-muted">
-                            <i class="fas fa-envelope me-2"></i>Direct Email Actions:
-                        </h6>
-                        <div class="btn-group" role="group">
-                            {% if booking.status == 'quoted' %}
-                            <a href="{{ url_for('booking.email_quote_pdf', booking_id=booking.id) }}"
-                                class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-envelope me-2"></i>Email Quote PDF
-                            </a>
-                            {% else %}
-                            <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}"
-                                class="btn btn-outline-secondary btn-sm">
-                                <i class="fas fa-envelope me-2"></i>Email Service Proposal
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -706,65 +691,7 @@
 
     <div class="row">
         <!-- Booking Status Alert -->
-        <div class="col-12">
-            <!-- Social Media Actions -->
-            <div class="mb-3">
-                <button class="btn btn-outline-primary me-2"
-                    onclick="try { shareToSocialMedia(getCurrentBookingId(), 'quote'); } catch(e) { console.error('shareToSocialMedia error:', e); }">
-                    <i class="fas fa-share-alt me-2"></i>Social Media
-                </button>
-                <button class="btn btn-outline-secondary"
-                    onclick="try { openSharePage(getCurrentBookingId(), 'quote'); } catch(e) { console.error('openSharePage error:', e); }">
-                    <i class="fas fa-external-link-alt me-2"></i>Open Share Page
-                </button>
-            </div>
-        </div>
-        {% if booking.status not in ['quoted', 'paid', 'vouchered', 'draft', 'cancelled'] %}
-        <!-- Booking PDF/PNG Buttons for Non-Quoted Status (excluding draft and cancelled) -->
-        <a href="{{ url_for('booking.generate_booking_pdf', booking_id=booking.id) }}?v={{ timestamp() }}"
-            class="btn btn-info" target="_blank">
-            <i class="fas fa-file-pdf me-2"></i>Booking PDF
-        </a>
-
-        <!-- Email Service Proposal Button -->
-        <a href="{{ url_for('booking.email_booking_pdf', booking_id=booking.id) }}" class="btn btn-outline-info">
-            <i class="fas fa-envelope me-2"></i>Email Service Proposal
-        </a>
-        <!-- Booking PNG with Share Options -->
-        <div class="btn-group" role="group">
-            <a href="{{ url_for('booking.generate_booking_png', booking_id=booking.id) }}?v={{ timestamp() }}"
-                class="btn btn-secondary" target="_blank">
-                <i class="fas fa-image me-2"></i>Booking PNG
-            </a>
-            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split"
-                data-bs-toggle="dropdown" aria-expanded="false">
-                <span class="visually-hidden">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu">
-                <li>
-                    <a class="dropdown-item" href="#"
-                        onclick="try { shareToLineOA(getCurrentBookingId()); } catch(e) { console.error('shareToLineOA error:', e); }">
-                        <i class="fab fa-line me-2" style="color: #00B900;"></i>Send to Line OA
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="#"
-                        onclick="try { copyLineMessage(getCurrentBookingId()); } catch(e) { console.error('copyLineMessage error:', e); }">
-                        <i class="fas fa-copy me-2"></i>Copy Line Message
-                    </a>
-                </li>
-                <li>
-                    <hr class="dropdown-divider">
-                </li>
-                <li>
-                    <a class="dropdown-item" href="#"
-                        onclick="try { sharePublic(getCurrentBookingId(), event); } catch(e) { console.error('sharePublic error:', e); }">
-                        <i class="fas fa-share-alt me-2"></i>Share Public Link
-                    </a>
-                </li>
-            </ul>
-        </div>
-        {% endif %}
+        <div class="col-12"></div>
     </div>
 </div>
 
@@ -893,6 +820,16 @@
                         <span class="badge bg-secondary text-capitalize">{{ booking.booking_type }}</span>
                     </div>
                 </div>
+                {% if booking.party_name %}
+                <div class="row mb-3">
+                    <div class="col-sm-4">
+                        <strong>Party Name/Code:</strong>
+                    </div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-info">{{ booking.party_name }}</span>
+                    </div>
+                </div>
+                {% endif %}
                 {% if booking.arrival_date %}
                 <div class="row mb-3">
                     <div class="col-sm-4">
@@ -1427,7 +1364,7 @@
             let data;
             if (window.currentBookingToken) {
                 console.log('✅ Using cached token from reset:', window.currentBookingToken);
-                const baseUrl = 'http://localhost:5001/public/booking';
+                const baseUrl = 'https://booking.dhakulchan.net/public/booking';
                 const token = window.currentBookingToken;
                 data = {
                     success: true,
@@ -1438,7 +1375,7 @@
                 };
             } else if (window.serverBookingToken) {
                 console.log('✅ Using server-side token from template:', window.serverBookingToken.substring(0, 20) + '...');
-                const baseUrl = 'http://localhost:5001/public/booking';
+                const baseUrl = 'https://booking.dhakulchan.net/public/booking';
                 const token = window.serverBookingToken;
                 data = {
                     success: true,
@@ -1489,9 +1426,24 @@
 
 🎫 Tour Voucher: ${data.secure_url}
 
-🖼️ Download PNG: ${data.png_url || `${data.secure_url}/png`}
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
 
-📄 Download PDF: ${data.pdf_url || `${data.secure_url}/pdf`}
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
 
 Thank you for letting us take care of you. Have a safe journey, and we hope to see you again!
 ขอบคุณที่ให้เราดูแลท่าน ขอให้เดินทางปลอดภัย และหวังว่าจะได้พบกันอีก!
@@ -1508,9 +1460,24 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
 
 🎫 Tour Voucher: ${data.secure_url}
 
-🖼️ Download PNG: ${data.png_url || `${data.secure_url}/png`}
+━━━━━━━━━
+💡แนะนำการใช้งาน
+━━━━━━━━━
 
-📄 Download PDF: ${data.pdf_url || `${data.secure_url}/pdf`}
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
 
 ติดต่อสอบถามข้อมูลเพิ่มเติม:
 📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
@@ -1607,7 +1574,7 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
 
                 // Update UI immediately with new token URLs
                 const newToken = data.tokens.base64_token;
-                const baseUrl = 'http://localhost:5001/public/booking';
+                const baseUrl = 'https://booking.dhakulchan.net/public/booking';
 
                 // Update all token displays in the page
                 document.querySelectorAll('a[href*="/public/booking/"]').forEach(link => {
@@ -1657,18 +1624,99 @@ Thank you for letting us take care of you. Have a safe journey, and we hope to s
 
     async function sendToLineOA(bookingId) {
         try {
-            showToast('🔄 Preparing Line OA message...', 'info');
-            const { message } = await generateEnhancedMessage(bookingId);
+            showToast('🔄 Preparing LINE OA message...', 'info');
 
-            // Open Line with pre-filled message
-            const lineUrl = `https://line.me/R/msg/text/?${encodeURIComponent(message)}`;
-            window.open(lineUrl, '_blank');
+            // First, try to send via LINE API automatically
+            // Prompt for LINE User ID (this would ideally come from customer record)
+            const lineUserId = prompt('กรุณากรอก LINE User ID ของลูกค้า:\n(ถ้าไม่มีให้กด Cancel เพื่อใช้วิธี Copy-Paste)');
 
-            showToast('📱 Opening Line OA...', 'success');
+            if (lineUserId && lineUserId.trim()) {
+                // Try automatic sending via API
+                try {
+                    showToast('📤 Sending via LINE API...', 'info');
+
+                    const response = await fetch(`/api/booking/${bookingId}/send-to-line`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            line_user_id: lineUserId.trim()
+                        })
+                    });
+
+                    console.log(`🔍 API Response Status: ${response.status}`);
+                    const responseText = await response.text();
+                    console.log(`🔍 API Response Body: ${responseText}`);
+
+                    let result;
+                    try {
+                        result = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('❌ Failed to parse response as JSON:', parseError);
+                        console.error('Response text:', responseText);
+                        showToast('⚠️ ไม่สามารถเข้าใจการตอบกลับจากเซิร์ฟเวอร์ จะใช้วิธี Copy-Paste', 'warning');
+                        result = { success: false };
+                    }
+
+                    if (result && result.success) {
+                        showToast('✅ ส่งข้อความผ่าน LINE OA สำเร็จ!', 'success');
+                        console.log('✅ LINE message sent:', result);
+                        return; // Exit - message sent successfully
+                    } else {
+                        // API failed, fall back to manual method
+                        console.warn('⚠️ LINE API failed:', result);
+                        showToast(`⚠️ ไม่สามารถส่งอัตโนมัติได้: ${result?.message || 'Unknown error'} จะใช้วิธี Copy-Paste`, 'warning');
+                    }
+
+                } catch (apiError) {
+                    console.error('❌ LINE API error:', apiError);
+                    console.error('Stack:', apiError.stack);
+                    showToast('⚠️ เกิดข้อผิดพลาด จะใช้วิธี Copy-Paste', 'warning');
+                }
+            }
+
+            // Fallback method: Manual clipboard copy + LINE open
+            const { message, data } = await generateEnhancedMessage(bookingId);
+
+            // Create message that will be copied to clipboard
+            const fullMessage = `สวัสดีค่ะ
+บริษัท ตระกูลเฉินฯ แจ้งรายละเอียดบริการหรือรายการทัวร์ หมายเลขอ้างอิง ${data.booking_reference}
+
+กรุณาคลิกดูรายละเอียดตามด้านล่างค่ะ
+🔗${data.secure_url}
+
+ติดต่อสอบถามข้อมูลเพิ่มเติม:
+📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
+📧 Email: booking@dhakulchan.com
+📱 Line OA: @dhakulchan | @changuru`;
+
+            // Copy the message to clipboard
+            try {
+                await navigator.clipboard.writeText(fullMessage);
+                showToast('✅ Message copied to clipboard!', 'success');
+            } catch (clipboardError) {
+                console.warn('Clipboard copy failed:', clipboardError);
+            }
+
+            // Open LINE messaging directly (simpler approach)
+            // Use LINE's official messaging URL
+            const lineUrl = `https://line.me/R/home/`;
+
+            console.log('📱 Opening LINE for manual messaging');
+            window.open(lineUrl, '_blank', 'width=500,height=600');
+
+            // Show instructions to user
+            setTimeout(() => {
+                showToast('📱 LINE opened. Paste message from clipboard in chat.', 'info');
+            }, 500);
+
         } catch (error) {
-            showToast('❌ Error opening Line OA: ' + error.message, 'error');
+            console.error('❌ Line share error:', error);
+            showToast('❌ Error: ' + error.message, 'error');
         }
     }
+
 
     async function openPublicSharePage(bookingId) {
         try {

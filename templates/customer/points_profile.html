@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle mx-auto mb-3"
+                            style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 2.5rem;">
+                            {{ customer.name[0] if customer and customer.name else 'C' }}
+                        </div>
+                        <h5 class="mb-1 fw-bold">{{ customer.name if customer else 'ลูกค้า' }}</h5>
+                        <small class="text-muted">{{ customer.email if customer else 'customer@example.com' }}</small>
+                    </div>
+                    <hr>
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#points" data-bs-toggle="tab">
+                            <i class="fas fa-gift me-2"></i>คะแนนสะสม
+                        </a>
+                        <a class="nav-link" href="#history" data-bs-toggle="tab">
+                            <i class="fas fa-history me-2"></i>ประวัติคะแนน
+                        </a>
+                        <a class="nav-link" href="#reviews" data-bs-toggle="tab">
+                            <i class="fas fa-star me-2"></i>รีวิวของฉัน
+                        </a>
+                        <a class="nav-link" href="#bookings" data-bs-toggle="tab">
+                            <i class="fas fa-ticket-alt me-2"></i>การจองของฉัน
+                        </a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <div class="tab-content">
+                <!-- Points Tab -->
+                <div class="tab-pane fade show active" id="points">
+                    <!-- Points Summary -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-lg h-100"
+                                style="border-radius: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <div class="card-body p-4 text-white text-center">
+                                    <i class="fas fa-coins fs-1 mb-3"></i>
+                                    <h6 class="mb-2">คะแนนที่ใช้ได้</h6>
+                                    <h2 class="mb-0 fw-bold">{{ points.available_points if points else 0 }}</h2>
+                                    <small class="opacity-75">คะแนน</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+                                <div class="card-body p-4 text-center">
+                                    <i class="fas fa-check-circle fs-1 mb-3" style="color: #10b981;"></i>
+                                    <h6 class="mb-2 text-muted">คะแนนตลอดชีพ</h6>
+                                    <h2 class="mb-0 fw-bold" style="color: #1a202c;">{{ points.lifetime_points if points
+                                        else 0 }}</h2>
+                                    <small class="text-muted">คะแนน</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+                                <div class="card-body p-4 text-center">
+                                    <i class="fas fa-shopping-bag fs-1 mb-3" style="color: #f59e0b;"></i>
+                                    <h6 class="mb-2 text-muted">คะแนนที่ใช้ไป</h6>
+                                    <h2 class="mb-0 fw-bold" style="color: #1a202c;">{{ points.used_points if points
+                                        else 0 }}</h2>
+                                    <small class="text-muted">คะแนน</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Points Value -->
+                    <div class="alert alert-info"
+                        style="border-radius: 15px; border-left: 4px solid #0ea5e9; background: #f0f9ff;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-calculator fs-2 me-3" style="color: #0ea5e9;"></i>
+                            <div>
+                                <h6 class="mb-1 fw-bold">มูลค่าคะแนนของคุณ</h6>
+                                <p class="mb-0">คะแนนที่ใช้ได้ <strong>{{ points.available_points if points else 0 }}
+                                        คะแนน</strong> = ส่วนลด <strong class="text-primary">{{ points.available_points
+                                        if points else 0 }} บาท</strong></p>
+                                <small class="text-muted">อัตราแลกเปลี่ยน: 100 คะแนน = ส่วนลด 100 บาท</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- How to Earn Points -->
+                    <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-lightbulb me-2"
+                                    style="color: #fbbf24;"></i>วิธีสะสมคะแนน</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="icon-circle"
+                                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-edit text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1 fw-bold">เขียนรีวิว</h6>
+                                            <p class="mb-0 text-muted small">รีวิวทริป = 50 คะแนน<br>+ รูปภาพ = +20
+                                                คะแนน<br>+ รีวิวยาว = +10 คะแนน</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="icon-circle"
+                                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-ticket-alt text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1 fw-bold">จองทริป</h6>
+                                            <p class="mb-0 text-muted small">จองครบ 5 ทริป<br>รับคะแนนโบนัส 100 คะแนน
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="icon-circle"
+                                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-users text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1 fw-bold">ชวนเพื่อน</h6>
+                                            <p class="mb-0 text-muted small">เพื่อนจองผ่านลิงก์<br>รับทันที 50 คะแนน</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-start">
+                                        <div class="flex-shrink-0">
+                                            <div class="icon-circle"
+                                                style="width: 50px; height: 50px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-birthday-cake text-white"></i>
+                                            </div>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h6 class="mb-1 fw-bold">วันเกิด</h6>
+                                            <p class="mb-0 text-muted small">รับคะแนนโบนัส<br>200 คะแนน ในวันเกิด</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div class="tab-pane fade" id="history">
+                    <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-history me-2"></i>ประวัติการได้/ใช้คะแนน</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            {% if transactions and transactions|length > 0 %}
+                            <div class="list-group list-group-flush">
+                                {% for trans in transactions %}
+                                <div class="list-group-item p-4">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="d-flex align-items-start">
+                                            <div class="icon-circle me-3"
+                                                style="width: 45px; height: 45px; background: {% if trans.transaction_type == 'earn' %}linear-gradient(135deg, #10b981 0%, #059669 100%){% else %}linear-gradient(135deg, #ef4444 0%, #dc2626 100%){% endif %}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                                <i
+                                                    class="fas {% if trans.transaction_type == 'earn' %}fa-plus{% else %}fa-minus{% endif %} text-white"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1 fw-bold">{{ trans.description }}</h6>
+                                                <small class="text-muted">{{ trans.created_at.strftime('%d/%m/%Y %H:%M')
+                                                    }}</small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            <h5 class="mb-1 fw-bold"
+                                                style="color: {% if trans.transaction_type == 'earn' %}#10b981{% else %}#ef4444{% endif %};">
+                                                {% if trans.transaction_type == 'earn' %}+{% else %}-{% endif %}{{
+                                                trans.points }}
+                                            </h5>
+                                            <small class="text-muted">คงเหลือ {{ trans.balance_after }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="p-5 text-center">
+                                <i class="fas fa-inbox fs-1 mb-3" style="color: #d1d5db;"></i>
+                                <p class="text-muted mb-0">ยังไม่มีประวัติการใช้คะแนน</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviews Tab -->
+                <div class="tab-pane fade" id="reviews">
+                    <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-star me-2" style="color: #fbbf24;"></i>รีวิวของฉัน
+                            </h5>
+                        </div>
+                        <div class="card-body p-4">
+                            {% if reviews and reviews|length > 0 %}
+                            {% for review in reviews %}
+                            <div class="review-item mb-4 pb-4 {% if not loop.last %}border-bottom{% endif %}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold">{{ review.campaign.title }}</h6>
+                                    <small class="text-muted">{{ review.created_at.strftime('%d/%m/%Y') }}</small>
+                                </div>
+                                <div class="stars mb-2">
+                                    {% for i in range(review.rating) %}
+                                    <i class="fas fa-star" style="color: #fbbf24;"></i>
+                                    {% endfor %}
+                                    {% for i in range(5 - review.rating) %}
+                                    <i class="far fa-star" style="color: #fbbf24;"></i>
+                                    {% endfor %}
+                                </div>
+                                <p class="mb-2 text-muted">{{ review.review_text }}</p>
+                                {% if review.images|length > 0 %}
+                                <div class="d-flex gap-2 mb-2">
+                                    {% for img in review.images[:3] %}
+                                    <img src="{{ img.image_url }}" alt="รีวิว" class="rounded"
+                                        style="width: 80px; height: 80px; object-fit: cover;">
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                                <span
+                                    class="badge {% if review.is_approved %}bg-success{% else %}bg-warning{% endif %}">
+                                    {% if review.is_approved %}อนุมัติแล้ว{% else %}รอการอนุมัติ{% endif %}
+                                </span>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-comment-slash fs-1 mb-3" style="color: #d1d5db;"></i>
+                                <p class="text-muted mb-3">คุณยังไม่ได้เขียนรีวิว</p>
+                                <a href="{{ url_for('public_group_buy.index') }}" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>ค้นหาทริป
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bookings Tab -->
+                <div class="tab-pane fade" id="bookings">
+                    <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h5 class="mb-0 fw-bold"><i class="fas fa-ticket-alt me-2"></i>การจองของฉัน</h5>
+                        </div>
+                        <div class="card-body p-4">
+                            {% if bookings and bookings|length > 0 %}
+                            {% for booking in bookings %}
+                            <div class="booking-item mb-4 p-3 rounded"
+                                style="background: #f8fafc; border-left: 4px solid #667eea;">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold">Booking #{{ booking.id }}</h6>
+                                    <span class="badge bg-primary">{{ booking.status }}</span>
+                                </div>
+                                <p class="mb-1 text-muted small">วันที่จอง: {{ booking.created_at.strftime('%d/%m/%Y')
+                                    }}</p>
+                                {% if not booking.has_reviewed %}
+                                <button class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="fas fa-edit me-1"></i>เขียนรีวิว รับคะแนน
+                                </button>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-calendar-times fs-1 mb-3" style="color: #d1d5db;"></i>
+                                <p class="text-muted mb-3">ยังไม่มีการจอง</p>
+                                <a href="{{ url_for('public_group_buy.index') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>จองทริปแรก
+                                </a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nav-link {
+        color: #6b7280;
+        border-radius: 10px;
+        transition: all 0.3s;
+        padding: 12px 16px;
+        margin-bottom: 8px;
+    }
+
+    .nav-link:hover {
+        background: #f3f4f6;
+        color: #667eea;
+    }
+
+    .nav-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .icon-circle {
+        transition: transform 0.3s;
+    }
+
+    .icon-circle:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}

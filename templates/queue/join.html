@@ -356,6 +356,16 @@
                             <i class="fas fa-times-circle"></i>
                             <div class="service-name">ยกเลิกทัวร์</div>
                         </div>
+
+                        <div class="service-card" onclick="selectService('flight', this)">
+                            <i class="fas fa-plane"></i>
+                            <div class="service-name">จองตั๋วเครื่องบิน</div>
+                        </div>
+
+                        <div class="service-card" onclick="selectService('activity', this)">
+                            <i class="fas fa-star"></i>
+                            <div class="service-name">ร่วมกิจกรรม หรือนาทีทอง</div>
+                        </div>
                     </div>
 
                     <input type="hidden" id="serviceType">
@@ -455,7 +465,9 @@
             'payment': 'ชำระเงิน',
             'document': 'รับเอกสาร',
             'change': 'แก้ไข/เปลี่ยนแปลง',
-            'cancel': 'ยกเลิกทัวร์'
+            'cancel': 'ยกเลิกทัวร์',
+            'flight': 'จองตั๋วเครื่องบิน',
+            'activity': 'ร่วมกิจกรรม หรือนาทีทอง'
         };
 
         // Character counter

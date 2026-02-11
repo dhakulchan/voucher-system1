@@ -25,6 +25,19 @@ class TourVoucherWeasyPrintV2:
         
         # Register custom filters
         self.jinja_env.filters['nl2br'] = self._nl2br_filter
+
+    def _resolve_font_path(self, filename: str) -> str:
+        """Resolve font file path across dev/prod locations."""
+        candidates = [
+            os.path.join(os.getcwd(), 'static', 'fonts', filename),
+            os.path.join(os.getcwd(), filename),
+            os.path.join('/home/ubuntu/voucher-ro_v1.0', 'static', 'fonts', filename),
+            os.path.join('/opt/bitnami/apache/htdocs', 'static', 'fonts', filename)
+        ]
+        for path in candidates:
+            if os.path.exists(path):
+                return path
+        return ""
     
     def _nl2br_filter(self, text):
         """Convert newlines to <br> tags for HTML"""
@@ -442,21 +455,45 @@ class TourVoucherWeasyPrintV2:
             html_doc = HTML(string=html_content, base_url=base_url)
             
             # Add CSS for better styling
-            css_styles = CSS(string="""
-                @page {
+            regular_font_path = self._resolve_font_path('NotoSansThai-Regular.ttf')
+            bold_font_path = self._resolve_font_path('NotoSansThai-Bold.ttf')
+            regular_font_url = f"file://{regular_font_path}" if regular_font_path else ""
+            bold_font_url = f"file://{bold_font_path}" if bold_font_path else ""
+
+            css_template = """
+                @font-face {{
+                    font-family: 'Noto Sans Thai';
+                    src: url('{regular_font_url}') format('truetype');
+                    font-weight: 400;
+                    font-style: normal;
+                }}
+
+                @font-face {{
+                    font-family: 'Noto Sans Thai';
+                    src: url('{bold_font_url}') format('truetype');
+                    font-weight: 700;
+                    font-style: normal;
+                }}
+
+                @page {{
                     size: A4;
                     margin: 20mm 15mm 20mm 15mm;
-                    @bottom-center {
+                    @bottom-center {{
                         content: "Page " counter(page) " of " counter(pages);
                         font-size: 10px;
                         color: #666;
-                    }
-                }
+                    }}
+                }}
                 
-                body {
-                    font-family: 'Noto Sans Thai', 'Segoe UI', Arial, sans-serif;
-                }
-            """)
+                body, * {{
+                    font-family: 'Noto Sans Thai', 'Segoe UI', Arial, sans-serif !important;
+                }}
+            """
+
+            css_styles = CSS(string=css_template.format(
+                regular_font_url=regular_font_url,
+                bold_font_url=bold_font_url
+            ))
             
             # Generate PDF with compatibility fix for pydyf 0.10.0
             pdf_bytes = html_doc.write_pdf(stylesheets=[css_styles])
@@ -513,21 +550,45 @@ class TourVoucherWeasyPrintV2:
             html_doc = HTML(string=html_content, base_url=base_url)
             
             # Add CSS for better styling
-            css_styles = CSS(string="""
-                @page {
+            regular_font_path = self._resolve_font_path('NotoSansThai-Regular.ttf')
+            bold_font_path = self._resolve_font_path('NotoSansThai-Bold.ttf')
+            regular_font_url = f"file://{regular_font_path}" if regular_font_path else ""
+            bold_font_url = f"file://{bold_font_path}" if bold_font_path else ""
+
+            css_template = """
+                @font-face {{
+                    font-family: 'Noto Sans Thai';
+                    src: url('{regular_font_url}') format('truetype');
+                    font-weight: 400;
+                    font-style: normal;
+                }}
+
+                @font-face {{
+                    font-family: 'Noto Sans Thai';
+                    src: url('{bold_font_url}') format('truetype');
+                    font-weight: 700;
+                    font-style: normal;
+                }}
+
+                @page {{
                     size: A4;
                     margin: 20mm 15mm 20mm 15mm;
-                    @bottom-center {
+                    @bottom-center {{
                         content: "Page " counter(page) " of " counter(pages);
                         font-size: 10px;
                         color: #666;
-                    }
-                }
+                    }}
+                }}
                 
-                body {
-                    font-family: 'Noto Sans Thai', 'Segoe UI', Arial, sans-serif;
-                }
-            """)
+                body, * {{
+                    font-family: 'Noto Sans Thai', 'Segoe UI', Arial, sans-serif !important;
+                }}
+            """
+
+            css_styles = CSS(string=css_template.format(
+                regular_font_url=regular_font_url,
+                bold_font_url=bold_font_url
+            ))
             
             pdf_bytes = html_doc.write_pdf(stylesheets=[css_styles])
             

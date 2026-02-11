@@ -17,19 +17,25 @@ class Config:
     DATABASE_URL = os.environ.get('DATABASE_URL')
     if not DATABASE_URL:
         # Use MariaDB for local development - Changed to voucher_enhanced
-        SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://voucher_user:voucher_secure_2024@localhost:3306/voucher_enhanced?charset=utf8mb4'
+        # Using mysql+mysqlconnector for better stability (instead of pymysql)
+        SQLALCHEMY_DATABASE_URI = 'mysql+mysqlconnector://voucher_user:voucher_secure_2024@localhost:3306/voucher_enhanced?charset=utf8mb4'
     else:
         SQLALCHEMY_DATABASE_URI = DATABASE_URL
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # SQLAlchemy Engine Options for MariaDB
+    # SQLAlchemy Engine Options for MySQL Connector (more stable than PyMySQL)
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_pre_ping': True,
-        'pool_recycle': 300,
-        'pool_size': 10,
-        'max_overflow': 20,
-        'echo': False  # Set to True for SQL debug logging
+        'pool_pre_ping': True,          # Test connections before using
+        'pool_recycle': 3600,            # Recycle connections after 1 hour
+        'pool_size': 5,                  # Number of permanent connections
+        'max_overflow': 10,              # Maximum overflow connections
+        'pool_timeout': 10,              # Wait timeout for getting a connection
+        'echo': False,                   # SQL debug logging
+        'connect_args': {
+            'connect_timeout': 10,       # Connection timeout
+            'autocommit': False          # Prevent autocommit issues
+        }
     }
     
     # SQLAlchemy Session Options
@@ -98,7 +104,7 @@ class Config:
     
     # File Upload Configuration
     UPLOAD_FOLDER = 'static/uploads'
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB max file size for multiple images
+    MAX_CONTENT_LENGTH = 200 * 1024 * 1024  # 200MB max - increased for WYSIWYG editor with images
     
     # Public URL Configuration
     # For development, you can set PUBLIC_BASE_URL=http://localhost:5001 in environment

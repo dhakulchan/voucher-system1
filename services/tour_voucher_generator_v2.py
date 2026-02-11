@@ -84,13 +84,17 @@ class TourVoucherGeneratorV2:
         base_font = 'NotoSansThai' if self.has_thai_font else 'Helvetica'
         bold_font = 'NotoSansThai-Bold' if self.has_thai_font else 'Helvetica-Bold'
         
+        # Store fonts as instance variables for use in TableStyle
+        self.base_font = base_font
+        self.bold_font = bold_font
+        
         # Header styles - Reduced font size for better fit on one line
         self.style_company_name = ParagraphStyle(
             'CompanyName',
             parent=styles['Normal'],
             fontSize=9,  # Reduced from 11 to 9 for better fit
             leading=11,  # Adjusted leading proportionally
-            fontName='Helvetica-Bold',
+            fontName=bold_font,  # Use bold_font with Thai support
             alignment=TA_CENTER,  # Center alignment for better layout
             spaceAfter=4  # Increased spacing after company name
         )
@@ -100,7 +104,7 @@ class TourVoucherGeneratorV2:
             parent=styles['Normal'],
             fontSize=9,
             leading=12,  # Increased line spacing for better readability
-            fontName='Helvetica',
+            fontName=base_font,  # Use base_font with Thai support
             alignment=TA_CENTER,  # Center alignment to match company name
             spaceAfter=2  # Increased spacing between lines
         )
@@ -111,7 +115,7 @@ class TourVoucherGeneratorV2:
             parent=styles['Normal'],
             fontSize=16,
             leading=20,
-            fontName='Helvetica-Bold',
+            fontName=bold_font,  # Use bold_font with Thai support
             alignment=TA_CENTER,
             spaceAfter=12,
             spaceBefore=12
@@ -123,7 +127,7 @@ class TourVoucherGeneratorV2:
             parent=styles['Normal'],
             fontSize=10,
             leading=12,
-            fontName='Helvetica',
+            fontName=base_font,  # Use base_font with Thai support
             alignment=TA_LEFT,
             spaceAfter=6
         )
@@ -195,7 +199,7 @@ class TourVoucherGeneratorV2:
         # Create table with wider left column for company info
         header_table = Table(header_data, colWidths=[15*cm, 3*cm])  # Wider company info area
         header_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 0), (-1, -1), self.base_font),
             ('ALIGN', (0, 0), (0, -1), 'CENTER'),  # Center align company info
             ('ALIGN', (1, 0), (1, -1), 'RIGHT'),   # Right align logo area
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -230,7 +234,7 @@ class TourVoucherGeneratorV2:
         
         ref_table = Table(ref_data, colWidths=[6*cm, 4*cm, 4*cm])
         ref_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 0), (-1, -1), self.base_font),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -313,13 +317,13 @@ class TourVoucherGeneratorV2:
         service_table.setStyle(TableStyle([
             # Header styling
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), self.bold_font),
             ('FONTSIZE', (0, 0), (-1, 0), 9),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             
             # Data rows styling
-            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 1), (-1, -1), self.base_font),
             ('FONTSIZE', (0, 1), (-1, -1), 8),
             ('ALIGN', (0, 1), (0, -1), 'CENTER'),  # No. column center
             ('ALIGN', (1, 1), (-1, -1), 'LEFT'),   # Other columns left
@@ -592,10 +596,10 @@ class TourVoucherGeneratorV2:
         
         quote_table = Table(quote_data, colWidths=[2.5*cm, 4*cm, 2.5*cm, 4*cm])
         quote_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTNAME', (0, 0), (-1, -1), self.base_font),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (0, -1), self.bold_font),
+            ('FONTNAME', (2, 0), (2, -1), self.bold_font),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('LEFTPADDING', (0, 0), (-1, -1), 6),
@@ -620,9 +624,9 @@ class TourVoucherGeneratorV2:
         
         pricing_table = Table(pricing_data, colWidths=[12*cm, 4*cm])
         pricing_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), self.bold_font),
+            ('FONTNAME', (0, 1), (-1, -2), self.base_font),
+            ('FONTNAME', (0, -1), (-1, -1), self.bold_font),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
             ('BACKGROUND', (0, -1), (-1, -1), colors.lightgrey),
@@ -683,7 +687,7 @@ class TourVoucherGeneratorV2:
         sig_table = Table(sig_data, colWidths=[6*cm, 2*cm, 6*cm])
         sig_table.setStyle(TableStyle([
             ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTNAME', (0, 0), (-1, 0), self.bold_font),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         

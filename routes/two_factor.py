@@ -92,6 +92,26 @@ def verify_setup():
             from flask_login import login_user
             login_user(user, remember=session.get('pending_2fa_remember', False))
             
+            # Auto-create customer profile for Customer role users
+            if user.role == 'Customer' and not user.customer_profile:
+                from models.customer import Customer
+                try:
+                    customer = Customer(
+                        name=user.username,
+                        email=user.email,
+                        phone='',
+                        customer_type='Visitor-Individual',
+                        user_id=user.id,
+                        created_by=user.id
+                    )
+                    db.session.add(customer)
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    from utils.logging_config import get_logger
+                    logger = get_logger(__name__)
+                    logger.error(f"Failed to auto-create customer profile for user {user.id}: {e}")
+            
             # Set session variables
             session['user_id'] = user.id
             session['username'] = user.username
@@ -157,6 +177,26 @@ def verify():
             # Complete login
             from flask_login import login_user
             login_user(user, remember=session.get('pending_2fa_remember', False))
+            
+            # Auto-create customer profile for Customer role users
+            if user.role == 'Customer' and not user.customer_profile:
+                from models.customer import Customer
+                try:
+                    customer = Customer(
+                        name=user.username,
+                        email=user.email,
+                        phone='',
+                        customer_type='Visitor-Individual',
+                        user_id=user.id,
+                        created_by=user.id
+                    )
+                    db.session.add(customer)
+                    db.session.commit()
+                except Exception as e:
+                    db.session.rollback()
+                    from utils.logging_config import get_logger
+                    logger = get_logger(__name__)
+                    logger.error(f"Failed to auto-create customer profile for user {user.id}: {e}")
             
             # Set session variables
             session['user_id'] = user.id

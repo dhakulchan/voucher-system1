@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tour Voucher - {{ booking.booking_reference }}</title>
     <style>
+        @font-face {
+            font-family: 'Noto Sans Thai';
+            src: url("static/fonts/NotoSansThai-Regular.ttf") format("truetype");
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Noto Sans Thai';
+            src: url("static/fonts/NotoSansThai-Bold.ttf") format("truetype");
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+
         @page {
             size: A4;
             margin: 20mm 15mm 20mm 15mm;
@@ -485,6 +501,7 @@
         </div>
 
         <!-- Service Detail Section -->
+        {% if booking.status != 'vouchered' %}
         <div class="section-header">Service Detail / Itinerary :</div>
         <div class="section-content service-detail-content">
             {% if booking.description %}
@@ -495,6 +512,7 @@
             No service detail available
             {% endif %}
         </div>
+        {% endif %}
 
 
 

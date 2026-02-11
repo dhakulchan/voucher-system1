@@ -452,6 +452,46 @@ def create_app():
             print("✅ Group Buy Payment Public registered")
         except Exception as e:
             print(f"❌ Failed to register Group Buy Payment Public: {e}")
+        
+        # Register Admin Reviews Management
+        try:
+            from routes.admin_reviews import bp as admin_reviews_bp
+            app.register_blueprint(admin_reviews_bp)
+            print("✅ Admin Reviews Management registered")
+        except Exception as e:
+            print(f"❌ Failed to register Admin Reviews: {e}")
+        
+        # Register Coupon Admin routes
+        try:
+            from routes.group_buy_coupon_admin import coupon_bp
+            app.register_blueprint(coupon_bp)
+            print("✅ Group Buy Coupon Admin registered")
+        except Exception as e:
+            print(f"❌ Failed to register Group Buy Coupon Admin: {e}")
+        
+        # Register Admin Points Management
+        try:
+            from routes.admin_points import bp as admin_points_bp
+            app.register_blueprint(admin_points_bp)
+            print("✅ Admin Points Management registered")
+        except Exception as e:
+            print(f"❌ Failed to register Admin Points: {e}")
+        
+        # Register Customer Reviews (Public-facing)
+        try:
+            from routes.customer_reviews import customer_reviews_bp
+            app.register_blueprint(customer_reviews_bp)
+            print("✅ Customer Reviews registered")
+        except Exception as e:
+            print(f"❌ Failed to register Customer Reviews: {e}")
+        
+        # Register Customer Points (Public-facing)
+        try:
+            from routes.customer_points import customer_points_bp
+            app.register_blueprint(customer_points_bp)
+            print("✅ Customer Points registered")
+        except Exception as e:
+            print(f"❌ Failed to register Customer Points: {e}")
     
     # Register mark-paid API
     try:
@@ -753,15 +793,26 @@ def create_app():
 
     @app.errorhandler(Exception)
     def handle_all_exceptions(e):
+        import traceback
         try:
             if isinstance(e, HTTPException):
-                app.logger.exception('HTTP exception during request: %s', e)
+                app.logger.error(f'❌ HTTP exception during request: {e}')
+                app.logger.error(f'Exception type: {type(e).__name__}')
                 return e
             # Non-HTTP exceptions: log full traceback
-            app.logger.exception('Unhandled exception (500): %s', e)
-        except Exception:
+            app.logger.error(f'❌❌❌ UNHANDLED EXCEPTION (500): {e}')
+            app.logger.error(f'Exception type: {type(e).__name__}')
+            app.logger.error(f'Traceback:\n{traceback.format_exc()}')
+            
+            # Also log request info
+            from flask import request
+            app.logger.error(f'Request URL: {request.url}')
+            app.logger.error(f'Request method: {request.method}')
+            app.logger.error(f'Request path: {request.path}')
+            app.logger.error(f'User agent: {request.user_agent}')
+        except Exception as log_error:
             # if logging itself fails, avoid crashing
-            pass
+            app.logger.error(f'Logging failed: {log_error}')
         # Return a generic 500 response
         from flask import Response
         return Response('Internal Server Error', status=500)

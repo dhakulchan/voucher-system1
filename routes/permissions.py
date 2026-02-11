@@ -116,6 +116,14 @@ def update_role(role):
                     'view': request.form.get('reports_view') == 'true',
                     'export': request.form.get('reports_export') == 'true',
                 },
+                'group_buy': {
+                    'view': request.form.get('group_buy_view') == 'true',
+                    'create_campaign': request.form.get('group_buy_create_campaign') == 'true',
+                    'edit_campaign': request.form.get('group_buy_edit_campaign') == 'true',
+                    'view_groups': request.form.get('group_buy_view_groups') == 'true',
+                    'manage_groups': request.form.get('group_buy_manage_groups') == 'true',
+                    'view_stats': request.form.get('group_buy_view_stats') == 'true',
+                },
                 'users': {
                     'view': request.form.get('users_view') == 'true',
                     'create': request.form.get('users_create') == 'true',
@@ -229,6 +237,14 @@ def update_user(user_id):
                 'reports': {
                     'view': request.form.get('reports_view') == 'true',
                     'export': request.form.get('reports_export') == 'true',
+                },
+                'group_buy': {
+                    'view': request.form.get('group_buy_view') == 'true',
+                    'create_campaign': request.form.get('group_buy_create_campaign') == 'true',
+                    'edit_campaign': request.form.get('group_buy_edit_campaign') == 'true',
+                    'view_groups': request.form.get('group_buy_view_groups') == 'true',
+                    'manage_groups': request.form.get('group_buy_manage_groups') == 'true',
+                    'view_stats': request.form.get('group_buy_view_stats') == 'true',
                 },
                 'users': {
                     'view': request.form.get('users_view') == 'true',

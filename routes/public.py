@@ -1,6 +1,6 @@
 """Public routes for sharing booking information without authentication."""
 
-from flask import Blueprint, render_template, abort, url_for, redirect, send_from_directory, make_response, send_file, current_app
+from flask import Blueprint, render_template, abort, url_for, redirect, send_from_directory, make_response, send_file, current_app, request
 from models.booking import Booking
 from models.booking_enhanced import BookingEnhanced
 from config import Config
@@ -1048,8 +1048,8 @@ def view_booking_secure(token):
                     except Exception as e:
                         logger.warning(f"Could not retrieve quote_number: {e}")
                 
-                # Check if booking is completed - redirect to thank you page
-                if booking.status == 'completed':
+                # Check if booking is completed - redirect to thank you page (unless explicitly requested)
+                if booking.status == 'completed' and request.args.get('view') != 'voucher':
                     logger.info(f"🎉 Booking {booking.id} is completed - showing Thank You page")
                     from config import Config as AppConfig
                     return render_template('public/completed_thank_you.html', booking=booking, config=AppConfig, token=token)

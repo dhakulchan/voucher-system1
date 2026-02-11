@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}จัดการคูปองส่วนลด - Group Buy{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-ticket-alt text-primary me-2"></i>จัดการคูปองส่วนลด</h2>
+            <p class="text-muted mb-0">สร้างและจัดการคูปองส่วนลดสำหรับ Group Buy</p>
+        </div>
+        <a href="{{ url_for('group_buy_coupon.create_coupon') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>สร้างคูปองใหม่
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>รหัสคูปอง</th>
+                            <th>คำอธิบาย</th>
+                            <th>ส่วนลด</th>
+                            <th>ระยะเวลา</th>
+                            <th>จำนวนการใช้</th>
+                            <th>แคมเปญ</th>
+                            <th>สถานะ</th>
+                            <th class="text-center">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coupon in coupons %}
+                        {% set stats = coupon_stats.get(coupon.id, {}) %}
+                        <tr>
+                            <td>
+                                <strong class="badge bg-dark fs-6">{{ coupon.code }}</strong>
+                            </td>
+                            <td>
+                                <div class="small">{{ coupon.description[:50] }}{% if coupon.description|length > 50
+                                    %}...{% endif %}</div>
+                            </td>
+                            <td>
+                                {% if coupon.discount_type == 'fixed' %}
+                                <span class="badge bg-success">฿{{ coupon.discount_value|int }}</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ coupon.discount_value|int }}%</span>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                <div><i class="fas fa-calendar-start text-success"></i> {{
+                                    coupon.start_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                                <div><i class="fas fa-calendar-xmark text-danger"></i> {{
+                                    coupon.end_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                            </td>
+                            <td>
+                                <div class="small">
+                                    <strong>{{ stats.get('usage_count', 0) }}</strong>
+                                    {% if coupon.max_uses %}
+                                    / {{ coupon.max_uses }}
+                                    {% else %}
+                                    <span class="text-muted">(ไม่จำกัด)</span>
+                                    {% endif %}
+                                </div>
+                                {% if stats %}
+                                <div class="small text-muted">
+                                    ส่วนลดรวม: ฿{{ "{:,.2f}".format(stats.get('total_discount', 0)) }}
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                {% if coupon.campaign %}
+                                <span class="badge bg-secondary">{{ coupon.campaign.name[:20] }}</span>
+                                {% else %}
+                                <span class="text-muted">ทุกแคมเปญ</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if coupon.is_active %}
+                                {% if coupon.start_date > now %}
+                                <span class="badge bg-warning">รอเริ่ม</span>
+                                {% elif coupon.end_date < now %} <span class="badge bg-secondary">หมดอายุ</span>
+                                    {% elif coupon.max_uses and coupon.used_count >= coupon.max_uses %}
+                                    <span class="badge bg-secondary">ใช้หมด</span>
+                                    {% else %}
+                                    <span class="badge bg-success">ใช้งานได้</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="badge bg-danger">ปิดใช้งาน</span>
+                                    {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('group_buy_coupon.edit_coupon', coupon_id=coupon.id) }}"
+                                        class="btn btn-outline-primary" title="แก้ไข">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('group_buy_coupon.view_usage', coupon_id=coupon.id) }}"
+                                        class="btn btn-outline-info" title="ดูการใช้งาน">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </a>
+                                    <form method="POST"
+                                        action="{{ url_for('group_buy_coupon.toggle_coupon', coupon_id=coupon.id) }}"
+                                        style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-warning" title="เปิด/ปิด">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
+                                    </form>
+                                    {% if coupon.used_count == 0 %}
+                                    <form method="POST"
+                                        action="{{ url_for('group_buy_coupon.delete_coupon', coupon_id=coupon.id) }}"
+                                        onsubmit="return confirm('ต้องการลบคูปองนี้หรือไม่?');" style="display:inline;">
+                                        <button type="submit" class="btn btn-outline-danger" title="ลบ">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

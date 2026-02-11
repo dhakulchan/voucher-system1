@@ -91,6 +91,7 @@
                                         <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>
                                         <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
                                         <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
+                                        <option value="Cash">เงินสด/Others</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">
@@ -319,7 +320,7 @@
             {% endif %}
             {% if booking.completed_at %}
             <div class="col-md-6">
-                <strong>Completed:</strong> {{ booking.completed_at.strftime('%d/%m/%Y %H:%M') }}
+                <strong>Completed:</strong> {{ booking.completed_at|thai_datetime('%d/%m/%Y %H:%M') }}
             </div>
             {% endif %}
         </div>
@@ -398,21 +399,6 @@
 
                 <!-- Voucher Actions -->
                 {% if booking.status == 'vouchered' %}
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-success" onclick="downloadVoucherPDF({{ booking.id }})"
-                        data-toggle="tooltip" title="Download voucher as PDF">
-                        <i class="fas fa-file-pdf"></i> Download PDF
-                    </button>
-                    <button type="button" class="btn btn-info" onclick="downloadVoucherPNG({{ booking.id }})"
-                        data-toggle="tooltip" title="Download voucher as PNG image">
-                        <i class="fas fa-image"></i> Download PNG
-                    </button>
-                    <button type="button" class="btn btn-primary" onclick="shareVoucher({{ booking.id }})"
-                        data-toggle="tooltip" title="Share voucher on social platforms">
-                        <i class="fas fa-share-alt"></i> Share
-                    </button>
-                </div>
-
                 <!-- Mark as Completed Button -->
                 <button type="button" class="btn btn-warning ml-2" onclick="markAsCompleted({{ booking.id }})"
                     data-toggle="tooltip" title="Mark booking as completed">
@@ -820,6 +806,7 @@
                                         <option value="GHB">ธนาคารอาคารสงเคราะห์ (GHB)</option>
                                         <option value="GSB">ธนาคารออมสิน (GSB)</option>
                                         <option value="LH">ธนาคารแลนด์ แอนด์ เฮ้าส์ (LH)</option>
+                                        <option value="Cash">เงินสด/Others</option>
                                     </select>
                                     <div class="invalid-feedback" id="bank_name_error"></div>
                                 </div>

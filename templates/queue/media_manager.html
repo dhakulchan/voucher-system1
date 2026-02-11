@@ -358,6 +358,21 @@
                 body: formData
             });
 
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error('Response is not JSON');
+            }
+
             const result = await response.json();
             if (result.success) {
                 alert('อัปโหลดสำเร็จ!');
@@ -391,6 +406,21 @@
                 body: JSON.stringify(data)
             });
 
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error('Response is not JSON');
+            }
+
             const result = await response.json();
             if (result.success) {
                 alert('เพิ่ม YouTube Video สำเร็จ!');
@@ -407,13 +437,33 @@
     async function loadMedia() {
         try {
             const response = await fetch('/queue/api/media/all');
+
+            // Check if response is OK and is JSON
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error('Response is not JSON');
+            }
+
             const data = await response.json();
 
             if (data.success) {
                 renderMedia(data.media);
+            } else {
+                console.error('API returned error:', data.error);
             }
         } catch (error) {
             console.error('Error loading media:', error);
+            alert('เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message);
         }
     }
 
@@ -471,6 +521,22 @@
     async function editMedia(id) {
         try {
             const response = await fetch('/queue/api/media/all');
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error('Response is not JSON');
+            }
+
             const data = await response.json();
             const media = data.media.find(m => m.id === id);
 
@@ -505,6 +571,21 @@
                 body: JSON.stringify(data)
             });
 
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error('Response is not JSON');
+            }
+
             const result = await response.json();
             if (result.success) {
                 alert('บันทึกสำเร็จ!');
@@ -525,6 +606,21 @@
             const response = await fetch(`/queue/api/media/${id}`, {
                 method: 'DELETE'
             });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    alert('กรุณาเข้าสู่ระบบใหม่');
+                    window.location.href = '/auth/login?next=' + encodeURIComponent(window.location.pathname);
+                    return;
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.error('Response is not JSON:', await response.text());
+                throw new Error('Response is not JSON');
+            }
 
             const result = await response.json();
             if (result.success) {

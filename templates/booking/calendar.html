@@ -1572,6 +1572,11 @@
                 <span class="tooltip-label">Customer:</span>
                 <span class="tooltip-value">${props.customerName}</span>
             </div>
+            ${props.partyName || props.partyCode ? `
+            <div class="tooltip-row">
+                <span class="tooltip-label">Party Name/Code:</span>
+                <span class="tooltip-value">${props.partyName}${props.partyCode ? ' (' + props.partyCode + ')' : ''}</span>
+            </div>` : ''}
             <div class="tooltip-row">
                 <span class="tooltip-label">Passengers:</span>
                 <span class="tooltip-value">${props.passengers} pax</span>

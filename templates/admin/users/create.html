@@ -53,21 +53,23 @@
                                     <label for="role" class="form-label">User Role <span
                                             class="text-danger">*</span></label>
                                     <select class="form-select" id="role" name="role" required>
-                                        <option value="Staff" {% if request.form.get('role')=='Staff' %}selected{% endif
+                                        <option value="staff" {% if request.form.get('role')=='staff' %}selected{% endif
                                             %}>Staff</option>
-                                        <option value="Operation" {% if request.form.get('role')=='Operation'
-                                            %}selected{% endif %}>Operation User</option>
-                                        <option value="Hong Kong" {% if request.form.get('role')=='Hong Kong'
-                                            %}selected{% endif %}>Hong Kong</option>
-                                        <option value="Manager" {% if request.form.get('role')=='Manager' %}selected{%
+                                        <option value="operation" {% if request.form.get('role')=='operation'
+                                            %}selected{% endif %}>Operation</option>
+                                        <option value="manager" {% if request.form.get('role')=='manager' %}selected{%
                                             endif %}>Manager</option>
-                                        <option value="Internship" {% if request.form.get('role')=='Internship'
+                                        <option value="agency" {% if request.form.get('role')=='agency' %}selected{%
+                                            endif %}>Agency</option>
+                                        <option value="customer" {% if request.form.get('role')=='customer' %}selected{%
+                                            endif %}>Customer</option>
+                                        <option value="internship" {% if request.form.get('role')=='internship'
                                             %}selected{% endif %}>Internship</option>
-                                        <option value="Freelance" {% if request.form.get('role')=='Freelance'
+                                        <option value="freelance" {% if request.form.get('role')=='freelance'
                                             %}selected{% endif %}>Freelance</option>
                                         {% if current_user.role == 'Administrator' %}
-                                        <option value="Administrator" {% if request.form.get('role')=='Administrator'
-                                            %}selected{% endif %}>Administrator</option>
+                                        <option value="admin" {% if request.form.get('role')=='admin' %}selected{% endif
+                                            %}>Administrator</option>
                                         {% endif %}
                                     </select>
                                     <div class="form-text">

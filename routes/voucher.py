@@ -3,6 +3,9 @@ from flask_login import login_required, current_user
 from models.booking import Booking
 from models.customer import Customer
 from extensions import db
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Import sharing models with error handling
 try:
@@ -347,37 +350,58 @@ def list_vouchers():  # renamed from list to avoid shadowing built-in list
 @login_required
 def view(id):
     """Unified voucher view (English only while Thai disabled)"""
-    booking = Booking.query.get_or_404(id)
-    if booking.status not in ['confirmed', 'quoted', 'paid', 'vouchered', 'completed']:
-        flash('Booking must be confirmed before viewing voucher', 'error')
-        return redirect(url_for('booking.view', id=id))
-    
-    # Sync ARNO/QTNO from Invoice Ninja before displaying
     try:
-        from services.booking_invoice import BookingInvoiceService
-        bis = BookingInvoiceService()
-        if bis.sync_booking_numbers(booking):
-            db.session.commit()
+        current_app.logger.info(f'📋 Voucher view requested for booking #{id}')
+        
+        booking = Booking.query.get_or_404(id)
+        current_app.logger.info(f'✅ Booking found: #{booking.id}, status={booking.status}')
+        
+        if booking.status not in ['confirmed', 'quoted', 'paid', 'vouchered', 'completed']:
+            flash('Booking must be confirmed before viewing voucher', 'error')
+            return redirect(url_for('booking.view', id=id))
+        
+        # Sync ARNO/QTNO from Invoice Ninja before displaying
+        try:
+            from services.booking_invoice import BookingInvoiceService
+            bis = BookingInvoiceService()
+            if bis.sync_booking_numbers(booking):
+                db.session.commit()
+            current_app.logger.info(f'✅ Invoice sync completed for booking #{id}')
+        except Exception as e:
+            # Non-fatal; continue rendering even if sync fails
+            current_app.logger.warning(f'⚠️ Failed to sync booking numbers for voucher view: {e}')
+        
+        try:
+            from models.vendor import Supplier, Vendor
+            vendors = Vendor.query.filter_by(active=True).order_by(Vendor.name.asc()).all()
+            suppliers = suppliers_list = Supplier.query.filter_by(active=True).order_by(Supplier.name.asc()).all()
+            current_app.logger.info(f'✅ Loaded {len(vendors)} vendors, {len(suppliers)} suppliers')
+        except Exception as e:
+            current_app.logger.error(f'❌ Failed to load vendors/suppliers: {e}')
+            vendors = []
+            suppliers = []
+        
+        # Get voucher images for template
+        try:
+            voucher_images = booking.get_voucher_images()
+            current_app.logger.info(f'✅ Loaded {len(voucher_images) if voucher_images else 0} voucher images')
+        except Exception as e:
+            current_app.logger.error(f'❌ Failed to get voucher images: {e}')
+            voucher_images = []
+        
+        current_app.logger.info(f'🎨 Rendering template for booking #{id}')
+        return render_template('voucher/unified_voucher.html', 
+                             booking=booking, 
+                             vendors=vendors, 
+                             suppliers=suppliers,
+                             voucher_images=voucher_images)
+    
     except Exception as e:
-        # Non-fatal; continue rendering even if sync fails
-        current_app.logger.warning(f'Failed to sync booking numbers for voucher view: {e}')
-    
-    try:
-        from models.vendor import Supplier, Vendor
-        vendors = Vendor.query.filter_by(active=True).order_by(Vendor.name.asc()).all()  # legacy variable
-        suppliers = suppliers_list = Supplier.query.filter_by(active=True).order_by(Supplier.name.asc()).all()
-    except Exception:
-        vendors = []
-        suppliers = []
-    
-    # Get voucher images for template
-    voucher_images = booking.get_voucher_images()
-    
-    return render_template('voucher/unified_voucher.html', 
-                         booking=booking, 
-                         vendors=vendors, 
-                         suppliers=suppliers,
-                         voucher_images=voucher_images)
+        current_app.logger.error(f'❌ FATAL ERROR in voucher view for booking #{id}: {e}')
+        current_app.logger.error(f'Exception type: {type(e).__name__}')
+        import traceback
+        current_app.logger.error(f'Traceback: {traceback.format_exc()}')
+        raise
 
 @voucher_bp.route('/<int:id>', methods=['POST'])
 @login_required
@@ -802,22 +826,20 @@ def download(id):
 @voucher_bp.route('/<int:id>/pdf')
 @login_required
 def generate_pdf(id):
-    """Generate PDF voucher - uses same logic as PNG route"""
+    """Generate PDF voucher - uses TourVoucherWeasyPrintV2 with Jinja2 template and WeasyPrint"""
     booking = Booking.query.get_or_404(id)
     if booking.status not in ['confirmed', 'quoted', 'paid', 'vouchered', 'completed']:
         flash('ต้องยืนยันก่อนสร้าง PDF', 'error')
         return redirect(url_for('voucher.view', id=id))
     
     try:
-        # Generate PDF bytes using same logic as PNG route
-        if booking.booking_type == 'tour':
-            from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
-            tour_generator = TourVoucherWeasyPrintV2()
-            pdf_bytes = tour_generator.generate_tour_voucher_v2_bytes(booking)
-        else:
-            from services.pdf_generator import PDFGenerator
-            gen = PDFGenerator()
-            pdf_bytes = gen.generate_tour_voucher_bytes(booking)
+        # ✅ Use TourVoucherWeasyPrintV2 with Jinja2(3.1.4) + WeasyPrint(62.3)
+        # Template: tour_voucher_template_v2_sample.html
+        from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
+        
+        # Generate PDF bytes
+        generator = TourVoucherWeasyPrintV2()
+        pdf_bytes = generator.generate_tour_voucher_v2_bytes(booking)
         
         if not pdf_bytes:
             flash('PDF generation failed', 'error')
@@ -916,6 +938,110 @@ def email_voucher(id):
     
     return render_template('voucher/email.html', booking=booking)
 
+@voucher_bp.route('/<int:id>/send-email-api', methods=['POST'])
+@login_required
+def send_email_api(id):
+    """API endpoint to send voucher email with public link (returns JSON)"""
+    try:
+        booking = Booking.query.get_or_404(id)
+        
+        # Get email from request
+        recipient_email = request.form.get('email') or (booking.customer.email if booking.customer else None)
+        
+        if not recipient_email:
+            return jsonify({
+                'success': False,
+                'error': 'No recipient email provided'
+            }), 400
+        
+        # Generate share token (120 days expiry)
+        from utils.datetime_utils import utc_now
+        expiry_minutes = 120 * 24 * 60  # 120 days in minutes
+        token_expiry = utc_now() + timedelta(minutes=expiry_minutes)
+        
+        # Create token
+        token_data = f"{booking.id}|{int(time.time())}|{int(token_expiry.timestamp())}"
+        token_signature = hmac.new(
+            current_app.config['SECRET_KEY'].encode(),
+            token_data.encode(),
+            hashlib.sha256
+        ).digest()
+        token = base64.urlsafe_b64encode(token_data.encode() + b'.' + token_signature).decode()
+        
+        # Build public URL
+        public_url = url_for('public.view_booking_public', booking_id=booking.id, _external=True)
+        
+        # Get customer name
+        customer_name = booking.customer.full_name if booking.customer else booking.customer.name if booking.customer else 'ลูกค้า'
+        
+        # Build email message with Thai template
+        email_body = f"""สวัสดีค่ะคุณ {customer_name}
+
+บริษัท ตระกูลเฉินฯ ขอขอบคุณที่ให้เราดูแลการเดินทางของท่าน 
+หมายเลขอ้างอิง: {booking.booking_reference}
+
+🎫 Tour Voucher: 
+{public_url}
+
+━━━━━━━━━
+💡 แนะนำการใช้งาน
+━━━━━━━━━
+
+1) เปิดลิงก์
+• เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+
+2) ตรวจสอบข้อมูล
+• ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+• รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+• ดาวน์โหลด: E-Ticket, Confirmation, Proposal, Quote, Voucher
+• คลิกลิงก์: รายการทัวร์-คู่มือท่องเที่ยว 
+
+3) ดาวน์โหลดเอกสาร
+🔴 PNG = ใช้บนมือถือ/พิมพ์
+🟣 PDF = เก็บในคอม/ส่งอีเมล
+❌ ห้ามแชร์ลิงก์
+⏰ หมดอายุ 120 วัน
+
+ติดต่อสอบถามข้อมูลเพิ่มเติม:
+📞 Tel: BKK +662 2744216  📞 Tel: HKG +852 23921155
+📧 Email: booking@dhakulchan.com
+📱 Line OA: @dhakulchan | @changuru
+🏛️ รู้จักตระกูลเฉินฯ: https://www.dhakulchan.net/page/about-dhakulchan
+
+---
+ขอบคุณที่ไว้วางใจตระกูลเฉินฯ
+DHAKUL CHAN TRAVEL SERVICE (THAILAND) CO., LTD.
+"""
+        
+        # Send email with message only (no attachment)
+        from services.email_service import EmailService
+        email_service = EmailService()
+        
+        subject = f'Tour Voucher - {booking.booking_reference}'
+        
+        # Use the send_email method without attachments
+        email_service.send_email(
+            to_email=recipient_email,
+            subject=subject,
+            body=f'<pre style="font-family: Arial, sans-serif; white-space: pre-wrap; word-wrap: break-word;">{email_body}</pre>',
+            cc_email=None,
+            attachments=None
+        )
+        
+        logger.info(f"✅ Voucher link email sent to {recipient_email} for booking #{booking.id}")
+        
+        return jsonify({
+            'success': True,
+            'message': f'Voucher link emailed successfully to {recipient_email}!'
+        })
+        
+    except Exception as e:
+        logger.error(f"Error sending voucher email: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @voucher_bp.route('/<int:id>/print')
 @login_required
 def print_voucher(id):
@@ -945,7 +1071,7 @@ def qr_code(id):
 @voucher_bp.route('/<int:id>/png')
 @login_required
 def voucher_png_combined(id):
-    """Generate combined PNG (long vertical image) for voucher"""
+    """Generate combined PNG (long vertical image) for voucher using WeasyPrint HTML template"""
     booking = Booking.query.get_or_404(id)
     
     # Check PDF image module availability
@@ -954,15 +1080,13 @@ def voucher_png_combined(id):
         return redirect(url_for('voucher.view', id=id))
     
     try:
+        # ✅ Use TourVoucherWeasyPrintV2 with Jinja2(3.1.4) + WeasyPrint(62.3)
+        # Template: tour_voucher_template_v2_sample.html
+        from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
+        
         # Generate PDF bytes
-        if booking.booking_type == 'tour':
-            from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
-            tour_generator = TourVoucherWeasyPrintV2()
-            pdf_bytes = tour_generator.generate_tour_voucher_v2_bytes(booking)
-        else:
-            from services.pdf_generator import PDFGenerator
-            gen = PDFGenerator()
-            pdf_bytes = gen.generate_tour_voucher_bytes(booking)
+        generator = TourVoucherWeasyPrintV2()
+        pdf_bytes = generator.generate_tour_voucher_v2_bytes(booking)
         
         if not pdf_bytes:
             flash('PDF generation failed', 'error')
@@ -1354,7 +1478,7 @@ def generate_share_token(id):
     
     # Return the new public booking URL format
     from flask import url_for
-    public_url = url_for('public.view_booking_secure', token=token, _external=True)
+    public_url = url_for('public.view_booking_secure', token=token, _external=True, view='voucher')
     
     return jsonify({'success': True, 'token': token, 'url': public_url, 'expires_days': 120})
 

@@ -138,17 +138,28 @@
 {% block extra_js %}
 <script>
     $(document).ready(function () {
-        $('#invoicesTable').DataTable({
-            order: [[7, 'desc']], // Sort by created date descending
-            pageLength: 25,
-            language: {
-                search: "Search:",
-                lengthMenu: "Show _MENU_ invoices per page",
-                info: "Showing _START_ to _END_ of _TOTAL_ invoices",
-                infoEmpty: "No invoices available",
-                infoFiltered: "(filtered from _MAX_ total invoices)"
+        // Only initialize DataTables if table has data rows
+        var $table = $('#invoicesTable');
+        var hasData = $table.find('tbody tr').length > 0 &&
+            !$table.find('tbody tr td[colspan]').length;
+
+        if (hasData) {
+            try {
+                $table.DataTable({
+                    order: [[7, 'desc']], // Sort by created date descending
+                    pageLength: 25,
+                    language: {
+                        search: "Search:",
+                        lengthMenu: "Show _MENU_ invoices per page",
+                        info: "Showing _START_ to _END_ of _TOTAL_ invoices",
+                        infoEmpty: "No invoices available",
+                        infoFiltered: "(filtered from _MAX_ total invoices)"
+                    }
+                });
+            } catch (e) {
+                console.error('DataTables initialization error:', e);
             }
-        });
+        }
     });
 </script>
 {% endblock %}

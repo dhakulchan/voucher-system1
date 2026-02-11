@@ -586,8 +586,9 @@ def list():
                 if status_filter in ['pending', 'confirmed', 'cancelled', 'quoted', 'paid', 'vouchered', 'draft', 'completed', 'invoiced']:
                     where_conditions.append("b.status = %s")
                     params.append(status_filter)
-            else:
+            elif not search:
                 # Default filter: show only Draft, Pending, or Confirmed bookings
+                # BUT only when there's no search term - if user is searching, show all statuses
                 where_conditions.append("b.status IN ('draft', 'pending', 'confirmed', 'Draft', 'Pending', 'Confirmed')")
                 current_app.logger.info("Applying default filter: Draft, Pending, or Confirmed only")
             
@@ -607,7 +608,7 @@ def list():
             if date_to:
                 try:
                     datetime.strptime(date_to, '%Y-%m-%d')
-                    where_conditions.append("b.departure_date <= %s")
+                    where_conditions.append("b.arrival_date <= %s")
                     params.append(date_to)
                 except ValueError:
                     pass
@@ -2201,6 +2202,10 @@ def generate_service_proposal_pdf(booking_id):
     booking = Booking.query.get_or_404(booking_id)
 
     try:
+        # Calculate traveling period from traveling_period fields or fallback to arrival/departure dates
+        start_date_obj = booking.traveling_period_start or booking.arrival_date
+        end_date_obj = booking.traveling_period_end or booking.departure_date
+        
         # Prepare complete booking data for WeasyPrint
         booking_data = {
             'booking_id': booking.booking_reference,
@@ -2212,8 +2217,8 @@ def generate_service_proposal_pdf(booking_id):
             'tour_name': booking.description or booking.hotel_name or 'Tour Package',
             'booking_date': booking.created_at.strftime('%Y-%m-%d') if booking.created_at else 'N/A',
             'tour_date': booking.arrival_date.strftime('%Y-%m-%d') if booking.arrival_date else 'N/A',
-            'start_date': booking.traveling_period_start.strftime('%Y-%m-%d') if booking.traveling_period_start else (booking.arrival_date.strftime('%Y-%m-%d') if booking.arrival_date else 'N/A'),
-            'end_date': booking.traveling_period_end.strftime('%Y-%m-%d') if booking.traveling_period_end else (booking.departure_date.strftime('%Y-%m-%d') if booking.departure_date else 'N/A'),
+            'start_date': start_date_obj.strftime('%Y-%m-%d') if start_date_obj else 'N/A',
+            'end_date': end_date_obj.strftime('%Y-%m-%d') if end_date_obj else 'N/A',
             'pax': booking.total_pax or 1,
             'adults': booking.adults or booking.total_pax or 1,
             'children': booking.children or 0,
@@ -2303,6 +2308,10 @@ def generate_service_proposal_png(booking_id):
         customer = booking.customer if hasattr(booking, 'customer') else None
         guest_name = booking.party_name or (customer.name if customer else 'Guest')
         
+        # Calculate traveling period from traveling_period fields or fallback to arrival/departure dates
+        start_date_obj = booking.traveling_period_start or booking.arrival_date
+        end_date_obj = booking.traveling_period_end or booking.departure_date
+        
         booking_data = {
             'booking_id': booking.booking_reference,
             'guest_name': guest_name,
@@ -2312,8 +2321,8 @@ def generate_service_proposal_png(booking_id):
             'adults': booking.adults or 0,
             'children': booking.children or 0,
             'infants': booking.infants or 0,
-            'start_date': booking.traveling_period_start.strftime('%d %b %Y') if booking.traveling_period_start else '',
-            'end_date': booking.traveling_period_end.strftime('%d %b %Y') if booking.traveling_period_end else '',
+            'start_date': start_date_obj.strftime('%d %b %Y') if start_date_obj else '',
+            'end_date': end_date_obj.strftime('%d %b %Y') if end_date_obj else '',
             'booking_date': booking.created_at.strftime('%d.%b.%Y') if booking.created_at else '',
             'status': booking.status or 'pending',
             'flight_info': booking.flight_info or '',
@@ -3219,9 +3228,9 @@ def generate_voucher_workflow(booking_id):
             flash(message, 'warning')
             return redirect(url_for('booking.view', id=booking_id))
         
-        # Generate voucher using TourVoucherGeneratorV2
-        from services.tour_voucher_generator_v2 import TourVoucherGeneratorV2
-        generator = TourVoucherGeneratorV2()
+        # ✅ Generate voucher using TourVoucherWeasyPrintV2 (Jinja2 + WeasyPrint)
+        from services.tour_voucher_weasyprint_v2 import TourVoucherWeasyPrintV2
+        generator = TourVoucherWeasyPrintV2()
         pdf_filename = generator.generate_tour_voucher_v2(booking)
         
         # Update booking status
@@ -3876,7 +3885,7 @@ def test_generate_quote_pdf(booking_id):
 
 @booking_bp.route('/booking/<int:booking_id>/quote-pdf')
 def generate_quote_pdf_public(booking_id):
-    """Generate Quote PDF for booking - Public access with WeasyPrint + Jinja2"""
+    """Generate Quote PDF for booking - Public access with ClassicPDFGenerator (ReportLab)"""
     try:
         # ⭐ REAL-TIME DATA SYNC: ดึงข้อมูลล่าสุดจาก database แบบ force refresh
         from extensions import db
@@ -3890,12 +3899,12 @@ def generate_quote_pdf_public(booking_id):
         if not booking:
             return f'Booking {booking_id} not found', 404
             
-        logger.info(f'Generating Quote PDF for booking {booking.booking_reference} (WeasyPrint + Jinja2)')
+        logger.info(f'Generating Quote PDF for booking {booking.booking_reference} (ClassicPDFGenerator)')
         
-        # Use WeasyPrint Quote Generator with quote_template_final_v2.html
-        from services.weasyprint_quote_generator import WeasyPrintQuoteGenerator
+        # Use Classic PDF Generator (ReportLab with Thai font support)
+        from services.classic_pdf_generator_quote import ClassicPDFGenerator
         
-        quote_generator = WeasyPrintQuoteGenerator()
+        quote_generator = ClassicPDFGenerator()
         pdf_filename = quote_generator.generate_quote_pdf(booking)
         
         if pdf_filename:
@@ -3904,12 +3913,12 @@ def generate_quote_pdf_public(booking_id):
             pdf_path = os.path.join(output_dir, pdf_filename)
             
             if os.path.exists(pdf_path):
-                logger.info(f'Quote PDF generated successfully with WeasyPrint: {pdf_filename}')
+                logger.info(f'Quote PDF generated successfully: {pdf_filename}')
                 
                 # Generate download filename with timestamp for cache busting
                 from datetime import datetime
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-                download_filename = f'quote_{booking.booking_reference}_{timestamp}.pdf'
+                download_filename = f'Quote_{booking.booking_reference}_{timestamp}.pdf'
                 
                 return send_file(pdf_path, 
                                as_attachment=True, 
@@ -3953,25 +3962,34 @@ def generate_quote_pdf(booking_id):
             flash('❌ Quote PDF only available for quoted, paid, or vouchered bookings', 'error')
             return redirect(url_for('booking.view', id=booking_id))
         
-        # Use Classic PDF Generator (ReportLab with optimized layout and Unicode support)
+        # Use ClassicPDFGenerator (Quote format with NotoSansThai font support)
         try:
-            # Import Classic PDF Generator (working generator with proper Unicode handling)
+            logger.info(f"Using ClassicPDFGenerator with Thai font support")
             from services.classic_pdf_generator_quote import ClassicPDFGenerator
-            
             quote_generator = ClassicPDFGenerator()
             pdf_filename = quote_generator.generate_quote_pdf(booking)
+            logger.info(f"ClassicPDFGenerator generated: {pdf_filename}")
             
             if not pdf_filename:
-                raise Exception("Classic PDF generation failed")
+                raise Exception("ClassicPDFGenerator generation failed")
                 
         except Exception as classic_error:
-            logger.warning(f"Classic Quote PDF failed: {str(classic_error)}, falling back to ReportLab")
+            logger.warning(f"ClassicPDFGenerator failed: {str(classic_error)}, trying fallback generators")
             
-            # Fallback to ReportLab Quote PDF Generator with header/footer
-            from services.quote_pdf_generator import QuotePDFGenerator
-            
-            reportlab_generator = QuotePDFGenerator()
-            pdf_filename = reportlab_generator.generate_quote_pdf(booking)
+            # Fallback 1: Try TourVoucherGeneratorV2 (Voucher format, not Quote)
+            try:
+                logger.info(f"Using TourVoucherGeneratorV2 fallback")
+                from services.tour_voucher_generator_v2 import TourVoucherGeneratorV2
+                voucher_gen = TourVoucherGeneratorV2()
+                pdf_filename = voucher_gen.generate_tour_voucher_v2(booking)
+                logger.info(f"TourVoucherGeneratorV2 generated: {pdf_filename}")
+            except Exception as voucher_error:
+                logger.error(f"TourVoucherGeneratorV2 also failed: {str(voucher_error)}")
+                # Final fallback: QuotePDFGenerator
+                logger.info(f"Using QuotePDFGenerator final fallback")
+                from services.quote_pdf_generator import QuotePDFGenerator
+                reportlab_generator = QuotePDFGenerator()
+                pdf_filename = reportlab_generator.generate_quote_pdf(booking)
         
         if pdf_filename:
             # Generate PDF path
@@ -4889,12 +4907,11 @@ def email_booking_pdf(booking_id):
             return redirect(url_for('booking.email_booking_pdf', booking_id=booking_id))
         
         try:
-            # Generate public URL token
-            from booking_share_manager import BookingShareManager
-            share_manager = BookingShareManager()
+            # Generate public URL token using BookingEnhanced (compatible with verify_secure_token)
+            from models.booking_enhanced import BookingEnhanced
             
-            # Generate secure token
-            token = share_manager.generate_secure_token(booking.id, expires_days=120)
+            # Generate secure token with 120-day expiry
+            token = BookingEnhanced.generate_secure_token(booking.id, expiry_days=120)
             
             # Build URLs
             base_url = request.url_root.rstrip('/')
@@ -4959,15 +4976,18 @@ def email_booking_pdf(booking_id):
             from email.mime.multipart import MIMEMultipart
             from email.mime.text import MIMEText
             from email.utils import formataddr
+            from email.header import Header
             
             email_service = EmailService()
             
             # Create MIMEMultipart message
             msg = MIMEMultipart()
             # Use formataddr to set display name while keeping actual sender as SMTP username
-            msg['From'] = formataddr(('DonotReply@dhakulchan.net', email_service.username))
+            # Use fallback email if username is None (when SMTP not configured)
+            sender_email = email_service.username or 'noreply@dhakulchan.net'
+            msg['From'] = formataddr(('DonotReply@dhakulchan.net', sender_email))
             msg['To'] = recipient_email
-            msg['Subject'] = f'รายละเอียดบริการ - {reference}'
+            msg['Subject'] = str(Header(f'รายละเอียดบริการ - {reference}', 'utf-8'))
             
             # Attach body
             msg.attach(MIMEText(email_body, 'plain', 'utf-8'))
@@ -5078,11 +5098,13 @@ def pending_booking(booking_id):
     try:
         booking = Booking.query.get_or_404(booking_id)
         
-        # Check if booking can be moved to pending
-        if booking.status != 'draft':
+        # Allow transition to pending from draft or quoted (allowing backwards movement)
+        # This provides flexibility for workflow corrections
+        allowed_statuses = ['draft', 'quoted', 'confirmed']
+        if booking.status not in allowed_statuses:
             return jsonify({
                 'success': False,
-                'message': f'Booking must be in draft status to move to pending. Current status: {booking.status}'
+                'message': f'Cannot move booking to pending from {booking.status} status. Allowed from: {", ".join(allowed_statuses)}'
             })
             
         # Store old status for activity log

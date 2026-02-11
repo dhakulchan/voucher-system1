@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+
+{% block title %}ยืนยันข้อมูลการจอง - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <!-- Progress Steps -->
+            <div class="progress-steps mb-5">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="step completed">
+                        <div class="step-circle">✓</div>
+                        <small>กรอกข้อมูล</small>
+                    </div>
+                    <div class="step-line active"></div>
+                    <div class="step active">
+                        <div class="step-circle">2</div>
+                        <small>ยืนยันข้อมูล</small>
+                    </div>
+                    <div class="step-line"></div>
+                    <div class="step">
+                        <div class="step-circle">3</div>
+                        <small>ชำระเงิน</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Confirmation Card -->
+            <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                <div class="card-header text-white py-4"
+                    style="background: linear-gradient(135deg, #1e40af 0%, #0891b2 100%); border-radius: 20px 20px 0 0;">
+                    <h4 class="mb-0"><i class="fas fa-check-circle me-2"></i>ยืนยันข้อมูลการจอง</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Campaign Info -->
+                    <div class="mb-4 p-3 bg-light rounded-3">
+                        <h5 class="fw-bold mb-3"><i class="fas fa-map-marked-alt me-2 text-primary"></i>{{ campaign.name
+                            }}</h5>
+                        {% if campaign.travel_date_from and campaign.travel_date_to %}
+                        <p class="mb-0">
+                            <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                            <strong>วันเดินทาง:</strong>
+                            {{ campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                            campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                        </p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Participant Info -->
+                    <h6 class="fw-bold mb-3"><i class="fas fa-user me-2 text-success"></i>ข้อมูลผู้จอง</h6>
+                    <div class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <div class="info-box p-3 border rounded-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">ชื่อ-นามสกุล:</span>
+                                        <strong>{{ booking_data.name }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">อีเมล:</span>
+                                        <strong>{{ booking_data.email }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-muted">เบอร์โทร:</span>
+                                        <strong>{{ booking_data.phone }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-muted">จำนวนผู้เดินทาง:</span>
+                                        <strong class="text-primary">{{ booking_data.pax_count }} คน</strong>
+                                    </div>
+                                    {% if booking_data.group_name %}
+                                    <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                                        <span class="text-muted">ชื่อกลุ่ม:</span>
+                                        <strong class="text-info">{{ booking_data.group_name }}</strong>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price Summary -->
+                    <h6 class="fw-bold mb-3"><i class="fas fa-receipt me-2 text-warning"></i>สรุปยอดชำระ</h6>
+                    <div class="price-summary p-4 bg-light rounded-3 mb-4">
+                        <!-- Points Redemption Section -->
+                        <div class="points-section mt-3 pt-3 border-top">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-gift text-primary me-2"></i>
+                                <strong>ใช้แต้มสะสม</strong>
+                                <small class="text-muted ms-auto">(100 แต้ม = ส่วนลด 100 บาท)</small>
+                            </div>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="fas fa-coins"></i></span>
+                                <input type="number" class="form-control" id="points_to_use" name="points_to_use"
+                                    placeholder="กรอกจำนวนแต้ม" min="0" step="100" value="0">
+                                <button class="btn btn-outline-primary" type="button" id="applyPoints">
+                                    <i class="fas fa-check"></i> ใช้แต้ม
+                                </button>
+                            </div>
+                            <small class="text-muted d-block" id="available_points_text">
+                                <i class="fas fa-info-circle me-1"></i>แต้มคงเหลือ: <span id="available_points">0</span>
+                                แต้ม
+                            </small>
+                            <div id="discount_applied" class="alert alert-success mt-2 d-none">
+                                <i class="fas fa-check-circle me-1"></i> ใช้แต้ม <strong id="used_points">0</strong>
+                                แต้ม = ส่วนลด <strong id="discount_amount">0</strong> บาท
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-2 mt-2">
+                            {% if campaign.allow_partial_payment and campaign.partial_payment_value %}
+                            {% set total_price = campaign.group_price * booking_data.pax_count %}
+                            {% if campaign.partial_payment_type == 'fixed' %}
+                            {% set deposit_per_person = campaign.partial_payment_value %}
+                            {% set deposit_amount = campaign.partial_payment_value * booking_data.pax_count %}
+                            {% elif campaign.partial_payment_type == 'percentage' %}
+                            {% set deposit_amount = (total_price * campaign.partial_payment_value / 100)|round|int %}
+                            {% set deposit_per_person = (deposit_amount / booking_data.pax_count)|round|int %}
+                            {% else %}
+                            {% set deposit_amount = total_price %}
+                            {% set deposit_per_person = campaign.group_price %}
+                            {% endif %}
+
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>ราคาต่อคน:</span>
+                                <strong>฿{{ "{:,.0f}".format(campaign.group_price) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>จำนวนผู้เดินทาง:</span>
+                                <strong>{{ booking_data.pax_count }} คน</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>ราคารวมทั้งหมด:</span>
+                                <strong>฿{{ "{:,.0f}".format(total_price) }}</strong>
+                            </div>
+
+                            <!-- Points discount display (shown only when points are used) -->
+                            <div id="points_discount_summary"
+                                class="d-flex justify-content-between mb-2 text-success d-none">
+                                <span>ใช้แต้ม <span id="summary_points">0</span> แต้ม = ส่วนลด <span
+                                        id="summary_discount">0</span> บาท</span>
+                                <strong class="text-success">- ฿<span id="summary_discount_value">0</span></strong>
+                            </div>
+
+                            <div id="amount_after_discount"
+                                class="d-flex justify-content-between mb-2 pb-2 border-bottom d-none">
+                                <span>คงเหลือยอดชำระ:</span>
+                                <strong>฿<span id="remaining_amount">{{ "{:,.0f}".format(total_price) }}</span> <small
+                                        class="text-muted">หลังหักส่วนลด</small></strong>
+                            </div>
+
+                            <div class="mt-2 pt-2 border-top">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>มัดจำ:</span>
+                                    <strong>฿{{ "{:,.0f}".format(deposit_per_person) }} ต่อท่าน</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>จำนวน:</span>
+                                    <strong>{{ booking_data.pax_count }} ท่าน</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 border-top pt-2">
+                                    <span class="fw-bold text-warning">
+                                        <i class="fas fa-coins me-1"></i>ชำระมัดจำ: <small
+                                            class="text-muted fw-normal">เพื่อยืนยันที่นั่ง</small>
+                                    </span>
+                                    <strong class="fs-5 text-warning" id="final_total">฿{{
+                                        "{:,.0f}".format(deposit_amount) }}</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>ส่วนที่เหลือ: <small class="text-muted">ชำระหลังกลุ่มสำเร็จ</small></span>
+                                    <strong id="remaining_payment">฿{{ "{:,.0f}".format(total_price - deposit_amount)
+                                        }}</strong>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="d-flex justify-content-between mb-1">
+                                <span>ยอดรวมก่อนหักส่วนลด:</span>
+                                <span id="subtotal">฿{{ "{:,.0f}".format(campaign.group_price * booking_data.pax_count)
+                                    }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-success" id="discount_row"
+                                style="display:none !important;">
+                                <span>ส่วนลดจากแต้ม:</span>
+                                <span id="discount_display">- ฿0</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span class="fs-5 fw-bold">ยอดชำระสุทธิ:</span>
+                                <span class="fs-4 fw-bold text-success" id="final_total">฿{{
+                                    "{:,.0f}".format(campaign.group_price *
+                                    booking_data.pax_count) }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        {% if false %} {# ซ่อน section เก่า #}
+                        {% if campaign.allow_partial_payment and campaign.partial_payment_value %}
+                        {% set total_price = campaign.group_price * booking_data.pax_count %}
+                        {% if campaign.partial_payment_type == 'fixed' %}
+                        {% set deposit_amount = campaign.partial_payment_value * booking_data.pax_count %}
+                        {% elif campaign.partial_payment_type == 'percentage' %}
+                        {% set deposit_amount = (total_price * campaign.partial_payment_value / 100)|round|int %}
+                        {% else %}
+                        {% set deposit_amount = total_price %}
+                        {% endif %}
+                        <div class="alert alert-warning mb-0"
+                            style="background: rgba(245, 158, 11, 0.1); border-left: 4px solid #f59e0b;">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fas fa-coins me-2"></i>
+                                    <strong>จ่ายเงินมัดจำก่อน
+                                        {% if campaign.partial_payment_type == 'fixed' %}
+                                        ({{ "{:,.0f}".format(campaign.partial_payment_value) }} บาท/คน)
+                                        {% elif campaign.partial_payment_type == 'percentage' %}
+                                        ({{ campaign.partial_payment_value }}%)
+                                        {% endif %}
+                                        :</strong>
+                                </div>
+                                <span class="fs-5 fw-bold text-warning">฿{{ "{:,.0f}".format(deposit_amount) }}</span>
+                            </div>
+                            <small class="text-muted">ส่วนที่เหลือ ฿{{ "{:,.0f}".format(total_price - deposit_amount) }}
+                                ชำระหลังกลุ่มสำเร็จ</small>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info mb-0"
+                            style="background: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>ชำระเต็มจำนวน</strong>
+                        </div>
+                        {% endif %}
+                        {% endif %} {# ปิด section เก่า #}
+                    </div>
+
+                    <!-- Important Notes -->
+                    <div class="alert alert-info">
+                        <h6 class="fw-bold mb-2"><i class="fas fa-exclamation-circle me-2"></i>ข้อมูลสำคัญ</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>กลุ่มต้องครบ {{ campaign.min_participants }} กลุ่ม ภายใน {{ campaign.duration_hours }}
+                                ชั่วโมง</li>
+                            <li>หากกลุ่มไม่สำเร็จ จะคืนเงินเต็มจำนวนภายใน 7 วันทำการ</li>
+                            <li>คุณจะได้รับอีเมลยืนยันและลิงก์แชร์กลุ่ม</li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <form method="POST" id="confirmForm"
+                        action="{{ url_for('public_group_buy.confirm_booking', campaign_id=campaign.id) }}">
+                        <!-- Hidden input for points -->
+                        <input type="hidden" name="points_used" id="points_used_hidden" value="0">
+
+                        <div class="d-grid gap-3">
+                            <button type="submit" class="btn btn-lg btn-success py-3 shadow-lg"
+                                style="border-radius: 14px; font-weight: 700; font-size: 1.2rem;">
+                                <i class="fas fa-check-circle me-2"></i>ยืนยันและไปชำระเงิน
+                            </button>
+                            {% if booking_data.group_name %}
+                            <a href="{{ url_for('public_group_buy.create_group', campaign_id=campaign.id) }}"
+                                class="btn btn-lg btn-outline-secondary py-3"
+                                style="border-radius: 14px; font-weight: 600;">
+                                <i class="fas fa-arrow-left me-2"></i>แก้ไขข้อมูล
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                                class="btn btn-lg btn-outline-secondary py-3"
+                                style="border-radius: 14px; font-weight: 600;">
+                                <i class="fas fa-arrow-left me-2"></i>กลับไปเลือกกลุ่ม
+                            </a>
+                            {% endif %}
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Points redemption logic
+    let originalTotal = {{ campaign.group_price * booking_data.pax_count }};
+    let customerEmail = '{{ booking_data.email }}';
+    let availablePoints = 0;
+    let currentDiscount = 0;
+
+    {% if campaign.allow_partial_payment and campaign.partial_payment_value %}
+    let isPartialPayment = true;
+    let depositAmount = {{ deposit_amount }};
+    {% else %}
+    let isPartialPayment = false;
+    let depositAmount = 0;
+    {% endif %}
+
+    // Load customer points
+    async function loadCustomerPoints() {
+        try {
+            const response = await fetch(`/group-buy/api/check-points-by-email?email=${encodeURIComponent(customerEmail)}`);
+            const data = await response.json();
+
+            if (data.available_points) {
+                availablePoints = data.available_points;
+                document.getElementById('available_points').textContent = availablePoints.toLocaleString();
+            }
+        } catch (error) {
+            console.error('Error loading points:', error);
+        }
+    }
+
+    // Apply points
+    document.getElementById('applyPoints').addEventListener('click', function () {
+        const pointsInput = document.getElementById('points_to_use');
+        const pointsToUse = parseInt(pointsInput.value) || 0;
+
+        // Validate
+        if (pointsToUse < 0) {
+            alert('กรุณากรอกจำนวนแต้มที่ถูกต้อง');
+            return;
+        }
+
+        if (pointsToUse > availablePoints) {
+            alert(`คุณมีแต้มเพียง ${availablePoints.toLocaleString()} แต้มเท่านั้น`);
+            return;
+        }
+
+        if (pointsToUse % 100 !== 0) {
+            alert('กรุณากรอกเป็นทวีคูณของ 100 (เช่น 100, 200, 300)');
+            return;
+        }
+
+        if (pointsToUse > originalTotal) {
+            alert(`ไม่สามารถใช้แต้มเกินยอดชำระได้ (สูงสุด ${originalTotal.toLocaleString()} แต้ม)`);
+            return;
+        }
+
+        // Calculate discount (100 points = 100 baht)
+        currentDiscount = pointsToUse;
+
+        // Update display in green box (used for both payment types)
+        const usedPointsEl = document.getElementById('used_points');
+        const discountAmountEl = document.getElementById('discount_amount');
+        const discountAppliedEl = document.getElementById('discount_applied');
+
+        if (usedPointsEl) usedPointsEl.textContent = pointsToUse.toLocaleString();
+        if (discountAmountEl) discountAmountEl.textContent = currentDiscount.toLocaleString();
+        if (discountAppliedEl) discountAppliedEl.classList.remove('d-none');
+
+        if (isPartialPayment) {
+            // For partial payment, update summary section
+            const pointsDiscountSummary = document.getElementById('points_discount_summary');
+            const amountAfterDiscount = document.getElementById('amount_after_discount');
+            const summaryPoints = document.getElementById('summary_points');
+            const summaryDiscount = document.getElementById('summary_discount');
+            const summaryDiscountValue = document.getElementById('summary_discount_value');
+            const remainingAmountEl = document.getElementById('remaining_amount');
+            const remainingPaymentEl = document.getElementById('remaining_payment');
+            const finalTotalEl = document.getElementById('final_total');
+
+            // Show points discount line
+            if (pointsDiscountSummary) pointsDiscountSummary.classList.remove('d-none');
+            if (amountAfterDiscount) amountAfterDiscount.classList.remove('d-none');
+
+            // Update values
+            if (summaryPoints) summaryPoints.textContent = pointsToUse.toLocaleString();
+            if (summaryDiscount) summaryDiscount.textContent = currentDiscount.toLocaleString();
+            if (summaryDiscountValue) summaryDiscountValue.textContent = currentDiscount.toLocaleString();
+
+            // Calculate remaining amount after discount
+            const remainingAfterDiscount = originalTotal - currentDiscount;
+            if (remainingAmountEl) remainingAmountEl.textContent = remainingAfterDiscount.toLocaleString();
+
+            // Calculate remaining payment after deposit (from the discounted total)
+            const remainingPayment = remainingAfterDiscount - depositAmount;
+            if (remainingPaymentEl) remainingPaymentEl.textContent = `฿${remainingPayment.toLocaleString()}`;
+
+            // Deposit stays the same
+            if (finalTotalEl) finalTotalEl.textContent = `฿${depositAmount.toLocaleString()}`;
+        } else {
+            // For full payment, update final total
+            const discountRowEl = document.getElementById('discount_row');
+            const discountDisplayEl = document.getElementById('discount_display');
+            const finalTotalEl = document.getElementById('final_total');
+
+            if (discountRowEl) discountRowEl.style.display = 'flex';
+            if (discountDisplayEl) discountDisplayEl.textContent = `- ฿${currentDiscount.toLocaleString()}`;
+
+            const finalTotal = originalTotal - currentDiscount;
+            if (finalTotalEl) finalTotalEl.textContent = `฿${finalTotal.toLocaleString()}`;
+        }
+
+        // Update hidden input for form submission
+        const hiddenInput = document.getElementById('points_used_hidden');
+        if (hiddenInput) {
+            hiddenInput.value = pointsToUse;
+        }
+    });
+
+    // Load points on page load
+    document.addEventListener('DOMContentLoaded', loadCustomerPoints);
+</script>
+
+<style>
+    .progress-steps {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .step {
+        text-align: center;
+        flex: 1;
+    }
+
+    .step-circle {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: #e5e7eb;
+        color: #9ca3af;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 8px;
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+
+    .step.completed .step-circle {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .step.active .step-circle {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+    }
+
+    .step-line {
+        height: 3px;
+        background: #e5e7eb;
+        flex: 1;
+        margin: 0 10px;
+        align-self: center;
+        margin-bottom: 30px;
+    }
+
+    .step-line.active {
+        background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+    }
+
+    .step small {
+        font-size: 0.85rem;
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .info-box {
+        background: rgba(59, 130, 246, 0.05);
+    }
+</style>
+{% endblock %}

@@ -337,7 +337,9 @@
                             <h5 class="mb-0"><i class="fas fa-plane"></i> รายละเอียดการเดินทาง</h5>
                         </div>
                         <div class="card-body">
-                            <div style="white-space: pre-line;">{{ campaign.product_details }}</div>
+                            <div style="white-space: pre-wrap; line-height: 2;">{{
+                                campaign.product_details|replace('<br>', '\n')|replace('<br />', '\n')|replace('<br />',
+                                '\n')|safe }}</div>
                         </div>
                     </div>
                 </div>
@@ -351,7 +353,11 @@
                             <h5 class="mb-0"><i class="fas fa-info-circle"></i> รายละเอียดเพิ่มเติม</h5>
                         </div>
                         <div class="card-body">
-                            <div style="white-space: pre-line;">{{ campaign.description }}</div>
+                            <div style="white-space: pre-line; line-height: 2;">{{
+                                campaign.description|e|replace('&lt;br&gt;', '\n')|replace('&lt;br/&gt;',
+                                '\n')|replace('&lt;br /&gt;', '\n')|replace('&lt;p&gt;', '')|replace('&lt;/p&gt;',
+                                '\n')|replace('&lt;b&gt;', '')|replace('&lt;/b&gt;', '')|replace('&nbsp;', ' ')|safe }}
+                            </div>
                         </div>
                     </div>
                 </div>

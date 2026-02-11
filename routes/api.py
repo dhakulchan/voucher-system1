@@ -1526,3 +1526,162 @@ def api_get_share_info_compat(booking_id):
     except Exception as e:
         logger.error(f"❌ API Error getting share info for booking {booking_id}: {str(e)}")
         return jsonify({'success': False, 'error': f'Failed to get share info: {str(e)}'}), 500
+@api_bp.route('/booking/<int:booking_id>/send-to-line', methods=['POST'])
+@login_required
+def api_send_to_line_oa(booking_id):
+    """Send booking notification to customer via LINE Official Account"""
+    from utils.logging_config import get_logger
+    logger = get_logger(__name__)
+    try:
+        logger.info(f"📱 [LINE API] Starting send-to-line for booking {booking_id}")
+        
+        # Get booking data
+        from services.universal_booking_extractor import UniversalBookingExtractor
+        booking = UniversalBookingExtractor.get_fresh_booking_data(booking_id)
+        if not booking:
+            logger.error(f"❌ [LINE API] Booking {booking_id} not found")
+            return jsonify({'success': False, 'error': 'Booking not found'}), 404
+        
+        logger.info(f"✅ [LINE API] Booking {booking_id} loaded")
+        
+        # Get LINE user ID from request
+        data = request.get_json() or {}
+        line_user_id = data.get('line_user_id', '').strip()
+        
+        if not line_user_id:
+            logger.warning(f"⚠️ [LINE API] No LINE user ID provided for booking {booking_id}")
+            return jsonify({
+                'success': False,
+                'error': 'LINE user ID is required',
+                'message': 'กรุณาระบุ LINE User ID ของลูกค้า'
+            }), 400
+        
+        logger.info(f"✅ [LINE API] LINE user ID provided: {line_user_id[:10]}...")
+        
+        # Generate secure token and URL
+        from models.booking_enhanced import BookingEnhanced
+        try:
+            booking_enhanced = db.session.query(BookingEnhanced).filter(BookingEnhanced.id == booking_id).first()
+        except Exception as query_error:
+            logger.error(f"❌ [LINE API] Query error: {query_error}")
+            # Fallback: Try to generate token without BookingEnhanced
+            booking_enhanced = None
+        
+        if not booking_enhanced:
+            logger.warning(f"⚠️ [LINE API] BookingEnhanced not found, will use simple token for {booking_id}")
+            # Generate a simple secure token instead
+            import time
+            import hashlib
+            import base64
+            current_timestamp = int(time.time())
+            token_string = f'{booking_id}|{current_timestamp}|{current_timestamp + 31536000}'
+            token_data = token_string.encode() + hashlib.sha256(token_string.encode()).digest()[:16] 
+            secure_token = base64.b64encode(token_data).decode().rstrip('=')
+        else:
+            logger.info(f"✅ [LINE API] BookingEnhanced loaded for {booking_id}")
+            secure_token = booking_enhanced.generate_secure_token()
+        
+        base_url = request.url_root.rstrip('/')
+        secure_url = f"{base_url}/public/booking/{secure_token}"
+        
+        booking_reference = getattr(booking, 'booking_reference', f'BK{booking_id}')
+        customer_name = getattr(booking, 'party_name', '') or getattr(getattr(booking, 'customer', None), 'name', '')
+        
+        logger.info(f"✅ [LINE API] Generated secure URL for {booking_reference}")
+        
+        # Send via LINE Messaging API
+        try:
+            logger.info(f"📤 [LINE API] Attempting to send message to LINE user {line_user_id[:10]}...")
+            from line_messaging_service import line_service
+            
+            result = line_service.send_booking_notification(
+                user_id=line_user_id,
+                booking_reference=booking_reference,
+                secure_url=secure_url,
+                customer_name=customer_name
+            )
+            
+            logger.info(f"📤 [LINE API] LINE service response: {result}")
+            
+            if result['success']:
+                logger.info(f"✅ [LINE API] SUCCESS - Message sent for booking {booking_id}")
+                return jsonify({
+                    'success': True,
+                    'message': 'ส่งข้อความผ่าน LINE OA สำเร็จ',
+                    'booking_reference': booking_reference,
+                    'secure_url': secure_url
+                })
+            else:
+                logger.warning(f"⚠️ [LINE API] LINE service failed: {result.get('message', 'Unknown error')}")
+                return jsonify({
+                    'success': False,
+                    'error': 'LINE API error',
+                    'message': f"ไม่สามารถส่งข้อความได้: {result.get('message', 'Unknown error')}",
+                    'fallback': True,
+                    'booking_reference': booking_reference,
+                    'secure_url': secure_url
+                }), 500
+                
+        except ImportError as ie:
+            logger.error(f"❌ [LINE API] Import error: {ie}")
+            return jsonify({
+                'success': False,
+                'error': 'LINE service not available',
+                'message': 'ระบบ LINE ยังไม่พร้อมใช้งาน กรุณาใช้วิธี Copy-Paste',
+                'fallback': True
+            }), 503
+            
+    except Exception as e:
+        logger.error(f"❌ [LINE API] EXCEPTION for booking {booking_id}: {type(e).__name__}: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'message': f'เกิดข้อผิดพลาด: {str(e)}',
+            'fallback': True
+        }), 500
+
+@api_bp.route('/line/webhook', methods=['POST'])
+def line_webhook():
+    """Webhook endpoint for LINE Official Account"""
+    from utils.logging_config import get_logger
+    logger = get_logger(__name__)
+    try:
+        logger.info("📩 Received LINE webhook event")
+        
+        # Get request data
+        data = request.get_json()
+        logger.debug(f"LINE webhook data: {data}")
+        
+        # Verify signature (optional but recommended for production)
+        # signature = request.headers.get('X-Line-Signature')
+        # TODO: Implement signature verification
+        
+        # Process events
+        events = data.get('events', [])
+        for event in events:
+            event_type = event.get('type')
+            
+            if event_type == 'message':
+                # Handle incoming message
+                user_id = event['source']['userId']
+                message = event['message']
+                logger.info(f"📨 Message from {user_id}: {message.get('text', 'N/A')}")
+                
+                # TODO: Store user_id in database for future messaging
+                # Example: Associate with customer record
+                
+            elif event_type == 'follow':
+                # User added OA as friend
+                user_id = event['source']['userId']
+                logger.info(f"👥 New follower: {user_id}")
+                
+            elif event_type == 'unfollow':
+                # User blocked OA
+                user_id = event['source']['userId']
+                logger.info(f"👋 User unfollowed: {user_id}")
+        
+        return jsonify({'success': True}), 200
+        
+    except Exception as e:
+        logger.error(f"❌ LINE webhook error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500

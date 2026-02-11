@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}การใช้งานคูปอง - {{ coupon.code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="mb-4">
+        <h2><i class="fas fa-chart-line text-primary me-2"></i>การใช้งานคูปอง: <strong>{{ coupon.code }}</strong></h2>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ stats.total_uses }}</h3>
+                    <p class="text-muted mb-0">ใช้งานทั้งหมด</p>
+                    {% if coupon.max_uses %}
+                    <small class="text-muted">/ {{ coupon.max_uses }} ครั้ง</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-success">฿{{ "{:,.2f}".format(stats.total_discount) }}</h3>
+                    <p class="text-muted mb-0">ส่วนลดรวม</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-info">{{ stats.unique_users }}</h3>
+                    <p class="text-muted mb-0">ผู้ใช้ไม่ซ้ำ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    {% if stats.remaining_uses is not none %}
+                    <h3 class="text-warning">{{ stats.remaining_uses }}</h3>
+                    <p class="text-muted mb-0">คงเหลือ</p>
+                    {% else %}
+                    <h3 class="text-secondary">∞</h3>
+                    <p class="text-muted mb-0">ไม่จำกัด</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coupon Details Card -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">รายละเอียดคูปอง</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>คำอธิบาย:</strong> {{ coupon.description or '-' }}</p>
+                    <p><strong>ส่วนลด:</strong>
+                        {% if coupon.discount_type == 'fixed' %}
+                        ฿{{ coupon.discount_value|int }}
+                        {% else %}
+                        {{ coupon.discount_value|int }}%
+                        {% endif %}
+                    </p>
+                    <p><strong>ยอดซื้อขั้นต่ำ:</strong> ฿{{ "{:,.2f}".format(coupon.min_purchase_amount) }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>ระยะเวลา:</strong> {{ coupon.start_date.strftime('%d/%m/%Y %H:%M') }} - {{
+                        coupon.end_date.strftime('%d/%m/%Y %H:%M') }}</p>
+                    <p><strong>แคมเปญ:</strong>
+                        {% if coupon.campaign %}
+                        {{ coupon.campaign.name }}
+                        {% else %}
+                        ทุกแคมเปญ
+                        {% endif %}
+                    </p>
+                    <p><strong>สถานะ:</strong>
+                        {% if coupon.is_active %}
+                        <span class="badge bg-success">เปิดใช้งาน</span>
+                        {% else %}
+                        <span class="badge bg-danger">ปิดใช้งาน</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage Logs Table -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">ประวัติการใช้งาน</h5>
+        </div>
+        <div class="card-body">
+            {% if usage_logs %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>วันที่ใช้</th>
+                            <th>ลูกค้า</th>
+                            <th>แคมเปญ</th>
+                            <th>ยอดเดิม</th>
+                            <th>ส่วนลด</th>
+                            <th>ยอดชำระ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in usage_logs %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td class="small">{{ log.used_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>
+                                <div class="small">{{ log.customer_email or '-' }}</div>
+                                {% if log.participant %}
+                                <small class="text-muted">ID: {{ log.participant_id }}</small>
+                                {% endif %}
+                            </td>
+                            <td class="small">
+                                {% if log.campaign %}
+                                {{ log.campaign.name[:30] }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>฿{{ "{:,.2f}".format(log.original_amount) }}</td>
+                            <td class="text-success">-฿{{ "{:,.2f}".format(log.discount_amount) }}</td>
+                            <td><strong>฿{{ "{:,.2f}".format(log.final_amount) }}</strong></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p>ยังไม่มีการใช้งานคูปองนี้</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ url_for('group_buy_coupon.list_coupons') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>กลับ
+        </a>
+        <a href="{{ url_for('group_buy_coupon.edit_coupon', coupon_id=coupon.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit me-2"></i>แก้ไขคูปอง
+        </a>
+    </div>
+</div>
+
+
+{% endblock %}

@@ -53,7 +53,7 @@ def create_user():
         elif len(password) < 6:
             errors.append('Password must be at least 6 characters')
         
-        if role not in ['staff', 'manager', 'admin', 'operation', 'internship', 'freelance']:
+        if role not in ['staff', 'manager', 'admin', 'operation', 'internship', 'freelance', 'agency', 'customer']:
             errors.append('Invalid role')
         
         # Only admin can create admin users
@@ -73,7 +73,9 @@ def create_user():
                 'admin': 'Administrator',
                 'operation': 'Operation',
                 'internship': 'Internship',
-                'freelance': 'Freelance'
+                'freelance': 'Freelance',
+                'agency': 'Agency',
+                'customer': 'Customer'
             }
             
             user = User(
@@ -105,7 +107,7 @@ def update_role(user_id):
     new_role = request.form.get('role', '').lower().strip()  # Normalize to lowercase
     
     # Validation
-    if new_role not in ['staff', 'manager', 'admin', 'operation', 'internship', 'freelance']:
+    if new_role not in ['staff', 'manager', 'admin', 'operation', 'internship', 'freelance', 'agency', 'customer']:
         flash('❌ Invalid role', 'error')
         return redirect(url_for('user_mgmt.list_users'))
     
@@ -129,7 +131,9 @@ def update_role(user_id):
             'admin': 'Administrator',
             'operation': 'Operation',
             'internship': 'Internship',
-            'freelance': 'Freelance'
+            'freelance': 'Freelance',
+            'agency': 'Agency',
+            'customer': 'Customer'
         }
         
         user.role = role_mapping.get(new_role, 'Staff')

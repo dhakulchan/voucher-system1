@@ -23,6 +23,7 @@ class GroupBuyCampaign(db.Model):
     regular_price = db.Column(db.Numeric(12, 2), nullable=False)
     group_price = db.Column(db.Numeric(12, 2), nullable=False)
     discount_percentage = db.Column(db.Numeric(5, 2))
+    price_description = db.Column(db.String(500), default='ราคาต่อท่าน พัก 3 หรือ 2 ท่าน ต่อห้องตามเงื่อนไข')  # Free text for price details
     
     # Group Requirements
     min_participants = db.Column(db.Integer, nullable=False, default=2)
@@ -57,6 +58,7 @@ class GroupBuyCampaign(db.Model):
     # Visibility
     is_public = db.Column(db.Boolean, default=True)
     featured = db.Column(db.Boolean, default=False)
+    display_order = db.Column(db.Integer, default=0)  # Manual ordering (lower number = higher priority)
     
     # Images
     banner_image = db.Column(db.String(500))
@@ -378,18 +380,9 @@ class GroupBuyGroup(db.Model):
     
     @property
     def is_full(self):
-        """ตรวจสอบว่ากลุ่มเต็มหรือยัง (เช็คทั้ง participants และ max_pax ของแคมเปญ)"""
-        # เช็คจำนวน participants ในกลุ่ม
-        if self.current_participants >= self.required_participants:
-            return True
-        
-        # เช็ค max_pax ของแคมเปญ (ถ้ามี)
-        if self.campaign and self.campaign.max_pax:
-            total_pax = self.total_pax_for_campaign
-            if total_pax >= self.campaign.max_pax:
-                return True
-        
-        return False
+        """ตรวจสอบว่ากลุ่มเต็มหรือยัง (เช็คจำนวน participants ในกลุ่ม)"""
+        # เช็คจำนวน participants ในกลุ่มนี้เท่านั้น
+        return self.current_participants >= self.required_participants
     
     @property
     def spots_remaining(self):
@@ -481,6 +474,7 @@ class GroupBuyParticipant(db.Model):
     
     # Relationships
     payment = db.relationship('GroupBuyPayment', foreign_keys=[payment_id], backref='participant', uselist=False)
+    campaign = db.relationship('GroupBuyCampaign', foreign_keys=[campaign_id])
     
     def to_dict(self):
         """แปลงเป็น dict"""

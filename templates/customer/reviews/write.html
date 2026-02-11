@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}เขียนรีวิว - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> เขียนรีวิวแคมเปญ</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">{{ campaign.name }}</h6>
+
+                    <form method="POST" id="reviewForm">
+                        <!-- Rating -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">ให้คะแนน <span class="text-danger">*</span></label>
+                            <div class="rating-stars">
+                                {% for i in range(5, 0, -1) %}
+                                <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}" {% if i==5
+                                    %}checked{% endif %}>
+                                <label for="star{{ i }}">★</label>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Comment -->
+                        <div class="mb-4">
+                            <label for="comment" class="form-label fw-bold">รีวิวของคุณ <span
+                                    class="text-danger">*</span></label>
+                            <textarea name="comment" id="comment" class="form-control" rows="6" required
+                                placeholder="แบ่งปันประสบการณ์ของคุณ..."></textarea>
+                            <small class="text-muted">ยิ่งเขียนละเอียด ยิ่งได้คะแนนมาก!</small>
+                        </div>
+
+                        <!-- Images (Optional) -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">อัพโหลดรูปภาพ (ถ้ามี)</label>
+                            <input type="file" class="form-control" id="imageUpload" multiple accept="image/*">
+                            <small class="text-muted">รีวิวพร้อมรูปภาพจะได้รับคะแนนเพิ่ม!</small>
+                            <div id="imagePreview" class="mt-2"></div>
+                            <input type="hidden" name="images" id="imageUrls">
+                        </div>
+
+                        <!-- Points Info -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-gift"></i> <strong>รับคะแนนสะสม:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>รีวิวข้อความ: <strong>50 คะแนน</strong></li>
+                                <li>รีวิว + รูปภาพ: <strong>80 คะแนน</strong></li>
+                            </ul>
+                            <small class="text-muted">*คะแนนจะได้รับหลังผู้ดูแลระบบอนุมัติรีวิว</small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> ส่งรีวิว
+                            </button>
+                            <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                                class="btn btn-secondary">
+                                <i class="fas fa-times"></i> ยกเลิก
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .rating-stars {
+        direction: rtl;
+        display: inline-flex;
+        font-size: 2rem;
+    }
+
+    .rating-stars input {
+        display: none;
+    }
+
+    .rating-stars label {
+        color: #ddd;
+        cursor: pointer;
+        padding: 0 5px;
+    }
+
+    .rating-stars input:checked~label,
+    .rating-stars label:hover,
+    .rating-stars label:hover~label {
+        color: #ffc107;
+    }
+</style>
+
+<script>
+    // Image upload preview
+    document.getElementById('imageUpload').addEventListener('change', function (e) {
+        const files = e.target.files;
+        const preview = document.getElementById('imagePreview');
+        preview.innerHTML = '';
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.className = 'img-thumbnail me-2 mb-2';
+                img.style.width = '100px';
+                img.style.height = '100px';
+                img.style.objectFit = 'cover';
+                preview.appendChild(img);
+            };
+
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Form submission
+    document.getElementById('reviewForm').addEventListener('submit', function (e) {
+        const comment = document.getElementById('comment').value.trim();
+        if (!comment) {
+            e.preventDefault();
+            alert('กรุณาเขียนรีวิวของคุณ');
+            return false;
+        }
+
+        // Here you would normally upload images to server
+        // For now, we'll just show a message
+        const files = document.getElementById('imageUpload').files;
+        if (files.length > 0) {
+            // In production, upload images and get URLs
+            console.log('Uploading ' + files.length + ' images...');
+        }
+    });
+</script>
+{% endblock %}

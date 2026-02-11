@@ -185,10 +185,10 @@
                         <div class="col-md-6">
                             <strong>ที่นั่งคงเหลือ:</strong>
                             {% if campaign.max_pax %}
-                            {% set total_confirmed_pax = campaign.groups|selectattr('status', 'equalto',
-                            'success')|sum(attribute='total_pax_count') %}
-                            {% set remaining_seats = campaign.max_pax - total_confirmed_pax %}
-                            <span class="badge bg-primary" style="font-size: 1.1rem; padding: 0.5rem 1rem;">คงเหลือ {{
+                            {% set remaining_seats = campaign.max_pax - stats.total_participants %}
+                            <span
+                                class="badge {% if remaining_seats <= 0 %}bg-danger{% elif remaining_seats < 5 %}bg-warning{% else %}bg-primary{% endif %}"
+                                style="font-size: 1.1rem; padding: 0.5rem 1rem;">คงเหลือ {{
                                 remaining_seats }} ที่นั่ง(seats)</span>
                             {% else %}
                             <span class="text-muted">ไม่จำกัด</span>
@@ -279,20 +279,14 @@
                                         <strong class="text-primary"><i
                                                 class="fas fa-users me-2"></i>จำนวนสมาชิกเข้าร่วม:</strong>
                                         <span class="ms-2 fs-5 fw-bold">
-                                            {% set success_groups = groups|selectattr('status', 'equalto',
-                                            'success')|list %}
-                                            {% set total_members = success_groups|sum(attribute='current_participants')
-                                            %}
-                                            {{ total_members }} ชุด
+                                            {{ stats.successful_groups }} ชุด
                                         </span>
                                     </div>
                                     <div class="col-md-6">
                                         <strong class="text-success"><i class="fas fa-check-circle me-2"></i>สำเร็จ
                                             จำนวนคนรวม:</strong>
                                         <span class="ms-2 fs-5 fw-bold">
-                                            {% set success_total_pax = success_groups|sum(attribute='total_pax_count')
-                                            %}
-                                            {{ success_total_pax }} คน
+                                            {{ stats.total_participants }} คน
                                         </span>
                                     </div>
                                 </div>
@@ -303,14 +297,20 @@
                     {% if campaign.product_details %}
                     <div class="mb-3">
                         <strong>Flights & Hotels (เที่ยวบิน / โรงแรม):</strong>
-                        <p style="white-space: pre-line;">{{ campaign.product_details }}</p>
+                        <div style="white-space: pre-wrap; line-height: 1.8;">{{
+                            campaign.product_details|replace('<br>', '\n')|replace('<br />', '\n')|replace('<br />',
+                            '\n')|safe }}</div>
                     </div>
                     {% endif %}
 
                     {% if campaign.description %}
                     <div class="mb-3">
                         <strong>Description - รายละเอียด:</strong>
-                        <p style="white-space: pre-line;">{{ campaign.description }}</p>
+                        <div style="white-space: pre-line; line-height: 1.8;">{{
+                            campaign.description|e|replace('&lt;br&gt;', '\n')|replace('&lt;br/&gt;',
+                            '\n')|replace('&lt;br /&gt;', '\n')|replace('&lt;p&gt;', '')|replace('&lt;/p&gt;',
+                            '\n')|replace('&lt;b&gt;', '')|replace('&lt;/b&gt;', '')|replace('&nbsp;', ' ')|safe }}
+                        </div>
                     </div>
                     {% endif %}
 

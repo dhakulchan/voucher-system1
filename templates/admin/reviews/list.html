@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+{% block title %}จัดการรีวิวลูกค้า{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col">
+            <h2><i class="fas fa-star"></i> จัดการรีวิวลูกค้า</h2>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-list"></i> รีวิวทั้งหมด</h5>
+                    <h2>{{ total_reviews }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-clock"></i> รอการอนุมัติ</h5>
+                    <h2>{{ pending_reviews }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="fas fa-check"></i> อนุมัติแล้ว</h5>
+                    <h2>{{ approved_reviews }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}"
+                href="{{ url_for('admin_reviews.list_reviews', status='pending') }}">
+                รอการอนุมัติ ({{ pending_reviews }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'approved' %}active{% endif %}"
+                href="{{ url_for('admin_reviews.list_reviews', status='approved') }}">
+                อนุมัติแล้ว ({{ approved_reviews }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if status_filter == 'all' %}active{% endif %}"
+                href="{{ url_for('admin_reviews.list_reviews', status='all') }}">
+                ทั้งหมด ({{ total_reviews }})
+            </a>
+        </li>
+    </ul>
+
+    <!-- Bulk Actions Form -->
+    <form id="bulkActionForm" method="POST" action="{{ url_for('admin_reviews.bulk_action') }}">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <button type="button" class="btn btn-sm btn-success" onclick="submitBulkAction('approve')">
+                        <i class="fas fa-check"></i> อนุมัติที่เลือก
+                    </button>
+                    <button type="button" class="btn btn-sm btn-warning" onclick="submitBulkAction('reject')">
+                        <i class="fas fa-times"></i> ปฏิเสธที่เลือก
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="submitBulkAction('delete')">
+                        <i class="fas fa-trash"></i> ลบที่เลือก
+                    </button>
+                </div>
+                <div>
+                    <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+                    <label for="selectAll">เลือกทั้งหมด</label>
+                </div>
+            </div>
+
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th width="40"></th>
+                                <th>ID</th>
+                                <th>แคมเปญ</th>
+                                <th>ลูกค้า</th>
+                                <th>คะแนน</th>
+                                <th>รีวิว</th>
+                                <th>รูปภาพ</th>
+                                <th>วันที่</th>
+                                <th>สถานะ</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews.items %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="review_ids[]" value="{{ review.id }}"
+                                        class="review-checkbox">
+                                </td>
+                                <td>{{ review.id }}</td>
+                                <td>
+                                    <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=review.campaign_id) }}"
+                                        target="_blank">
+                                        {{ review.campaign.name[:40] }}...
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if review.customer %}
+                                    <strong>{{ review.customer.name }}</strong><br>
+                                    <small class="text-muted">{{ review.customer.email }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="stars-display">
+                                        {% for i in range(5) %}
+                                        <i
+                                            class="fas fa-star {% if i < review.rating %}text-warning{% else %}text-muted{% endif %}"></i>
+                                        {% endfor %}
+                                    </div>
+                                    <small class="text-muted">({{ review.rating }}/5)</small>
+                                </td>
+                                <td>
+                                    {% if review.comment %}
+                                    <p class="mb-0">{{ review.comment[:100] }}{% if review.comment|length > 100 %}...{%
+                                        endif %}</p>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if review.images.count() > 0 %}
+                                    <span class="badge bg-info">{{ review.images.count() }} รูป</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ review.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    {% if review.is_approved %}
+                                    <span class="badge bg-success"><i class="fas fa-check"></i> อนุมัติ</span>
+                                    {% else %}
+                                    <span class="badge bg-warning"><i class="fas fa-clock"></i> รออนุมัติ</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('admin_reviews.view_review', review_id=review.id) }}"
+                                            class="btn btn-sm btn-info" title="ดูรายละเอียด">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if not review.is_approved %}
+                                        <form method="POST"
+                                            action="{{ url_for('admin_reviews.approve_review', review_id=review.id) }}"
+                                            style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-success" title="อนุมัติ">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        </form>
+                                        {% else %}
+                                        <form method="POST"
+                                            action="{{ url_for('admin_reviews.reject_review', review_id=review.id) }}"
+                                            style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-warning" title="ปฏิเสธ">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        <form method="POST"
+                                            action="{{ url_for('admin_reviews.delete_review', review_id=review.id) }}"
+                                            style="display:inline;"
+                                            onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบรีวิวนี้?')">
+                                            <button type="submit" class="btn btn-sm btn-danger" title="ลบ">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% if not reviews.items %}
+                            <tr>
+                                <td colspan="10" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i><br>
+                                    ไม่มีรีวิว
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="action" id="bulkAction">
+    </form>
+
+    <!-- Pagination -->
+    {% if reviews.pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if reviews.has_prev %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('admin_reviews.list_reviews', page=reviews.prev_num, status=status_filter) }}">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for page in reviews.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page %}
+            <li class="page-item {% if page == reviews.page %}active{% endif %}">
+                <a class="page-link"
+                    href="{{ url_for('admin_reviews.list_reviews', page=page, status=status_filter) }}">{{ page }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+            {% endfor %}
+
+            {% if reviews.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                    href="{{ url_for('admin_reviews.list_reviews', page=reviews.next_num, status=status_filter) }}">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<script>
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('.review-checkbox');
+        checkboxes.forEach(cb => cb.checked = checkbox.checked);
+    }
+
+    function submitBulkAction(action) {
+        const checkedBoxes = document.querySelectorAll('.review-checkbox:checked');
+        if (checkedBoxes.length === 0) {
+            alert('กรุณาเลือกรีวิวอย่างน้อย 1 รายการ');
+            return;
+        }
+
+        let confirmMsg = '';
+        if (action === 'approve') {
+            confirmMsg = `คุณต้องการอนุมัติรีวิว ${checkedBoxes.length} รายการหรือไม่?`;
+        } else if (action === 'reject') {
+            confirmMsg = `คุณต้องการปฏิเสธรีวิว ${checkedBoxes.length} รายการหรือไม่?`;
+        } else if (action === 'delete') {
+            confirmMsg = `คุณแน่ใจหรือไม่ที่จะลบรีวิว ${checkedBoxes.length} รายการ? การดำเนินการนี้ไม่สามารถยกเลิกได้`;
+        }
+
+        if (confirm(confirmMsg)) {
+            document.getElementById('bulkAction').value = action;
+            document.getElementById('bulkActionForm').submit();
+        }
+    }
+</script>
+
+<style>
+    .stars-display {
+        display: inline-block;
+    }
+</style>
+{% endblock %}

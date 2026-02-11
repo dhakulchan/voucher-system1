@@ -288,7 +288,7 @@
             </div>
             <div class="info-row">
                 <span class="info-label">เวลาที่ออกคิว:</span>
-                <span class="info-value">{{ queue.created_at.strftime('%H:%M') }}</span>
+                <span class="info-value">{{ queue.created_at|thai_datetime('%H:%M') }}</span>
             </div>
         </div>
 

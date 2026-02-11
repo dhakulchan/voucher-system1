@@ -11,6 +11,7 @@ from models.customer import Customer
 from models.booking import Booking
 from app import db
 from werkzeug.utils import secure_filename
+from functools import wraps
 import logging
 import os
 
@@ -21,29 +22,74 @@ logger = logging.getLogger(__name__)
 UPLOAD_FOLDER = 'static/queue_media'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'mp4', 'webm', 'ogg'}
 
+def api_login_required(f):
+    """Decorator for API endpoints that returns JSON instead of redirecting"""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return jsonify({
+                'success': False,
+                'error': 'Authentication required'
+            }), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 def generate_queue_number():
-    """Generate unique queue number for today (Format: YYMMNN - 6 digits total)"""
+    """Generate unique queue number using atomic database counter"""
+    from sqlalchemy import text
+    
     today = date.today()
-    prefix = today.strftime('%y%m')  # YYMM (4 digits: YY + MM)
+    prefix = today.strftime('%y%m')  # YYMM format like '2601'
     
-    # Find last queue number for today
-    last_queue = Queue.query.filter(
-        Queue.queue_number.like(f'{prefix}%')
-    ).order_by(Queue.id.desc()).first()
-    
-    if last_queue:
-        # Extract last 2 digits for running number
-        last_num = int(last_queue.queue_number[-2:])  # Last 2 digits
-        new_num = last_num + 1
-    else:
-        new_num = 0
-    
-    return f'{prefix}{new_num:02d}'  # 6-digit total: YYMMNN (26 + 01 + 00)
+    try:
+        # Atomic increment using INSERT ON DUPLICATE KEY UPDATE
+        # This is guaranteed to be atomic across all connections
+        db.session.execute(
+            text("""
+                INSERT INTO queue_sequences (date_prefix, next_number) 
+                VALUES (:prefix, 1)
+                ON DUPLICATE KEY UPDATE next_number = next_number + 1
+            """),
+            {"prefix": prefix}
+        )
+        
+        # Get the number we just reserved
+        result = db.session.execute(
+            text("""
+                SELECT next_number 
+                FROM queue_sequences 
+                WHERE date_prefix = :prefix
+            """),
+            {"prefix": prefix}
+        ).fetchone()
+        
+        db.session.commit()
+        
+        if not result:
+            raise Exception("Failed to get queue number from sequence")
+        
+        num = result[0]
+        
+        # Format appropriately based on number size
+        if num <= 99:
+            queue_number = f'{prefix}{num:02d}'
+        elif num <= 999:
+            queue_number = f'{prefix}{num:03d}'
+        else:
+            queue_number = f'{prefix}{num:04d}'
+        
+        logger.info(f"✅ Generated queue number: {queue_number}")
+        return queue_number
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Error generating queue number: {str(e)}")
+        raise
 
 
 
@@ -121,15 +167,9 @@ def counter(counter_id):
     # Check if user is assigned to this counter
     user_counter = current_user.assigned_counter
     
-    # Admin can access any counter
-    if not current_user.is_admin:
-        if user_counter is None:
-            flash('You have not been assigned to any counter. Please contact your administrator.', 'warning')
-            return redirect(url_for('queue.index_public'))
-        
-        if str(user_counter) != str(counter_id):
-            flash(f'Access denied. You are assigned to Counter {user_counter}.', 'danger')
-            return redirect(url_for('queue.counter', counter_id=user_counter))
+    # Show info message if accessing different counter than assigned
+    if not current_user.is_admin and user_counter and str(user_counter) != str(counter_id):
+        flash(f'Note: You are accessing Counter {counter_id}. Your assigned counter is {user_counter}.', 'info')
     
     return render_template('queue/counter.html', counter_id=counter_id)
 
@@ -163,7 +203,7 @@ def my_counter():
         return redirect(url_for('queue.counter', counter_id=current_user.assigned_counter))
     else:
         flash('You have not been assigned to any counter yet. Please contact your administrator.', 'warning')
-        return redirect(url_for('queue.index_public'))
+        return redirect(url_for('queue.index'))
 
 
 @queue_bp.route('/counter-assignments')
@@ -218,19 +258,27 @@ def get_queues():
 @queue_bp.route('/api/queue', methods=['POST'])
 def create_queue():
     """Create new queue with customer information"""
+    from sqlalchemy.exc import IntegrityError
+    import time
+    import random
+    
+    data = request.get_json()
+    
+    # Validate required fields
+    if not data.get('customer_name'):
+        return jsonify({'success': False, 'error': 'Customer name is required'}), 400
+    if not data.get('customer_phone'):
+        return jsonify({'success': False, 'error': 'Customer phone is required'}), 400
+    if not data.get('service_type'):
+        return jsonify({'success': False, 'error': 'Service type is required'}), 400
+    
     try:
-        data = request.get_json()
+        # Generate queue number (handles atomicity internally)
+        queue_number = generate_queue_number()
         
-        # Validate required fields
-        if not data.get('customer_name'):
-            return jsonify({'success': False, 'error': 'Customer name is required'}), 400
-        if not data.get('customer_phone'):
-            return jsonify({'success': False, 'error': 'Customer phone is required'}), 400
-        if not data.get('service_type'):
-            return jsonify({'success': False, 'error': 'Service type is required'}), 400
-        
+        # Create queue
         queue = Queue(
-            queue_number=generate_queue_number(),
+            queue_number=queue_number,
             customer_name=data['customer_name'].strip(),
             customer_phone=data['customer_phone'].strip(),
             customer_email=data.get('customer_email', '').strip() if data.get('customer_email') else None,
@@ -242,17 +290,18 @@ def create_queue():
         db.session.add(queue)
         db.session.commit()
         
-        logger.info(f"✅ New queue created: {queue.queue_number} for {queue.customer_name}")
+        logger.info(f"✅ Queue created: {queue.queue_number} - {queue.customer_name}")
         
         return jsonify({
             'success': True,
             'queue': queue.to_dict(),
             'tracking_url': f'/queue/track/{queue.queue_number}'
         })
+            
     except Exception as e:
-        logger.error(f"❌ Error creating queue: {str(e)}")
+        logger.error(f"❌ Error creating queue: {str(e)}", exc_info=True)
         db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': 'Unable to create queue. Please try again.'}), 500
 
 
 @queue_bp.route('/api/queue/<int:queue_id>/status', methods=['GET'])
@@ -484,7 +533,7 @@ def get_media_list():
 
 
 @queue_bp.route('/api/media/all', methods=['GET'])
-@login_required
+@api_login_required
 def get_all_media():
     """Get all media (including inactive) for admin"""
     try:
@@ -503,7 +552,7 @@ def get_all_media():
 
 
 @queue_bp.route('/api/media', methods=['POST'])
-@login_required
+@api_login_required
 def create_media():
     """Upload new media (image/video)"""
     try:
@@ -619,7 +668,7 @@ def create_media():
 
 
 @queue_bp.route('/api/media/<int:media_id>', methods=['PUT'])
-@login_required
+@api_login_required
 def update_media(media_id):
     """Update media information"""
     try:
@@ -650,7 +699,7 @@ def update_media(media_id):
 
 
 @queue_bp.route('/api/media/<int:media_id>', methods=['DELETE'])
-@login_required
+@api_login_required
 def delete_media(media_id):
     """Delete media"""
     try:
@@ -680,7 +729,7 @@ def delete_media(media_id):
 # ============================================================
 
 @queue_bp.route('/api/tokens', methods=['GET'])
-@login_required
+@api_login_required
 def get_tokens():
     """Get all display tokens"""
     from models.display_token import DisplayToken
@@ -696,7 +745,7 @@ def get_tokens():
 
 
 @queue_bp.route('/api/tokens', methods=['POST'])
-@login_required
+@api_login_required
 def create_token():
     """Create new display token"""
     from models.display_token import DisplayToken
@@ -729,7 +778,7 @@ def create_token():
 
 
 @queue_bp.route('/api/tokens/<int:token_id>', methods=['PUT'])
-@login_required
+@api_login_required
 def update_token(token_id):
     """Update display token"""
     from models.display_token import DisplayToken
@@ -762,7 +811,7 @@ def update_token(token_id):
 
 
 @queue_bp.route('/api/tokens/<int:token_id>', methods=['DELETE'])
-@login_required
+@api_login_required
 def delete_token(token_id):
     """Delete display token"""
     from models.display_token import DisplayToken
@@ -782,7 +831,7 @@ def delete_token(token_id):
 
 
 @queue_bp.route('/api/tokens/<int:token_id>/regenerate', methods=['POST'])
-@login_required
+@api_login_required
 def regenerate_token(token_id):
     """Regenerate token string for security"""
     from models.display_token import DisplayToken
@@ -810,7 +859,7 @@ def regenerate_token(token_id):
 
 
 @queue_bp.route('/api/assign-counter', methods=['POST'])
-@login_required
+@api_login_required
 def assign_counter():
     """API endpoint to assign counter to user (Admin only)"""
     if not current_user.is_admin:
@@ -852,7 +901,7 @@ def assign_counter():
 
 
 @queue_bp.route('/api/users')
-@login_required
+@api_login_required
 def get_all_users():
     """API endpoint to get all users for counter assignment (Admin only)"""
     if not current_user.is_admin:

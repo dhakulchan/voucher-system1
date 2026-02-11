@@ -1,8 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from utils.logging_config import get_logger
-from flask_login import login_required
+from flask_login import login_required, current_user
 from extensions import db
 from models.customer import Customer
+from models.group_buy import GroupBuyParticipant
 from sqlalchemy import or_
 
 customer_bp = Blueprint('customer', __name__)
@@ -204,3 +205,25 @@ def api_import_invoice_ninja_client():
 
     # Invoice Ninja integration removed
     return jsonify({'ok': False, 'error': 'invoice_ninja_removed'}), 400
+
+@customer_bp.route('/my-bookings')
+@login_required
+def my_bookings():
+    """หน้าแสดงประวัติ bookings ของลูกค้า"""
+    if current_user.role != 'Customer':
+        flash('กรุณา login ด้วยบัญชี Customer', 'error')
+        return redirect(url_for('customer_login.login'))
+    
+    # ดึงข้อมูล customer ที่เชื่อมโยงกับ user ปัจจุบัน
+    customer = Customer.query.filter_by(user_id=current_user.id).first()
+    
+    if not customer:
+        flash('ไม่พบข้อมูลลูกค้า', 'error')
+        return redirect(url_for('group_buy_public.index'))
+    
+    # ดึงข้อมูล bookings จาก GroupBuyParticipant
+    participants = GroupBuyParticipant.query.filter_by(
+        customer_id=customer.id
+    ).order_by(GroupBuyParticipant.created_at.desc()).all()
+    
+    return render_template('customer/my_bookings.html', participants=participants, customer=customer)

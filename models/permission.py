@@ -33,10 +33,19 @@ class RolePermission(db.Model):
         if not self.permissions:
             return False
         
-        if module not in self.permissions:
+        # Parse permissions if it's a string
+        perms = self.permissions
+        if isinstance(perms, str):
+            import json
+            try:
+                perms = json.loads(perms)
+            except:
+                return False
+        
+        if module not in perms:
             return False
         
-        module_perms = self.permissions[module]
+        module_perms = perms[module]
         if isinstance(module_perms, dict):
             return module_perms.get(action, False)
         
@@ -47,7 +56,16 @@ class RolePermission(db.Model):
         if not self.permissions:
             return False
         
-        sidebar_menus = self.permissions.get('sidebar_menus', [])
+        # Handle case where permissions might be stored as JSON string
+        import json
+        perms = self.permissions
+        if isinstance(perms, str):
+            try:
+                perms = json.loads(perms)
+            except (json.JSONDecodeError, TypeError):
+                return False
+        
+        sidebar_menus = perms.get('sidebar_menus', [])
         return menu_name in sidebar_menus
     
     @classmethod
@@ -103,10 +121,19 @@ class UserPermission(db.Model):
         if not self.permissions:
             return False
         
-        if module not in self.permissions:
+        # Parse permissions if it's a string
+        perms = self.permissions
+        if isinstance(perms, str):
+            import json
+            try:
+                perms = json.loads(perms)
+            except:
+                return False
+        
+        if module not in perms:
             return False
         
-        module_perms = self.permissions[module]
+        module_perms = perms[module]
         if isinstance(module_perms, dict):
             return module_perms.get(action, False)
         
@@ -117,7 +144,16 @@ class UserPermission(db.Model):
         if not self.permissions:
             return False
         
-        sidebar_menus = self.permissions.get('sidebar_menus', [])
+        # Handle case where permissions might be stored as JSON string
+        import json
+        perms = self.permissions
+        if isinstance(perms, str):
+            try:
+                perms = json.loads(perms)
+            except (json.JSONDecodeError, TypeError):
+                return False
+        
+        sidebar_menus = perms.get('sidebar_menus', [])
         return menu_name in sidebar_menus
     
     @classmethod

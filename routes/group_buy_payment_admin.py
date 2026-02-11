@@ -1,7 +1,7 @@
 """
 Group Buy Payment Admin Routes
 """
-from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for, current_app
 from extensions import db
 from models.group_buy_payment import GroupBuyBankAccount, GroupBuyPayment
 from werkzeug.utils import secure_filename
@@ -34,12 +34,14 @@ def create_bank_account():
                     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'png'
                     new_filename = f"bank_logo_{timestamp}.{ext}"
                     
-                    upload_folder = os.path.join('static', 'uploads', 'bank_logos')
+                    # Use absolute path from Flask app root
+                    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'bank_logos')
                     os.makedirs(upload_folder, exist_ok=True)
                     filepath = os.path.join(upload_folder, new_filename)
                     
                     file.save(filepath)
-                    bank_logo = filepath
+                    # Store relative path in database
+                    bank_logo = os.path.join('static', 'uploads', 'bank_logos', new_filename)
             
             account = GroupBuyBankAccount(
                 bank_name=request.form.get('bank_name'),
@@ -84,12 +86,14 @@ def edit_bank_account(id):
                     ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else 'png'
                     new_filename = f"bank_logo_{timestamp}.{ext}"
                     
-                    upload_folder = os.path.join('static', 'uploads', 'bank_logos')
+                    # Use absolute path from Flask app root
+                    upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'bank_logos')
                     os.makedirs(upload_folder, exist_ok=True)
                     filepath = os.path.join(upload_folder, new_filename)
                     
                     file.save(filepath)
-                    account.bank_logo = filepath
+                    # Store relative path in database
+                    account.bank_logo = os.path.join('static', 'uploads', 'bank_logos', new_filename)
             
             db.session.commit()
             flash('อัปเดตบัญชีธนาคารสำเร็จ', 'success')

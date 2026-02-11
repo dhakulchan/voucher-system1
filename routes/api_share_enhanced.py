@@ -8,6 +8,8 @@ import time
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.header import Header
+from email import policy
 from config import Config
 
 logger = logging.getLogger(__name__)
@@ -72,7 +74,7 @@ def get_secure_share_url(booking_id):
                 generator_description = BookingEnhanced.get_generator_description_for_status(booking['status'])
                 
                 # Use production URL for all environments
-                public_url = f"http://localhost:5001/public/booking/{token}"
+                public_url = f"https://booking.dhakulchan.net/public/booking/{token}"
                 message = BookingEnhanced.generate_share_message(
                     booking['booking_reference'],
                     public_url,
@@ -314,9 +316,9 @@ def send_email_link_message(booking_id):
             logger.error(f"Failed to generate secure token for booking {booking_id}")
             return jsonify({'success': False, 'error': 'Failed to generate secure access token'}), 500
         
-        # Build secure URL
-        # Use localhost for development
-        secure_url = f"http://localhost:5001/public/booking/{token}"
+        # Build secure URL using the actual request URL
+        base_url = request.url_root.rstrip('/')
+        secure_url = f"{base_url}/public/booking/{token}"
         
         # Determine document type and title
         if booking['status'] == 'quoted':
@@ -378,22 +380,32 @@ def send_email_link_message(booking_id):
         if not all([smtp_server, smtp_username, smtp_password, sender_email]):
             return jsonify({'success': False, 'error': 'SMTP configuration incomplete'}), 500
         
-        # Create email
+        # Create email with UTF-8 support
+        from email.header import Header
+        from email import policy
+        
         msg = MIMEMultipart()
         msg['From'] = sender_email
         msg['To'] = recipient_email
-        msg['Subject'] = f"{document_title} - {booking['booking_reference']}"
+        msg['Subject'] = str(Header(f"{document_title} - {booking['booking_reference']}", 'utf-8'))
         
-        # Add message body
-        msg.attach(MIMEText(message, 'plain'))
+        # Add message body with UTF-8 charset
+        msg.attach(MIMEText(message, 'plain', 'utf-8'))
         
-        # Send email
+        # Send email with UTF-8 support
         try:
             server = smtplib.SMTP(smtp_server, smtp_port)
             server.starttls()
             server.login(smtp_username, smtp_password)
-            text = msg.as_string()
-            server.sendmail(sender_email, recipient_email, text)
+            
+            # Use SMTPUTF8 if supported, otherwise use standard encoding
+            try:
+                data = msg.as_bytes(policy=policy.SMTPUTF8)
+                server.sendmail(sender_email, [recipient_email], data, mail_options=['SMTPUTF8'])
+            except smtplib.SMTPNotSupportedError:
+                data = msg.as_bytes(policy=policy.SMTP)
+                server.sendmail(sender_email, [recipient_email], data)
+            
             server.quit()
             
             logger.info(f"Email sent successfully to {recipient_email} for booking {booking_id}")

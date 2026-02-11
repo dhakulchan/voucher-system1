@@ -25,7 +25,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">คำอธิบาย</label>
-                            <textarea name="description" class="form-control"
+                            <textarea name="description" class="form-control summernote-editor"
                                 rows="4">{{ campaign.description or '' }}</textarea>
                         </div>
 
@@ -57,7 +57,7 @@
 
                         <div class="mb-3">
                             <label class="form-label">Product Details</label>
-                            <textarea name="product_details" class="form-control" rows="3"
+                            <textarea name="product_details" class="form-control summernote-editor" rows="3"
                                 placeholder="รายละเอียดสินค้า เช่น รหัสทัวร์, ชื่อโรงแรม, เที่ยวบิน ฯลฯ">{{ campaign.product_details or '' }}</textarea>
                             <small class="text-muted">ระบุรายละเอียดสินค้าเพิ่มเติม</small>
                         </div>
@@ -95,6 +95,15 @@
                                         <input type="number" name="group_price" class="form-control" step="0.01"
                                             value="{{ campaign.group_price }}" required>
                                     </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">คำอธิบายราคา (แสดงด้านล่างราคา)</label>
+                                    <input type="text" name="price_description" class="form-control"
+                                        value="{{ campaign.price_description or 'ราคาต่อท่าน พัก 3 หรือ 2 ท่าน ต่อห้องตามเงื่อนไข' }}"
+                                        maxlength="500"
+                                        placeholder="เช่น ราคาต่อท่าน พัก 3 หรือ 2 ท่าน ต่อห้องตามเงื่อนไข">
+                                    <small class="text-muted">ระบุข้อความที่ต้องการแสดงด้านล่างราคา (ไม่เกิน 500
+                                        ตัวอักษร)</small>
                                 </div>
                             </div>
                         </div>
@@ -220,6 +229,16 @@
                             <label class="form-check-label" for="featured">
                                 <i class="fas fa-star text-warning"></i> Featured
                             </label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="display_order" class="form-label">
+                                <i class="fas fa-sort-numeric-down"></i> ลำดับการแสดง (เลขน้อย = แสดงก่อน)
+                            </label>
+                            <input type="number" class="form-control" id="display_order" name="display_order"
+                                value="{{ campaign.display_order or 0 }}" min="0" max="999">
+                            <small class="form-text text-muted">0 = ลำดับปกติ, 1-999 = กำหนดลำดับเอง
+                                (เลขน้อยแสดงก่อน)</small>
                         </div>
 
                         <div class="form-check mb-3">
@@ -400,35 +419,53 @@
                             <label class="form-label">Album ภาพเพิ่มเติม</label>
                             {% if campaign.album_images %}
                             <div class="mb-3">
-                                <h6>ภาพที่มีอยู่แล้ว:</h6>
-                                <div class="row">
+                                <h6>ภาพที่มีอยู่แล้ว: <small class="text-muted">(ลากเพื่อเรียงลำดับ)</small></h6>
+                                <div id="sortableAlbum" class="row">
                                     {% set album_list = campaign.album_images|from_json %}
                                     {% for item in album_list %}
-                                    <div class="col-md-4 mb-3">
-                                        <div class="position-relative">
-                                            {% if item is mapping %}
-                                            <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
-                                                class="img-thumbnail mb-2" style="width: 100%;">
-                                            <div class="text-muted small mb-2">
-                                                <strong>Title:</strong> {{ item.title or '(ไม่มี)' }}
+                                    <div class="col-md-4 mb-3 sortable-item"
+                                        data-path="{{ item.path if item is mapping else item }}">
+                                        <div class="card shadow-sm position-relative" style="cursor: move;">
+                                            <div class="position-absolute top-0 start-0 m-2 bg-dark text-white rounded px-2 py-1"
+                                                style="font-size: 0.75rem; z-index: 10;">
+                                                <i class="fas fa-grip-vertical me-1"></i>ลาก
                                             </div>
-                                            <button type="button" class="btn btn-danger btn-sm w-100"
-                                                onclick="deleteAlbumImage({{ campaign.id }}, '{{ item.path }}')">
-                                                <i class="fas fa-trash"></i> ลบรูปนี้
-                                            </button>
-                                            {% else %}
-                                            <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
-                                                class="img-thumbnail mb-2" style="width: 100%;">
-                                            <div class="text-muted small mb-2">(รูปแบบเก่า - ไม่มี title)</div>
-                                            <button type="button" class="btn btn-danger btn-sm w-100"
-                                                onclick="deleteAlbumImage({{ campaign.id }}, '{{ item }}')">
-                                                <i class="fas fa-trash"></i> ลบรูปนี้
-                                            </button>
-                                            {% endif %}
+                                            <div class="card-body p-2">
+                                                {% if item is mapping %}
+                                                <img src="{{ url_for('static', filename=item.path.replace('static/', '')) }}"
+                                                    class="img-thumbnail mb-2"
+                                                    style="width: 100%; height: 150px; object-fit: cover;">
+                                                <div class="text-muted small mb-2">
+                                                    <strong>Title:</strong> {{ item.title or '(ไม่มี)' }}
+                                                </div>
+                                                {% else %}
+                                                <img src="{{ url_for('static', filename=item.replace('static/', '')) }}"
+                                                    class="img-thumbnail mb-2"
+                                                    style="width: 100%; height: 150px; object-fit: cover;">
+                                                <div class="text-muted small mb-2">(รูปแบบเก่า - ไม่มี title)</div>
+                                                {% endif %}
+                                                <div class="d-flex gap-1">
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary flex-fill"
+                                                        onclick="moveAlbumImage(this, 'up')" title="เลื่อนขึ้น">
+                                                        <i class="fas fa-arrow-up"></i>
+                                                    </button>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary flex-fill"
+                                                        onclick="moveAlbumImage(this, 'down')" title="เลื่อนลง">
+                                                        <i class="fas fa-arrow-down"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger flex-fill"
+                                                        onclick="deleteAlbumImage({{ campaign.id }}, '{{ item.path if item is mapping else item }}')">
+                                                        <i class="fas fa-trash"></i> ลบ
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     {% endfor %}
                                 </div>
+                                <input type="hidden" name="album_order" id="albumOrder" value="">
                             </div>
                             {% endif %}
                             <h6>เพิ่มภาพใหม่:</h6>
@@ -547,6 +584,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Sortable.js for drag & drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
 <script>
     $(document).ready(function () {
         // Handle album images file selection
@@ -657,5 +697,111 @@
                 alert('เกิดข้อผิดพลาดในการลบรูปภาพ: ' + error.message);
             });
     }
+
+    // Move album image up or down
+    function moveAlbumImage(button, direction) {
+        const item = $(button).closest('.sortable-item');
+        if (direction === 'up') {
+            item.prev('.sortable-item').before(item);
+        } else if (direction === 'down') {
+            item.next('.sortable-item').after(item);
+        }
+        updateAlbumOrder();
+    }
+
+    // Update album order hidden input
+    function updateAlbumOrder() {
+        const order = [];
+        $('#sortableAlbum .sortable-item').each(function () {
+            order.push($(this).data('path'));
+        });
+        $('#albumOrder').val(JSON.stringify(order));
+        console.log('Updated album order:', order);
+    }
+
+    // Initialize Sortable.js for drag & drop
+    $(document).ready(function () {
+        const sortableAlbum = document.getElementById('sortableAlbum');
+        if (sortableAlbum && typeof Sortable !== 'undefined') {
+            new Sortable(sortableAlbum, {
+                animation: 150,
+                handle: '.card',
+                draggable: '.sortable-item',
+                onEnd: function () {
+                    updateAlbumOrder();
+                }
+            });
+        }
+
+        // Initialize order on page load
+        updateAlbumOrder();
+    });
+
+    // Initialize Summernote WYSIWYG Editor
+    $(document).ready(function () {
+        $('.summernote-editor').each(function () {
+            var editor = $(this);
+            editor.summernote({
+                height: 250,
+                toolbar: [
+                    ['style', ['style', 'bold', 'italic', 'underline', 'clear']],
+                    ['font', ['strikethrough', 'superscript', 'subscript']],
+                    ['fontsize', ['fontsize']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['height', ['height']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                styleTags: ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+                placeholder: 'พิมพ์ข้อความที่นี่...',
+                callbacks: {
+                    onImageUpload: function (files) {
+                        for (var i = 0; i < files.length; i++) {
+                            if (files[i].size > 5242880) {  // 5MB
+                                alert('ไฟล์รูปภาพต้องไม่เกิน 5MB');
+                                continue;
+                            }
+                            uploadImage(files[i], editor);
+                        }
+                    }
+                }
+            });
+        });
+
+        function uploadImage(file, editor) {
+            // Upload file to server instead of base64
+            var formData = new FormData();
+            formData.append('file', file);
+
+            $.ajax({
+                url: '{{ url_for("group_buy_admin.upload_editor_image") }}',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    if (data.url) {
+                        var img = $('<img>')
+                            .attr('src', data.url)
+                            .css({
+                                'max-width': '100%',
+                                'height': 'auto'
+                            });
+                        editor.summernote('insertNode', img[0]);
+                    } else {
+                        alert('อัปโหลดรูปภาพล้มเหลว');
+                    }
+                },
+                error: function (xhr) {
+                    var errorMsg = xhr.responseJSON && xhr.responseJSON.error ?
+                        xhr.responseJSON.error : 'อัปโหลดรูปภาพล้มเหลว';
+                    alert(errorMsg);
+                    console.error('Upload error:', xhr);
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}

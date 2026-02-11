@@ -1,0 +1,213 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║           AWS LIGHTSAIL DEPLOYMENT - COMPLETE CHECKLIST                   ║
+║           Instance: booking-dhakulchan-prod                                ║
+║           Domain: https://booking.dhakulchan.net                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+✅ PHASE 1: LOCAL PREPARATION (COMPLETED)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✓ Updated config.py with booking.dhakulchan.net
+✓ Updated routes/api_share.py for HTTPS redirect
+✓ Updated deploy/.env.production with production credentials
+✓ Updated deploy/gunicorn.conf.py for admin user
+✓ Created deploy_lightsail.sh - automated deployment script
+✓ Created server_setup.sh - complete server setup
+✓ Created systemd/booking-system.service - systemd service
+✓ Created nginx/booking.dhakulchan.net.conf - nginx config
+✓ Updated calendar: Cancelled status color = #9e9e9e (grey)
+✓ Committed and pushed all changes to GitHub
+✓ Repository: https://github.com/dhakulchan/voucher-system1
+
+□ PHASE 2: AWS LIGHTSAIL SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Create AWS Lightsail instance:
+  - Name: booking-dhakulchan-prod
+  - OS: Debian 12
+  - Plan: 8GB RAM, 2 vCPUs, 160GB SSD ($40/month)
+  - Region: Singapore (ap-southeast-1a)
+
+□ Attach Static IP:
+  - IP: 52.76.162.188 (already allocated)
+  - Attach to: booking-dhakulchan-prod
+
+□ Configure Firewall:
+  - SSH (22): Your IP only
+  - HTTP (80): 0.0.0.0/0
+  - HTTPS (443): 0.0.0.0/0
+
+□ Download SSH Key:
+  1. Go to AWS Lightsail Console
+  2. Account → SSH Keys
+  3. Download: LightsailDefaultKey-ap-southeast-1.pem
+  4. Save to: ~/voucher-ro_v1.1/.ssh/
+  5. chmod 400 ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem
+
+□ PHASE 3: DNS CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Configure DNS A Record:
+  Type: A
+  Name: booking (or @booking)
+  Value: 52.76.162.188
+  TTL: 300 (5 minutes)
+
+□ Verify DNS propagation:
+  $ nslookup booking.dhakulchan.net
+  $ dig booking.dhakulchan.net +short
+  
+  Expected result: 52.76.162.188
+  Wait time: 5-30 minutes
+
+□ PHASE 4: SERVER SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ SSH to server:
+  $ ssh -i ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem admin@52.76.162.188
+
+□ Run automated setup script:
+  $ curl -sL https://raw.githubusercontent.com/dhakulchan/voucher-system1/main/server_setup.sh -o setup.sh
+  $ chmod +x setup.sh
+  $ ./setup.sh
+
+  This will install:
+  ✓ Python 3.11 + pip + venv
+  ✓ MariaDB 10.11
+  ✓ Nginx
+  ✓ Certbot (Let's Encrypt)
+  ✓ Git and build tools
+  ✓ Required system libraries
+  ✓ Clone repository
+  ✓ Setup virtual environment
+  ✓ Install Python packages
+  ✓ Create database and user
+  ✓ Configure systemd service
+  ✓ Setup nginx reverse proxy
+  ✓ Configure firewall
+
+  Duration: ~10-15 minutes
+
+□ PHASE 5: SSL CERTIFICATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Install SSL certificate (after DNS is working):
+  $ sudo certbot --nginx -d booking.dhakulchan.net
+
+  Follow prompts:
+  ✓ Email: your-email@dhakulchan.net
+  ✓ Agree to TOS: Y
+  ✓ Redirect HTTP to HTTPS: Y
+
+□ Test SSL auto-renewal:
+  $ sudo certbot renew --dry-run
+
+□ PHASE 6: VERIFICATION & TESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Check service status:
+  $ sudo systemctl status booking-system nginx mariadb
+
+□ Test application locally:
+  $ curl -I http://localhost:5000
+
+□ Test via public IP:
+  $ curl -I http://52.76.162.188
+
+□ Test via domain (HTTP):
+  $ curl -I http://booking.dhakulchan.net
+
+□ Test via domain (HTTPS):
+  $ curl -I https://booking.dhakulchan.net
+
+□ Open in browser:
+  ✓ Homepage: https://booking.dhakulchan.net
+  ✓ Login: https://booking.dhakulchan.net/login
+  ✓ Calendar: https://booking.dhakulchan.net/booking/calendar
+
+□ Verify calendar colors:
+  ✓ Cancelled bookings should be grey (#9e9e9e)
+
+□ Create test booking:
+  ✓ Login as admin
+  ✓ Create new booking
+  ✓ Test all features
+
+□ PHASE 7: MONITORING & MAINTENANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+□ Setup monitoring:
+  - AWS Lightsail Metrics (CPU, Network, Disk)
+  - Application logs: /var/log/booking-system/
+  - Nginx logs: /var/log/nginx/
+
+□ Enable automatic snapshots:
+  - Frequency: Daily
+  - Time: 02:00 AM Bangkok time
+  - Retention: 7 days
+  - Cost: ~$2/month
+
+□ Setup backup schedule:
+  - Database backup: Daily at 03:00 AM
+  - Uploaded files backup: Weekly
+  - Config files backup: After each change
+
+□ Document admin credentials:
+  - Store securely in password manager
+  - Share with authorized team members only
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                          QUICK REFERENCE                                   ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+SSH Command:
+  ssh -i ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem admin@52.76.162.188
+
+Deploy Updates:
+  ./deploy_lightsail.sh
+
+Service Management:
+  sudo systemctl status booking-system    # Check status
+  sudo systemctl restart booking-system   # Restart app
+  sudo systemctl reload nginx             # Reload nginx
+
+View Logs:
+  sudo journalctl -u booking-system -f   # Application logs
+  sudo tail -f /var/log/nginx/booking_error.log  # Nginx errors
+
+Database:
+  mysql -u voucher_user -p voucher_enhanced
+  Password: VoucherSecure2026!
+
+Database Backup:
+  mysqldump -u voucher_user -p voucher_enhanced > backup_$(date +%Y%m%d).sql
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                       IMPORTANT CREDENTIALS                                ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+Server:
+  IP: 52.76.162.188
+  User: admin
+  SSH Key: ~/voucher-ro_v1.1/.ssh/LightsailDefaultKey-ap-southeast-1.pem
+
+Database:
+  Host: localhost
+  Database: voucher_enhanced
+  User: voucher_user
+  Password: VoucherSecure2026!
+
+Application:
+  Domain: https://booking.dhakulchan.net
+  Path: /var/www/booking
+  Service: booking-system.service
+  Port: 5000 (internal)
+
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                           SUPPORT CONTACTS                                 ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+Company: บริษัท ดักุลจันทร์ ทราเวล เซอร์วิส (ประเทศไทย) จำกัด
+Phone: +662 2744216
+Email: DonotReply@dhakulchan.net
+Website: www.dhakulchan.net
+
+GitHub Repository: https://github.com/dhakulchan/voucher-system1
+AWS Console: https://lightsail.aws.amazon.com/
+
+Created: January 18, 2026
+Last Updated: January 18, 2026
+Status: Ready for Deployment ✅

@@ -4,122 +4,353 @@
 
 {% block content %}
 <div class="container py-5">
+    <!-- Hero Section -->
     <div class="row mb-5 text-center">
         <div class="col-12">
-            <h1 class="display-4"><i class="fas fa-users"></i> Group Buy</h1>
-            <p class="lead text-muted">ชวนเพื่อนซื้อด้วยกัน ได้ราคาพิเศษสุด!</p>
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="fas fa-users text-primary"></i> Group Buy
+            </h1>
+            <p class="lead text-muted mb-4">ชวนเพื่อนซื้อด้วยกัน ได้ราคาพิเศษสุด!</p>
+
+            <!-- Why Choose Us Section -->
+            <div class="row justify-content-center mb-5">
+                <div class="col-lg-10">
+                    <div class="card border-0 shadow-lg"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 20px;">
+                        <div class="card-body p-4">
+                            <h3 class="text-white fw-bold mb-4">
+                                <i class="fas fa-star me-2"></i>ทำไมต้องเลือกเรา ตระกูลเฉินฯ?
+                            </h3>
+                            <div class="row g-4 text-white">
+                                <div class="col-md-3 col-6">
+                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                        <i class="fas fa-shield-alt fa-2x mb-2"></i>
+                                        <h6 class="fw-bold">รับประกันคืนเงิน</h6>
+                                        <small>100% หากไม่ครบกลุ่ม</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                        <i class="fas fa-certificate fa-2x mb-2"></i>
+                                        <h6 class="fw-bold">มาตรฐานสากล</h6>
+                                        <small>ใบอนุญาตธรุกิจนำเที่ยว 11/03589</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                        <i class="fas fa-headset fa-2x mb-2"></i>
+                                        <h6 class="fw-bold">บริการ 24/7</h6>
+                                        <small>ทีมงานพร้อมช่วยเหลือ<br>Line: @DHAKULCHAN</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-6">
+                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                        <i class="fas fa-award fa-2x mb-2"></i>
+                                        <h6 class="fw-bold">ประสบการณ์ 35+ ปี</h6>
+                                        <small>ผู้นำทัวร์มืออาชีพ</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
+    <!-- Filter Tabs (Optional) -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-pills justify-content-center" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" href="?">
+                        <i class="fas fa-th-large me-2"></i>ทั้งหมด
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="?featured=1">
+                        <i class="fas fa-star me-2"></i>แนะนำ
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Campaigns Grid -->
     {% if campaigns %}
-    <div class="row">
+    <div class="row g-4">
         {% for campaign in campaigns %}
         <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100 shadow-sm hover-shadow">
-                {% if campaign.featured %}
-                <div class="ribbon ribbon-top-right">
-                    <span class="bg-warning text-dark"><i class="fas fa-star"></i> Featured</span>
+            <div class="card h-100 shadow hover-shadow"
+                style="border-radius: 15px; overflow: hidden; border: none; position: relative;">
+
+                <!-- Card Header with Gradient -->
+                <div class="card-header text-white text-center py-3"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px 15px 0 0;">
+                    <h5 class="card-title mb-0 fw-bold">{{ campaign.name }}</h5>
                 </div>
-                {% endif %}
 
-                <div class="card-body">
-                    <h5 class="card-title">{{ campaign.name }}</h5>
-                    <p class="text-muted small mb-3">
-                        <i class="fas fa-tag"></i> {{ campaign.product_type }}
-                    </p>
+                <div class="card-body d-flex flex-column">
+                    <!-- Campaign Type Badge with Featured -->
+                    <div class="mb-3 d-flex align-items-center gap-2">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-tag"></i> {{ campaign.product_type }}
+                        </span>
+                        {% if campaign.featured %}
+                        <span class="badge bg-warning text-dark fw-bold" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                            <i class="fas fa-star"></i> แนะนำ
+                        </span>
+                        {% endif %}
+                    </div>
 
-                    {% if campaign.description %}
-                    <p class="card-text small">{{ campaign.description[:100] }}{% if campaign.description|length > 100
-                        %}...{% endif %}</p>
+                    <!-- Travel Dates -->
+                    {% if campaign.travel_date_from and campaign.travel_date_to %}
+                    <div class="mb-3 p-3 bg-light rounded border border-primary">
+                        <div class="text-primary fw-bold small mb-2">
+                            <i class="fas fa-calendar-check text-success"></i> วันเดินทาง
+                        </div>
+                        <div class="h6 fw-bold text-danger mb-0">
+                            {{ campaign.travel_date_from.strftime('%d/%m/%Y') }} - {{
+                            campaign.travel_date_to.strftime('%d/%m/%Y') }}
+                        </div>
+                    </div>
                     {% endif %}
 
-                    <!-- Pricing -->
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center justify-content-between">
+                    <!-- Flight Information -->
+                    {% if campaign.product_details %}
+                    <div class="mb-3 p-2 bg-light rounded">
+                        <div class="text-primary fw-bold small mb-1">
+                            <i class="fas fa-plane text-info"></i> เที่ยวบิน
+                        </div>
+                        <div class="small text-muted" style="line-height: 1.8;">
+                            {{ campaign.product_details|safe }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Description -->
+                    {% if campaign.description %}
+                    <div class="mb-3 small text-muted">
+                        {{ (campaign.description|striptags)[:100] }}{% if (campaign.description|striptags)|length > 100
+                        %}...{% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Pricing Section -->
+                    <div class="mb-3 p-3 bg-light rounded flex-grow-1">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
                             <div>
-                                <p class="text-muted text-decoration-line-through mb-0 small">
+                                <small class="text-muted">ราคาปกติ</small>
+                                <p class="text-muted text-decoration-line-through mb-1 h6">
                                     ฿{{ "{:,.2f}".format(campaign.regular_price) }}
                                 </p>
-                                <h3 class="text-success mb-0">฿{{ "{:,.2f}".format(campaign.group_price) }}</h3>
                             </div>
                             <div>
-                                <span class="badge bg-danger" style="font-size: 1.2rem;">
-                                    -{{ "{:.0f}".format(campaign.discount_percentage) }}%
+                                <span class="badge bg-danger px-3 py-2" style="font-size: 1rem;">
+                                    ลด {{ "{:.0f}".format(campaign.discount_percentage) }}%
                                 </span>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <small class="text-muted d-block">ราคา Group Buy</small>
+                            <h3 class="text-success mb-0 fw-bold">฿{{ "{:,.2f}".format(campaign.group_price) }}</h3>
+                        </div>
+                    </div>
+
+                    <!-- Requirements Box -->
+                    <div class="alert alert-info py-2 small mb-3 text-center">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <i class="fas fa-users text-primary"></i>
+                                <div><strong>{{ campaign.min_participants }}</strong></div>
+                                <small>คนขั้นต่ำ</small>
+                            </div>
+                            <div class="col-6">
+                                <i class="fas fa-clock text-warning"></i>
+                                <div><strong>{{ campaign.duration_hours }}</strong></div>
+                                <small>ชั่วโมง</small>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Requirements -->
-                    <div class="alert alert-info py-2 small mb-3">
-                        <i class="fas fa-users"></i> ต้องมีอย่างน้อย <strong>{{ campaign.min_participants }}
-                            คน</strong><br>
-                        <i class="fas fa-clock"></i> ภายใน <strong>{{ campaign.duration_hours }} ชั่วโมง</strong>
-                    </div>
-
+                    <!-- Inventory -->
                     {% if campaign.total_inventory %}
-                    <p class="small text-muted mb-3">
-                        <i class="fas fa-box"></i> เหลือ {{ campaign.inventory_remaining }}/{{ campaign.total_inventory
-                        }}
-                    </p>
+                    <div class="progress mb-3" style="height: 25px;">
+                        {% set progress_percent = (campaign.inventory_remaining / campaign.total_inventory * 100)|int %}
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress_percent }}%">
+                            <small>เหลือ {{ campaign.inventory_remaining }}/{{ campaign.total_inventory }}
+                                ที่นั่ง</small>
+                        </div>
+                    </div>
                     {% endif %}
 
-                    <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
-                        class="btn btn-primary w-100">
-                        ดูรายละเอียด <i class="fas fa-arrow-right"></i>
-                    </a>
+                    <!-- Action Button -->
+                    <div class="mt-auto">
+                        <a href="{{ url_for('public_group_buy.view_campaign', campaign_id=campaign.id) }}"
+                            class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+                            <i class="fas fa-search-plus me-2"></i>ดูรายละเอียด
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Card Footer with Review Count -->
+                <div class="card-footer bg-white border-top text-center py-2">
+                    <small class="text-muted">
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <i class="fas fa-star text-warning"></i>
+                        <span class="ms-1">คุณภาพการบริการระดับ 5 ดาว</span>
+                    </small>
                 </div>
             </div>
         </div>
         {% endfor %}
     </div>
+
+    <!-- Trust Badges Section -->
+    <div class="row mt-5 pt-4 border-top">
+        <div class="col-12 text-center mb-4">
+            <h4 class="fw-bold text-muted">
+                <i class="fas fa-shield-alt text-primary"></i> การันตีความมั่นใจ
+            </h4>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="text-center p-3">
+                <i class="fas fa-lock fa-3x text-primary mb-2"></i>
+                <h6 class="fw-bold">ชำระเงินปลอดภัย</h6>
+                <small class="text-muted">SSL Encryption</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="text-center p-3">
+                <i class="fas fa-money-check-alt fa-3x text-success mb-2"></i>
+                <h6 class="fw-bold">รับประกันคืนเงิน</h6>
+                <small class="text-muted">100% Refund</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="text-center p-3">
+                <i class="fas fa-user-shield fa-3x text-info mb-2"></i>
+                <h6 class="fw-bold">ข้อมูลปลอดภัย</h6>
+                <small class="text-muted">PDPA Compliant</small>
+            </div>
+        </div>
+        <div class="col-md-3 col-6 mb-3">
+            <div class="text-center p-3">
+                <i class="fas fa-phone-volume fa-3x text-warning mb-2"></i>
+                <h6 class="fw-bold">ติดต่อได้ 24/7</h6>
+                <small class="text-muted">Support Ready</small>
+            </div>
+        </div>
+    </div>
+
     {% else %}
     <div class="text-center py-5">
         <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
-        <p class="text-muted">ยังไม่มีแคมเปญ Group Buy ในขณะนี้</p>
+        <h5 class="text-muted mb-3">ยังไม่มีแคมเปญ Group Buy ในขณะนี้</h5>
+        <p class="text-muted">กำลังเตรียมแคมเปญใหม่ๆ ให้คุณเร็วๆ นี้!</p>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-primary mt-3">
+            <i class="fas fa-home me-2"></i>กลับหน้าหลัก
+        </a>
     </div>
     {% endif %}
 </div>
 
 <style>
     .hover-shadow {
-        transition: box-shadow 0.3s ease;
+        transition: all 0.3s ease;
     }
 
     .hover-shadow:hover {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2) !important;
     }
 
     .ribbon {
         position: absolute;
-        overflow: hidden;
-        width: 100px;
-        height: 100px;
+        overflow: visible;
+        width: 120px;
+        height: 120px;
+        z-index: 10;
+        pointer-events: none;
     }
 
-    .ribbon-top-right {
-        top: -10px;
-        right: -10px;
+    .ribbon-top-left {
+        top: -15px;
+        left: -15px;
     }
 
     .ribbon span {
         position: absolute;
         display: block;
-        width: 150px;
-        padding: 8px 0;
-        box-shadow: 0 5px 10px rgba(0, 0, 0, .1);
+        width: 120px;
+        padding: 5px 0;
+        box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
         color: #fff;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: bold;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, .2);
+        text-shadow: 0 1px 1px rgba(0, 0, 0, .3);
         text-transform: uppercase;
         text-align: center;
+        animation: pulse 2s infinite;
+        pointer-events: auto;
     }
 
-    .ribbon-top-right span {
-        right: -30px;
-        top: 20px;
-        transform: rotate(45deg);
+    .ribbon-top-left span {
+        left: -20px;
+        top: 25px;
+        transform: rotate(-45deg);
+        background: linear-gradient(45deg, #FFD700 0%, #FFA500 100%);
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            transform: rotate(45deg) scale(1);
+        }
+
+        50% {
+            transform: rotate(45deg) scale(1.05);
+        }
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: scale(1.02);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .progress-bar {
+        background: linear-gradient(90deg, #28a745 0%, #20c997 100%) !important;
+        font-size: 0.75rem;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .nav-pills .nav-link {
+        border-radius: 25px;
+        padding: 10px 25px;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+    }
+
+    .nav-pills .nav-link:hover {
+        background-color: #e9ecef;
+    }
+
+    .nav-pills .nav-link.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
 </style>
 {% endblock %}

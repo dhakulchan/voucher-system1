@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก - Voucher System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .register-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .register-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .register-body {
+            padding: 40px;
+        }
+
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .btn-register {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-register:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-right: none;
+        }
+
+        .form-control {
+            border-left: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="register-card">
+                    <div class="register-header">
+                        <h3><i class="fas fa-user-plus"></i> สมัครสมาชิก</h3>
+                        <p class="mb-0">สร้างบัญชีเพื่อใช้บริการของเรา</p>
+                    </div>
+                    <div class="register-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                            role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" action="{{ url_for('auth.register') }}">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">ชื่อผู้ใช้ <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" required
+                                        placeholder="กรอกชื่อผู้ใช้">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="email" class="form-label">อีเมล <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email" required
+                                        placeholder="example@email.com">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">รหัสผ่าน <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" required
+                                        placeholder="อย่างน้อย 6 ตัวอักษร">
+                                </div>
+                                <small class="text-muted">รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">ยืนยันรหัสผ่าน <span
+                                        class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="confirm_password"
+                                        name="confirm_password" required placeholder="กรอกรหัสผ่านอีกครั้ง">
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="terms" required>
+                                    <label class="form-check-label" for="terms">
+                                        ฉันยอมรับ <a href="#" class="text-decoration-none" data-bs-toggle="modal"
+                                            data-bs-target="#termsModal">ข้อกำหนดและเงื่อนไข</a>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-register">
+                                <i class="fas fa-user-plus me-2"></i>สมัครสมาชิก
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4">
+                            <p class="mb-0">มีบัญชีอยู่แล้ว?
+                                <a href="{{ url_for('customer_points.customer_login') }}"
+                                    class="text-decoration-none fw-bold">
+                                    เข้าสู่ระบบ
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Terms and Conditions Modal -->
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header"
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h5 class="modal-title" id="termsModalLabel">
+                        <i class="fas fa-file-contract me-2"></i>ข้อกำหนดและเงื่อนไขการใช้บริการ
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="font-size: 14px;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>กรุณาอ่านข้อกำหนดและเงื่อนไขต่อไปนี้อย่างละเอียดก่อนใช้บริการ</strong>
+                    </div>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-check-circle text-primary me-2"></i>1.
+                        การยอมรับข้อกำหนด</h6>
+                    <p>การใช้บริการของ <strong>Dhakul Chan Travel Service (Thailand) Co., Ltd.</strong> ("บริษัท")
+                        แสดงว่าท่านยอมรับและตกลงที่จะปฏิบัติตามข้อกำหนดและเงื่อนไขทั้งหมดที่ระบุไว้ในเอกสารฉบับนี้</p>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-user-shield text-primary me-2"></i>2.
+                        การสมัครสมาชิกและบัญชีผู้ใช้</h6>
+                    <ul>
+                        <li>ท่านต้องให้ข้อมูลที่ถูกต้อง ครบถ้วน และเป็นปัจจุบันในการสมัครสมาชิก</li>
+                        <li>ท่านมีหน้าที่รักษาความลับของรหัสผ่านและรับผิดชอบต่อการใช้งานบัญชีของท่าน</li>
+                        <li>ห้ามแชร์บัญชีหรือรหัสผ่านให้บุคคลอื่น</li>
+                        <li>หากพบการใช้งานบัญชีโดยไม่ได้รับอนุญาต กรุณาแจ้งบริษัททันที</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-shield-alt text-primary me-2"></i>3.
+                        ความเป็นส่วนตัวและการคุ้มครองข้อมูล</h6>
+                    <ul>
+                        <li>บริษัทจะเก็บรักษาข้อมูลส่วนบุคคลของท่านตามพระราชบัญญัติคุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562
+                            (PDPA)</li>
+                        <li>ข้อมูลของท่านจะถูกใช้เพื่อวัตถุประสงค์ในการให้บริการ การติดต่อสื่อสาร และการปรับปรุงบริการ
+                        </li>
+                        <li>บริษัทจะไม่เปิดเผยข้อมูลส่วนบุคคลของท่านให้แก่บุคคลที่สามโดยไม่ได้รับความยินยอม
+                            เว้นแต่กรณีที่กฎหมายกำหนด</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-plane-departure text-primary me-2"></i>4.
+                        การจองและการชำระเงิน</h6>
+                    <ul>
+                        <li>การจองทัวร์จะสมบูรณ์เมื่อได้รับการชำระเงินและยืนยันจากบริษัทแล้วเท่านั้น</li>
+                        <li>ราคาทัวร์อาจมีการเปลี่ยนแปลงตามอัตราแลกเปลี่ยนและค่าน้ำมันเชื้อเพลิง</li>
+                        <li>กรณียกเลิกการจอง จะเป็นไปตามเงื่อนไขการยกเลิกที่ระบุในโปรแกรมทัวร์แต่ละรายการ</li>
+                        <li>การชำระเงินผ่านบัตรเครดิตอาจมีค่าธรรมเนียมเพิ่มเติมตามที่ธนาคารกำหนด</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-ticket-alt text-primary me-2"></i>5. บัตรกำนัล
+                        (Voucher) และส่วนลด</h6>
+                    <ul>
+                        <li>บัตรกำนัลและรหัสส่วนลดมีวันหมดอายุและเงื่อนไขการใช้งาน</li>
+                        <li>บัตรกำนัลไม่สามารถแลกเป็นเงินสดได้</li>
+                        <li>การใช้บัตรกำนัลหรือรหัสส่วนลดต้องเป็นไปตามเงื่อนไขที่ระบุในแต่ละโปรโมชั่น</li>
+                        <li>บริษัทสงวนสิทธิ์ในการเปลี่ยนแปลงหรือยกเลิกโปรโมชั่นโดยไม่ต้องแจ้งให้ทราบล่วงหน้า</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-star text-primary me-2"></i>6. ระบบคะแนนสะสมและรีวิว
+                    </h6>
+                    <ul>
+                        <li>คะแนนสะสมมีอายุ 1 ปี นับจากวันที่ได้รับ</li>
+                        <li>คะแนนสะสมไม่สามารถโอนย้ายหรือแลกเป็นเงินสดได้</li>
+                        <li>การเขียนรีวิวต้องเป็นความคิดเห็นที่แท้จริงและไม่ละเมิดสิทธิของผู้อื่น</li>
+                        <li>บริษัทสงวนสิทธิ์ในการลบรีวิวที่ไม่เหมาะสม</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-users text-primary me-2"></i>7. Group Buy
+                        และการซื้อกลุ่ม</h6>
+                    <ul>
+                        <li>การซื้อกลุ่มจะสมบูรณ์เมื่อมีจำนวนผู้เข้าร่วมครบตามที่กำหนด</li>
+                        <li>หากไม่ครบจำนวน บริษัทจะคืนเงินเต็มจำนวนภายใน 14 วันทำการ</li>
+                        <li>ผู้นำกลุ่มมีหน้าที่ประสานงานกับสมาชิกในกลุ่ม</li>
+                        <li>บริษัทสงวนสิทธิ์ในการยกเลิกแคมเปญ Group Buy หากมีเหตุสุดวิสัย</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-exclamation-triangle text-primary me-2"></i>8.
+                        ข้อจำกัดความรับผิดชอบ</h6>
+                    <ul>
+                        <li>บริษัทไม่รับผิดชอบต่อความเสียหายที่เกิดจากเหตุสุดวิสัย เช่น ภัยธรรมชาติ การนัดหยุดงาน สงคราม
+                        </li>
+                        <li>บริษัทไม่รับผิดชอบต่อทรัพย์สินส่วนตัวที่สูญหายหรือเสียหาย</li>
+                        <li>บริษัทไม่รับผิดชอบต่อความล่าช้าของสายการบินหรือผู้ให้บริการอื่น</li>
+                        <li>ผู้เดินทางต้องมีเอกสารเดินทางที่ถูกต้องและครบถ้วน</li>
+                    </ul>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-gavel text-primary me-2"></i>9.
+                        การเปลี่ยนแปลงข้อกำหนด</h6>
+                    <p>บริษัทสงวนสิทธิ์ในการแก้ไขข้อกำหนดและเงื่อนไขได้ตลอดเวลา โดยจะแจ้งให้ทราบผ่านทางเว็บไซต์
+                        การใช้บริการต่อไปถือว่าท่านยอมรับการเปลี่ยนแปลงดังกล่าว</p>
+
+                    <h6 class="fw-bold mt-4 mb-3"><i class="fas fa-phone text-primary me-2"></i>10. การติดต่อ</h6>
+                    <p>หากมีข้อสงสัยหรือต้องการข้อมูลเพิ่มเติม กรุณาติดต่อ:</p>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <p class="mb-1"><strong>Dhakul Chan Travel Service (Thailand) Co., Ltd.</strong></p>
+                            <p class="mb-1"><i class="fas fa-map-marker-alt text-danger me-2"></i>710, 716, 704, 706
+                                Prachautid Road, Samsennok, Huai Kwang, Bangkok 10310</p>
+                            <p class="mb-1"><i class="fas fa-phone text-success me-2"></i>Tel: +662 2744216</p>
+                            <p class="mb-1"><i class="fas fa-envelope text-primary me-2"></i>Email:
+                                support@dhakulchan.com</p>
+                            <p class="mb-0"><i class="fas fa-globe text-info me-2"></i>Website: www.dhakulchan.net</p>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mt-4">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>หมายเหตุ:</strong>
+                        การสมัครสมาชิกและใช้บริการของบริษัทแสดงว่าท่านได้อ่านและยอมรับข้อกำหนดและเงื่อนไขทั้งหมดแล้ว
+                    </div>
+
+                    <p class="text-muted text-center mt-4 mb-0">
+                        <small>ปรับปรุงล่าสุด: 11 กุมภาพันธ์ 2026</small>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>ปิด
+                    </button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal"
+                        onclick="document.getElementById('terms').checked = true;">
+                        <i class="fas fa-check me-2"></i>ฉันยอมรับ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Prevent default link behavior for terms link
+        document.querySelector('a[data-bs-toggle="modal"]').addEventListener('click', function (e) {
+            e.preventDefault();
+        });
+
+        // Password confirmation validation
+        document.querySelector('form').addEventListener('submit', function (e) {
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm_password').value;
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('รหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง');
+                return false;
+            }
+
+            if (password.length < 6) {
+                e.preventDefault();
+                alert('รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
+                return false;
+            }
+        });
+    </script>
+</body>
+
+</html>

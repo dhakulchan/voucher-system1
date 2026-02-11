@@ -37,9 +37,11 @@ class Customer(db.Model):
     
     # User tracking
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True)  # Link to User account for customer role
 
     # Relationships
     bookings = db.relationship('Booking', backref='customer', lazy=True)
+    user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('customer_profile', uselist=False))
 
     @property
     def full_name(self):
