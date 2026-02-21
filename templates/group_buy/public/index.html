@@ -7,10 +7,33 @@
     <!-- Hero Section -->
     <div class="row mb-5 text-center">
         <div class="col-12">
-            <h1 class="display-4 fw-bold mb-3">
-                <i class="fas fa-users text-primary"></i> Group Buy
+            <h1 class="display-4 fw-bold mb-3 animate-title">
+                <i class="fas fa-users text-primary pulse-icon"></i> Group Buy
             </h1>
-            <p class="lead text-muted mb-4">ชวนเพื่อนซื้อด้วยกัน ได้ราคาพิเศษสุด!</p>
+            <p class="lead text-muted mb-2">ชวนเพื่อนซื้อด้วยกัน ได้ราคาพิเศษสุด!</p>
+
+            <!-- CTA Messages -->
+            <div class="cta-messages mb-4">
+                <div class="d-flex flex-wrap justify-content-center gap-2 mb-3">
+                    <span class="badge cta-badge cta-badge-1">
+                        <i class="fas fa-fire"></i> ยิ่งมากยิ่งถูก ลดสูงสุด 16%!
+                    </span>
+                    <span class="badge cta-badge cta-badge-2">
+                        <i class="fas fa-clock"></i> จองเลย! โปรดีมีจำนวนจำกัด
+                    </span>
+                    <span class="badge cta-badge cta-badge-3">
+                        <i class="fas fa-bolt"></i> ครบกลุ่มเร็ว ไปแน่นอน!
+                    </span>
+                </div>
+                <div class="mt-3">
+                    <p class="text-primary fw-bold mb-1 slide-in fs-5">
+                        <i class="fas fa-gift"></i> พิเศษ! ชวนเพื่อน 2-4 คน รับส่วนลดทันที
+                    </p>
+                    <p class="text-success small slide-in-delay fw-semibold">
+                        <i class="fas fa-shield-check"></i> ไม่ครบกลุ่ม - คืนเงิน 100% ตามเงื่อนไขบริษัทฯกำหนด
+                    </p>
+                </div>
+            </div>
 
             <!-- Why Choose Us Section -->
             <div class="row justify-content-center mb-5">
@@ -23,28 +46,28 @@
                             </h3>
                             <div class="row g-4 text-white">
                                 <div class="col-md-3 col-6">
-                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                    <div class="p-3 rounded hover-scale" style="background: rgba(255,255,255,0.1);">
                                         <i class="fas fa-shield-alt fa-2x mb-2"></i>
                                         <h6 class="fw-bold">รับประกันคืนเงิน</h6>
                                         <small>100% หากไม่ครบกลุ่ม</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-6">
-                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                    <div class="p-3 rounded hover-scale" style="background: rgba(255,255,255,0.1);">
                                         <i class="fas fa-certificate fa-2x mb-2"></i>
                                         <h6 class="fw-bold">มาตรฐานสากล</h6>
                                         <small>ใบอนุญาตธรุกิจนำเที่ยว 11/03589</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-6">
-                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                    <div class="p-3 rounded hover-scale" style="background: rgba(255,255,255,0.1);">
                                         <i class="fas fa-headset fa-2x mb-2"></i>
                                         <h6 class="fw-bold">บริการ 24/7</h6>
                                         <small>ทีมงานพร้อมช่วยเหลือ<br>Line: @DHAKULCHAN</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3 col-6">
-                                    <div class="p-3 rounded" style="background: rgba(255,255,255,0.1);">
+                                    <div class="p-3 rounded hover-scale" style="background: rgba(255,255,255,0.1);">
                                         <i class="fas fa-award fa-2x mb-2"></i>
                                         <h6 class="fw-bold">ประสบการณ์ 35+ ปี</h6>
                                         <small>ผู้นำทัวร์มืออาชีพ</small>
@@ -70,6 +93,12 @@
                 <li class="nav-item">
                     <a class="nav-link" href="?featured=1">
                         <i class="fas fa-star me-2"></i>แนะนำ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link btn-special" href="https://booking.dhakulchan.net/landing/groups"
+                        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; font-weight: 600;">
+                        <i class="fas fa-plane-departure me-2"></i>ทัวร์แนะนำพิเศษ
                     </a>
                 </li>
             </ul>
@@ -269,6 +298,18 @@
         box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.2) !important;
     }
 
+    /* Special Button for Tours */
+    .btn-special {
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+
+    .btn-special:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        color: white !important;
+    }
+
     .ribbon {
         position: absolute;
         overflow: visible;
@@ -315,6 +356,117 @@
 
         50% {
             transform: rotate(45deg) scale(1.05);
+        }
+    }
+
+    /* CTA Badge Animations */
+    @keyframes pulseIcon {
+
+        0%,
+        100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.15);
+        }
+    }
+
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-title {
+        animation: slideInDown 0.8s ease-out;
+        animation-fill-mode: both;
+    }
+
+    .pulse-icon {
+        animation: pulseIcon 2s ease-in-out infinite;
+        display: inline-block;
+    }
+
+    .cta-badge {
+        font-size: 0.95rem;
+        padding: 0.6rem 1.2rem;
+        border-radius: 25px;
+        font-weight: 600;
+        animation: fadeInUp 0.8s ease-out;
+        animation-fill-mode: both;
+        transition: all 0.3s ease;
+        color: white;
+        border: none;
+    }
+
+    .cta-badge-1 {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        animation-delay: 0.3s;
+    }
+
+    .cta-badge-2 {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        animation-delay: 0.5s;
+    }
+
+    .cta-badge-3 {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        animation-delay: 0.7s;
+    }
+
+    .cta-badge:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .slide-in {
+        animation: slideInDown 0.8s ease-out;
+        animation-delay: 0.8s;
+        animation-fill-mode: both;
+    }
+
+    .slide-in-delay {
+        animation: slideInDown 0.8s ease-out;
+        animation-delay: 1s;
+        animation-fill-mode: both;
+    }
+
+    .hover-scale {
+        transition: all 0.3s ease;
+    }
+
+    .hover-scale:hover {
+        transform: scale(1.05);
+        background: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    @media (max-width: 768px) {
+        .cta-badge {
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+
+        .display-4 {
+            font-size: 2rem;
         }
     }
 
