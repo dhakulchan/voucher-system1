@@ -5,6 +5,16 @@
 {% block content %}
 <div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
 
+    <!-- Back Button -->
+    {% if current_group %}
+    <div class="mb-3">
+        <a href="https://booking.dhakulchan.net/landing/groups" class="btn btn-outline-secondary"
+            style="border-radius: 20px; padding: 10px 24px; font-weight: 600; transition: all 0.3s ease;">
+            <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+        </a>
+    </div>
+    {% endif %}
+
     <!-- Group Header -->
     {% if current_group %}
     <div class="text-center mb-4">
