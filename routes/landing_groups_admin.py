@@ -258,8 +258,9 @@ def delete(group_id):
     
     try:
         # Check if group has products
-        if group.products:
-            flash(f'ไม่สามารถลบ Group "{group.name}" ได้ เนื่องจากมี {len(group.products)} Products อยู่', 'danger')
+        product_count = group.products.count()
+        if product_count > 0:
+            flash(f'ไม่สามารถลบ Group "{group.name}" ได้ เนื่องจากมี {product_count} Products อยู่', 'danger')
             return redirect(url_for('landing_groups_admin.index'))
         
         # Delete banner image
