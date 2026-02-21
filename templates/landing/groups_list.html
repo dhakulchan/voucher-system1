@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กรุ๊ปทัวร์แนะนำ - DHAKULCHAN</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+
+        /* Search & Filter Section */
+        .filter-section {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: slideDown 0.5s ease-out;
+        }
+
+        .filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .filter-header h2 {
+            font-size: 20px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .results-count {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 45px 12px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 18px;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #e2e8f0;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            display: none;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .clear-search.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover {
+            background: #cbd5e1;
+        }
+
+        .filter-select {
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 15px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .btn-filter {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-apply {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-apply:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-reset:hover {
+            background: #e2e8f0;
+        }
+
+        /* Active Filters Display */
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .filter-tag {
+            background: #e0e7ff;
+            color: #4338ca;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-tag .remove {
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        .filter-tag .remove:hover {
+            color: #dc2626;
+        }
+
+        /* Groups Grid */
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .group-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            opacity: 0;
+            animation: fadeInUp 0.5s forwards;
+        }
+
+        .group-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Group Icon - Featured Section */
+        .group-icon-wrapper {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .group-icon {
+            font-size: 80px;
+            z-index: 2;
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+
+            0%,
+            100% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .group-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            z-index: 3;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-count-badge {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #667eea;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 3;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .group-content {
+            padding: 25px;
+        }
+
+        .group-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .group-description {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 63px;
+        }
+
+        .group-dates {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 18px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .date-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        .date-item strong {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .group-footer {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding-top: 18px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .btn-detail {
+            padding: 12px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+
+        .btn-detail:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        /* No Results */
+        .no-results {
+            text-align: center;
+            padding: 80px 20px;
+            color: white;
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        .no-results-icon {
+            font-size: 100px;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .no-results h2 {
+            font-size: 32px;
+            margin-bottom: 15px;
+        }
+
+        .no-results p {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 25px;
+        }
+
+        .btn-reset-filters {
+            padding: 14px 30px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-reset-filters:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .groups-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .header h1 {
+                font-size: 32px;
+            }
+
+            .filter-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌟 กรุ๊ปทัวร์แนะนำ</h1>
+            <p>ค้นหาและเลือกกรุ๊ปทัวร์ที่ถูกใจ พร้อมเริ่มต้นการเดินทางกับเรา</p>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-header">
+                <h2>🔍 ค้นหาและกรองข้อมูล</h2>
+                <div class="results-count" id="resultsCount">
+                    พบ {{ groups|length }} กรุ๊ปทัวร์
+                </div>
+            </div>
+
+            <form method="GET" action="{{ url_for('landing_page.groups_list') }}" id="filterForm">
+                <div class="filter-grid">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" name="search" id="searchInput" placeholder="ค้นหาชื่อกรุ๊ป, รายละเอียด..."
+                            value="{{ current_filters.search or '' }}">
+                        <button type="button" class="clear-search" id="clearSearch"
+                            onclick="clearSearchInput()">×</button>
+                    </div>
+
+                    <select name="sort" class="filter-select">
+                        <option value="display_order" {% if current_filters.sort=='display_order' %}selected{% endif %}>
+                            📌 เรียงตามลำดับ</option>
+                        <option value="name" {% if current_filters.sort=='name' %}selected{% endif %}>🔤 เรียงตามชื่อ
+                        </option>
+                        <option value="date" {% if current_filters.sort=='date' %}selected{% endif %}>📅 เรียงตามวันที่
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit" class="btn-filter btn-apply">🔍 ค้นหา</button>
+                    <button type="button" class="btn-filter btn-reset" onclick="resetFilters()">🔄 ล้างตัวกรอง</button>
+                </div>
+            </form>
+
+            <!-- Active Filters Display -->
+            {% if current_filters.search %}
+            <div class="active-filters">
+                <div class="filter-tag">
+                    🔍 "{{ current_filters.search }}"
+                    <span class="remove" onclick="removeFilter('search')">×</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Groups Grid -->
+        {% if groups %}
+        <div class="groups-grid" id="groupsGrid">
+            {% for group in groups %}
+            <div class="group-card"
+                onclick="location.href='{{ url_for('landing_page.group_detail', slug=group.slug) }}'"
+                style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                <div class="group-icon-wrapper" style="background: {{ group.theme_color or '#e0e7ff' }}20;">
+                    <!-- Group Icon - Auto-detect based on name -->
+                    <div class="group-icon">
+                        {% if 'ญี่ปุ่น' in group.name or 'Japan' in group.name %}
+                        🗾
+                        {% elif 'เกาหลี' in group.name or 'Korea' in group.name %}
+                        🇰🇷
+                        {% elif 'ยุโรป' in group.name or 'Europe' in group.name %}
+                        🏰
+                        {% elif 'จีน' in group.name or 'China' in group.name %}
+                        🐼
+                        {% elif 'ไต้หวัน' in group.name or 'Taiwan' in group.name %}
+                        🎋
+                        {% elif 'เวียดนาม' in group.name or 'Vietnam' in group.name %}
+                        🍜
+                        {% elif 'สิงคโปร์' in group.name or 'Singapore' in group.name %}
+                        🦁
+                        {% elif 'มาเลเซีย' in group.name or 'Malaysia' in group.name %}
+                        🌴
+                        {% elif 'อินโดนีเซีย' in group.name or 'Indonesia' in group.name or 'บาหลี' in group.name %}
+                        🏝️
+                        {% elif 'ฮ่องกง' in group.name or 'Hong Kong' in group.name %}
+                        🏙️
+                        {% elif 'มัลดีฟส์' in group.name or 'Maldives' in group.name %}
+                        🏖️
+                        {% elif 'ทะเล' in group.name or 'beach' in group.name.lower() %}
+                        🏖️
+                        {% elif 'ภูเขา' in group.name or 'mountain' in group.name.lower() %}
+                        ⛰️
+                        {% elif 'วัด' in group.name or 'temple' in group.name.lower() %}
+                        ⛩️
+                        {% elif 'ดำน้ำ' in group.name or 'dive' in group.name.lower() %}
+                        🤿
+                        {% elif 'ครูซ' in group.name or 'cruise' in group.name.lower() %}
+                        🚢
+                        {% elif 'เต็นท์' in group.name or 'camp' in group.name.lower() %}
+                        🏕️
+                        {% else %}
+                        ✈️
+                        {% endif %}
+                    </div>
+
+                    {% if group.active_product_count > 0 %}
+                    <div class="product-count-badge">
+                        <span>📦</span>
+                        <span>{{ group.active_product_count }} โปรแกรม</span>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="group-content">
+                    <h2 class="group-title">{{ group.name }}</h2>
+                    {% if group.description %}
+                    <p class="group-description">{{ group.description }}</p>
+                    {% else %}
+                    <p class="group-description">สำรวจโปรแกรมทัวร์ที่น่าสนใจในกรุ๊ปนี้</p>
+                    {% endif %}
+
+                    {% if group.start_date or group.end_date %}
+                    <div class="group-dates">
+                        {% if group.start_date %}
+                        <div class="date-item">
+                            <span>📅</span>
+                            <span><strong>เริ่ม:</strong> {{ group.start_date.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        {% endif %}
+                        {% if group.end_date %}
+                        <div class="date-item">
+                            <span>📅</span>
+                            <span><strong>สิ้นสุด:</strong> {{ group.end_date.strftime('%d/%m/%Y') }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="group-footer">
+                        <button class="btn-detail">ดูรายละเอียด →</button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results">
+            <div class="no-results-icon">🔍</div>
+            <h2>ไม่พบกรุ๊ปทัวร์ที่ตรงกับเงื่อนไข</h2>
+            <p>ลองปรับเปลี่ยนตัวกรองหรือค้นหาใหม่อีกครั้ง</p>
+            <button class="btn-reset-filters" onclick="resetFilters()">🔄 ลบตัวกรองทั้งหมด</button>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Toggle clear search button
+        const searchInput = document.getElementById('searchInput');
+        const clearSearch = document.getElementById('clearSearch');
+
+        searchInput.addEventListener('input', function () {
+            clearSearch.classList.toggle('active', this.value.length > 0);
+        });
+
+        if (searchInput.value.length > 0) {
+            clearSearch.classList.add('active');
+        }
+
+        // Clear search input
+        function clearSearchInput() {
+            searchInput.value = '';
+            clearSearch.classList.remove('active');
+            searchInput.focus();
+        }
+
+        // Reset all filters
+        function resetFilters() {
+            window.location.href = '{{ url_for("landing_page.groups_list") }}';
+        }
+
+        // Remove specific filter
+        function removeFilter(filterName) {
+            const form = document.getElementById('filterForm');
+            const input = form.querySelector(`[name="${filterName}"]`);
+            if (input) {
+                input.value = '';
+                form.submit();
+            }
+        }
+
+        // Keyboard shortcut: Ctrl/Cmd + K for search focus
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
+    </script>
+</body>
+
+</html>

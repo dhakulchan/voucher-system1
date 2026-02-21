@@ -207,6 +207,19 @@ def create_app():
     # Initialize extensions with app
     db.init_app(app)
     
+    # Configure Flask-Mail for Job Application notifications
+    app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
+    app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'True').lower() == 'true'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME', 'hr@dhakulchan.net')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD', '')
+    app.config['MAIL_DEFAULT_SENDER'] = ('DHAKULCHAN HR', os.getenv('MAIL_USERNAME', 'hr@dhakulchan.net'))
+    app.config['ADMIN_EMAILS'] = os.getenv('ADMIN_EMAILS', 'hr@dhakulchan.net,admin@dhakulchan.net').split(',')
+    
+    # Configure Cloudflare Turnstile
+    app.config['TURNSTILE_SITE_KEY'] = '0x4AAAAAACfmyRfKwzzCJH-t'
+    app.config['TURNSTILE_SECRET_KEY'] = '0x4AAAAAACfmyTBBO_CTHUIQg-glwg8anog'
+    
     # Initialize Flask-Mail
     mail.init_app(app)
     
@@ -253,6 +266,7 @@ def create_app():
     from routes.api_share import api_share_bp
     from routes.api_share_enhanced import api_share_enhanced_bp  # Enhanced API share routes
     from routes.api_enhanced import api_enhanced_bp  # NEW Enhanced API routes
+    from routes.api_v1 import api_v1_bp  # API V1 - RESTful API
     from routes.user_management import user_mgmt_bp
     from routes.passport_upload import passport_upload_bp  # Passport MRZ OCR system
     from routes.passport_nfc import passport_nfc_bp  # Passport NFC reading via mobile app
@@ -353,6 +367,16 @@ def create_app():
         account_report = None
         print(f"❌ Failed to import account_report: {e}")
     
+    # Import Job Application routes
+    try:
+        from routes.job_application import job_application_bp
+        JOB_APPLICATION_AVAILABLE = True
+        print("✅ Job Application blueprint imported successfully")
+    except ImportError as e:
+        JOB_APPLICATION_AVAILABLE = False
+        job_application_bp = None
+        print(f"❌ Failed to import Job Application blueprint: {e}")
+    
     # Import Group Buy routes
     try:
         from routes.group_buy_admin import bp as group_buy_admin_bp
@@ -365,9 +389,30 @@ def create_app():
         group_buy_public_bp = None
         print(f"❌ Failed to import Group Buy blueprints: {e}")
     
+    # Import debug auth blueprint
+    from routes.debug_auth import bp as debug_auth_bp
+    
+    # Redirect root path to Group Buy landing page
+    @app.route('/')
+    def home():
+        """Redirect homepage to Group Buy landing page"""
+        from flask import redirect, url_for
+        return redirect(url_for('public_group_buy.index'))
+    
+    # Short URL redirect for Landing Page Groups
+    @app.route('/l/<short_url>')
+    def short_url_redirect(short_url):
+        """Redirect จาก Short URL ไปหน้า Landing Page Group"""
+        from flask import redirect, abort
+        from models.landing_page_group import LandingPageGroup
+        group = LandingPageGroup.query.filter_by(short_url=short_url, is_active=True).first()
+        if not group:
+            abort(404)
+        return redirect(f'/landing?group={group.slug}')
+    
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(two_factor_bp, url_prefix='/auth/2fa')
-    app.register_blueprint(dashboard_bp, url_prefix='/')
+    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')  # Changed from '/' to '/dashboard'
     app.register_blueprint(booking_bp, url_prefix='/booking')
     app.register_blueprint(calendar_bp)  # Calendar and daily report
     app.register_blueprint(enhanced_workflow_bp, url_prefix='/booking')  # Enhanced workflow
@@ -380,11 +425,13 @@ def create_app():
     if supplier_bp:
         app.register_blueprint(supplier_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(api_v1_bp)  # API V1 - RESTful API
     app.register_blueprint(api_enhanced_bp)  # NEW Enhanced API routes (has its own url_prefix)
     app.register_blueprint(language_bp, url_prefix='/language')
     app.register_blueprint(customer_bp, url_prefix='/customer')
     app.register_blueprint(vendor_bp, url_prefix='/vendor')
     app.register_blueprint(user_mgmt_bp)
+    app.register_blueprint(debug_auth_bp)  # Debug auth status
     app.register_blueprint(sync_bp, url_prefix='/sync')
     app.register_blueprint(public_bp)  # Blueprint already has url_prefix='/public' 
     app.register_blueprint(api_share_bp)
@@ -429,6 +476,23 @@ def create_app():
         app.register_blueprint(account_report)  # Already has url_prefix='/account-report'
         print("✅ Account Report registered")
     
+    # Job Application System
+    if JOB_APPLICATION_AVAILABLE and job_application_bp:
+        app.register_blueprint(job_application_bp)  # Already has url_prefix='/jobs'
+        print("✅ Job Application registered")
+    
+    # Landing Page System (แยกจาก Group Buy)
+    try:
+        from routes.landing_page import bp as landing_page_bp
+        from routes.landing_admin import bp as landing_admin_bp
+        from routes.landing_groups_admin import bp as landing_groups_admin_bp
+        app.register_blueprint(landing_page_bp)  # Already has url_prefix='/landing' (includes /groups routes)
+        app.register_blueprint(landing_admin_bp)  # Already has url_prefix='/admin/landing'
+        app.register_blueprint(landing_groups_admin_bp)  # Already has url_prefix='/admin/landing/groups'
+        print("✅ Landing Page registered")
+    except Exception as e:
+        print(f"⚠️  Could not register Landing Page: {e}")
+    
     # Group Buy
     if GROUP_BUY_AVAILABLE:
         if group_buy_admin_bp:
@@ -444,11 +508,22 @@ def create_app():
             app.register_blueprint(group_buy_payment_admin_bp)
             print("✅ Group Buy Payment Admin registered")
         except Exception as e:
-            print(f"❌ Failed to register Group Buy Payment Admin: {e}")
+            print(f"⚠️  Could not register Group Buy Payment Admin: {e}")
         
         try:
             from routes.group_buy_payment_public import bp as group_buy_payment_public_bp
             app.register_blueprint(group_buy_payment_public_bp)
+            print("✅ Group Buy Payment Public registered")
+        except Exception as e:
+            print(f"⚠️  Could not register Group Buy Payment Public: {e}")
+        
+        # Register Special Codes Admin
+        try:
+            from routes.special_codes_admin import bp as special_codes_admin_bp
+            app.register_blueprint(special_codes_admin_bp)
+            print("✅ Special Codes Admin registered")
+        except Exception as e:
+            print(f"⚠️  Could not register Special Codes Admin: {e}")
             print("✅ Group Buy Payment Public registered")
         except Exception as e:
             print(f"❌ Failed to register Group Buy Payment Public: {e}")
@@ -590,12 +665,24 @@ def create_app():
     @app.context_processor
     def inject_translations():
         from routes.language import t, get_current_language, TRANSLATIONS
+        from models.group_buy import GroupBuyGroup
+        from flask_login import current_user
+        
+        # Count pending groups (status='active' = กำลังรอ)
+        pending_groups_count = 0
+        try:
+            if current_user.is_authenticated:
+                pending_groups_count = GroupBuyGroup.query.filter_by(status='active').count()
+        except:
+            pass
+        
         return {
             't': t,
             'current_language': get_current_language(),
             'is_thai': get_current_language() == 'th',
             'translations': TRANSLATIONS.get(get_current_language(), {}),
-            'get_role_badge': get_role_badge
+            'get_role_badge': get_role_badge,
+            'pending_groups_count': pending_groups_count
         }
     
     def get_role_badge(role):

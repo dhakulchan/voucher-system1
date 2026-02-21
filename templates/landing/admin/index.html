@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+
+{% block title %}จัดการ Landing Products{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1><i class="fas fa-gifts"></i> จัดการ Landing Products</h1>
+            <p class="text-muted">จัดการผลิตภัณฑ์และโปรโมชั่นสำหรับหน้า Landing Page</p>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{{ url_for('landing_admin.create') }}" class="btn btn-success btn-lg">
+                <i class="fas fa-plus"></i> เพิ่ม Product ใหม่
+            </a>
+            <a href="{{ url_for('landing_page.index') }}" class="btn btn-info btn-lg" target="_blank">
+                <i class="fas fa-eye"></i> ดูหน้า Landing
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h3>{{ products|length }}</h3>
+                    <p class="mb-0">Products ทั้งหมด</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h3>{{ products|selectattr('is_active')|list|length }}</h3>
+                    <p class="mb-0">Products ที่เปิดใช้งาน</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h3>{{ products|selectattr('is_featured')|list|length }}</h3>
+                    <p class="mb-0">Products แนะนำ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h3>{{ products|map(attribute='category')|unique|list|length }}</h3>
+                    <p class="mb-0">Categories</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list"></i> รายการ Products</h5>
+        </div>
+        <div class="card-body">
+            {% if products %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Preview</th>
+                            <th>ชื่อ Product</th>
+                            <th>Category</th>
+                            <th>ลิงก์</th>
+                            <th>สถานะ</th>
+                            <th style="width: 100px;">Order</th>
+                            <th style="width: 200px;">การดำเนินการ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>
+                                {% if product.banner_image %}
+                                <img src="{{ url_for('static', filename=product.banner_image) }}"
+                                    alt="{{ product.title }}"
+                                    style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+                                {% else %}
+                                <div
+                                    style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px;">
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ product.title }}</strong>
+                                {% if product.is_featured %}
+                                <span class="badge bg-warning text-dark"><i class="fas fa-star"></i> แนะนำ</span>
+                                {% endif %}
+                                {% if product.highlight_badge %}
+                                <span class="badge bg-{{ product.highlight_color }}">{{ product.highlight_badge
+                                    }}</span>
+                                {% endif %}
+                                <br>
+                                <small class="text-muted">{{ product.subtitle or '-' }}</small>
+                            </td>
+                            <td>
+                                {% if product.category %}
+                                <span class="badge bg-light text-dark">{{ product.category }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ product.external_url }}" target="_blank"
+                                    class="text-truncate d-inline-block" style="max-width: 200px;">
+                                    <i class="fas fa-external-link-alt"></i> {{ product.external_url[:30] }}...
+                                </a>
+                            </td>
+                            <td>
+                                {% if product.is_active %}
+                                <span class="badge bg-success">เปิดใช้งาน</span>
+                                {% else %}
+                                <span class="badge bg-secondary">ปิดใช้งาน</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ product.display_order }}</span>
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('landing_admin.edit', product_id=product.id) }}"
+                                        class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST"
+                                        action="{{ url_for('landing_admin.toggle_active', product_id=product.id) }}"
+                                        style="display: inline;">
+                                        <button type="submit"
+                                            class="btn btn-sm {% if product.is_active %}btn-secondary{% else %}btn-success{% endif %}"
+                                            onclick="return confirm('ต้องการเปลี่ยนสถานะ?')">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
+                                    </form>
+                                    <form method="POST"
+                                        action="{{ url_for('landing_admin.delete', product_id=product.id) }}"
+                                        style="display: inline;">
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                            onclick="return confirm('ต้องการลบ Product นี้?')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">ยังไม่มี Product</h5>
+                <a href="{{ url_for('landing_admin.create') }}" class="btn btn-success mt-3">
+                    <i class="fas fa-plus"></i> เพิ่ม Product แรก
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

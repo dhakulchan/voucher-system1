@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}เพิ่ม Landing Product ใหม่{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h1><i class="fas fa-plus"></i> เพิ่ม Product ใหม่</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{{ url_for('landing_admin.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> กลับ
+            </a>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">ข้อมูลพื้นฐาน</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">ชื่อ Product <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">คำอธิบายสั้น (Subtitle)</label>
+                            <input type="text" name="subtitle" class="form-control" maxlength="500">
+                            <small class="text-muted">แสดงใต้ชื่อ Product</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">รายละเอียดเต็ม</label>
+                            <textarea name="description" class="form-control" rows="5"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <input type="text" name="category" class="form-control"
+                                placeholder="เช่น Tour, Hotel, Package">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tags (คั่นด้วย comma)</label>
+                            <input type="text" name="tags" class="form-control"
+                                placeholder="เช่น ญี่ปุ่น, ทัวร์, 5 วัน 4 คืน">
+                            <small class="text-muted">ใช้คอมม่าคั่นแต่ละ tag</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">External Link</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">URL <span class="text-danger">*</span></label>
+                            <input type="url" name="external_url" class="form-control" required
+                                placeholder="https://example.com/product-detail">
+                            <small class="text-muted">ลิงก์ไปยังหน้ารายละเอียด Product</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ข้อความปุ่ม</label>
+                            <input type="text" name="external_url_text" class="form-control" value="ดูรายละเอียด"
+                                maxlength="100">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="open_in_new_tab"
+                                    id="open_in_new_tab" checked>
+                                <label class="form-check-label" for="open_in_new_tab">
+                                    เปิดลิงก์ในแท็บใหม่
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">SEO Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">SEO Title</label>
+                            <input type="text" name="seo_title" class="form-control" maxlength="255">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">SEO Description</label>
+                            <textarea name="seo_description" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Banner Image (1:1)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">อัพโหลดรูปภาพ</label>
+                            <input type="file" name="banner_image" class="form-control" accept="image/*">
+                            <small class="text-muted">แนะนำ 800x800px หรือ 1:1 ratio</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-video"></i> Video (ถ้ามี)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">อัพโหลดวิดีโอ</label>
+                            <input type="file" name="video_file" class="form-control"
+                                accept="video/mp4,video/webm,video/quicktime">
+                            <small class="text-muted">รองรับ MP4, WebM, MOV</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">รูปภาพตัวอย่างวิดีโอ (Thumbnail)</label>
+                            <input type="file" name="video_thumbnail" class="form-control" accept="image/*">
+                            <small class="text-muted">แสดงตอนยังไม่ได้เล่นวิดีโอ</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ความยาววิดีโอ</label>
+                            <input type="text" name="video_duration" class="form-control" placeholder="3:45"
+                                maxlength="20">
+                            <small class="text-muted">เช่น 3:45 หรือ 1:30</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Group (โปรโมชั่น)</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">เลือก Group</label>
+                            <select name="group_id" class="form-select">
+                                <option value="">-- ไม่ระบุ --</option>
+                                {% if groups %}
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                                {% endif %}
+                            </select>
+                            <small class="text-muted">เลือกว่า Product นี้อยู่ใน Group ไหน</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Display Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
+                                <label class="form-check-label" for="is_active">
+                                    <strong>เปิดใช้งาน</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_featured" id="is_featured">
+                                <label class="form-check-label" for="is_featured">
+                                    <strong>แนะนำ (Featured)</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Display Order</label>
+                            <input type="number" name="display_order" class="form-control" value="0" min="0">
+                            <small class="text-muted">เลขน้อย = แสดงก่อน</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Highlight Badge</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">ข้อความ Badge</label>
+                            <input type="text" name="highlight_badge" class="form-control"
+                                placeholder="เช่น HOT, NEW, SALE">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">สี Badge</label>
+                            <select name="highlight_color" class="form-select">
+                                <option value="danger" selected>แดง (Danger)</option>
+                                <option value="warning">เหลือง (Warning)</option>
+                                <option value="success">เขียว (Success)</option>
+                                <option value="info">ฟ้า (Info)</option>
+                                <option value="primary">น้ำเงิน (Primary)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">ข้อความราคา</label>
+                            <input type="text" name="price_text" class="form-control"
+                                placeholder="เช่น เริ่มต้น 9,999 บาท">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-body">
+                        <button type="submit" class="btn btn-success w-100 btn-lg">
+                            <i class="fas fa-save"></i> บันทึก Product
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}สร้าง Landing Page Group{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-plus"></i> สร้าง Landing Page Group ใหม่</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">ชื่อ Group <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required
+                                        placeholder="เช่น Songkran 2026, New Year 2027">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="display_order" class="form-label">ลำดับการแสดง</label>
+                                    <input type="number" class="form-control" id="display_order" name="display_order"
+                                        value="0">
+                                    <small class="text-muted">เลขน้อย = แสดงก่อน</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="slug" class="form-label">Slug (URL) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="slug" name="slug" required
+                                placeholder="songkran-2026" pattern="[a-z0-9\-]+" title="ใช้ a-z, 0-9, และ - เท่านั้น">
+                            <small class="text-muted">ใช้สำหรับ URL: /landing?group=slug (ใช้ตัวเล็ก a-z, ตัวเลข, และ -
+                                เท่านั้น)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="short_url" class="form-label">Short URL <i
+                                    class="fas fa-share-alt text-primary"></i></label>
+                            <div class="input-group">
+                                <span class="input-group-text">https://booking.dhakulchan.net/l/</span>
+                                <input type="text" class="form-control" id="short_url" name="short_url"
+                                    placeholder="auto" pattern="[a-z0-9\-]+" title="ใช้ a-z, 0-9, และ - เท่านั้น"
+                                    maxlength="50">
+                            </div>
+                            <small class="text-muted">ลิงก์สั้นสำหรับโพสต์ Social Media (ปล่อยว่างเพื่อ Auto Generate
+                                จาก Slug)</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">คำอธิบาย</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                placeholder="คำอธิบายสั้นๆ เกี่ยวกับโปรโมชั่นนี้"></textarea>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">วันที่เริ่ม</label>
+                                    <input type="date" class="form-control" id="start_date" name="start_date">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">วันที่สิ้นสุด</label>
+                                    <input type="date" class="form-control" id="end_date" name="end_date">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="theme_color" class="form-label">สี Theme</label>
+                                    <input type="color" class="form-control form-control-color" id="theme_color"
+                                        name="theme_color" value="#3498db">
+                                    <small class="text-muted">สีของ Group (ใช้สำหรับตกแต่ง)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label d-block">สถานะ</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                            checked>
+                                        <label class="form-check-label" for="is_active">
+                                            เปิดใช้งาน
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="banner_image" class="form-label">Banner Image (Group)</label>
+                            <input type="file" class="form-control" id="banner_image" name="banner_image"
+                                accept="image/*">
+                            <small class="text-muted">รูปภาพสำหรับแสดงใน Group Card (ถ้ามี)</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a href="{{ url_for('landing_groups_admin.index') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> ยกเลิก
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> สร้าง Group
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-generate slug from name
+    document.getElementById('name').addEventListener('input', function (e) {
+        const slugInput = document.getElementById('slug');
+        if (!slugInput.value || slugInput.dataset.autoGenerated !== 'false') {
+            let slug = e.target.value.toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^\u0E00-\u0E7Fa-z0-9-]/g, '')
+                .replace(/-+/g, '-')
+                .replace(/^-|-$/g, '');
+
+            // Convert Thai to transliteration (simple version)
+            const thaiToEng = {
+                'ก': 'k', 'ข': 'k', 'ค': 'k', 'ฆ': 'k',
+                'ง': 'ng', 'จ': 'j', 'ฉ': 'ch', 'ช': 'ch',
+                'ซ': 's', 'ฌ': 'ch', 'ญ': 'y', 'ฎ': 'd',
+                'ฏ': 't', 'ฐ': 'th', 'ฑ': 'th', 'ฒ': 'th',
+                'ณ': 'n', 'ด': 'd', 'ต': 't', 'ถ': 'th',
+                'ท': 'th', 'ธ': 'th', 'น': 'n', 'บ': 'b',
+                'ป': 'p', 'ผ': 'ph', 'ฝ': 'f', 'พ': 'ph',
+                'ฟ': 'f', 'ภ': 'ph', 'ม': 'm', 'ย': 'y',
+                'ร': 'r', 'ล': 'l', 'ว': 'w', 'ศ': 's',
+                'ษ': 's', 'ส': 's', 'ห': 'h', 'ฬ': 'l',
+                'อ': 'o', 'ฮ': 'h', 'า': 'a', 'ิ': 'i',
+                'ี': 'i', 'ึ': 'ue', 'ื': 'ue', 'ุ': 'u',
+                'ู': 'u', 'เ': 'e', 'แ': 'ae', 'โ': 'o',
+                'ใ': 'ai', 'ไ': 'ai', 'ำ': 'am', 'ั': 'a',
+                'ๅ': '', '์': '', 'ํ': ''
+            };
+
+            slug = slug.split('').map(c => thaiToEng[c] || c).join('');
+            slugInput.value = slug;
+            slugInput.dataset.autoGenerated = 'true';
+        }
+    });
+
+    document.getElementById('slug').addEventListener('input', function () {
+        this.dataset.autoGenerated = 'false';
+    });
+</script>
+{% endblock %}

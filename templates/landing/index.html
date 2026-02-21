@@ -1,0 +1,557 @@
+{% extends "base.html" %}
+
+{% block title %}{{ current_group.name if current_group else 'Products' }} - Landing Page{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
+
+    <!-- Group Header -->
+    {% if current_group %}
+    <div class="text-center mb-4">
+        <h1 class="fw-bold mb-2"
+            style="font-size: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            <i class="fas fa-calendar-alt"></i> {{ current_group.name }}
+        </h1>
+        {% if current_group.description %}
+        <p class="text-muted mb-3" style="font-size: 0.95rem;">{{ current_group.description }}</p>
+        {% endif %}
+
+        <!-- Trust Badges & Group Buy Button -->
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-3 mb-3">
+            <!-- Trust Badges -->
+            <div class="trust-badge animate-fade-in" style="animation-delay: 0.2s;">
+                <i class="fas fa-shield-alt text-success me-1"></i>
+                <span class="small text-muted">ปลอดภัย 100%</span>
+            </div>
+            <div class="trust-badge animate-fade-in" style="animation-delay: 0.4s;">
+                <i class="fas fa-users text-primary me-1"></i>
+                <span class="small text-muted">ลูกค้าไว้วางใจ 5,000+</span>
+            </div>
+            <div class="trust-badge animate-fade-in" style="animation-delay: 0.6s;">
+                <i class="fas fa-star text-warning me-1"></i>
+                <span class="small text-muted">4.9/5 คะแนน</span>
+            </div>
+        </div>
+
+        <!-- Floating Promotion Banner with Link -->
+        <div class="promo-banner animate-bounce-soft mb-3">
+            <a href="https://booking.dhakulchan.net/group-buy" class="text-decoration-none d-inline-block"
+                style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'"
+                onmouseout="this.style.transform='scale(1)'">
+                <div class="d-inline-flex align-items-center px-4 py-2"
+                    style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: 30px; box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4); cursor: pointer;">
+                    <i class="fas fa-fire text-white me-2 animate-pulse"></i>
+                    <span class="text-white fw-bold" style="font-size: 0.95rem;">
+                        <i class="fas fa-bolt me-1"></i>โปรโมชั่นพิเศษ! จองด่วนวันนี้ รับส่วนลดทันทีตามเงื่อนไข
+                    </span>
+                    <span class="badge ms-2"
+                        style="background: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;"
+                        id="countdown-timer">
+                        <i class="far fa-clock me-1"></i><span id="timer-display">--:--:--</span>
+                    </span>
+                </div>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Category Filter Buttons -->
+    {% if categories %}
+    <div class="d-flex justify-content-center flex-wrap gap-2 mb-4">
+        <button class="btn category-filter-btn active" data-category="all"
+            style="border-radius: 20px; padding: 10px 24px; border: 2px solid #667eea; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 600; transition: all 0.3s ease;">
+            <i class="fas fa-th me-2"></i>แสดงทั้งหมด
+        </button>
+        {% for category in categories %}
+        <button class="btn category-filter-btn" data-category="{{ category }}"
+            style="border-radius: 20px; padding: 10px 24px; border: 2px solid #e2e8f0; background: white; color: #4a5568; font-weight: 600; transition: all 0.3s ease;">
+            <i class="fas fa-tag me-2"></i>{{ category }}
+        </button>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Products Grid -->
+    {% if products %}
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-sm-6 col-lg-4 product-item"
+            data-category="{{ product.category if product.category else 'uncategorized' }}">
+            <div class="card h-100 border-0 shadow-hover modern-card"
+                style="border-radius: 20px; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">;
+
+                <!-- Product Image -->
+                <div class="position-relative"
+                    style="height: 380px; overflow: hidden; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);">
+                    {% if product.is_featured %}
+                    <div class="position-absolute top-0 start-0 m-3" style="z-index: 10;">
+                        <span class="badge px-3 py-2"
+                            style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: 20px; font-weight: 600; font-size: 0.85rem;">
+                            <i class="fas fa-star"></i> แนะนำ
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    {% if product.banner_image %}
+                    <img src="{{ url_for('static', filename=product.banner_image) }}" alt="{{ product.title }}"
+                        class="w-100 h-100 product-image"
+                        style="object-fit: contain; object-position: center; padding: 20px; transition: transform 0.3s ease;">
+
+                    <!-- Video Play Button Overlay -->
+                    {% if product.video_url %}
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                        style="background: rgba(0,0,0,0.1); cursor: pointer; transition: all 0.3s ease;"
+                        onclick="openVideoModal('{{ url_for('static', filename=product.video_url) }}', '{{ product.title }}')"
+                        onmouseover="this.style.background='rgba(0,0,0,0.4)'"
+                        onmouseout="this.style.background='rgba(0,0,0,0.1)'">
+                        <div class="text-center">
+                            <i class="fas fa-play-circle text-white"
+                                style="font-size: 3rem; opacity: 0.6; text-shadow: 0 2px 8px rgba(0,0,0,0.5);"></i>
+                            {% if product.video_duration %}
+                            <div class="position-absolute bottom-0 end-0 m-3">
+                                <span class="badge px-3 py-2" style="background: rgba(0,0,0,0.7); font-size: 0.9rem;">
+                                    <i class="fas fa-clock me-1"></i> {{ product.video_duration }}
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% else %}
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-image fa-5x text-white" style="opacity: 0.3;"></i>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Card Body -->
+                <div class="card-body p-4 d-flex flex-column" style="min-height: 280px;">
+                    <!-- Category Badge -->
+                    {% if product.category %}
+                    <div class="mb-2">
+                        <span class="badge px-3 py-2"
+                            style="background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%); color: #495057; border-radius: 20px; font-weight: 600; font-size: 0.85rem;">
+                            <i class="fas fa-tag me-1"></i> {{ product.category }}
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Title -->
+                    <h5 class="card-title fw-bold mb-2" style="font-size: 1.15rem; line-height: 1.4; color: #2d3748;">
+                        {{ product.title }}
+                    </h5>
+
+                    <!-- Subtitle -->
+                    {% if product.subtitle %}
+                    <p class="card-text text-muted mb-2" style="font-size: 0.9rem; line-height: 1.5;">
+                        {{ product.subtitle }}
+                    </p>
+                    {% endif %}
+
+                    <!-- Description -->
+                    {% if product.description %}
+                    <p class="card-text mb-3" style="font-size: 0.85rem; line-height: 1.6; color: #718096;">
+                        {{ (product.description|striptags)[:100] }}{% if (product.description|striptags)|length > 100
+                        %}...{% endif %}
+                    </p>
+                    {% endif %}
+
+                    <!-- Price -->
+                    {% if product.price_text %}
+                    <div class="mb-3">
+                        <div class="d-inline-flex align-items-center px-4 py-2"
+                            style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border-radius: 25px; box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);">
+                            <i class="fas fa-tag text-white me-2" style="font-size: 1.1rem;"></i>
+                            <span class="text-white fw-bold" style="font-size: 1.1rem;">{{ product.price_text }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Tags -->
+                    {% if product.tags_list %}
+                    <div class="mb-3 d-flex flex-wrap gap-2">
+                        {% for tag in product.tags_list[:4] %}
+                        <span class="badge px-2 py-1"
+                            style="background: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; font-size: 0.75rem; border-radius: 10px; font-weight: 500;">
+                            {{ tag }}
+                        </span>
+                        {% endfor %}
+                        {% if product.tags_list|length > 4 %}
+                        <span class="badge px-2 py-1"
+                            style="background: #f7fafc; color: #4a5568; border: 1px solid #e2e8f0; font-size: 0.75rem; border-radius: 10px; font-weight: 500;">
+                            +{{ product.tags_list|length - 4 }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <!-- CTA Button -->
+                    <div class="mt-auto pt-3">
+                        <a href="{{ product.external_url }}" {% if product.open_in_new_tab %}target="_blank"
+                            rel="noopener noreferrer" {% endif %}
+                            class="btn btn-primary w-100 py-3 fw-bold modern-button"
+                            style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); font-size: 1rem;">
+                            <i class="fas fa-external-link-alt me-2"></i>{{ product.external_url_text }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="fas fa-inbox fa-4x text-muted" style="opacity: 0.3;"></i>
+        </div>
+        <h5 class="text-muted mb-2">ยังไม่มีสินค้าในขณะนี้</h5>
+        <p class="text-muted">กำลังเตรียมสินค้าใหม่ๆ ให้คุณเร็วๆ นี้!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Floating Action Button -->
+{% if current_group %}
+<div class="floating-action-btn">
+    <a href="https://booking.dhakulchan.net/group-buy" class="btn btn-lg"
+        style="border-radius: 50px; padding: 16px 28px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white; font-weight: 700; font-size: 1rem; box-shadow: 0 8px 25px rgba(245, 87, 108, 0.5); transition: all 0.3s ease; text-decoration: none; display: flex; align-items: center; gap: 10px;"
+        title="เข้าร่วมกลุ่มซื้อ - ราคาถูกกว่า!">
+        <i class="fas fa-users" style="font-size: 1.2rem;"></i>
+        <span class="floating-text">กลุ่มซื้อ</span>
+        <span class="badge"
+            style="background: rgba(255,255,255,0.3); padding: 4px 8px; border-radius: 10px; font-size: 0.75rem;">
+            -20%
+        </span>
+    </a>
+</div>
+{% endif %}
+
+<style>
+    /* Modern Card Animations */
+    .modern-card {
+        background: white;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .modern-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .shadow-hover {
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Product Image Hover Effect */
+    .modern-card:hover .product-image {
+        transform: scale(1.05);
+    }
+
+    /* Button Hover Effects */
+    .modern-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5) !important;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 1.5rem !important;
+        }
+
+        .modern-card {
+            margin-bottom: 1rem;
+        }
+
+        .modern-card .position-relative {
+            height: 280px !important;
+        }
+
+        .modern-card .card-body {
+            min-height: auto !important;
+        }
+
+        .floating-action-btn {
+            bottom: 20px;
+            right: 20px;
+        }
+
+        .floating-action-btn a {
+            padding: 12px 20px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .floating-action-btn .floating-text {
+            display: none;
+        }
+
+        .trust-badge {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+        }
+
+        .promo-banner {
+            font-size: 0.85rem !important;
+        }
+
+        .group-buy-btn {
+            font-size: 0.95rem !important;
+            padding: 12px 30px !important;
+        }
+    }
+
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Trust Badges */
+    .trust-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 12px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes bounceSoft {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-5px);
+        }
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    @keyframes slideRight {
+
+        0%,
+        100% {
+            transform: translateX(0);
+        }
+
+        50% {
+            transform: translateX(5px);
+        }
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    .animate-bounce-soft {
+        animation: bounceSoft 2s ease-in-out infinite;
+    }
+
+    .animate-pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .animate-slide-right {
+        display: inline-block;
+        animation: slideRight 1s ease-in-out infinite;
+    }
+
+    /* Group Buy Button Hover */
+    .group-buy-btn:hover {
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 12px 35px rgba(245, 87, 108, 0.6) !important;
+    }
+
+    /* Promo Banner Glow Effect */
+    .promo-banner {
+        position: relative;
+    }
+
+    .promo-banner::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255, 107, 107, 0.3) 0%, transparent 70%);
+        filter: blur(20px);
+        z-index: -1;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    /* Floating Action Button */
+    .floating-action-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 1000;
+        animation: fadeIn 1s ease-out 1s forwards, bounceSoft 2s ease-in-out 2s infinite;
+        opacity: 0;
+    }
+
+    .floating-action-btn a:hover {
+        transform: scale(1.1);
+        box-shadow: 0 12px 40px rgba(245, 87, 108, 0.7) !important;
+    }
+
+    .floating-action-btn .floating-text {
+        font-size: 1rem;
+    }
+
+    /* Category Filter Buttons */
+    .category-filter-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .category-filter-btn.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border-color: #667eea !important;
+    }
+
+    /* Product Item Animation */
+    .product-item {
+        transition: all 0.3s ease;
+    }
+
+    .product-item.hidden {
+        display: none;
+    }
+</style>
+
+<script>
+    // Category Filter Function
+    document.addEventListener('DOMContentLoaded', function () {
+        const filterButtons = document.querySelectorAll('.category-filter-btn');
+        const productItems = document.querySelectorAll('.product-item');
+
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const selectedCategory = this.getAttribute('data-category');
+
+                // Update active button
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                // Filter products
+                productItems.forEach(item => {
+                    const itemCategory = item.getAttribute('data-category');
+
+                    if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+                        item.classList.remove('hidden');
+                    } else {
+                        item.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        // Countdown Timer (ends at midnight)
+        function updateCountdown() {
+            const now = new Date();
+            const tomorrow = new Date(now);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(0, 0, 0, 0);
+
+            const diff = tomorrow - now;
+
+            if (diff > 0) {
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                const timerDisplay = document.getElementById('timer-display');
+                if (timerDisplay) {
+                    timerDisplay.textContent =
+                        String(hours).padStart(2, '0') + ':' +
+                        String(minutes).padStart(2, '0') + ':' +
+                        String(seconds).padStart(2, '0');
+                }
+            }
+        }
+
+        // Update countdown every second
+        if (document.getElementById('countdown-timer')) {
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        }
+
+        // Video Modal Functions
+        window.openVideoModal = function (videoUrl, title) {
+            const modal = document.getElementById('videoModal');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const videoSource = document.getElementById('videoSource');
+            const modalTitle = document.getElementById('videoModalTitle');
+
+            videoSource.src = videoUrl;
+            videoPlayer.load();
+            modalTitle.textContent = title;
+
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+
+            // Play video automatically
+            videoPlayer.play();
+
+            // Stop video when modal is closed
+            modal.addEventListener('hidden.bs.modal', function () {
+                videoPlayer.pause();
+                videoPlayer.currentTime = 0;
+            });
+        };
+    });
+</script>
+
+<!-- Video Modal -->
+<div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="modal-title text-white" id="videoModalTitle">
+                    <i class="fas fa-video me-2"></i> <span id="videoModalTitle">วิดีโอ</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <video id="videoPlayer" controls style="width: 100%; max-height: 70vh;">
+                    <source id="videoSource" src="" type="video/mp4">
+                    เบราว์เซอร์ของคุณไม่รองรับการเล่นวิดีโอ
+                </video>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
