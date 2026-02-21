@@ -10,6 +10,7 @@ class LandingPageGroup(db.Model):
     description = db.Column(db.Text)
     banner_image = db.Column(db.String(500))
     theme_color = db.Column(db.String(50), default="#667eea")
+    icon = db.Column(db.String(10), default="✈️")  # Emoji icon for group
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)

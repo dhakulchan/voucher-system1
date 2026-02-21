@@ -543,50 +543,11 @@
         {% if groups %}
         <div class="groups-grid" id="groupsGrid">
             {% for group in groups %}
-            <div class="group-card"
-                onclick="location.href='{{ url_for('landing_page.group_detail', slug=group.slug) }}'"
+            <div class="group-card" onclick="location.href='{{ url_for('landing_page.index') }}?group={{ group.slug }}'"
                 style="animation-delay: {{ loop.index0 * 0.1 }}s">
                 <div class="group-icon-wrapper" style="background: {{ group.theme_color or '#e0e7ff' }}20;">
-                    <!-- Group Icon - Auto-detect based on name -->
-                    <div class="group-icon">
-                        {% if 'ญี่ปุ่น' in group.name or 'Japan' in group.name %}
-                        🗾
-                        {% elif 'เกาหลี' in group.name or 'Korea' in group.name %}
-                        🇰🇷
-                        {% elif 'ยุโรป' in group.name or 'Europe' in group.name %}
-                        🏰
-                        {% elif 'จีน' in group.name or 'China' in group.name %}
-                        🐼
-                        {% elif 'ไต้หวัน' in group.name or 'Taiwan' in group.name %}
-                        🎋
-                        {% elif 'เวียดนาม' in group.name or 'Vietnam' in group.name %}
-                        🍜
-                        {% elif 'สิงคโปร์' in group.name or 'Singapore' in group.name %}
-                        🦁
-                        {% elif 'มาเลเซีย' in group.name or 'Malaysia' in group.name %}
-                        🌴
-                        {% elif 'อินโดนีเซีย' in group.name or 'Indonesia' in group.name or 'บาหลี' in group.name %}
-                        🏝️
-                        {% elif 'ฮ่องกง' in group.name or 'Hong Kong' in group.name %}
-                        🏙️
-                        {% elif 'มัลดีฟส์' in group.name or 'Maldives' in group.name %}
-                        🏖️
-                        {% elif 'ทะเล' in group.name or 'beach' in group.name.lower() %}
-                        🏖️
-                        {% elif 'ภูเขา' in group.name or 'mountain' in group.name.lower() %}
-                        ⛰️
-                        {% elif 'วัด' in group.name or 'temple' in group.name.lower() %}
-                        ⛩️
-                        {% elif 'ดำน้ำ' in group.name or 'dive' in group.name.lower() %}
-                        🤿
-                        {% elif 'ครูซ' in group.name or 'cruise' in group.name.lower() %}
-                        🚢
-                        {% elif 'เต็นท์' in group.name or 'camp' in group.name.lower() %}
-                        🏕️
-                        {% else %}
-                        ✈️
-                        {% endif %}
-                    </div>
+                    <!-- Group Icon from Database -->
+                    <div class="group-icon">{{ group.icon or '✈️' }}</div>
 
                     {% if group.active_product_count > 0 %}
                     <div class="product-count-badge">
