@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}จัดการภาพ Info — Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-image text-primary me-2"></i>จัดการภาพ Info (ทำไมต้องเลือกเรา / รู้จักเรา)
+        </h2>
+        <a href="{{ url_for('landing_groups_admin.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>กลับ
+        </a>
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'danger' }} alert-dismissible fade show"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="row g-4">
+
+        <!-- Card: ทำไมต้องเลือกเรา -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header py-3" style="background: linear-gradient(135deg,#667eea,#764ba2); color:white;">
+                    <h5 class="mb-0"><i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา</h5>
+                    <small class="opacity-75">ไฟล์: Why-Choose-Us.jpg</small>
+                </div>
+                <div class="card-body">
+
+                    <!-- Preview -->
+                    {% if status['why-choose-us'].exists %}
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('info_images.serve', name='why-choose-us') }}?t={{ range(1,99999)|random }}"
+                            alt="Why Choose Us" class="img-fluid rounded shadow"
+                            style="max-height:300px; object-fit:contain;">
+                    </div>
+                    <div class="alert alert-success py-2 mb-3">
+                        <i class="fas fa-check-circle me-1"></i>มีภาพแล้ว — พร้อมแสดงบนหน้าเว็บ
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 mb-3 bg-light rounded" style="border: 2px dashed #dee2e6;">
+                        <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">ยังไม่มีภาพ — กรุณาอัพโหลด</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Upload form -->
+                    <form method="POST" action="{{ url_for('info_images.admin_upload', name='why-choose-us') }}"
+                        enctype="multipart/form-data">
+                        <label class="form-label fw-semibold">อัพโหลดภาพใหม่</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" name="image" accept=".jpg,.jpeg,.png,.webp,.gif"
+                                required>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload me-1"></i>อัพโหลด
+                            </button>
+                        </div>
+                        <div class="form-text">รองรับ: JPG, PNG, WebP (แนะนำ JPG)</div>
+                    </form>
+
+                    <!-- Delete -->
+                    {% if status['why-choose-us'].exists %}
+                    <form method="POST" action="{{ url_for('info_images.admin_delete', name='why-choose-us') }}"
+                        class="mt-2" onsubmit="return confirm('ยืนยันการลบภาพ?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash me-1"></i>ลบภาพ
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Card: รู้จักเรา -->
+        <div class="col-md-6">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header py-3" style="background: linear-gradient(135deg,#11998e,#38ef7d); color:white;">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>รู้จักเรา</h5>
+                    <small class="opacity-75">ไฟล์: about-dhakulchan-info.jpg</small>
+                </div>
+                <div class="card-body">
+
+                    <!-- Preview -->
+                    {% if status['about-us'].exists %}
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('info_images.serve', name='about-us') }}?t={{ range(1,99999)|random }}"
+                            alt="About Us" class="img-fluid rounded shadow"
+                            style="max-height:300px; object-fit:contain;">
+                    </div>
+                    <div class="alert alert-success py-2 mb-3">
+                        <i class="fas fa-check-circle me-1"></i>มีภาพแล้ว — พร้อมแสดงบนหน้าเว็บ
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 mb-3 bg-light rounded" style="border: 2px dashed #dee2e6;">
+                        <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">ยังไม่มีภาพ — กรุณาอัพโหลด</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Upload form -->
+                    <form method="POST" action="{{ url_for('info_images.admin_upload', name='about-us') }}"
+                        enctype="multipart/form-data">
+                        <label class="form-label fw-semibold">อัพโหลดภาพใหม่</label>
+                        <div class="input-group">
+                            <input type="file" class="form-control" name="image" accept=".jpg,.jpeg,.png,.webp,.gif"
+                                required>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-upload me-1"></i>อัพโหลด
+                            </button>
+                        </div>
+                        <div class="form-text">รองรับ: JPG, PNG, WebP (แนะนำ JPG)</div>
+                    </form>
+
+                    <!-- Delete -->
+                    {% if status['about-us'].exists %}
+                    <form method="POST" action="{{ url_for('info_images.admin_delete', name='about-us') }}" class="mt-2"
+                        onsubmit="return confirm('ยืนยันการลบภาพ?');">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-trash me-1"></i>ลบภาพ
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /row -->
+
+    <!-- Usage note -->
+    <div class="alert alert-info mt-4">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>หมายเหตุ:</strong> ภาพจะแสดงเป็น Popup บนหน้า
+        <a href="https://booking.dhakulchan.net/landing/groups" target="_blank">
+            /landing/groups
+        </a>
+        เมื่อผู้ใช้กดปุ่ม "ทำไมต้องเลือกเรา" หรือ "รู้จักเรา"
+    </div>
+
+</div>
+{% endblock %}

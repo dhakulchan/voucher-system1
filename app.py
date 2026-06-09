@@ -381,12 +381,14 @@ def create_app():
     try:
         from routes.group_buy_admin import bp as group_buy_admin_bp
         from routes.group_buy_public import bp as group_buy_public_bp
+        from routes.campaign_tracking_admin import bp as campaign_tracking_admin_bp
         GROUP_BUY_AVAILABLE = True
         print("✅ Group Buy blueprints imported successfully")
     except ImportError as e:
         GROUP_BUY_AVAILABLE = False
         group_buy_admin_bp = None
         group_buy_public_bp = None
+        campaign_tracking_admin_bp = None
         print(f"❌ Failed to import Group Buy blueprints: {e}")
     
     # Import debug auth blueprint
@@ -399,16 +401,91 @@ def create_app():
         from flask import redirect, url_for
         return redirect(url_for('public_group_buy.index'))
     
-    # Short URL redirect for Landing Page Groups
-    @app.route('/l/<short_url>')
-    def short_url_redirect(short_url):
-        """Redirect จาก Short URL ไปหน้า Landing Page Group"""
-        from flask import redirect, abort
+    # Short URL redirect with Tracking Support
+    @app.route('/l/<path:short_code>')
+    def short_url_redirect(short_code):
+        """
+        Redirect จาก Short URL ไปหน้าที่ต้องการ พร้อมบันทึก tracking
+        
+        รองรับรูปแบบ:
+        - /l/cml/h -> Campaign tracking URL (priority 1)
+        - /l/hk-5/john -> Group Buy Campaign with tracking_id (priority 2)
+        - /l/songkran -> Landing Page Group (priority 3)
+        """
+        from flask import redirect, abort, request
+        from models.campaign_tracking import CampaignTrackingURL, CampaignTrackingClick
         from models.landing_page_group import LandingPageGroup
-        group = LandingPageGroup.query.filter_by(short_url=short_url, is_active=True).first()
-        if not group:
-            abort(404)
-        return redirect(f'/landing?group={group.slug}')
+        from models.group_buy import GroupBuyCampaign
+        from extensions import db
+        import logging
+        
+        logger = logging.getLogger(__name__)
+        
+        # Priority 1: Campaign Tracking URL (admin-created)
+        tracking_url = CampaignTrackingURL.query.filter_by(
+            short_code=short_code, 
+            is_active=True
+        ).first()
+        
+        if tracking_url:
+            try:
+                # บันทึก click
+                CampaignTrackingClick.log_click(
+                    tracking_url_id=tracking_url.id,
+                    ip_address=request.remote_addr,
+                    user_agent=request.headers.get('User-Agent'),
+                    referer=request.headers.get('Referer')
+                )
+                
+                # เพิ่มจำนวนคลิก
+                tracking_url.increment_clicks()
+                
+                logger.info(f"📊 Tracking URL Click: {short_code} -> {tracking_url.destination_url}")
+                
+            except Exception as e:
+                logger.error(f"Error logging tracking click: {e}")
+            
+            # Redirect ไปยังจุดหมาย
+            return redirect(tracking_url.destination_url)
+        
+        # Priority 2: Group Buy Campaign with tracking_id (format: code/tracking_id)
+        if '/' in short_code:
+            parts = short_code.split('/', 1)
+            campaign_code = parts[0]
+            tracking_id = parts[1] if len(parts) > 1 else None
+            
+            campaign = GroupBuyCampaign.query.filter_by(
+                short_code=campaign_code, 
+                is_active=True
+            ).first()
+            
+            if campaign:
+                if tracking_id:
+                    logger.info(f"📊 Campaign Click with tracking: campaign={campaign_code}, tracking={tracking_id}, ip={request.remote_addr}")
+                
+                return redirect(f'/group-buy/campaign/{campaign.id}')
+        
+        # Priority 3: Landing Page Group
+        group = LandingPageGroup.query.filter_by(
+            short_url=short_code, 
+            is_active=True
+        ).first()
+        
+        if group:
+            return redirect(f'/landing?group={group.slug}')
+        
+        # Priority 4: Group Buy Campaign (simple short_code)
+        campaign = GroupBuyCampaign.query.filter_by(
+            short_code=short_code, 
+            is_active=True
+        ).first()
+        
+        if campaign:
+            return redirect(f'/group-buy/campaign/{campaign.id}')
+        
+        # ไม่เจอ
+        logger.warning(f"❌ Short URL not found: {short_code}")
+        abort(404)
     
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(two_factor_bp, url_prefix='/auth/2fa')
@@ -486,9 +563,11 @@ def create_app():
         from routes.landing_page import bp as landing_page_bp
         from routes.landing_admin import bp as landing_admin_bp
         from routes.landing_groups_admin import bp as landing_groups_admin_bp
+        from routes.info_images import bp as info_images_bp
         app.register_blueprint(landing_page_bp)  # Already has url_prefix='/landing' (includes /groups routes)
         app.register_blueprint(landing_admin_bp)  # Already has url_prefix='/admin/landing'
         app.register_blueprint(landing_groups_admin_bp)  # Already has url_prefix='/admin/landing/groups'
+        app.register_blueprint(info_images_bp)   # /landing/info-image/<name> + /admin/info-images/
         print("✅ Landing Page registered")
     except Exception as e:
         print(f"⚠️  Could not register Landing Page: {e}")
@@ -498,6 +577,9 @@ def create_app():
         if group_buy_admin_bp:
             app.register_blueprint(group_buy_admin_bp)  # Already has url_prefix='/backoffice/group-buy'
             print("✅ Group Buy Admin registered")
+        if campaign_tracking_admin_bp:
+            app.register_blueprint(campaign_tracking_admin_bp)  # url_prefix='/admin/campaign-tracking'
+            print("✅ Campaign Tracking Admin registered")
         if group_buy_public_bp:
             app.register_blueprint(group_buy_public_bp)  # Already has url_prefix='/group-buy'
             print("✅ Group Buy Public registered")
@@ -535,6 +617,14 @@ def create_app():
             print("✅ Admin Reviews Management registered")
         except Exception as e:
             print(f"❌ Failed to register Admin Reviews: {e}")
+
+        # Register Review Slides (Customer Review Slideshow)
+        try:
+            from routes.review_slides import bp as review_slides_bp
+            app.register_blueprint(review_slides_bp)
+            print("✅ Review Slides registered")
+        except Exception as e:
+            print(f"❌ Failed to register Review Slides: {e}")
         
         # Register Coupon Admin routes
         try:

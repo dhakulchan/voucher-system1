@@ -219,19 +219,78 @@
         color: #64748b;
     }
 
-    /* Floating Action Button - Group Buy */
+    /* Floating Webchat Button */
     .floating-action-btn {
         position: fixed;
         bottom: 30px;
         right: 30px;
         z-index: 1000;
-        animation: fadeIn 1s ease-out 1s forwards, bounceSoft 2s ease-in-out 2s infinite;
+        animation: fadeIn 1.2s ease-out forwards;
         opacity: 0;
     }
 
-    .floating-action-btn a:hover {
-        transform: scale(1.1);
-        box-shadow: 0 12px 40px rgba(245, 87, 108, 0.7) !important;
+    .webchat-fab {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 22px;
+        border: none;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: #1a4a2e;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        position: relative;
+        box-shadow: 0 8px 28px rgba(67, 233, 123, 0.55);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
+        animation: fabBreathe 4s ease-in-out infinite;
+    }
+
+    .webchat-fab:hover {
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 14px 40px rgba(67, 233, 123, 0.7);
+    }
+
+    .webchat-fab:active {
+        transform: translateY(-1px) scale(0.98);
+    }
+
+    .webchat-fab-online {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 11px;
+        height: 11px;
+        background: #00e676;
+        border: 2px solid white;
+        border-radius: 50%;
+        animation: onlinePulse 3s ease-in-out infinite;
+    }
+
+    @keyframes fabBreathe {
+
+        0%,
+        100% {
+            box-shadow: 0 8px 24px rgba(67, 233, 123, 0.45);
+        }
+
+        50% {
+            box-shadow: 0 8px 36px rgba(67, 233, 123, 0.65);
+        }
+    }
+
+    @keyframes onlinePulse {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
+        }
+
+        60% {
+            box-shadow: 0 0 0 5px rgba(0, 230, 118, 0);
+        }
     }
 
     /* Animations */
@@ -272,15 +331,14 @@
 
         .floating-action-btn {
             bottom: 20px;
-            right: 20px;
+            right: 16px;
         }
 
-        .floating-action-btn a {
-            padding: 12px 20px !important;
-            font-size: 0.9rem !important;
+        .webchat-fab {
+            padding: 12px 16px;
         }
 
-        .floating-action-btn .floating-text {
+        .webchat-fab .floating-text {
             display: none;
         }
     }
@@ -301,6 +359,27 @@
     <div class="groups-page-header">
         <h1><i class="fas fa-layer-group me-2"></i>ทัวร์แนะนำพิเศษ</h1>
         <p>ค้นหาและเลือกกรุ๊ปทัวร์ที่ถูกใจ พร้อมเริ่มต้นการเดินทางกับเรา</p>
+
+        <!-- Info Buttons Row -->
+        <div class="mt-4 d-flex justify-content-center flex-wrap gap-3">
+            <button type="button" onclick="openInfoModal('why')" class="btn btn-info-why px-4 py-2">
+                <i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา
+            </button>
+            <button type="button" onclick="openInfoModal('about')" class="btn btn-info-about px-4 py-2">
+                <i class="fas fa-building me-2"></i>รู้จักเรา
+            </button>
+        </div>
+
+        <!-- Customer Reviews Button -->
+        <div class="mt-3 text-center">
+            <div class="review-guide-hint mb-2">
+                <i class="fas fa-hand-point-down me-1"></i>คลิกปุ่มด้านล่าง เลือกดู Review
+            </div>
+            <button type="button" onclick="openReviewModal()" class="btn btn-review-popup px-4 py-2">
+                <i class="fas fa-star me-2"></i>รีวิวจากลูกค้า
+                <span class="review-star-badge ms-2">★★★★★</span>
+            </button>
+        </div>
     </div>
 
     <!-- Groups Grid -->
@@ -376,22 +455,406 @@
     </div>
     {% endif %}
 </div>
-<!-- Floating Action Button - Group Buy -->
+<!-- Floating Webchat Button -->
 <div class="floating-action-btn">
-    <a href="https://booking.dhakulchan.net/group-buy" class="btn btn-lg"
-        style="border-radius: 50px; padding: 16px 28px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white; font-weight: 700; font-size: 1rem; box-shadow: 0 8px 25px rgba(245, 87, 108, 0.5); transition: all 0.3s ease; text-decoration: none; display: flex; align-items: center; gap: 10px;"
-        title="เข้าร่วมกลุ่มซื้อ - ราคาถูกกว่า!">
-        <i class="fas fa-users" style="font-size: 1.2rem;"></i>
-        <span class="floating-text">กลุ่มซื้อ</span>
-        <span class="badge"
-            style="background: rgba(255,255,255,0.3); padding: 4px 8px; border-radius: 10px; font-size: 0.75rem;">
-            -20%
-        </span>
-    </a>
+    <button type="button" onclick="openWebchat()" class="webchat-fab" title="สอบถามเรา">
+        <span class="webchat-fab-online"></span>
+        <i class="fas fa-comments" style="font-size:1.3rem;"></i>
+        <span class="floating-text">สอบถาม</span>
+    </button>
 </div>
+
+<!-- Booking Fallback Modal -->
+<div class="modal fade" id="webchatFallbackModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:20px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header py-3 px-4"
+                style="background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%); border-bottom:none;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-comments" style="color:#1a4a2e; font-size:1.2rem;"></i>
+                    <span class="fw-bold" style="color:#1a4a2e;">สอบถาม | Book Now</span>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center px-4 py-5">
+                <div style="font-size:3rem; margin-bottom:1rem;">🚫</div>
+                <h6 class="fw-bold mb-2">Browser บล็อค Popup ไว้</h6>
+                <p class="text-muted mb-4" style="font-size:0.88rem;">
+                    กรุณาอนุญาต Popup สำหรับ <strong>booking.dhakulchan.net</strong><br>
+                    หรือกดปุ่มด้านล่างเพื่อเปิดลิงก์โดยตรง
+                </p>
+                <a href="https://ops.bookingstation.org/pricing-v12/webchat" target="_blank" rel="noopener noreferrer"
+                    class="btn btn-lg fw-bold w-100"
+                    style="border-radius:15px; background:linear-gradient(135deg,#43e97b 0%,#38f9d7 100%); border:none; color:#1a4a2e; box-shadow:0 4px 15px rgba(67,233,123,0.4);">
+                    <i class="fas fa-comments me-2"></i>เปิดหน้าสอบถาม
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
-    // Optional: Add any interactive features here
-    // For example, smooth scrolling, lazy loading, etc.
+    function openWebchat() {
+        const url = 'https://ops.bookingstation.org/pricing-v12/webchat';
+        const w = 760, h = 830;
+        const left = Math.round((window.screen.width - w) / 2);
+        const top = Math.round((window.screen.height - h) / 5);
+        const popup = window.open(url, 'WebchatPopup', `width=${w},height=${h},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=yes,status=no`);
+        if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+            new bootstrap.Modal(document.getElementById('webchatFallbackModal')).show();
+        } else {
+            popup.focus();
+        }
+    }
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     Customer Reviews Popup Modal
+══════════════════════════════════════════════════ -->
+<style>
+    /* ── Customer Reviews Button ── */
+    .review-guide-hint {
+        font-size: .92rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, .88);
+        letter-spacing: .5px;
+        animation: bounceDown 1.6s ease-in-out infinite;
+    }
+
+    @keyframes bounceDown {
+
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(5px);
+        }
+    }
+
+    .btn-review-popup {
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        color: #5a3500;
+        border: none;
+        border-radius: 999px;
+        font-weight: 800;
+        font-size: 1rem;
+        box-shadow: 0 6px 22px rgba(247, 151, 30, .45), inset 0 1px 0 rgba(255, 255, 255, .4);
+        transition: all .3s cubic-bezier(.22, 1, .36, 1);
+        letter-spacing: .4px;
+    }
+
+    .btn-review-popup:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 12px 32px rgba(247, 151, 30, .55);
+        color: #3d2200;
+    }
+
+    .btn-review-popup:active {
+        transform: scale(.97);
+    }
+
+    .review-star-badge {
+        font-size: .88rem;
+        color: #a06200;
+        letter-spacing: 2px;
+        opacity: .85;
+    }
+
+    /* ── Review Modal ── */
+    #reviewModal .modal-dialog {
+        max-width: min(94vw, 900px);
+    }
+
+    #reviewModal .modal-content {
+        border: none;
+        border-radius: 22px;
+        overflow: hidden;
+        background: #b8dff0;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, .38), 0 0 0 1px rgba(255, 255, 255, .15);
+    }
+
+    #reviewModal.fade .modal-dialog {
+        transition: transform .35s cubic-bezier(.22, 1, .36, 1), opacity .35s;
+        transform: translateY(24px) scale(.97);
+    }
+
+    #reviewModal.show .modal-dialog {
+        transform: translateY(0) scale(1);
+    }
+
+    /* Header */
+    #reviewModal .modal-header {
+        background: linear-gradient(135deg, #1564a0 0%, #0d4a7a 100%);
+        border-bottom: none;
+        padding: 16px 22px;
+        position: relative;
+    }
+
+    #reviewModal .modal-header::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, .06) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    #reviewModal .modal-title {
+        color: #fff;
+        font-weight: 900;
+        letter-spacing: 3px;
+        font-size: 1rem;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #reviewModal .modal-title .star-icon {
+        color: #ffd200;
+        font-size: 1.1rem;
+    }
+
+    #reviewModal .btn-close {
+        filter: brightness(0) invert(1);
+        opacity: .85;
+    }
+
+    #reviewModal .btn-close:hover {
+        opacity: 1;
+    }
+
+    /* Body */
+    #reviewModal .modal-body {
+        padding: 0;
+        background: #b8dff0;
+    }
+
+    /* iframe — fixed viewport height, not aspect-ratio trick */
+    .review-iframe-wrap {
+        width: 100%;
+        height: 72vh;
+        max-height: 680px;
+        background: #b8dff0;
+    }
+
+    .review-iframe-wrap iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+    }
+</style>
+
+<div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">
+                    <span class="star-icon">★</span>
+                    Customer Review
+                    <span class="star-icon">★</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="review-iframe-wrap">
+                    <iframe id="reviewIframe" src="" title="Customer Reviews Slideshow" allow="autoplay"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openReviewModal() {
+        const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        // Load iframe only when opening (lazy)
+        const iframe = document.getElementById('reviewIframe');
+        if (!iframe.src || iframe.src === window.location.href) {
+            iframe.src = '/display/reviews';
+        }
+        modal.show();
+    }
+
+    // Pause/resume iframe autoplay when modal closes
+    document.getElementById('reviewModal').addEventListener('hidden.bs.modal', function () {
+        const iframe = document.getElementById('reviewIframe');
+        // Reset src to pause Swiper autoplay
+        iframe.src = '';
+    });
+    document.getElementById('reviewModal').addEventListener('show.bs.modal', function () {
+        const iframe = document.getElementById('reviewIframe');
+        if (!iframe.src) iframe.src = '/display/reviews';
+    });
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     Info Image Modals: ทำไมต้องเลือกเรา / รู้จักเรา
+══════════════════════════════════════════════════ -->
+<style>
+    /* Info buttons */
+    .btn-info-why {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, .45);
+        transition: all .3s ease;
+    }
+
+    .btn-info-why:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 10px 28px rgba(102, 126, 234, .6);
+        color: #fff;
+    }
+
+    .btn-info-about {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        color: #0c4a3e;
+        border: none;
+        border-radius: 999px;
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 6px 20px rgba(17, 153, 142, .4);
+        transition: all .3s ease;
+    }
+
+    .btn-info-about:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 10px 28px rgba(17, 153, 142, .6);
+        color: #0c4a3e;
+    }
+
+    /* Modal shared styles */
+    .info-modal .modal-dialog {
+        max-width: min(92vw, 680px);
+    }
+
+    .info-modal .modal-content {
+        border: none;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, .4);
+    }
+
+    .info-modal .modal-header {
+        border-bottom: none;
+        padding: 14px 20px;
+    }
+
+    .info-modal .modal-body {
+        padding: 0;
+        position: relative;
+        background: #000;
+    }
+
+    /* Protected image container */
+    .info-img-wrap {
+        position: relative;
+        width: 100%;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+    }
+
+    .info-img-wrap img {
+        width: 100%;
+        display: block;
+        pointer-events: none;
+        /* disable drag */
+        -webkit-user-drag: none;
+    }
+
+    /* Invisible overlay blocks right-click on image */
+    .info-img-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        cursor: default;
+        -webkit-tap-highlight-color: transparent;
+    }
+</style>
+
+<!-- Modal: ทำไมต้องเลือกเรา -->
+<div class="modal fade info-modal" id="whyChooseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#667eea,#764ba2);">
+                <h5 class="modal-title text-white fw-bold">
+                    <i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="info-img-wrap" id="whyImgWrap">
+                    <img id="whyImg" src="" alt="ทำไมต้องเลือกเรา" draggable="false">
+                    <div class="info-img-overlay" oncontextmenu="return false;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: รู้จักเรา -->
+<div class="modal fade info-modal" id="aboutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background:linear-gradient(135deg,#11998e,#38ef7d);">
+                <h5 class="modal-title fw-bold" style="color:#0c4a3e;">
+                    <i class="fas fa-building me-2"></i>รู้จักเรา
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="info-img-wrap" id="aboutImgWrap">
+                    <img id="aboutImg" src="" alt="รู้จักเรา" draggable="false">
+                    <div class="info-img-overlay" oncontextmenu="return false;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        // Disable right-click inside modal bodies
+        document.addEventListener('contextmenu', function (e) {
+            if (e.target.closest('.info-modal')) {
+                e.preventDefault();
+            }
+        });
+        // Disable drag on info images
+        document.addEventListener('dragstart', function (e) {
+            if (e.target.closest('.info-modal')) {
+                e.preventDefault();
+            }
+        });
+
+        var _whyLoaded = false;
+        var _aboutLoaded = false;
+
+        window.openInfoModal = function (which) {
+            if (which === 'why') {
+                var modal = new bootstrap.Modal(document.getElementById('whyChooseModal'));
+                if (!_whyLoaded) {
+                    document.getElementById('whyImg').src = '/landing/info-image/why-choose-us';
+                    _whyLoaded = true;
+                }
+                modal.show();
+            } else {
+                var modal = new bootstrap.Modal(document.getElementById('aboutModal'));
+                if (!_aboutLoaded) {
+                    document.getElementById('aboutImg').src = '/landing/info-image/about-us';
+                    _aboutLoaded = true;
+                }
+                modal.show();
+            }
+        };
+    })();
 </script>
 
 {% endblock %}
