@@ -3,73 +3,74 @@
 {% block title %}{{ current_group.name if current_group else 'Products' }} - Landing Page{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
 
-    <!-- Back Button -->
-    {% if current_group %}
-    <div class="mb-3 d-flex align-items-center gap-2">
-        <a href="https://booking.dhakulchan.net/landing/groups" class="btn btn-outline-secondary"
-            style="border-radius: 20px; padding: 10px 24px; font-weight: 600; transition: all 0.3s ease;">
+{% if current_group %}
+<!-- ═══════════════════════════════════════════════════
+     HERO SECTION — Full Width
+═══════════════════════════════════════════════════ -->
+<div class="group-hero">
+
+    <!-- Background: banner image or gradient -->
+    {% if current_group.banner_image %}
+    <div class="group-hero-bg" style="background-image: url('{{ url_for('static', filename=current_group.banner_image) }}')"></div>
+    {% endif %}
+    <div class="group-hero-overlay"></div>
+
+    <!-- Top Nav -->
+    <div class="group-hero-nav">
+        <a href="https://booking.dhakulchan.net/landing/groups" class="hero-back-btn">
             <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
         </a>
-        <a href="https://booking.dhakulchan.net/group-buy/" class="btn"
-            style="border-radius: 20px; padding: 10px 24px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 4px 15px rgba(102,126,234,0.35); transition: all 0.3s ease;"
-            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(102,126,234,0.5)'"
-            onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 15px rgba(102,126,234,0.35)'">
+        <a href="https://booking.dhakulchan.net/group-buy/" class="hero-groupbuy-btn">
             <i class="fas fa-users me-2"></i>รวมกลุ่มซื้อ | Group Buy
         </a>
     </div>
-    {% endif %}
 
-    <!-- Group Header -->
-    {% if current_group %}
-    <div class="text-center mb-4">
-        <h1 class="fw-bold mb-2"
-            style="font-size: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
-            <i class="fas fa-calendar-alt"></i> {{ current_group.name }}
-        </h1>
+    <!-- Hero Body -->
+    <div class="group-hero-body">
+        <h1 class="group-hero-title">{{ current_group.icon or '✈️' }} {{ current_group.name }}</h1>
         {% if current_group.description %}
-        <p class="text-muted mb-3" style="font-size: 0.95rem;">{{ current_group.description }}</p>
+        <p class="group-hero-desc">{{ current_group.description }}</p>
         {% endif %}
 
-        <!-- Trust Badges & Group Buy Button -->
-        <div class="d-flex justify-content-center align-items-center flex-wrap gap-3 mb-3">
-            <!-- Trust Badges -->
-            <div class="trust-badge animate-fade-in" style="animation-delay: 0.2s;">
-                <i class="fas fa-shield-alt text-success me-1"></i>
-                <span class="small text-muted">ปลอดภัย 100%</span>
+        <!-- Trust Stat Cards -->
+        <div class="trust-stats-row">
+            <div class="trust-stat animate-fade-in" style="animation-delay:0.15s">
+                <div class="trust-stat-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="trust-stat-number">100%</div>
+                <div class="trust-stat-label">ปลอดภัย</div>
             </div>
-            <div class="trust-badge animate-fade-in" style="animation-delay: 0.4s;">
-                <i class="fas fa-users text-primary me-1"></i>
-                <span class="small text-muted">ลูกค้าไว้วางใจ 5,000+</span>
+            <div class="trust-stat animate-fade-in" style="animation-delay:0.3s">
+                <div class="trust-stat-icon"><i class="fas fa-users"></i></div>
+                <div class="trust-stat-number">5,000+</div>
+                <div class="trust-stat-label">ลูกค้าไว้วางใจ</div>
             </div>
-            <div class="trust-badge animate-fade-in" style="animation-delay: 0.6s;">
-                <i class="fas fa-star text-warning me-1"></i>
-                <span class="small text-muted">4.9/5 คะแนน</span>
+            <div class="trust-stat animate-fade-in" style="animation-delay:0.45s">
+                <div class="trust-stat-icon"><i class="fas fa-star"></i></div>
+                <div class="trust-stat-number">4.9/5</div>
+                <div class="trust-stat-label">คะแนนรีวิว</div>
             </div>
-        </div>
-
-        <!-- Floating Promotion Banner with Link -->
-        <div class="promo-banner animate-bounce-soft mb-3">
-            <a href="https://booking.dhakulchan.net/group-buy" class="text-decoration-none d-inline-block"
-                style="transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.05)'"
-                onmouseout="this.style.transform='scale(1)'">
-                <div class="d-inline-flex align-items-center px-4 py-2"
-                    style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: 30px; box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4); cursor: pointer;">
-                    <i class="fas fa-fire text-white me-2 animate-pulse"></i>
-                    <span class="text-white fw-bold" style="font-size: 0.95rem;">
-                        <i class="fas fa-bolt me-1"></i>โปรโมชั่นพิเศษ! จองด่วนวันนี้ รับส่วนลดทันทีตามเงื่อนไข
-                    </span>
-                    <span class="badge ms-2"
-                        style="background: rgba(255,255,255,0.3); padding: 5px 10px; border-radius: 15px; font-size: 0.85rem;"
-                        id="countdown-timer">
-                        <i class="far fa-clock me-1"></i><span id="timer-display">--:--:--</span>
-                    </span>
-                </div>
-            </a>
         </div>
     </div>
-    {% endif %}
+
+    <!-- Promo Strip -->
+    <div class="group-hero-promo">
+        <a href="https://booking.dhakulchan.net/group-buy" class="text-decoration-none">
+            <i class="fas fa-bolt me-2"></i>
+            <strong>โปรโมชั่นพิเศษ!</strong> จองด่วนวันนี้ รับส่วนลดทันทีตามเงื่อนไข
+            <span class="promo-timer">
+                <i class="far fa-clock me-1"></i><span id="timer-display">--:--:--</span>
+            </span>
+        </a>
+    </div>
+
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════
+     CONTENT SECTION
+═══════════════════════════════════════════════════ -->
+<div class="container-fluid px-3 px-md-4 py-4" style="max-width: 1400px;">
 
     <!-- Category Filter Buttons -->
     {% if categories %}
@@ -254,8 +255,7 @@
 
 <!-- Floating Webchat Button -->
 <div class="floating-action-btn" id="floatingWebchat">
-    <button type="button"
-        onclick="openBookingPopup('https://ops.bookingstation.org/pricing-v12/webchat', 'สอบถามราคา')"
+    <button type="button" onclick="openBookingPopup('https://ops.bookingstation.org/pricing-v12/webchat', 'สอบถามราคา')"
         class="webchat-fab" title="สอบถามเรา">
         <span class="webchat-fab-online"></span>
         <i class="fas fa-comments webchat-fab-icon"></i>
@@ -285,7 +285,228 @@
 </div>
 
 <style>
-    /* Modern Card Animations */
+    /* ══════════════════════════════════════════════════
+       HERO SECTION
+    ══════════════════════════════════════════════════ */
+    .group-hero {
+        position: relative;
+        min-height: 420px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        overflow: hidden;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+    }
+
+    /* Banner image background */
+    .group-hero-bg {
+        position: absolute;
+        inset: 0;
+        background-size: contain;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.18;
+        filter: blur(2px) saturate(1.5);
+        transform: scale(1.05);
+    }
+
+    /* Gradient overlay for readability */
+    .group-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            180deg,
+            rgba(15, 23, 42, 0.75) 0%,
+            rgba(15, 23, 42, 0.55) 50%,
+            rgba(15, 23, 42, 0.85) 100%
+        );
+    }
+
+    /* Top nav inside hero */
+    .group-hero-nav {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 28px 0;
+        max-width: 1400px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .hero-back-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 9px 20px;
+        border-radius: 50px;
+        border: 2px solid rgba(255,255,255,0.55);
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        backdrop-filter: blur(8px);
+        background: rgba(255,255,255,0.08);
+    }
+    .hero-back-btn:hover {
+        background: rgba(255,255,255,0.18);
+        border-color: white;
+        color: white;
+        transform: translateX(-3px);
+    }
+
+    .hero-groupbuy-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 9px 22px;
+        border-radius: 50px;
+        border: none;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        font-weight: 700;
+        font-size: 0.9rem;
+        text-decoration: none;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 18px rgba(102, 126, 234, 0.45);
+    }
+    .hero-groupbuy-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 26px rgba(102, 126, 234, 0.65);
+        color: white;
+    }
+
+    /* Hero center content */
+    .group-hero-body {
+        position: relative;
+        z-index: 10;
+        text-align: center;
+        padding: 28px 24px 16px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .group-hero-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: white;
+        text-shadow: 0 2px 16px rgba(0,0,0,0.5);
+        line-height: 1.3;
+        margin-bottom: 14px;
+        max-width: 900px;
+    }
+
+    .group-hero-desc {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.78);
+        max-width: 760px;
+        line-height: 1.7;
+        margin-bottom: 28px;
+    }
+
+    /* Trust Stat Cards */
+    .trust-stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+
+    .trust-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 14px 22px;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        min-width: 100px;
+        transition: all 0.25s ease;
+    }
+    .trust-stat:hover {
+        background: rgba(255, 255, 255, 0.18);
+        transform: translateY(-3px);
+    }
+
+    .trust-stat-icon {
+        font-size: 1.4rem;
+        color: #ffd200;
+        margin-bottom: 2px;
+    }
+    .trust-stat:nth-child(1) .trust-stat-icon { color: #4ade80; }
+    .trust-stat:nth-child(2) .trust-stat-icon { color: #60a5fa; }
+    .trust-stat:nth-child(3) .trust-stat-icon { color: #fbbf24; }
+
+    .trust-stat-number {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: white;
+        line-height: 1;
+    }
+
+    .trust-stat-label {
+        font-size: 0.75rem;
+        color: rgba(255, 255, 255, 0.7);
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* Promo Strip at bottom of hero */
+    .group-hero-promo {
+        position: relative;
+        z-index: 10;
+        background: linear-gradient(90deg, #ff416c 0%, #ff4b2b 100%);
+        padding: 12px 24px;
+        text-align: center;
+    }
+    .group-hero-promo a {
+        color: white;
+        font-size: 0.95rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .group-hero-promo a:hover { color: rgba(255,255,255,0.9); }
+
+    .promo-timer {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0,0,0,0.25);
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        margin-left: 4px;
+    }
+
+    /* Mobile hero */
+    @media (max-width: 768px) {
+        .group-hero { min-height: 340px; }
+        .group-hero-title { font-size: 1.55rem; }
+        .group-hero-desc { font-size: 0.88rem; }
+        .group-hero-nav { padding: 16px 16px 0; }
+        .trust-stat { padding: 10px 14px; min-width: 80px; }
+        .trust-stat-number { font-size: 1.1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .group-hero-title { font-size: 1.35rem; }
+        .hero-back-btn, .hero-groupbuy-btn { font-size: 0.82rem; padding: 7px 14px; }
+        .trust-stats-row { gap: 10px; }
+    }
+
+    /* ══════════════════════════════════════════════════
+       Modern Card Animations
+    ══════════════════════════════════════════════════ */
     .modern-card {
         background: white;
         box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
@@ -684,7 +905,7 @@
         }
 
         // Update countdown every second
-        if (document.getElementById('countdown-timer')) {
+        if (document.getElementById('timer-display')) {
             updateCountdown();
             setInterval(updateCountdown, 1000);
         }
@@ -801,8 +1022,10 @@
 <div class="modal fade" id="whyChooseModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: min(92vw, 680px);">
         <div class="modal-content" style="border:none; border-radius:16px; overflow:hidden;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none;">
-                <h5 class="modal-title text-white fw-bold"><i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา</h5>
+            <div class="modal-header"
+                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none;">
+                <h5 class="modal-title text-white fw-bold"><i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0 text-center" style="background:#f8f9fa;" oncontextmenu="return false;">
@@ -817,8 +1040,10 @@
 <div class="modal fade" id="aboutModalLanding" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: min(92vw, 680px);">
         <div class="modal-content" style="border:none; border-radius:16px; overflow:hidden;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border:none;">
-                <h5 class="modal-title fw-bold" style="color:#0c4a3e;"><i class="fas fa-building me-2"></i>รู้จักเรา</h5>
+            <div class="modal-header"
+                style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border:none;">
+                <h5 class="modal-title fw-bold" style="color:#0c4a3e;"><i class="fas fa-building me-2"></i>รู้จักเรา
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0 text-center" style="background:#f8f9fa;" oncontextmenu="return false;">
@@ -833,8 +1058,10 @@
 <div class="modal fade" id="reviewModalLanding" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: min(94vw, 900px);">
         <div class="modal-content" style="border:none; border-radius:22px; overflow:hidden; background:#b8dff0;">
-            <div class="modal-header" style="background: linear-gradient(135deg, #1564a0 0%, #0d4a7a 100%); border:none; padding:16px 22px;">
-                <h5 class="modal-title text-white fw-bold"><i class="fas fa-star text-warning me-2"></i>รีวิวจากลูกค้า</h5>
+            <div class="modal-header"
+                style="background: linear-gradient(135deg, #1564a0 0%, #0d4a7a 100%); border:none; padding:16px 22px;">
+                <h5 class="modal-title text-white fw-bold"><i class="fas fa-star text-warning me-2"></i>รีวิวจากลูกค้า
+                </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0">
@@ -861,8 +1088,15 @@
     }
 
     @keyframes landingFabIn {
-        from { opacity: 0; transform: translateY(30px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .landing-fab {
@@ -877,7 +1111,7 @@
         font-size: 22px;
         color: white;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         overflow: visible;
     }
@@ -887,12 +1121,17 @@
         border-radius: 28px;
         padding: 0 20px;
         transform: translateX(-5px) scale(1.05);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
 
-    .landing-fab:active { transform: translateX(-5px) scale(0.98); }
+    .landing-fab:active {
+        transform: translateX(-5px) scale(0.98);
+    }
 
-    .landing-fab i { transition: all 0.3s ease; min-width: 22px; }
+    .landing-fab i {
+        transition: all 0.3s ease;
+        min-width: 22px;
+    }
 
     .landing-fab-label {
         max-width: 0;
@@ -916,38 +1155,84 @@
         background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
         animation: landingFabIn 0.6s ease-out, landingReviewPulse 2.5s ease-in-out 1s infinite;
     }
+
     .landing-fab-reviews:hover {
         background: linear-gradient(135deg, #f7971e 0%, #ffdd33 100%);
-        box-shadow: 0 8px 24px rgba(247,151,30,0.5);
+        box-shadow: 0 8px 24px rgba(247, 151, 30, 0.5);
     }
-    .landing-fab-why { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+
+    .landing-fab-why {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
     .landing-fab-why:hover {
         background: linear-gradient(135deg, #7b93ff 0%, #8b5cb8 100%);
-        box-shadow: 0 8px 24px rgba(102,126,234,0.5);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5);
     }
-    .landing-fab-about { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+
+    .landing-fab-about {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
     .landing-fab-about:hover {
         background: linear-gradient(135deg, #14b09f 0%, #45ff8d 100%);
-        box-shadow: 0 8px 24px rgba(17,153,142,0.5);
+        box-shadow: 0 8px 24px rgba(17, 153, 142, 0.5);
     }
 
     @keyframes landingReviewPulse {
-        0%, 100% { box-shadow: 0 4px 12px rgba(247,151,30,0.4); }
-        50%       { box-shadow: 0 6px 22px rgba(247,151,30,0.7); }
+
+        0%,
+        100% {
+            box-shadow: 0 4px 12px rgba(247, 151, 30, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 6px 22px rgba(247, 151, 30, 0.7);
+        }
     }
 
     @media (max-width: 768px) {
-        .landing-fab-container { bottom: 100px; right: 20px; gap: 10px; }
-        .landing-fab { width: 50px; height: 50px; font-size: 20px; }
-        .landing-fab:hover { padding: 0 16px; }
-        .landing-fab-label { font-size: 13px; }
+        .landing-fab-container {
+            bottom: 100px;
+            right: 20px;
+            gap: 10px;
+        }
+
+        .landing-fab {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+        }
+
+        .landing-fab:hover {
+            padding: 0 16px;
+        }
+
+        .landing-fab-label {
+            font-size: 13px;
+        }
     }
 
     @media (max-width: 480px) {
-        .landing-fab-container { bottom: 90px; right: 15px; gap: 9px; }
-        .landing-fab { width: 48px; height: 48px; font-size: 18px; }
-        .landing-fab:hover { padding: 0 14px; }
-        .landing-fab-label { font-size: 12px; }
+        .landing-fab-container {
+            bottom: 90px;
+            right: 15px;
+            gap: 9px;
+        }
+
+        .landing-fab {
+            width: 48px;
+            height: 48px;
+            font-size: 18px;
+        }
+
+        .landing-fab:hover {
+            padding: 0 14px;
+        }
+
+        .landing-fab-label {
+            font-size: 12px;
+        }
     }
 </style>
 
