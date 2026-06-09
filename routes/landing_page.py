@@ -1,7 +1,7 @@
 """Landing Page Routes - Public"""
 from flask import Blueprint, render_template, abort, request, redirect, jsonify
 from models.landing_product import LandingProduct
-from models.landing_page_group import LandingPageGroup
+from models.landing_page_group import LandingPageGroup, DESTINATION_CHOICES
 from sqlalchemy import or_
 from datetime import datetime
 
@@ -89,6 +89,7 @@ def groups_list():
         # รับค่า filter parameters
         search = request.args.get('search', '').strip()
         sort_by = request.args.get('sort', 'display_order')  # display_order, name, date
+        cat_filter = request.args.get('cat', '').strip()  # destination category filter
         
         # Base query - แสดงเฉพาะ Groups ที่ active
         now = datetime.now()
@@ -118,6 +119,10 @@ def groups_list():
                 )
             )
         
+        # Apply destination category filter
+        if cat_filter:
+            query = query.filter(LandingPageGroup.destination_category == cat_filter)
+        
         # Apply sorting
         if sort_by == 'name':
             query = query.order_by(LandingPageGroup.name.asc())
@@ -135,19 +140,24 @@ def groups_list():
         for group in groups:
             group.active_product_count = group.products.filter_by(is_active=True).count()
         
+        # Get all destination categories in use (for filter tabs)
+        
         return render_template(
             'landing/groups_list.html',
             groups=groups,
+            destination_choices=DESTINATION_CHOICES,
+            cat_filter=cat_filter,
             current_filters={
                 'search': search,
-                'sort': sort_by
+                'sort': sort_by,
+                'cat': cat_filter
             }
         )
     except Exception as e:
         print(f"Error loading groups: {str(e)}")
         import traceback
         traceback.print_exc()
-        return render_template('landing/groups_list.html', groups=[], current_filters={})
+        return render_template('landing/groups_list.html', groups=[], destination_choices=[], cat_filter='', current_filters={})
 
 @bp.route('/groups/<slug>')
 def group_detail(slug):

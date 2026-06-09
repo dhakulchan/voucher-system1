@@ -1,6 +1,16 @@
 from extensions import db
 from utils.datetime_utils import naive_utc_now
 
+DESTINATION_CHOICES = [
+    ('china',    '🇨🇳 จีน / มาเก๊า / ฮ่องกง'),
+    ('japan',    '🇯🇵 ญี่ปุ่น'),
+    ('korea',    '🇰🇷 เกาหลี'),
+    ('europe',   '🌍 ยุโรป'),
+    ('asean',    '🌏 อาเซียน'),
+    ('domestic', '🇹🇭 ไทย'),
+    ('other',    '✈️ อื่นๆ'),
+]
+
 class LandingPageGroup(db.Model):
     __tablename__ = "landing_page_groups"
     id = db.Column(db.Integer, primary_key=True)
@@ -11,6 +21,7 @@ class LandingPageGroup(db.Model):
     banner_image = db.Column(db.String(500))
     theme_color = db.Column(db.String(50), default="#667eea")
     icon = db.Column(db.String(10), default="✈️")  # Emoji icon for group
+    destination_category = db.Column(db.String(100), nullable=True)  # e.g. china, japan, europe, other
     start_date = db.Column(db.DateTime)
     end_date = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True)

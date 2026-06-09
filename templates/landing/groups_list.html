@@ -34,6 +34,54 @@
         margin: 0 auto;
     }
 
+    /* Destination Filter Tabs */
+    .dest-filter-wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-bottom: 32px;
+    }
+
+    .dest-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 20px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-decoration: none;
+        border: 2px solid #e2e8f0;
+        background: white;
+        color: #4a5568;
+        transition: all 0.25s ease;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .dest-tab:hover {
+        border-color: #667eea;
+        color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 18px rgba(102,126,234,0.2);
+    }
+
+    .dest-tab-active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white !important;
+        border-color: transparent;
+        box-shadow: 0 6px 18px rgba(102,126,234,0.35);
+    }
+
+    .dest-tab-active:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(102,126,234,0.45);
+    }
+
+    @media (max-width: 480px) {
+        .dest-tab { font-size: 0.82rem; padding: 7px 14px; }
+    }
+
     /* Groups Grid */
     .groups-grid {
         display: grid;
@@ -360,6 +408,25 @@
         <h1><i class="fas fa-layer-group me-2"></i>ทัวร์แนะนำพิเศษ</h1>
         <p>ค้นหาและเลือกกรุ๊ปทัวร์ที่ถูกใจ พร้อมเริ่มต้นการเดินทางกับเรา</p>
     </div>
+
+    <!-- Destination Filter Tabs -->
+    {% if destination_choices %}
+    <div class="dest-filter-wrap">
+        <a href="{{ url_for('landing_page.groups_list') }}"
+           class="dest-tab {% if not cat_filter %}dest-tab-active{% endif %}">
+            🌐 ทั้งหมด
+        </a>
+        {% for key, label in destination_choices %}
+        {% set has_groups = groups|selectattr('destination_category', 'equalto', key)|list|length %}
+        {% if has_groups or cat_filter == key %}
+        <a href="{{ url_for('landing_page.groups_list', cat=key) }}"
+           class="dest-tab {% if cat_filter == key %}dest-tab-active{% endif %}">
+            {{ label }}
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- Groups Grid -->
     {% if groups %}
@@ -821,13 +888,27 @@
     }
 
     @keyframes slideInLeft {
-        from { opacity: 0; transform: translateX(-40px); }
-        to   { opacity: 1; transform: translateX(0); }
+        from {
+            opacity: 0;
+            transform: translateX(-40px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
 
     @keyframes topLeftPulse {
-        0%, 100% { box-shadow: 0 4px 16px rgba(247, 151, 30, 0.45); }
-        50%       { box-shadow: 0 6px 24px rgba(247, 151, 30, 0.7); }
+
+        0%,
+        100% {
+            box-shadow: 0 4px 16px rgba(247, 151, 30, 0.45);
+        }
+
+        50% {
+            box-shadow: 0 6px 24px rgba(247, 151, 30, 0.7);
+        }
     }
 
     @media (max-width: 768px) {

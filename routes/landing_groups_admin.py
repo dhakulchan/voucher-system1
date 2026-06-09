@@ -1,7 +1,7 @@
 """Landing Page Groups Admin Routes"""
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
-from models.landing_page_group import LandingPageGroup
+from models.landing_page_group import LandingPageGroup, DESTINATION_CHOICES
 from models.landing_product import LandingProduct
 from extensions import db
 from functools import wraps
@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 bp = Blueprint('landing_groups_admin', __name__, url_prefix='/admin/landing/groups')
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
 
 def admin_required(f):
     """Decorator: ต้องเป็น Admin"""
@@ -65,7 +66,13 @@ def index():
         LandingPageGroup.start_date.desc()
     ).all()
     
-    return render_template('landing/admin/groups/index.html', groups=groups)
+    # gather distinct categories in use
+    cat_filter = request.args.get('cat', '')
+    
+    return render_template('landing/admin/groups/index.html',
+                           groups=groups,
+                           destination_choices=DESTINATION_CHOICES,
+                           cat_filter=cat_filter)
 
 @bp.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -84,11 +91,7 @@ def create():
             theme_color = request.form.get('theme_color', '#3498db').strip()
             is_active = request.form.get('is_active') == 'on'
             display_order = request.form.get('display_order', 0, type=int)
-            
-            # Validate required fields
-            if not name or not slug:
-                flash('กรุณากรอกชื่อและ Slug', 'danger')
-                return redirect(url_for('landing_groups_admin.create'))
+            destination_category = request.form.get('destination_category', '').strip() or None
             
             # Check if slug exists
             existing = LandingPageGroup.query.filter_by(slug=slug).first()
@@ -138,7 +141,8 @@ def create():
                 theme_color=theme_color,
                 banner_image=banner_image,
                 is_active=is_active,
-                display_order=display_order
+                display_order=display_order,
+                destination_category=destination_category
             )
             
             db.session.add(group)
@@ -152,7 +156,8 @@ def create():
             flash(f'เกิดข้อผิดพลาด: {str(e)}', 'danger')
             return redirect(url_for('landing_groups_admin.create'))
     
-    return render_template('landing/admin/groups/create.html')
+    return render_template('landing/admin/groups/create.html',
+                           destination_choices=DESTINATION_CHOICES)
 
 @bp.route('/<int:group_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -236,6 +241,7 @@ def edit(group_id):
             group.theme_color = theme_color
             group.is_active = is_active
             group.display_order = display_order
+            group.destination_category = request.form.get('destination_category', '').strip() or None
             
             db.session.commit()
             
@@ -247,7 +253,8 @@ def edit(group_id):
             flash(f'เกิดข้อผิดพลาด: {str(e)}', 'danger')
             return redirect(url_for('landing_groups_admin.edit', group_id=group_id))
     
-    return render_template('landing/admin/groups/edit.html', group=group)
+    return render_template('landing/admin/groups/edit.html', group=group,
+                           destination_choices=DESTINATION_CHOICES)
 
 @bp.route('/<int:group_id>/delete', methods=['POST'])
 @login_required

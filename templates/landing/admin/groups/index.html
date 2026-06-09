@@ -16,6 +16,27 @@
         </div>
     </div>
 
+    <!-- Destination Filter Tabs -->
+    <div class="mb-3 d-flex flex-wrap gap-2 align-items-center">
+        <a href="{{ url_for('landing_groups_admin.index') }}"
+           class="btn btn-sm {% if not cat_filter %}btn-dark{% else %}btn-outline-dark{% endif %}">
+            🌐 ทั้งหมด
+            <span class="badge bg-secondary ms-1">{{ groups|length }}</span>
+        </a>
+        {% for key, label in destination_choices %}
+        {% set count = groups|selectattr('destination_category', 'equalto', key)|list|length %}
+        {% if count > 0 %}
+        <a href="{{ url_for('landing_groups_admin.index', cat=key) }}"
+           class="btn btn-sm {% if cat_filter == key %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            {{ label }}
+            <span class="badge bg-secondary ms-1">{{ count }}</span>
+        </a>
+        {% endif %}
+        {% endfor %}
+        {% set uncategorized = groups|selectattr('destination_category', 'none')|list|length +
+                               groups|rejectattr('destination_category')|list|length %}
+    </div>
+
     {% if groups %}
     <div class="card">
         <div class="card-body">
@@ -26,17 +47,19 @@
                             <th style="width: 60px;">ID</th>
                             <th style="width: 80px;">Banner</th>
                             <th>ชื่อ Group</th>
+                            <th style="width:130px;">ปลายทาง</th>
                             <th>Slug</th>
                             <th style="width: 120px;">ระยะเวลา</th>
-                            <th style="width: 80px;">สี Theme</th>
+                            <th style="width: 60px;">สี</th>
                             <th style="width: 80px;">Products</th>
                             <th style="width: 100px;">สถานะ</th>
-                            <th style="width: 80px;">ลำดับ</th>
+                            <th style="width: 70px;">ลำดับ</th>
                             <th style="width: 150px;">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for group in groups %}
+                        {% if not cat_filter or group.destination_category == cat_filter %}
                         <tr>
                             <td>{{ group.id }}</td>
                             <td>
@@ -52,6 +75,17 @@
                                 {% if group.description %}
                                 <br><small class="text-muted">{{ group.description[:50] }}{% if group.description|length
                                     > 50 %}...{% endif %}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if group.destination_category %}
+                                {% for key, label in destination_choices %}
+                                {% if key == group.destination_category %}
+                                <span class="badge bg-primary">{{ label }}</span>
+                                {% endif %}
+                                {% endfor %}
+                                {% else %}
+                                <span class="text-muted small">—</span>
                                 {% endif %}
                             </td>
                             <td><code>{{ group.slug }}</code></td>
@@ -96,6 +130,7 @@
                                 </button>
                             </td>
                         </tr>
+                        {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>

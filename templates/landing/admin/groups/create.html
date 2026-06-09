@@ -73,6 +73,19 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="destination_category" class="form-label">
+                                <i class="fas fa-map-marker-alt text-danger me-1"></i>ปลายทาง / Destination
+                            </label>
+                            <select class="form-select" id="destination_category" name="destination_category">
+                                <option value="">— ไม่ระบุ —</option>
+                                {% for key, label in destination_choices %}
+                                <option value="{{ key }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">ใช้สำหรับกรองแสดงผลตามปลายทางในหน้า Groups และ Admin</small>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
