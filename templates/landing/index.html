@@ -12,7 +12,8 @@
 
     <!-- Background: banner image or gradient -->
     {% if current_group.banner_image %}
-    <div class="group-hero-bg" style="background-image: url('{{ url_for('static', filename=current_group.banner_image) }}')"></div>
+    <div class="group-hero-bg"
+        style="background-image: url('{{ url_for('static', filename=current_group.banner_image) }}')"></div>
     {% endif %}
     <div class="group-hero-overlay"></div>
 
@@ -295,31 +296,52 @@
         flex-direction: column;
         justify-content: space-between;
         overflow: hidden;
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+        /* Rich travel-themed fallback gradient */
+        background:
+            radial-gradient(ellipse at 20% 50%, rgba(102, 126, 234, 0.35) 0%, transparent 55%),
+            radial-gradient(ellipse at 80% 20%, rgba(118, 75, 162, 0.3) 0%, transparent 50%),
+            radial-gradient(ellipse at 60% 90%, rgba(15, 52, 96, 0.5) 0%, transparent 50%),
+            linear-gradient(135deg, #0d1b3e 0%, #1a1a3e 40%, #0f2d52 100%);
+    }
+
+    /* Wave divider at bottom of hero */
+    .group-hero::after {
+        content: '';
+        position: absolute;
+        bottom: 36px;
+        /* above the promo strip */
+        left: 0;
+        width: 100%;
+        height: 40px;
+        background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 40'%3E%3Cpath fill='%23ffffff' fill-opacity='0.06' d='M0,20 C360,40 1080,0 1440,20 L1440,40 L0,40 Z'/%3E%3C/svg%3E") no-repeat center/cover;
+        pointer-events: none;
+        z-index: 5;
     }
 
     /* Banner image background */
     .group-hero-bg {
         position: absolute;
         inset: 0;
-        background-size: contain;
+        background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        opacity: 0.18;
-        filter: blur(2px) saturate(1.5);
-        transform: scale(1.05);
+        opacity: 0.4;
+        transition: opacity 0.6s ease;
     }
 
     /* Gradient overlay for readability */
     .group-hero-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(
-            180deg,
-            rgba(15, 23, 42, 0.75) 0%,
-            rgba(15, 23, 42, 0.55) 50%,
-            rgba(15, 23, 42, 0.85) 100%
-        );
+        background:
+            linear-gradient(180deg,
+                rgba(10, 15, 40, 0.78) 0%,
+                rgba(10, 15, 40, 0.30) 42%,
+                rgba(10, 15, 40, 0.65) 100%),
+            linear-gradient(105deg,
+                rgba(102, 126, 234, 0.20) 0%,
+                rgba(118, 75, 162, 0.12) 50%,
+                transparent 100%);
     }
 
     /* Top nav inside hero */
@@ -340,17 +362,18 @@
         align-items: center;
         padding: 9px 20px;
         border-radius: 50px;
-        border: 2px solid rgba(255,255,255,0.55);
+        border: 2px solid rgba(255, 255, 255, 0.55);
         color: white;
         font-weight: 600;
         font-size: 0.9rem;
         text-decoration: none;
         transition: all 0.25s ease;
         backdrop-filter: blur(8px);
-        background: rgba(255,255,255,0.08);
+        background: rgba(255, 255, 255, 0.08);
     }
+
     .hero-back-btn:hover {
-        background: rgba(255,255,255,0.18);
+        background: rgba(255, 255, 255, 0.18);
         border-color: white;
         color: white;
         transform: translateX(-3px);
@@ -370,6 +393,7 @@
         transition: all 0.25s ease;
         box-shadow: 0 4px 18px rgba(102, 126, 234, 0.45);
     }
+
     .hero-groupbuy-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 26px rgba(102, 126, 234, 0.65);
@@ -393,10 +417,11 @@
         font-size: 2.2rem;
         font-weight: 800;
         color: white;
-        text-shadow: 0 2px 16px rgba(0,0,0,0.5);
-        line-height: 1.3;
+        text-shadow: 0 2px 24px rgba(0, 0, 0, 0.7), 0 0 60px rgba(102, 126, 234, 0.3);
+        line-height: 1.25;
         margin-bottom: 14px;
-        max-width: 900px;
+        max-width: 860px;
+        letter-spacing: -0.01em;
     }
 
     .group-hero-desc {
@@ -421,16 +446,20 @@
         align-items: center;
         gap: 4px;
         padding: 14px 22px;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.22);
         border-radius: 16px;
         min-width: 100px;
         transition: all 0.25s ease;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
+
     .trust-stat:hover {
-        background: rgba(255, 255, 255, 0.18);
-        transform: translateY(-3px);
+        background: rgba(255, 255, 255, 0.16);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
     .trust-stat-icon {
@@ -438,9 +467,18 @@
         color: #ffd200;
         margin-bottom: 2px;
     }
-    .trust-stat:nth-child(1) .trust-stat-icon { color: #4ade80; }
-    .trust-stat:nth-child(2) .trust-stat-icon { color: #60a5fa; }
-    .trust-stat:nth-child(3) .trust-stat-icon { color: #fbbf24; }
+
+    .trust-stat:nth-child(1) .trust-stat-icon {
+        color: #4ade80;
+    }
+
+    .trust-stat:nth-child(2) .trust-stat-icon {
+        color: #60a5fa;
+    }
+
+    .trust-stat:nth-child(3) .trust-stat-icon {
+        color: #fbbf24;
+    }
 
     .trust-stat-number {
         font-size: 1.35rem;
@@ -464,6 +502,7 @@
         padding: 12px 24px;
         text-align: center;
     }
+
     .group-hero-promo a {
         color: white;
         font-size: 0.95rem;
@@ -474,12 +513,15 @@
         flex-wrap: wrap;
         justify-content: center;
     }
-    .group-hero-promo a:hover { color: rgba(255,255,255,0.9); }
+
+    .group-hero-promo a:hover {
+        color: rgba(255, 255, 255, 0.9);
+    }
 
     .promo-timer {
         display: inline-flex;
         align-items: center;
-        background: rgba(0,0,0,0.25);
+        background: rgba(0, 0, 0, 0.25);
         padding: 4px 12px;
         border-radius: 20px;
         font-size: 0.9rem;
@@ -490,18 +532,46 @@
 
     /* Mobile hero */
     @media (max-width: 768px) {
-        .group-hero { min-height: 340px; }
-        .group-hero-title { font-size: 1.55rem; }
-        .group-hero-desc { font-size: 0.88rem; }
-        .group-hero-nav { padding: 16px 16px 0; }
-        .trust-stat { padding: 10px 14px; min-width: 80px; }
-        .trust-stat-number { font-size: 1.1rem; }
+        .group-hero {
+            min-height: 340px;
+        }
+
+        .group-hero-title {
+            font-size: 1.55rem;
+        }
+
+        .group-hero-desc {
+            font-size: 0.88rem;
+        }
+
+        .group-hero-nav {
+            padding: 16px 16px 0;
+        }
+
+        .trust-stat {
+            padding: 10px 14px;
+            min-width: 80px;
+        }
+
+        .trust-stat-number {
+            font-size: 1.1rem;
+        }
     }
 
     @media (max-width: 480px) {
-        .group-hero-title { font-size: 1.35rem; }
-        .hero-back-btn, .hero-groupbuy-btn { font-size: 0.82rem; padding: 7px 14px; }
-        .trust-stats-row { gap: 10px; }
+        .group-hero-title {
+            font-size: 1.35rem;
+        }
+
+        .hero-back-btn,
+        .hero-groupbuy-btn {
+            font-size: 0.82rem;
+            padding: 7px 14px;
+        }
+
+        .trust-stats-row {
+            gap: 10px;
+        }
     }
 
     /* ══════════════════════════════════════════════════
