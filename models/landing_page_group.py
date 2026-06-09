@@ -2,13 +2,16 @@ from extensions import db
 from utils.datetime_utils import naive_utc_now
 
 DESTINATION_CHOICES = [
-    ('china',    '🇨🇳 จีน / มาเก๊า / ฮ่องกง'),
-    ('japan',    '🇯🇵 ญี่ปุ่น'),
-    ('korea',    '🇰🇷 เกาหลี'),
-    ('europe',   '🌍 ยุโรป'),
-    ('asean',    '🌏 อาเซียน'),
-    ('domestic', '🇹🇭 ไทย'),
-    ('other',    '✈️ อื่นๆ'),
+    ('china',     '🇨🇳 จีน'),
+    ('chimelong', '🐼 Chimelong / ฉางหลง'),
+    ('hongkong',  '🏙️ Hong Kong / ฮ่องกง'),
+    ('macau',     '🎰 Macau / มาเก๊า'),
+    ('japan',     '🇯🇵 ญี่ปุ่น'),
+    ('korea',     '🇰🇷 เกาหลี'),
+    ('europe',    '🌍 ยุโรป'),
+    ('asean',     '🌏 อาเซียน'),
+    ('domestic',  '🇹🇭 ไทย'),
+    ('other',     '✈️ อื่นๆ'),
 ]
 
 class LandingPageGroup(db.Model):
