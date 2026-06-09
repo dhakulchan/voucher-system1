@@ -371,6 +371,27 @@
             .fa-fallback .fa-tachometer-alt:before {
                 content: "📊";
             }
+
+            /* Blinking badge animation for pending groups */
+            @keyframes blink-animation {
+
+                0%,
+                100% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+
+                50% {
+                    opacity: 0.4;
+                    transform: scale(1.1);
+                }
+            }
+
+            .badge.blink-badge {
+                animation: blink-animation 1s ease-in-out infinite !important;
+                font-weight: bold !important;
+                font-size: 0.75rem !important;
+            }
     </style>
 
     <!-- Font Loading Optimization -->
@@ -501,6 +522,11 @@
                     {% else %}
                     <!-- Guest Menu - Not Logged In -->
                     <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('job_application.apply') }}">
+                            <i class="fas fa-briefcase me-1"></i>ร่วมงานกับเรา
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link btn btn-outline-light btn-sm" href="/customer/login">
                             <i class="fas fa-sign-in-alt me-1"></i>Customer Login
                         </a>
@@ -514,7 +540,7 @@
     <!-- Main Content -->
     <div class="container-fluid">
         <div class="row">
-            {% if current_user.is_authenticated %}
+            {% if current_user.is_authenticated and current_user.role not in ['Customer', 'Agency'] %}
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-block sidebar show">
                 <div class="position-sticky pt-3">
@@ -587,6 +613,9 @@
                         {% if current_user.has_sidebar_menu('voucher_library') or
                         current_user.has_sidebar_menu('short_itinerary') or
                         current_user.has_sidebar_menu('flight_templates') or current_user.has_sidebar_menu('group_buy')
+                        or current_user.has_sidebar_menu('landing_page') or
+                        current_user.has_sidebar_menu('landing_groups')
+                        or current_user.has_sidebar_menu('review_slides')
                         %}
                         <li class="nav-item mt-2 mb-1">
                             <hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.2);">
@@ -620,6 +649,42 @@
                         </li>
                         {% endif %}
 
+                        {% if current_user.has_sidebar_menu('landing_page') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('landing_admin') %}active{% endif %}"
+                                href="{{ url_for('landing_admin.index') }}">
+                                <i class="fas fa-newspaper me-2"></i>Landing Page
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('landing_groups') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('landing_groups_admin') %}active{% endif %}"
+                                href="{{ url_for('landing_groups_admin.index') }}">
+                                <i class="fas fa-layer-group me-2"></i>Group-Landing page
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('review_slides') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('review_slides') %}active{% endif %}"
+                                href="{{ url_for('review_slides.admin_list') }}">
+                                <i class="fas fa-star me-2"></i>Customer Reviews
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.has_sidebar_menu('company_images') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('info_images') %}active{% endif %}"
+                                href="{{ url_for('info_images.admin_index') }}">
+                                <i class="fas fa-image me-2"></i>Company Images
+                            </a>
+                        </li>
+                        {% endif %}
+
                         {% if current_user.has_sidebar_menu('group_buy') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('group_buy_admin') or request.endpoint.startswith('group_buy_payment_admin') %}active{% endif %}"
@@ -638,8 +703,15 @@
                         {% if current_user.has_sidebar_menu('group_buy_groups') %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'group_buy_admin.groups' in request.endpoint %}active{% endif %}"
-                                href="{{ url_for('group_buy_admin.groups') }}" style="padding-left: 2.5rem;">
+                                href="{{ url_for('group_buy_admin.groups', status='active') }}"
+                                style="padding-left: 2.5rem;">
                                 <i class="fas fa-layer-group me-2"></i>Groups
+                                {% if pending_groups_count > 0 %}
+                                <span class="badge bg-danger rounded-pill ms-1"
+                                    style="animation: blink-animation 1s ease-in-out infinite; font-weight: bold;">
+                                    {{ pending_groups_count }}
+                                </span>
+                                {% endif %}
                             </a>
                         </li>
                         {% endif %}
@@ -664,7 +736,7 @@
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('admin_reviews') %}active{% endif %}"
                                 href="{{ url_for('admin_reviews.list_reviews') }}" style="padding-left: 2.5rem;">
-                                <i class="fas fa-star me-2"></i>Customer Reviews
+                                <i class="fas fa-check-circle me-2"></i>Review Approvals
                             </a>
                         </li>
                         {% endif %}
@@ -673,6 +745,22 @@
                             <a class="nav-link {% if request.endpoint.startswith('admin_points') %}active{% endif %}"
                                 href="{{ url_for('admin_points.list_customers') }}" style="padding-left: 2.5rem;">
                                 <i class="fas fa-coins me-2"></i>Customer Points
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('special_codes') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('special_codes_admin') %}active{% endif %}"
+                                href="{{ url_for('special_codes_admin.index') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-key me-2"></i>ผู้จองพิเศษ(Global)
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.has_sidebar_menu('campaign_tracking') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('campaign_tracking_admin') %}active{% endif %}"
+                                href="{{ url_for('campaign_tracking_admin.index') }}" style="padding-left: 2.5rem;">
+                                <i class="fas fa-link me-2"></i>Short URL - Tracking
                             </a>
                         </li>
                         {% endif %}
@@ -829,58 +917,282 @@
 
             <!-- Main Content Area -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                {% else %}
+                {% elif current_user.is_authenticated and current_user.role in ['Customer', 'Agency'] %}
+                <!-- Centered Content for Customer/Agency (no sidebar) -->
                 <main class="main-content">
+                    <div class="container" style="max-width: 1400px;">
+                        {% else %}
+                        <main class="main-content">
+                            {% endif %}
+
+                            <div class="pt-3">
+                                <!-- Flash Messages -->
+                                {% with messages = get_flashed_messages(with_categories=true) %}
+                                {% if messages %}
+                                {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                                    role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                                {% endwith %}
+
+                                <!-- Page Content -->
+                                {% block content %}{% endblock %}
+                            </div>
+
+                            {% if current_user.is_authenticated and current_user.role in ['Customer', 'Agency'] %}
+                    </div> <!-- Close centered container -->
                     {% endif %}
 
-                    <div class="pt-3">
-                        <!-- Flash Messages -->
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                        {% if messages %}
-                        {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
-                            role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                        {% endfor %}
-                        {% endif %}
-                        {% endwith %}
-
-                        <!-- Page Content -->
-                        {% block content %}{% endblock %}
-                    </div>
-
                     <!-- Footer -->
-                    <footer class="mt-5 py-3 border-top bg-white">
+                    <footer class="mt-5 py-4 border-top"
+                        style="background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);">
                         <div class="container-fluid">
                             <div class="row">
                                 <div class="col-12 text-center">
-                                    <p class="mb-3 text-muted" style="font-size: 0.75rem;">
-                                        © 2026 Dhakul Chan Nice Holidays. All Rights Reserved. | System Version 1.1 |
-                                        <a href="https://www.dhakulchan.net/page/about-dhakulchan" target="_blank"
-                                            rel="noopener noreferrer" class="text-decoration-none">
-                                            <i class="fas fa-info-circle me-1"></i>รู้จักเรา
-                                        </a>
-                                    </p>
-                                    <p class="mb-2" style="font-size: 0.8rem; line-height: 1.5;">
-                                        <strong>HKG:</strong> Flat C13, 21/F, Mai Wah Industrial Bldg., No. 1–7 Wah
-                                        Shing Street, Kwai Chung, NT. Hong Kong<br>
-                                        <strong>Tel:</strong> +852 23921155, +852 23921177 | <strong>Fax:</strong> +852
-                                        23929845
-                                    </p>
-                                    <p class="mb-3" style="font-size: 0.8rem; line-height: 1.5;">
-                                        <strong>BKK:</strong> 710, 716, 704, 706 Prachautid Road, Samsennok, Huai Kwang,
-                                        Bangkok 10320 Thailand.<br>
-                                        <strong>Tel:</strong> +66 020266525, 022744216, +66 0818453303, 0846763332 |
-                                        <strong>Fax:</strong> +66 020266525 Ext. 5
-                                    </p>
-                                    <p class="mb-0" style="font-size: 0.75rem;">
-                                        บริษัทตระกูลเฉินฯ
-                                        ได้รับการอนุญาตอย่างเป็นทางการจากสมาคมขนส่งทางอากาศระหว่างประเทศ <strong>IATA
-                                            License 3530464</strong> โดยมีสมาชิกรวมกันมากว่า 112 สายการบินทั่วโลก
-                                        พร้อมสามารถทำการออกบัตรโดยสารได้เองที่สำนักงาน
-                                    </p>
+                                    <!-- Contact Information Section -->
+                                    <div class="mb-4 p-4"
+                                        style="background: linear-gradient(135deg, #06b6d420 0%, #67b26f20 100%); border-radius: 16px; max-width: 850px; margin: 0 auto; border: 2px solid rgba(6, 182, 212, 0.2); box-shadow: 0 4px 15px rgba(6, 182, 212, 0.1);">
+                                        <h5 class="mb-4 fw-bold" style="color: #0e7490; font-size: 1.15rem;">
+                                            <i class="fas fa-comments text-info me-2"></i>สอบถามเพิ่มเติม
+                                        </h5>
+
+                                        <div
+                                            class="d-flex flex-wrap justify-content-center align-items-center gap-4 mb-4">
+                                            <!-- LINE QR Code -->
+                                            <div class="text-center" style="flex: 0 0 auto;">
+                                                <a href="https://line.me/R/ti/p/@dhakulchan" target="_blank"
+                                                    rel="noopener noreferrer" class="text-decoration-none d-block"
+                                                    style="transition: transform 0.3s ease;"
+                                                    onmouseover="this.style.transform='scale(1.05)'"
+                                                    onmouseout="this.style.transform='scale(1)'">
+                                                    <div class="p-3"
+                                                        style="background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); min-width: 220px; min-height: 220px; display: flex; align-items: center; justify-content: center;">
+                                                        <img src="{{ url_for('static', filename='images/landing/line_qr.png') }}"
+                                                            alt="LINE QR Code"
+                                                            style="width: 180px; height: 180px; display: block;"
+                                                            onerror="this.src='https://qr-official.line.me/gs/M_izm3477h_GW.png'">
+                                                    </div>
+                                                </a>
+                                            </div>
+
+                                            <!-- Phone Contact -->
+                                            <div class="text-center" style="flex: 0 0 auto;">
+                                                <a href="tel:+66020266525" class="text-decoration-none d-block"
+                                                    style="transition: transform 0.3s ease;"
+                                                    onmouseover="this.style.transform='scale(1.05)'"
+                                                    onmouseout="this.style.transform='scale(1)'">
+                                                    <div class="p-3"
+                                                        style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); border-radius: 12px; box-shadow: 0 4px 15px rgba(6, 182, 212, 0.3); min-width: 220px; min-height: 220px; display: flex; flex-direction: column; justify-content: center;">
+                                                        <i class="fas fa-phone-alt text-white mb-2"
+                                                            style="font-size: 2.5rem;"></i>
+                                                        <p class="mb-1 text-white fw-bold" style="font-size: 1.15rem;">
+                                                            โทรสอบถาม</p>
+                                                        <p class="mb-0 text-white fw-semibold"
+                                                            style="font-size: 1.1rem; letter-spacing: 1px;">02-026-6525
+                                                        </p>
+                                                        <p class="mb-0 text-white-50"
+                                                            style="font-size: 0.8rem; margin-top: 8px;">
+                                                            <i class="fas fa-hand-pointer me-1"></i>คลิกเพื่อโทรออก
+                                                        </p>
+                                                    </div>
+                                                </a>
+                                            </div>
+                                        </div>
+
+                                        <!-- Social Media Links -->
+                                        <div class="pt-4 border-top"
+                                            style="border-color: rgba(6, 182, 212, 0.25) !important;">
+                                            <p class="mb-3 fw-semibold" style="color: #0e7490; font-size: 0.95rem;">
+                                                <i class="fas fa-share-alt me-2"></i>ติดตามเราได้ที่
+                                            </p>
+                                            <div
+                                                class="d-flex justify-content-center gap-3 flex-wrap align-items-center">
+                                                <!-- Home Website -->
+                                                <a href="https://www.dhakulchan.net/" target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="btn btn-sm d-flex align-items-center gap-2"
+                                                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 10px 18px; border-radius: 25px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);"
+                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(102, 126, 234, 0.4)'"
+                                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(102, 126, 234, 0.3)'">
+                                                    <i class="fas fa-home" style="font-size: 1.1rem;"></i>
+                                                    <span style="font-size: 0.9rem; font-weight: 600;">Website</span>
+                                                </a>
+
+                                                <!-- Facebook -->
+                                                <a href="https://www.facebook.com/NiceHolidaysDiscovery" target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="btn btn-sm d-flex align-items-center gap-2"
+                                                    style="background: #1877F2; color: white; border: none; padding: 10px 18px; border-radius: 25px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);"
+                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(24, 119, 242, 0.4)'"
+                                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(24, 119, 242, 0.3)'">
+                                                    <i class="fab fa-facebook-f" style="font-size: 1.1rem;"></i>
+                                                    <span style="font-size: 0.9rem; font-weight: 600;">Facebook</span>
+                                                </a>
+
+                                                <!-- Instagram -->
+                                                <a href="https://www.instagram.com/niceholidays/" target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="btn btn-sm d-flex align-items-center gap-2"
+                                                    style="background: linear-gradient(135deg, #833AB4 0%, #FD1D1D 50%, #F77737 100%); color: white; border: none; padding: 10px 18px; border-radius: 25px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(131, 58, 180, 0.3);"
+                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(131, 58, 180, 0.4)'"
+                                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(131, 58, 180, 0.3)'">
+                                                    <i class="fab fa-instagram" style="font-size: 1.1rem;"></i>
+                                                    <span style="font-size: 0.9rem; font-weight: 600;">Instagram</span>
+                                                </a>
+
+                                                <!-- TikTok -->
+                                                <a href="https://www.tiktok.com/@exploreedu" target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    class="btn btn-sm d-flex align-items-center gap-2"
+                                                    style="background: #000000; color: white; border: none; padding: 10px 18px; border-radius: 25px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);"
+                                                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.4)'; this.style.background='#EE1D52'"
+                                                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.3)'; this.style.background='#000000'">
+                                                    <i class="fab fa-tiktok" style="font-size: 1.1rem;"></i>
+                                                    <span style="font-size: 0.9rem; font-weight: 600;">TikTok</span>
+                                                </a>
+
+                                                <!-- LINE Add Friend Button -->
+                                                <a href="https://lin.ee/dmrunmh" target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    style="transition: transform 0.3s ease; display: inline-block;"
+                                                    onmouseover="this.style.transform='translateY(-2px) scale(1.05)'"
+                                                    onmouseout="this.style.transform='translateY(0) scale(1)'">
+                                                    <img src="https://scdn.line-apps.com/n/line_add_friends/btn/th.png"
+                                                        alt="เพิ่มเพื่อน LINE" height="40"
+                                                        style="border-radius: 20px; box-shadow: 0 2px 8px rgba(6, 199, 85, 0.3); border: 0;">
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Official Company Information -->
+                                    <div class="mb-3 p-4"
+                                        style="background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%); border-radius: 16px; max-width: 950px; margin: 0 auto; border: 2px solid rgba(102, 126, 234, 0.2); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);">
+                                        <p class="mb-3 fw-bold"
+                                            style="font-size: 1rem; color: #2d3748; letter-spacing: 0.3px;">
+                                            <i class="fas fa-certificate text-primary me-2"
+                                                style="font-size: 1.1rem;"></i>
+                                            บริษัท ตระกูลเฉินฯ - Dhakul Chan Nice Holidays Discovery Group Company
+                                            Limited.
+                                        </p>
+                                        <div class="mb-0 px-3 py-2"
+                                            style="background: linear-gradient(to right, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.8) 100%); border-radius: 10px; border-left: 4px solid #667eea;">
+                                            <p class="mb-0 fw-semibold"
+                                                style="font-size: 0.95rem; line-height: 1.8; color: #1a202c;">
+                                                <i class="fas fa-check-circle text-success me-2"></i>
+                                                <span
+                                                    style="color: #667eea; font-weight: 700;">ตัวแทนจำหน่ายโดยตรงอย่างเป็นทางการ</span><span
+                                                    style="color: #2d3748;">ของรีสอร์ทและสวนสนุกฉางหลง</span>
+                                                <span style="color: #667eea; font-weight: 600;">(Chimelong Resort &
+                                                    Theme Parks)</span><br>
+                                                <i class="fas fa-award text-warning me-2"></i>
+                                                โดย<span
+                                                    style="color: #667eea; font-weight: 700;">ได้รับการแต่งตั้ง</span>จาก
+                                                <span style="font-weight: 700; color: #2d3748;">Chimelong International
+                                                    Travel Company Limited.</span>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Copyright & Version -->
+                                    <div class="mb-4 pt-3" style="border-top: 2px solid rgba(102, 126, 234, 0.15);">
+                                        <p class="mb-2" style="font-size: 0.9rem; color: #2d3748; font-weight: 600;">
+                                            <strong style="color: #1a202c;">© 2026 Dhakul Chan Nice Holidays. All Rights
+                                                Reserved.</strong>
+                                        </p>
+                                        <p class="mb-0" style="font-size: 0.85rem; color: #64748b;">
+                                            System Version 1.1 |
+                                            <a href="https://www.dhakulchan.net/page/about-dhakulchan" target="_blank"
+                                                rel="noopener noreferrer" class="text-decoration-none fw-semibold"
+                                                style="color: #667eea; transition: color 0.3s ease;"
+                                                onmouseover="this.style.color='#764ba2'"
+                                                onmouseout="this.style.color='#667eea'">
+                                                <i class="fas fa-info-circle me-1"></i>รู้จักเรา
+                                            </a>
+                                        </p>
+                                    </div>
+
+                                    <!-- Office Addresses -->
+                                    <div class="row g-3 mb-4">
+                                        <!-- Hong Kong Office -->
+                                        <div class="col-md-6">
+                                            <div class="p-3 h-100"
+                                                style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; border-left: 4px solid #667eea;">
+                                                <h6 class="mb-2 fw-bold" style="color: #667eea; font-size: 0.9rem;">
+                                                    <i class="fas fa-map-marker-alt me-2"></i>Hong Kong Office
+                                                </h6>
+                                                <p class="mb-1"
+                                                    style="font-size: 0.8rem; line-height: 1.6; color: #475569;">
+                                                    <strong>Address:</strong> Flat C13, 21/F, Mai Wah Industrial
+                                                    Bldg.,<br>
+                                                    No. 1–7 Wah Shing Street, Kwai Chung, NT. Hong Kong
+                                                </p>
+                                                <p class="mb-0" style="font-size: 0.8rem; color: #64748b;">
+                                                    <i class="fas fa-phone me-1" style="color: #667eea;"></i>
+                                                    <strong>Tel:</strong> <a href="tel:+85223921155"
+                                                        class="text-decoration-none" style="color: #475569;">+852
+                                                        2392-1155</a>,
+                                                    <a href="tel:+85223921177" class="text-decoration-none"
+                                                        style="color: #475569;">+852 2392-1177</a><br>
+                                                    <i class="fas fa-fax me-1" style="color: #667eea;"></i>
+                                                    <strong>Fax:</strong> +852 2392-9845
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Bangkok Office -->
+                                        <div class="col-md-6">
+                                            <div class="p-3 h-100"
+                                                style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; border-left: 4px solid #06b6d4;">
+                                                <h6 class="mb-2 fw-bold" style="color: #06b6d4; font-size: 0.9rem;">
+                                                    <i class="fas fa-map-marker-alt me-2"></i>Bangkok Office (Thailand)
+                                                </h6>
+                                                <p class="mb-1"
+                                                    style="font-size: 0.8rem; line-height: 1.6; color: #475569;">
+                                                    <strong>Address:</strong> 710, 716, 704, 706 Prachautid Road,<br>
+                                                    Samsennok, Huai Kwang, Bangkok 10320 Thailand
+                                                </p>
+                                                <p class="mb-0" style="font-size: 0.8rem; color: #64748b;">
+                                                    <i class="fas fa-phone me-1" style="color: #06b6d4;"></i>
+                                                    <strong>Tel:</strong> <a href="tel:+66020266525"
+                                                        class="text-decoration-none fw-semibold"
+                                                        style="color: #06b6d4;">02-026-6525</a>,
+                                                    <a href="tel:+66022744216" class="text-decoration-none"
+                                                        style="color: #475569;">02-274-4216</a><br>
+                                                    <i class="fas fa-mobile-alt me-1" style="color: #06b6d4;"></i>
+                                                    <strong>Mobile:</strong> 081-845-3303, 084-676-3332<br>
+                                                    <i class="fas fa-fax me-1" style="color: #06b6d4;"></i>
+                                                    <strong>Fax:</strong> +66 02-026-6525 Ext. 5
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- IATA License Badge -->
+                                    <div class="p-3 mb-3"
+                                        style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 2px solid #fbbf24;">
+                                        <div class="d-flex align-items-center justify-content-center flex-wrap gap-2">
+                                            <i class="fas fa-award" style="font-size: 1.5rem; color: #d97706;"></i>
+                                            <p class="mb-0"
+                                                style="font-size: 0.85rem; line-height: 1.6; color: #78350f; font-weight: 600;">
+                                                บริษัทตระกูลเฉินฯ
+                                                ได้รับการอนุญาตอย่างเป็นทางการจากสมาคมขนส่งทางอากาศระหว่างประเทศ
+                                                <span class="badge ms-1"
+                                                    style="background: #d97706; color: white; padding: 4px 12px; font-size: 0.85rem; border-radius: 20px;">
+                                                    <i class="fas fa-certificate me-1"></i>IATA License 3530464
+                                                </span>
+                                                <br>
+                                                <span style="font-size: 0.8rem; font-weight: 500; color: #92400e;">
+                                                    โดยมีสมาชิกรวมกันมากว่า 112 สายการบินทั่วโลก
+                                                    พร้อมสามารถทำการออกบัตรโดยสารได้เองที่สำนักงาน
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -921,6 +1233,30 @@
                 clearTimeout(fontTimeout);
             });
         }
+    </script>
+
+    <script>
+        // Debug and force badge animation
+        document.addEventListener('DOMContentLoaded', function () {
+            console.log('Checking for pending groups badge...');
+            const badges = document.querySelectorAll('.badge.bg-danger.rounded-pill');
+            console.log('Found badges:', badges.length);
+
+            badges.forEach(badge => {
+                if (badge.textContent.trim().match(/^\d+$/)) {
+                    console.log('Badge found with count:', badge.textContent);
+                    // Force animation using setInterval
+                    let opacity = 1;
+                    let direction = -1;
+                    setInterval(() => {
+                        opacity += direction * 0.05;
+                        if (opacity <= 0.4) direction = 1;
+                        if (opacity >= 1) direction = -1;
+                        badge.style.opacity = opacity;
+                    }, 50);
+                }
+            });
+        });
     </script>
 
     {% block scripts %}{% endblock %}
