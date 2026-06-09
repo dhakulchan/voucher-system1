@@ -7,10 +7,16 @@
 
     <!-- Back Button -->
     {% if current_group %}
-    <div class="mb-3">
+    <div class="mb-3 d-flex align-items-center gap-2">
         <a href="https://booking.dhakulchan.net/landing/groups" class="btn btn-outline-secondary"
             style="border-radius: 20px; padding: 10px 24px; font-weight: 600; transition: all 0.3s ease;">
             <i class="fas fa-arrow-left me-2"></i>ย้อนกลับ
+        </a>
+        <a href="https://booking.dhakulchan.net/group-buy/" class="btn"
+            style="border-radius: 20px; padding: 10px 24px; font-weight: 700; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; box-shadow: 0 4px 15px rgba(102,126,234,0.35); transition: all 0.3s ease;"
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(102,126,234,0.5)'"
+            onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 15px rgba(102,126,234,0.35)'">
+            <i class="fas fa-users me-2"></i>รวมกลุ่มซื้อ | Group Buy
         </a>
     </div>
     {% endif %}
@@ -88,7 +94,7 @@
         <div class="col-sm-6 col-lg-4 product-item"
             data-category="{{ product.category if product.category else 'uncategorized' }}">
             <div class="card h-100 border-0 shadow-hover modern-card"
-                style="border-radius: 20px; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">;
+                style="border-radius: 20px; overflow: hidden; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
 
                 <!-- Product Image -->
                 <div class="position-relative"
@@ -198,12 +204,37 @@
 
                     <!-- CTA Button -->
                     <div class="mt-auto pt-3">
+                        {% if product.book_url %}
+                        <div class="d-flex flex-row gap-2">
+                            {% if product.book_url_new_tab %}
+                            <a href="{{ product.book_url }}" target="_blank" rel="noopener noreferrer"
+                                class="btn fw-bold inquiry-btn"
+                                style="flex:1; border-radius: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white; font-size: 0.95rem; padding: 14px 10px; box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4); position: relative; overflow: hidden;">
+                                <span class="inquiry-btn-ripple"></span>
+                                <i class="fas fa-comments me-1"></i>สอบถามราคา
+                            </a>
+                            {% else %}
+                            <button type="button"
+                                onclick="openBookingPopup('{{ product.book_url|e }}', '{{ product.title|e }}')"
+                                class="btn fw-bold inquiry-btn"
+                                style="flex:1; border-radius: 15px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white; font-size: 0.95rem; padding: 14px 10px; box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4); position: relative; overflow: hidden;">
+                                <span class="inquiry-btn-ripple"></span>
+                                <i class="fas fa-comments me-1"></i>สอบถามราคา
+                            </button>
+                            {% endif %}
+                            <a href="{{ product.external_url }}" {% if product.open_in_new_tab %}target="_blank"
+                                rel="noopener noreferrer" {% endif %} class="btn fw-bold detail-btn"
+                                style="flex:1; border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 0.95rem; padding: 14px 10px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35); transition: all 0.3s ease;">
+                                <i class="fas fa-search me-1"></i>{{ product.external_url_text }}
+                            </a>
+                        </div>
+                        {% else %}
                         <a href="{{ product.external_url }}" {% if product.open_in_new_tab %}target="_blank"
-                            rel="noopener noreferrer" {% endif %}
-                            class="btn btn-primary w-100 py-3 fw-bold modern-button"
-                            style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3); font-size: 1rem;">
-                            <i class="fas fa-external-link-alt me-2"></i>{{ product.external_url_text }}
+                            rel="noopener noreferrer" {% endif %} class="btn fw-bold w-100 modern-button detail-btn"
+                            style="border-radius: 15px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; color: white; font-size: 1rem; padding: 14px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.35); transition: all 0.3s ease;">
+                            <i class="fas fa-search me-2"></i>{{ product.external_url_text }}
                         </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -221,21 +252,37 @@
     {% endif %}
 </div>
 
-<!-- Floating Action Button -->
-{% if current_group %}
-<div class="floating-action-btn">
-    <a href="https://booking.dhakulchan.net/group-buy" class="btn btn-lg"
-        style="border-radius: 50px; padding: 16px 28px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; color: white; font-weight: 700; font-size: 1rem; box-shadow: 0 8px 25px rgba(245, 87, 108, 0.5); transition: all 0.3s ease; text-decoration: none; display: flex; align-items: center; gap: 10px;"
-        title="เข้าร่วมกลุ่มซื้อ - ราคาถูกกว่า!">
-        <i class="fas fa-users" style="font-size: 1.2rem;"></i>
-        <span class="floating-text">กลุ่มซื้อ</span>
-        <span class="badge"
-            style="background: rgba(255,255,255,0.3); padding: 4px 8px; border-radius: 10px; font-size: 0.75rem;">
-            -20%
-        </span>
-    </a>
+<!-- Floating Webchat Button -->
+<div class="floating-action-btn" id="floatingWebchat">
+    <button type="button"
+        onclick="openBookingPopup('https://ops.bookingstation.org/pricing-v12/webchat', 'สอบถามราคา')"
+        class="webchat-fab" title="สอบถามเรา">
+        <span class="webchat-fab-online"></span>
+        <i class="fas fa-comments webchat-fab-icon"></i>
+        <span class="webchat-fab-label">สอบถาม</span>
+    </button>
 </div>
-{% endif %}
+
+<!-- ══════════════════════════════════════════════════
+     Floating Action Buttons (Bottom Right — above webchat)
+══════════════════════════════════════════════════ -->
+<div class="landing-fab-container">
+    <!-- Reviews Button -->
+    <button type="button" onclick="openReviewModal()" class="landing-fab landing-fab-reviews" title="รีวิวจากลูกค้า">
+        <i class="fas fa-star"></i>
+        <span class="landing-fab-label">รีวิวลูกค้า ★★★★★</span>
+    </button>
+    <!-- Why Choose Us Button -->
+    <button type="button" onclick="openInfoModal('why')" class="landing-fab landing-fab-why" title="ทำไมต้องเลือกเรา">
+        <i class="fas fa-question-circle"></i>
+        <span class="landing-fab-label">ทำไมเลือกเรา</span>
+    </button>
+    <!-- About Us Button -->
+    <button type="button" onclick="openInfoModal('about')" class="landing-fab landing-fab-about" title="รู้จักเรา">
+        <i class="fas fa-building"></i>
+        <span class="landing-fab-label">รู้จักเรา</span>
+    </button>
+</div>
 
 <style>
     /* Modern Card Animations */
@@ -260,9 +307,60 @@
     }
 
     /* Button Hover Effects */
-    .modern-button:hover {
+    .modern-button:hover,
+    .detail-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(102, 126, 234, 0.5) !important;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.55) !important;
+    }
+
+    /* Inquiry Button Animation */
+    .inquiry-btn {
+        animation: inquiryPulse 2s ease-in-out infinite;
+        transition: all 0.3s ease;
+    }
+
+    .inquiry-btn:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 10px 30px rgba(245, 87, 108, 0.6) !important;
+        animation: none;
+    }
+
+    .inquiry-btn-ripple {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        animation: rippleEffect 2s ease-out infinite;
+    }
+
+    @keyframes inquiryPulse {
+
+        0%,
+        100% {
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        50% {
+            box-shadow: 0 4px 30px rgba(245, 87, 108, 0.75);
+        }
+    }
+
+    @keyframes rippleEffect {
+        0% {
+            width: 0;
+            height: 0;
+            opacity: 0.6;
+        }
+
+        100% {
+            width: 300px;
+            height: 300px;
+            opacity: 0;
+        }
     }
 
     /* Responsive adjustments */
@@ -281,20 +379,6 @@
 
         .modern-card .card-body {
             min-height: auto !important;
-        }
-
-        .floating-action-btn {
-            bottom: 20px;
-            right: 20px;
-        }
-
-        .floating-action-btn a {
-            padding: 12px 20px !important;
-            font-size: 0.9rem !important;
-        }
-
-        .floating-action-btn .floating-text {
-            display: none;
         }
 
         .trust-badge {
@@ -419,23 +503,111 @@
         animation: pulse 2s ease-in-out infinite;
     }
 
-    /* Floating Action Button */
+    /* Floating Webchat Button */
     .floating-action-btn {
         position: fixed;
         bottom: 30px;
         right: 30px;
         z-index: 1000;
-        animation: fadeIn 1s ease-out 1s forwards, bounceSoft 2s ease-in-out 2s infinite;
+        animation: fadeIn 1.2s ease-out forwards;
         opacity: 0;
     }
 
-    .floating-action-btn a:hover {
-        transform: scale(1.1);
-        box-shadow: 0 12px 40px rgba(245, 87, 108, 0.7) !important;
+    .webchat-fab {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 22px;
+        border: none;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: #1a4a2e;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        position: relative;
+        box-shadow: 0 8px 28px rgba(67, 233, 123, 0.55);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        white-space: nowrap;
     }
 
-    .floating-action-btn .floating-text {
-        font-size: 1rem;
+    .webchat-fab:hover {
+        transform: translateY(-4px) scale(1.05);
+        box-shadow: 0 14px 40px rgba(67, 233, 123, 0.7);
+    }
+
+    .webchat-fab:active {
+        transform: translateY(-1px) scale(0.98);
+    }
+
+    .webchat-fab-icon {
+        font-size: 1.3rem;
+    }
+
+    .webchat-fab-label {
+        font-size: 0.95rem;
+        letter-spacing: 0.02em;
+    }
+
+    /* Online indicator dot */
+    .webchat-fab-online {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 11px;
+        height: 11px;
+        background: #00e676;
+        border: 2px solid white;
+        border-radius: 50%;
+        animation: onlinePulse 3s ease-in-out infinite;
+    }
+
+    /* Subtle shadow breathe on the button */
+    .webchat-fab {
+        animation: fabBreathe 4s ease-in-out infinite;
+    }
+
+    @keyframes fabBreathe {
+
+        0%,
+        100% {
+            box-shadow: 0 8px 24px rgba(67, 233, 123, 0.45);
+        }
+
+        50% {
+            box-shadow: 0 8px 36px rgba(67, 233, 123, 0.65);
+        }
+    }
+
+    @keyframes onlinePulse {
+
+        0%,
+        100% {
+            box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.6);
+        }
+
+        60% {
+            box-shadow: 0 0 0 5px rgba(0, 230, 118, 0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .floating-action-btn {
+            bottom: 20px;
+            right: 16px;
+        }
+
+        .webchat-fab {
+            padding: 12px 16px;
+        }
+
+        .webchat-fab-label {
+            display: none;
+        }
+
+        .webchat-fab-icon {
+            font-size: 1.4rem;
+        }
     }
 
     /* Category Filter Buttons */
@@ -517,6 +689,27 @@
             setInterval(updateCountdown, 1000);
         }
 
+        // Booking Popup — open real browser popup window (bypasses X-Frame-Options)
+        window.openBookingPopup = function (url, title) {
+            const w = 760, h = 830;
+            const left = Math.round((window.screen.width - w) / 2);
+            const top = Math.round((window.screen.height - h) / 5);
+            const features = `width=${w},height=${h},left=${left},top=${top},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=yes,status=no`;
+
+            const popup = window.open(url, 'BookingPopup', features);
+
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                // Browser blocked popup — show fallback modal
+                const el = document.getElementById('bookingFallbackTitle');
+                const lnk = document.getElementById('bookingFallbackLink');
+                if (el) el.textContent = title;
+                if (lnk) lnk.href = url;
+                new bootstrap.Modal(document.getElementById('bookingPopupModal')).show();
+            } else {
+                popup.focus();
+            }
+        };
+
         // Video Modal Functions
         window.openVideoModal = function (videoUrl, title) {
             const modal = document.getElementById('videoModal');
@@ -543,6 +736,46 @@
     });
 </script>
 
+<!-- Booking Fallback Modal (shown only when browser blocks popup) -->
+<div class="modal fade" id="bookingPopupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content" style="border-radius:20px; overflow:hidden; box-shadow:0 25px 60px rgba(0,0,0,0.3);">
+            <!-- Header -->
+            <div class="modal-header py-3 px-4"
+                style="background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%); border-bottom:none;">
+                <div class="d-flex align-items-center gap-2">
+                    <div
+                        style="width:36px;height:36px;background:rgba(255,255,255,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                        <i class="fas fa-comments text-white"></i>
+                    </div>
+                    <span class="text-white fw-bold" style="font-size:0.95rem;">สอบถามราคา</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <!-- Body -->
+            <div class="modal-body text-center px-4 py-5">
+                <div style="font-size:3rem; margin-bottom:1rem;">🚫</div>
+                <h6 class="fw-bold mb-2">Browser บล็อค Popup ไว้</h6>
+                <p class="text-muted mb-1" style="font-size:0.88rem;">
+                    กรุณาอนุญาต Popup สำหรับ <strong>booking.dhakulchan.net</strong><br>
+                    หรือกดปุ่มด้านล่างเพื่อเปิดลิงก์โดยตรง
+                </p>
+                <p class="text-muted mb-4" style="font-size:0.82rem;">
+                    <strong id="bookingFallbackTitle"></strong>
+                </p>
+                <a id="bookingFallbackLink" href="#" target="_blank" rel="noopener noreferrer"
+                    class="btn btn-lg fw-bold w-100 mb-2"
+                    style="border-radius:15px; background:linear-gradient(135deg,#f093fb 0%,#f5576c 100%); border:none; color:white; box-shadow:0 4px 15px rgba(245,87,108,0.4);">
+                    <i class="fas fa-external-link-alt me-2"></i>เปิดหน้าสอบถาม
+                </a>
+                <small class="text-muted d-block" style="font-size:0.78rem;">
+                    <i class="fas fa-info-circle me-1"></i>จะเปิดในแท็บใหม่
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Video Modal -->
 <div class="modal fade" id="videoModal" tabindex="-1" aria-labelledby="videoModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -563,5 +796,200 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: ทำไมต้องเลือกเรา -->
+<div class="modal fade" id="whyChooseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: min(92vw, 680px);">
+        <div class="modal-content" style="border:none; border-radius:16px; overflow:hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border:none;">
+                <h5 class="modal-title text-white fw-bold"><i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 text-center" style="background:#f8f9fa;" oncontextmenu="return false;">
+                <img id="whyImgLanding" src="" alt="ทำไมต้องเลือกเรา" draggable="false"
+                    style="max-width:100%; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: รู้จักเรา -->
+<div class="modal fade" id="aboutModalLanding" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: min(92vw, 680px);">
+        <div class="modal-content" style="border:none; border-radius:16px; overflow:hidden;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border:none;">
+                <h5 class="modal-title fw-bold" style="color:#0c4a3e;"><i class="fas fa-building me-2"></i>รู้จักเรา</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 text-center" style="background:#f8f9fa;" oncontextmenu="return false;">
+                <img id="aboutImgLanding" src="" alt="รู้จักเรา" draggable="false"
+                    style="max-width:100%; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: รีวิวลูกค้า -->
+<div class="modal fade" id="reviewModalLanding" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: min(94vw, 900px);">
+        <div class="modal-content" style="border:none; border-radius:22px; overflow:hidden; background:#b8dff0;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #1564a0 0%, #0d4a7a 100%); border:none; padding:16px 22px;">
+                <h5 class="modal-title text-white fw-bold"><i class="fas fa-star text-warning me-2"></i>รีวิวจากลูกค้า</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div style="width:100%; height:72vh; max-height:680px;">
+                    <iframe id="reviewIframeLanding" src="" title="Customer Reviews" allow="autoplay"
+                        style="width:100%; height:100%; border:none; display:block;"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ── Landing Page FAB Container ── */
+    .landing-fab-container {
+        position: fixed;
+        bottom: 110px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 1001;
+        animation: landingFabIn 0.6s ease-out;
+    }
+
+    @keyframes landingFabIn {
+        from { opacity: 0; transform: translateY(30px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .landing-fab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        font-size: 22px;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: visible;
+    }
+
+    .landing-fab:hover {
+        width: auto;
+        border-radius: 28px;
+        padding: 0 20px;
+        transform: translateX(-5px) scale(1.05);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .landing-fab:active { transform: translateX(-5px) scale(0.98); }
+
+    .landing-fab i { transition: all 0.3s ease; min-width: 22px; }
+
+    .landing-fab-label {
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        font-weight: 600;
+        font-size: 14px;
+        margin-left: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .landing-fab:hover .landing-fab-label {
+        max-width: 200px;
+        opacity: 1;
+        margin-left: 10px;
+    }
+
+    /* Colors */
+    .landing-fab-reviews {
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        animation: landingFabIn 0.6s ease-out, landingReviewPulse 2.5s ease-in-out 1s infinite;
+    }
+    .landing-fab-reviews:hover {
+        background: linear-gradient(135deg, #f7971e 0%, #ffdd33 100%);
+        box-shadow: 0 8px 24px rgba(247,151,30,0.5);
+    }
+    .landing-fab-why { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .landing-fab-why:hover {
+        background: linear-gradient(135deg, #7b93ff 0%, #8b5cb8 100%);
+        box-shadow: 0 8px 24px rgba(102,126,234,0.5);
+    }
+    .landing-fab-about { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .landing-fab-about:hover {
+        background: linear-gradient(135deg, #14b09f 0%, #45ff8d 100%);
+        box-shadow: 0 8px 24px rgba(17,153,142,0.5);
+    }
+
+    @keyframes landingReviewPulse {
+        0%, 100% { box-shadow: 0 4px 12px rgba(247,151,30,0.4); }
+        50%       { box-shadow: 0 6px 22px rgba(247,151,30,0.7); }
+    }
+
+    @media (max-width: 768px) {
+        .landing-fab-container { bottom: 100px; right: 20px; gap: 10px; }
+        .landing-fab { width: 50px; height: 50px; font-size: 20px; }
+        .landing-fab:hover { padding: 0 16px; }
+        .landing-fab-label { font-size: 13px; }
+    }
+
+    @media (max-width: 480px) {
+        .landing-fab-container { bottom: 90px; right: 15px; gap: 9px; }
+        .landing-fab { width: 48px; height: 48px; font-size: 18px; }
+        .landing-fab:hover { padding: 0 14px; }
+        .landing-fab-label { font-size: 12px; }
+    }
+</style>
+
+<script>
+    // ── Info Image Modals ──
+    (function () {
+        var _whyLoaded = false, _aboutLoaded = false;
+        window.openInfoModal = window.openInfoModal || function (which) {
+            if (which === 'why') {
+                var m = new bootstrap.Modal(document.getElementById('whyChooseModal'));
+                if (!_whyLoaded) {
+                    document.getElementById('whyImgLanding').src = '/landing/info-image/why-choose-us';
+                    _whyLoaded = true;
+                }
+                m.show();
+            } else {
+                var m = new bootstrap.Modal(document.getElementById('aboutModalLanding'));
+                if (!_aboutLoaded) {
+                    document.getElementById('aboutImgLanding').src = '/landing/info-image/about-us';
+                    _aboutLoaded = true;
+                }
+                m.show();
+            }
+        };
+    })();
+
+    // ── Review Modal ──
+    (function () {
+        window.openReviewModal = window.openReviewModal || function () {
+            var m = new bootstrap.Modal(document.getElementById('reviewModalLanding'));
+            var iframe = document.getElementById('reviewIframeLanding');
+            if (!iframe.src) iframe.src = '/display/reviews';
+            m.show();
+        };
+        document.getElementById('reviewModalLanding').addEventListener('hidden.bs.modal', function () {
+            document.getElementById('reviewIframeLanding').src = '';
+        });
+        document.getElementById('reviewModalLanding').addEventListener('show.bs.modal', function () {
+            var iframe = document.getElementById('reviewIframeLanding');
+            if (!iframe.src) iframe.src = '/display/reviews';
+        });
+    })();
+</script>
 
 {% endblock %}
