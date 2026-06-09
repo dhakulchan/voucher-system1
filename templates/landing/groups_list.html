@@ -359,27 +359,6 @@
     <div class="groups-page-header">
         <h1><i class="fas fa-layer-group me-2"></i>ทัวร์แนะนำพิเศษ</h1>
         <p>ค้นหาและเลือกกรุ๊ปทัวร์ที่ถูกใจ พร้อมเริ่มต้นการเดินทางกับเรา</p>
-
-        <!-- Info Buttons Row -->
-        <div class="mt-4 d-flex justify-content-center flex-wrap gap-3">
-            <button type="button" onclick="openInfoModal('why')" class="btn btn-info-why px-4 py-2">
-                <i class="fas fa-question-circle me-2"></i>ทำไมต้องเลือกเรา
-            </button>
-            <button type="button" onclick="openInfoModal('about')" class="btn btn-info-about px-4 py-2">
-                <i class="fas fa-building me-2"></i>รู้จักเรา
-            </button>
-        </div>
-
-        <!-- Customer Reviews Button -->
-        <div class="mt-3 text-center">
-            <div class="review-guide-hint mb-2">
-                <i class="fas fa-hand-point-down me-1"></i>คลิกปุ่มด้านล่าง เลือกดู Review
-            </div>
-            <button type="button" onclick="openReviewModal()" class="btn btn-review-popup px-4 py-2">
-                <i class="fas fa-star me-2"></i>รีวิวจากลูกค้า
-                <span class="review-star-badge ms-2">★★★★★</span>
-            </button>
-        </div>
     </div>
 
     <!-- Groups Grid -->
@@ -513,55 +492,6 @@
 ══════════════════════════════════════════════════ -->
 <style>
     /* ── Customer Reviews Button ── */
-    .review-guide-hint {
-        font-size: .92rem;
-        font-weight: 700;
-        color: rgba(255, 255, 255, .88);
-        letter-spacing: .5px;
-        animation: bounceDown 1.6s ease-in-out infinite;
-    }
-
-    @keyframes bounceDown {
-
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-
-        50% {
-            transform: translateY(5px);
-        }
-    }
-
-    .btn-review-popup {
-        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
-        color: #5a3500;
-        border: none;
-        border-radius: 999px;
-        font-weight: 800;
-        font-size: 1rem;
-        box-shadow: 0 6px 22px rgba(247, 151, 30, .45), inset 0 1px 0 rgba(255, 255, 255, .4);
-        transition: all .3s cubic-bezier(.22, 1, .36, 1);
-        letter-spacing: .4px;
-    }
-
-    .btn-review-popup:hover {
-        transform: translateY(-3px) scale(1.03);
-        box-shadow: 0 12px 32px rgba(247, 151, 30, .55);
-        color: #3d2200;
-    }
-
-    .btn-review-popup:active {
-        transform: scale(.97);
-    }
-
-    .review-star-badge {
-        font-size: .88rem;
-        color: #a06200;
-        letter-spacing: 2px;
-        opacity: .85;
-    }
-
     /* ── Review Modal ── */
     #reviewModal .modal-dialog {
         max-width: min(94vw, 900px);
@@ -694,41 +624,6 @@
      Info Image Modals: ทำไมต้องเลือกเรา / รู้จักเรา
 ══════════════════════════════════════════════════ -->
 <style>
-    /* Info buttons */
-    .btn-info-why {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: #fff;
-        border: none;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: 1rem;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, .45);
-        transition: all .3s ease;
-    }
-
-    .btn-info-why:hover {
-        transform: translateY(-3px) scale(1.03);
-        box-shadow: 0 10px 28px rgba(102, 126, 234, .6);
-        color: #fff;
-    }
-
-    .btn-info-about {
-        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-        color: #0c4a3e;
-        border: none;
-        border-radius: 999px;
-        font-weight: 700;
-        font-size: 1rem;
-        box-shadow: 0 6px 20px rgba(17, 153, 142, .4);
-        transition: all .3s ease;
-    }
-
-    .btn-info-about:hover {
-        transform: translateY(-3px) scale(1.03);
-        box-shadow: 0 10px 28px rgba(17, 153, 142, .6);
-        color: #0c4a3e;
-    }
-
     /* Modal shared styles */
     .info-modal .modal-dialog {
         max-width: min(92vw, 680px);
@@ -856,6 +751,203 @@
         };
     })();
 </script>
+
+<!-- ══════════════════════════════════════════════════
+     Floating Action Buttons (Modern & Minimal)
+══════════════════════════════════════════════════ -->
+<div class="fab-container">
+    <!-- Review Button -->
+    <button type="button" onclick="openReviewModal()" class="fab fab-reviews" title="รีวิวจากลูกค้า">
+        <i class="fas fa-star"></i>
+        <span class="fab-label">รีวิวลูกค้า</span>
+    </button>
+    
+    <!-- Why Choose Us Button -->
+    <button type="button" onclick="openInfoModal('why')" class="fab fab-why" title="ทำไมต้องเลือกเรา">
+        <i class="fas fa-question-circle"></i>
+        <span class="fab-label">ทำไมเลือกเรา</span>
+    </button>
+    
+    <!-- About Us Button -->
+    <button type="button" onclick="openInfoModal('about')" class="fab fab-about" title="รู้จักเรา">
+        <i class="fas fa-building"></i>
+        <span class="fab-label">รู้จักเรา</span>
+    </button>
+</div>
+
+<style>
+    /* ══════════════════════════════════════════════════
+       Floating Action Buttons - Modern Design
+    ══════════════════════════════════════════════════ */
+    .fab-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1000;
+        animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .fab {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        font-size: 22px;
+        color: white;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: visible;
+        backdrop-filter: blur(10px);
+    }
+    
+    .fab:hover {
+        width: auto;
+        border-radius: 28px;
+        padding: 0 20px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateX(-5px) scale(1.05);
+    }
+    
+    .fab:active {
+        transform: translateX(-5px) scale(0.98);
+    }
+    
+    .fab i {
+        transition: all 0.3s ease;
+        min-width: 22px;
+    }
+    
+    .fab-label {
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        font-weight: 600;
+        font-size: 14px;
+        margin-left: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .fab:hover .fab-label {
+        max-width: 200px;
+        opacity: 1;
+        margin-left: 10px;
+    }
+    
+    /* ── Individual Button Colors ── */
+    
+    /* Reviews - Golden Yellow */
+    .fab-reviews {
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        animation-delay: 0s;
+    }
+    
+    .fab-reviews:hover {
+        background: linear-gradient(135deg, #f7971e 0%, #ffdd33 100%);
+        box-shadow: 0 8px 24px rgba(247, 151, 30, 0.4), 0 4px 12px rgba(255, 210, 0, 0.3);
+    }
+    
+    /* Why Choose Us - Purple */
+    .fab-why {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        animation-delay: 0.1s;
+    }
+    
+    .fab-why:hover {
+        background: linear-gradient(135deg, #7b93ff 0%, #8b5cb8 100%);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4), 0 4px 12px rgba(118, 75, 162, 0.3);
+    }
+    
+    /* About Us - Green */
+    .fab-about {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        animation-delay: 0.2s;
+    }
+    
+    .fab-about:hover {
+        background: linear-gradient(135deg, #14b09f 0%, #45ff8d 100%);
+        box-shadow: 0 8px 24px rgba(17, 153, 142, 0.4), 0 4px 12px rgba(56, 239, 125, 0.3);
+    }
+    
+    /* ── Mobile Responsive ── */
+    @media (max-width: 768px) {
+        .fab-container {
+            bottom: 20px;
+            right: 20px;
+            gap: 12px;
+        }
+        
+        .fab {
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+        }
+        
+        .fab:hover {
+            width: auto;
+            padding: 0 16px;
+        }
+        
+        .fab-label {
+            font-size: 13px;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .fab-container {
+            bottom: 15px;
+            right: 15px;
+            gap: 10px;
+        }
+        
+        .fab {
+            width: 48px;
+            height: 48px;
+            font-size: 18px;
+        }
+        
+        .fab:hover {
+            padding: 0 14px;
+        }
+        
+        .fab-label {
+            font-size: 12px;
+        }
+    }
+    
+    /* ── Pulse Animation on First Load ── */
+    @keyframes pulse {
+        0%, 100% {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        50% {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+    }
+    
+    .fab-reviews {
+        animation: fadeInUp 0.6s ease-out, pulse 2s ease-in-out 1s infinite;
+    }
+</style>
 
 {% endblock %}
 font-weight: 600;
