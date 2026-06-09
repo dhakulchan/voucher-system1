@@ -40,46 +40,51 @@
         flex-wrap: wrap;
         gap: 10px;
         justify-content: center;
-        margin-bottom: 32px;
+        margin-bottom: 36px;
     }
 
     .dest-tab {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 9px 20px;
+        gap: 7px;
+        padding: 11px 22px;
         border-radius: 50px;
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: 700;
+        font-size: 0.95rem;
         text-decoration: none;
         border: 2px solid #e2e8f0;
         background: white;
         color: #4a5568;
         transition: all 0.25s ease;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
+        letter-spacing: 0.01em;
     }
 
     .dest-tab:hover {
         border-color: #667eea;
         color: #667eea;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 18px rgba(102,126,234,0.2);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.22);
     }
 
     .dest-tab-active {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white !important;
         border-color: transparent;
-        box-shadow: 0 6px 18px rgba(102,126,234,0.35);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.45);
+        transform: translateY(-2px);
     }
 
     .dest-tab-active:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(102,126,234,0.45);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(102, 126, 234, 0.55);
     }
 
     @media (max-width: 480px) {
-        .dest-tab { font-size: 0.82rem; padding: 7px 14px; }
+        .dest-tab {
+            font-size: 0.85rem;
+            padding: 8px 15px;
+        }
     }
 
     /* Groups Grid */
@@ -413,14 +418,14 @@
     {% if destination_choices %}
     <div class="dest-filter-wrap">
         <a href="{{ url_for('landing_page.groups_list') }}"
-           class="dest-tab {% if not cat_filter %}dest-tab-active{% endif %}">
+            class="dest-tab {% if not cat_filter %}dest-tab-active{% endif %}">
             🌐 ทั้งหมด
         </a>
         {% for key, label in destination_choices %}
         {% set has_groups = groups|selectattr('destination_category', 'equalto', key)|list|length %}
         {% if has_groups or cat_filter == key %}
         <a href="{{ url_for('landing_page.groups_list', cat=key) }}"
-           class="dest-tab {% if cat_filter == key %}dest-tab-active{% endif %}">
+            class="dest-tab {% if cat_filter == key %}dest-tab-active{% endif %}">
             {{ label }}
         </a>
         {% endif %}
@@ -862,15 +867,15 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 18px;
-        border: none;
+        padding: 11px 20px;
+        border: 2.5px solid rgba(255,255,255,0.7);
         border-radius: 50px;
         background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
         color: #5a3500;
-        font-weight: 700;
+        font-weight: 800;
         font-size: 14px;
         cursor: pointer;
-        box-shadow: 0 4px 16px rgba(247, 151, 30, 0.45);
+        box-shadow: 0 4px 18px rgba(247, 151, 30, 0.5), 0 0 0 3px rgba(247,151,30,0.15);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 1050;
         white-space: nowrap;
@@ -878,8 +883,8 @@
     }
 
     .fab-topleft-review:hover {
-        transform: translateX(4px) scale(1.05);
-        box-shadow: 0 8px 28px rgba(247, 151, 30, 0.6);
+        transform: translateX(5px) scale(1.06);
+        box-shadow: 0 10px 32px rgba(247, 151, 30, 0.65), 0 0 0 4px rgba(247,151,30,0.2);
         color: #3d2000;
     }
 
@@ -888,45 +893,21 @@
     }
 
     @keyframes slideInLeft {
-        from {
-            opacity: 0;
-            transform: translateX(-40px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
+        from { opacity: 0; transform: translateX(-40px); }
+        to   { opacity: 1; transform: translateX(0); }
     }
 
     @keyframes topLeftPulse {
-
-        0%,
-        100% {
-            box-shadow: 0 4px 16px rgba(247, 151, 30, 0.45);
-        }
-
-        50% {
-            box-shadow: 0 6px 24px rgba(247, 151, 30, 0.7);
-        }
+        0%, 100% { box-shadow: 0 4px 18px rgba(247,151,30,0.5), 0 0 0 3px rgba(247,151,30,0.15); }
+        50%       { box-shadow: 0 6px 26px rgba(247,151,30,0.72), 0 0 0 5px rgba(247,151,30,0.1); }
     }
 
     @media (max-width: 768px) {
-        .fab-topleft-review {
-            top: 70px;
-            left: 15px;
-            font-size: 13px;
-            padding: 8px 14px;
-        }
+        .fab-topleft-review { top: 70px; left: 15px; font-size: 13px; padding: 9px 14px; }
     }
 
     @media (max-width: 480px) {
-        .fab-topleft-review {
-            top: 65px;
-            left: 10px;
-            font-size: 12px;
-            padding: 7px 12px;
-        }
+        .fab-topleft-review { top: 65px; left: 10px; font-size: 12px; padding: 8px 12px; }
     }
 
     /* ── FAB Container — floats above webchat ── */
@@ -955,54 +936,67 @@
 
     .fab {
         position: relative;
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: center;
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
+        justify-content: flex-end;
+        gap: 0;
+        height: 46px;
+        border-radius: 50px;
         border: none;
-        font-size: 22px;
+        font-size: 18px;
         color: white;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow: visible;
-        backdrop-filter: blur(10px);
+        overflow: hidden;
+        padding: 0 14px 0 12px;
+        min-width: 46px;
+        white-space: nowrap;
     }
 
     .fab:hover {
-        width: auto;
-        border-radius: 28px;
-        padding: 0 20px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
-        transform: translateX(-5px) scale(1.05);
+        transform: translateX(-4px) scale(1.06);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
     }
 
-    .fab:active {
-        transform: translateX(-5px) scale(0.98);
-    }
+    .fab:active { transform: translateX(-2px) scale(0.97); }
 
-    .fab i {
-        transition: all 0.3s ease;
-        min-width: 22px;
-    }
+    .fab i { flex-shrink: 0; transition: transform 0.3s ease; }
 
     .fab-label {
         max-width: 0;
         opacity: 0;
         overflow: hidden;
         white-space: nowrap;
-        font-weight: 600;
-        font-size: 14px;
+        font-weight: 700;
+        font-size: 13px;
         margin-left: 0;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        letter-spacing: 0.01em;
     }
 
     .fab:hover .fab-label {
-        max-width: 200px;
+        max-width: 160px;
         opacity: 1;
-        margin-left: 10px;
+        margin-left: 8px;
+    }
+
+    /* Show mini-label on desktop always */
+    @media (min-width: 769px) {
+        .fab {
+            padding: 0 14px 0 12px;
+        }
+        .fab-label {
+            max-width: 120px;
+            opacity: 0.9;
+            margin-left: 7px;
+            font-size: 12px;
+        }
+        .fab:hover .fab-label {
+            max-width: 160px;
+            opacity: 1;
+            font-size: 13px;
+        }
     }
 
     /* ── Individual Button Colors ── */
@@ -1049,18 +1043,22 @@
         }
 
         .fab {
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
-        }
-
-        .fab:hover {
-            width: auto;
-            padding: 0 16px;
+            height: 42px;
+            font-size: 16px;
+            padding: 0 12px 0 10px;
         }
 
         .fab-label {
-            font-size: 13px;
+            max-width: 0;
+            opacity: 0;
+            font-size: 12px;
+            margin-left: 0;
+        }
+
+        .fab:hover .fab-label {
+            max-width: 140px;
+            opacity: 1;
+            margin-left: 7px;
         }
     }
 
@@ -1068,21 +1066,13 @@
         .fab-container {
             bottom: 95px;
             right: 15px;
-            gap: 10px;
+            gap: 9px;
         }
 
         .fab {
-            width: 48px;
-            height: 48px;
-            font-size: 18px;
-        }
-
-        .fab:hover {
-            padding: 0 14px;
-        }
-
-        .fab-label {
-            font-size: 12px;
+            height: 40px;
+            font-size: 15px;
+            padding: 0 10px;
         }
     }
 
