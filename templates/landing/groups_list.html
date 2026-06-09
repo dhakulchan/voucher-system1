@@ -753,21 +753,25 @@
 </script>
 
 <!-- ══════════════════════════════════════════════════
-     Floating Action Buttons (Modern & Minimal)
+     Review Button — Top Left
+══════════════════════════════════════════════════ -->
+<button type="button" onclick="openReviewModal()" class="fab-review-topleft" title="รีวิวจากลูกค้า">
+    <span class="fab-review-icon"><i class="fas fa-star"></i></span>
+    <span class="fab-review-text">
+        <span class="fab-review-title">รีวิวจากลูกค้า</span>
+        <span class="fab-review-stars">★★★★★</span>
+    </span>
+</button>
+
+<!-- ══════════════════════════════════════════════════
+     Floating Action Buttons (Bottom Right — above webchat)
 ══════════════════════════════════════════════════ -->
 <div class="fab-container">
-    <!-- Review Button -->
-    <button type="button" onclick="openReviewModal()" class="fab fab-reviews" title="รีวิวจากลูกค้า">
-        <i class="fas fa-star"></i>
-        <span class="fab-label">รีวิวลูกค้า</span>
-    </button>
-    
-    <!-- Why Choose Us Button -->
     <button type="button" onclick="openInfoModal('why')" class="fab fab-why" title="ทำไมต้องเลือกเรา">
         <i class="fas fa-question-circle"></i>
         <span class="fab-label">ทำไมเลือกเรา</span>
     </button>
-    
+
     <!-- About Us Button -->
     <button type="button" onclick="openInfoModal('about')" class="fab fab-about" title="รู้จักเรา">
         <i class="fas fa-building"></i>
@@ -779,28 +783,102 @@
     /* ══════════════════════════════════════════════════
        Floating Action Buttons - Modern Design
     ══════════════════════════════════════════════════ */
+    /* ── Review Button Top-Left ── */
+    .fab-review-topleft {
+        position: fixed;
+        top: 80px;
+        left: 20px;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        border: none;
+        border-radius: 50px;
+        background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
+        color: #5a3500;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(247, 151, 30, 0.45);
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1050;
+        overflow: hidden;
+        padding: 0;
+        animation: fadeInLeft 0.6s ease-out;
+    }
+
+    @keyframes fadeInLeft {
+        from { opacity: 0; transform: translateX(-30px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .fab-review-icon {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+
+    .fab-review-text {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        max-width: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        padding-right: 0;
+        white-space: nowrap;
+    }
+
+    .fab-review-topleft:hover .fab-review-text {
+        max-width: 160px;
+        opacity: 1;
+        padding-right: 16px;
+    }
+
+    .fab-review-topleft:hover {
+        box-shadow: 0 8px 28px rgba(247, 151, 30, 0.55);
+        transform: translateX(4px) scale(1.04);
+    }
+
+    .fab-review-title {
+        font-weight: 700;
+        font-size: 13px;
+        line-height: 1.2;
+    }
+
+    .fab-review-stars {
+        font-size: 11px;
+        color: #a06200;
+        letter-spacing: 2px;
+        margin-top: 1px;
+    }
+
+    /* ── Right FAB Container — floats above webchat ── */
     .fab-container {
         position: fixed;
-        bottom: 30px;
+        bottom: 110px;
         right: 30px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
         z-index: 1000;
         animation: fadeInUp 0.6s ease-out;
     }
-    
+
     @keyframes fadeInUp {
         from {
             opacity: 0;
             transform: translateY(30px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
-    
+
     .fab {
         position: relative;
         display: flex;
@@ -818,7 +896,7 @@
         overflow: visible;
         backdrop-filter: blur(10px);
     }
-    
+
     .fab:hover {
         width: auto;
         border-radius: 28px;
@@ -826,16 +904,16 @@
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.15);
         transform: translateX(-5px) scale(1.05);
     }
-    
+
     .fab:active {
         transform: translateX(-5px) scale(0.98);
     }
-    
+
     .fab i {
         transition: all 0.3s ease;
         min-width: 22px;
     }
-    
+
     .fab-label {
         max-width: 0;
         opacity: 0;
@@ -846,106 +924,120 @@
         margin-left: 0;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     .fab:hover .fab-label {
         max-width: 200px;
         opacity: 1;
         margin-left: 10px;
     }
-    
+
     /* ── Individual Button Colors ── */
-    
+
     /* Reviews - Golden Yellow */
     .fab-reviews {
         background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%);
         animation-delay: 0s;
     }
-    
+
     .fab-reviews:hover {
         background: linear-gradient(135deg, #f7971e 0%, #ffdd33 100%);
         box-shadow: 0 8px 24px rgba(247, 151, 30, 0.4), 0 4px 12px rgba(255, 210, 0, 0.3);
     }
-    
+
     /* Why Choose Us - Purple */
     .fab-why {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         animation-delay: 0.1s;
     }
-    
+
     .fab-why:hover {
         background: linear-gradient(135deg, #7b93ff 0%, #8b5cb8 100%);
         box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4), 0 4px 12px rgba(118, 75, 162, 0.3);
     }
-    
+
     /* About Us - Green */
     .fab-about {
         background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         animation-delay: 0.2s;
     }
-    
+
     .fab-about:hover {
         background: linear-gradient(135deg, #14b09f 0%, #45ff8d 100%);
         box-shadow: 0 8px 24px rgba(17, 153, 142, 0.4), 0 4px 12px rgba(56, 239, 125, 0.3);
     }
-    
+
     /* ── Mobile Responsive ── */
     @media (max-width: 768px) {
-        .fab-container {
-            bottom: 20px;
-            right: 20px;
-            gap: 12px;
+        .fab-review-topleft {
+            top: 70px;
+            left: 15px;
         }
-        
+        .fab-review-icon {
+            width: 44px;
+            height: 44px;
+            font-size: 18px;
+        }
+        .fab-container {
+            bottom: 100px;
+            right: 20px;
+            gap: 10px;
+        }
+
         .fab {
             width: 50px;
             height: 50px;
             font-size: 20px;
         }
-        
+
         .fab:hover {
             width: auto;
             padding: 0 16px;
         }
-        
+
         .fab-label {
             font-size: 13px;
         }
     }
-    
+
     @media (max-width: 480px) {
+        .fab-review-topleft {
+            top: 65px;
+            left: 10px;
+        }
+        .fab-review-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
         .fab-container {
-            bottom: 15px;
+            bottom: 95px;
             right: 15px;
             gap: 10px;
         }
-        
+
         .fab {
             width: 48px;
             height: 48px;
             font-size: 18px;
         }
-        
+
         .fab:hover {
             padding: 0 14px;
         }
-        
+
         .fab-label {
             font-size: 12px;
         }
     }
-    
-    /* ── Pulse Animation on First Load ── */
-    @keyframes pulse {
-        0%, 100% {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-        50% {
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 3px 10px rgba(0, 0, 0, 0.15);
-        }
+
+    /* ── Pulse Animation on review button ── */
+    @keyframes reviewPulse {
+        0%, 100% { box-shadow: 0 4px 16px rgba(247, 151, 30, 0.45); }
+        50%       { box-shadow: 0 6px 24px rgba(247, 151, 30, 0.7); }
     }
-    
-    .fab-reviews {
-        animation: fadeInUp 0.6s ease-out, pulse 2s ease-in-out 1s infinite;
+
+    .fab-review-topleft {
+        animation: fadeInLeft 0.6s ease-out, reviewPulse 2.5s ease-in-out 1s infinite;
     }
 </style>
 
