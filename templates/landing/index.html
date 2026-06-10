@@ -67,15 +67,16 @@
             <div class="trust-stat animate-fade-in" style="animation-delay:0.3s">
                 <div class="trust-stat-icon"><i class="fas fa-users"></i></div>
                 <div class="trust-stat-text">
-                    <span class="trust-stat-number">5,000+</span>
+                    <span class="trust-stat-number">60,000+</span>
                     <span class="trust-stat-label">ลูกค้าไว้วางใจ</span>
                 </div>
             </div>
-            <div class="trust-stat animate-fade-in" style="animation-delay:0.45s">
+            <div class="trust-stat trust-stat-clickable animate-fade-in" style="animation-delay:0.45s"
+                onclick="openReviewModal()" role="button" title="ดูรีวิวจากลูกค้า">
                 <div class="trust-stat-icon"><i class="fas fa-star"></i></div>
                 <div class="trust-stat-text">
                     <span class="trust-stat-number">4.9/5</span>
-                    <span class="trust-stat-label">คะแนนรีวิว</span>
+                    <span class="trust-stat-label">คะแนนรีวิว ►</span>
                 </div>
             </div>
         </div>
@@ -523,6 +524,16 @@
         background: rgba(255, 255, 255, 0.16);
         transform: translateY(-3px);
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .trust-stat-clickable {
+        cursor: pointer;
+    }
+
+    .trust-stat-clickable:hover {
+        background: rgba(251, 191, 36, 0.2) !important;
+        border-color: rgba(251, 191, 36, 0.55) !important;
+        transform: translateY(-3px) scale(1.05) !important;
     }
 
     .trust-stat-icon {
