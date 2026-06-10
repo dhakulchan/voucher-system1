@@ -1414,18 +1414,21 @@
 
     // ── Review Modal ──
     (function () {
+        var _reviewModal = null;
         window.openReviewModal = window.openReviewModal || function () {
-            var m = new bootstrap.Modal(document.getElementById('reviewModalLanding'));
+            if (!_reviewModal) {
+                _reviewModal = new bootstrap.Modal(document.getElementById('reviewModalLanding'));
+            }
+            // Always (re)set src so iframe loads correctly
             var iframe = document.getElementById('reviewIframeLanding');
-            if (!iframe.src) iframe.src = '/display/reviews';
-            m.show();
+            iframe.setAttribute('src', '/display/reviews');
+            _reviewModal.show();
         };
         document.getElementById('reviewModalLanding').addEventListener('hidden.bs.modal', function () {
-            document.getElementById('reviewIframeLanding').src = '';
-        });
-        document.getElementById('reviewModalLanding').addEventListener('show.bs.modal', function () {
+            // Clear src to stop loading when modal is closed
             var iframe = document.getElementById('reviewIframeLanding');
-            if (!iframe.src) iframe.src = '/display/reviews';
+            iframe.removeAttribute('src');
+            iframe.setAttribute('src', '');
         });
     })();
 </script>
