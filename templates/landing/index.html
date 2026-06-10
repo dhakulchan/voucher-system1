@@ -352,15 +352,23 @@
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
-        opacity: 0.72;
-        filter: saturate(1.25) brightness(1.05);
+        opacity: 0.65;
+        /* blur erases poster text, saturate boosts destination color vibrancy */
+        filter: blur(10px) saturate(1.55) brightness(0.88);
+        /* over-scale to hide blur edge artifacts */
+        transform: scale(1.14);
         animation: heroBgZoom 22s ease-in-out infinite alternate;
         transform-origin: center;
     }
 
     @keyframes heroBgZoom {
-        from { transform: scale(1.0); }
-        to   { transform: scale(1.08); }
+        from {
+            transform: scale(1.12);
+        }
+
+        to {
+            transform: scale(1.22);
+        }
     }
 
     /* Gradient overlay — dark only at top (nav) + bottom (promo), clear in middle */
