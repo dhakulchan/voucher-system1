@@ -641,6 +641,10 @@
                     if (data.success) {
                         showAlert('success', `Quote ${data.quote_number} created successfully!`);
                         setTimeout(() => location.reload(), 2000);
+                    } else if (data.quote_id) {
+                        // Quote already exists - treat as info, not error, and refresh to show it
+                        showAlert('info', `Quote ${data.quote_number} already exists. Opening it now...`);
+                        setTimeout(() => location.reload(), 1500);
                     } else {
                         showAlert('error', data.message || 'Failed to create quote');
                     }
