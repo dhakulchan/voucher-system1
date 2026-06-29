@@ -2966,14 +2966,26 @@ def create_quote_workflow(booking_id):
                 if result:
                     message = f'Quote {result.quote_number} already exists (Status: {result.status})'
                     logger.info(f"ℹ️  Found existing quote: {result.quote_number} with status {result.status}")
+                    # Sync booking with the existing quote so the UI reflects the quoted state
+                    try:
+                        if booking.quote_id != result.id or booking.quote_number != result.quote_number:
+                            booking.quote_id = result.id
+                            booking.quote_number = result.quote_number
+                            if booking.can_create_quote():
+                                booking.mark_as_quoted()
+                            db.session.commit()
+                            logger.info(f"🔄 Synced booking {booking_id} with existing quote {result.quote_number}")
+                    except Exception as sync_err:
+                        db.session.rollback()
+                        logger.warning(f"⚠️ Could not sync booking with existing quote: {sync_err}")
                     if request.is_json or request.headers.get('Content-Type') == 'application/json':
                         return jsonify({
-                            'success': False, 
+                            'success': True,
                             'message': message,
                             'quote_id': result.id,
                             'quote_number': result.quote_number,
                             'status': result.status
-                        }), 400
+                        }), 200
                     flash(message, 'info')
                     return redirect(url_for('quote.view_quote', quote_id=result.id))
                 else:
