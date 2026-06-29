@@ -2968,11 +2968,15 @@ def create_quote_workflow(booking_id):
                     logger.info(f"ℹ️  Found existing quote: {result.quote_number} with status {result.status}")
                     # Sync booking with the existing quote so the UI reflects the quoted state
                     try:
+                        changed = False
                         if booking.quote_id != result.id or booking.quote_number != result.quote_number:
                             booking.quote_id = result.id
                             booking.quote_number = result.quote_number
-                            if booking.can_create_quote():
-                                booking.mark_as_quoted()
+                            changed = True
+                        if booking.can_create_quote():
+                            booking.mark_as_quoted()
+                            changed = True
+                        if changed:
                             db.session.commit()
                             logger.info(f"🔄 Synced booking {booking_id} with existing quote {result.quote_number}")
                     except Exception as sync_err:
