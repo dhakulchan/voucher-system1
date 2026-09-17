@@ -685,6 +685,23 @@
                         </li>
                         {% endif %}
 
+                        {% if current_user.role == 'Administrator' or current_user.has_sidebar_menu('trip_updates') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('trip_updates') %}active{% endif %}"
+                                href="{{ url_for('trip_updates.index') }}">
+                                <i class="fas fa-camera-retro me-2"></i>Trip Updates
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if current_user.role == 'Administrator' or current_user.has_sidebar_menu('map_buttons') %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('map_buttons') %}active{% endif %}"
+                                href="{{ url_for('map_buttons.index') }}">
+                                <i class="fas fa-map-marked-alt me-2"></i>Voucher Maps
+                            </a>
+                        </li>
+                        {% endif %}
+
                         {% if current_user.has_sidebar_menu('group_buy') %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint.startswith('group_buy_admin') or request.endpoint.startswith('group_buy_payment_admin') %}active{% endif %}"
@@ -946,6 +963,13 @@
                             {% if current_user.is_authenticated and current_user.role in ['Customer', 'Agency'] %}
                     </div> <!-- Close centered container -->
                     {% endif %}
+
+                    <!-- Pricing Note -->
+                    <p class="text-center mx-auto px-3"
+                        style="max-width: 1000px; margin-top: 28px; color: #4a5568; font-size: 0.95rem; line-height: 1.7;">
+                        หมายเหตุ: ราคาเริ่มต้นต่อท่าน/ต่อสินค้า ขึ้นอยู่กับวันเดินทางและวันที่ทำการจอง
+                        เงื่อนไขเป็นไปตามที่บริษัทฯกำหนด
+                    </p>
 
                     <!-- Footer -->
                     <footer class="mt-5 py-4 border-top"
