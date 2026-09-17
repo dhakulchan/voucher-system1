@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% block title %}Trip Updates — Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-camera-retro text-primary me-2"></i>Trip Updates (อัปเดตรายวัน / อัลบั้มรายการโชว์)
+        </h2>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'danger' }} alert-dismissible fade show"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Range filter -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-2 align-items-end">
+                <div class="col-auto">
+                    <label class="form-label fw-semibold mb-1">ช่วงเวลาเดินทาง</label>
+                    <div class="btn-group d-block">
+                        <a href="{{ url_for('trip_updates.index', range='today') }}"
+                            class="btn btn-sm {{ 'btn-primary' if range_key == 'today' else 'btn-outline-primary' }}">วันนี้</a>
+                        <a href="{{ url_for('trip_updates.index', range='w3') }}"
+                            class="btn btn-sm {{ 'btn-primary' if range_key == 'w3' else 'btn-outline-primary' }}">±3
+                            วัน</a>
+                    </div>
+                </div>
+                <div class="col-auto">
+                    <label class="form-label mb-1">จาก</label>
+                    <input type="date" name="from" value="{{ win_start }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label mb-1">ถึง</label>
+                    <input type="date" name="to" value="{{ win_end }}" class="form-control form-control-sm">
+                </div>
+                <div class="col-auto">
+                    <input type="hidden" name="range" value="custom">
+                    <button class="btn btn-sm btn-secondary">กรองช่วงเอง</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Traveling parties -->
+    <h5 class="mb-3"><i class="fas fa-plane-departure me-2 text-success"></i>กำลังเดินทาง
+        <span class="badge bg-success">{{ traveling|length }}</span>
+        <small class="text-muted">({{ win_start }} – {{ win_end }})</small>
+    </h5>
+
+    {% if traveling %}
+    <form method="POST" action="{{ url_for('trip_updates.bulk_create') }}" enctype="multipart/form-data" id="bulk-form">
+
+        <!-- Bulk post panel -->
+        <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="select-all">
+                        <label class="form-check-label fw-semibold" for="select-all">เลือกทั้งหมด</label>
+                    </div>
+                    <button type="button" id="clear-all" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-times me-1"></i>ยกเลิกเลือกทั้งหมด
+                    </button>
+                    <span class="text-muted small">เลือกแล้ว <span id="sel-count">0</span> กรุ๊ป</span>
+                </div>
+                <button type="submit" class="btn btn-warning btn-sm fw-semibold">
+                    <i class="fas fa-layer-group me-1"></i>โพสต์อัปเดตให้กรุ๊ปที่เลือก
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">วันที่</label>
+                        <input type="date" name="update_date" value="{{ today }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-semibold">หัวข้อ</label>
+                        <input type="text" name="title" class="form-control" placeholder="เช่น Day 1 – Ocean Kingdom"
+                            required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">รายละเอียด / รายการโชว์ / ข้อมูล</label>
+                        <textarea name="message" rows="2" class="form-control"
+                            placeholder="รายละเอียด (จะส่งให้ทุกกรุ๊ปที่เลือก)..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">รูปภาพ (สูงสุด 10 รูป, ≤ 8MB/รูป)</label>
+                        <input type="file" name="images" class="form-control" multiple accept=".jpg,.jpeg,.png,.webp">
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="purge_old" id="purge_old">
+                            <label class="form-check-label" for="purge_old">
+                                ลบอัปเดตเก่าทั้งหมดของกรุ๊ปที่เลือกก่อนโพสต์ <span class="text-muted">(ไม่เลือก =
+                                    เพิ่มต่อจากของเดิม)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    {% if map_buttons %}
+                    <div class="col-12">
+                        <div class="border rounded p-3 bg-light">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="update_maps" id="update_maps">
+                                <label class="form-check-label fw-semibold" for="update_maps">
+                                    <i class="fas fa-map-marked-alt me-1 text-primary"></i>ตั้งค่า Voucher Maps
+                                    ให้กรุ๊ปที่เลือก
+                                    <span class="text-muted">(เลือกไว้ = booking นั้นแสดงเฉพาะแผนที่ที่ติ๊ก)</span>
+                                </label>
+                            </div>
+                            <div id="map-picker" class="d-flex flex-wrap gap-3 ps-4"
+                                style="opacity:.5;pointer-events:none;">
+                                {% for m in map_buttons %}
+                                <div class="form-check">
+                                    <input class="form-check-input map-check" type="checkbox" name="map_ids"
+                                        value="{{ m.id }}" id="map{{ m.id }}" checked>
+                                    <label class="form-check-label" for="map{{ m.id }}">
+                                        <i class="{{ m.icon or 'fas fa-map-marked-alt' }} me-1 text-muted"></i>{{
+                                        m.label }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-paper-plane me-1"></i>โพสต์ให้กรุ๊ปที่เลือก
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="row g-3 mb-4">
+            {% for item in traveling %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm border-0">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input booking-check" type="checkbox" name="booking_ids"
+                                    value="{{ item.booking.id }}" id="bk{{ item.booking.id }}"
+                                    data-map-ids="{{ booking_map_ids.get(item.booking.id, [])|join(',') }}">
+                                <label class="form-check-label fw-bold" for="bk{{ item.booking.id }}">
+                                    {{ item.booking.booking_reference }}
+                                </label>
+                            </div>
+                            {% if item.day_current and item.day_total %}
+                            <span class="badge bg-info">Day {{ item.day_current }}/{{ item.day_total }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="mb-1"><i class="fas fa-users me-1 text-muted"></i>{{ item.booking.party_name or '-' }}
+                            {% if item.booking.party_code %}<small class="text-muted">({{ item.booking.party_code
+                                }})</small>{% endif %}
+                        </p>
+                        <p class="mb-2 small text-muted">
+                            <i class="fas fa-calendar me-1"></i>{{ item.booking.arrival_date }} → {{
+                            item.booking.departure_date }}
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-light text-dark border">
+                                <i class="fas fa-images me-1"></i>{{ item.update_count }} อัปเดต
+                            </span>
+                            <a href="{{ url_for('trip_updates.manage', booking_id=item.booking.id) }}"
+                                class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i>เพิ่ม/จัดการ
+                            </a>
+                        </div>
+                        {% set bmids = booking_map_ids.get(item.booking.id, []) %}
+                        {% if bmids %}
+                        <div class="mt-2 d-flex flex-wrap gap-1">
+                            {% for m in map_buttons if m.id in bmids %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                <i class="{{ m.icon or 'fas fa-map-marked-alt' }} me-1"></i>{{ m.label }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </form>
+
+    <script>
+        (function () {
+            const selectAll = document.getElementById('select-all');
+            const clearAll = document.getElementById('clear-all');
+            const boxes = Array.from(document.querySelectorAll('.booking-check'));
+            const count = document.getElementById('sel-count');
+            const updateMaps = document.getElementById('update_maps');
+            const mapPicker = document.getElementById('map-picker');
+            const mapChecks = Array.from(document.querySelectorAll('.map-check'));
+
+            function syncMapsToSelection() {
+                // When exactly one booking is ticked, mirror its saved Voucher Maps.
+                if (!mapChecks.length) return;
+                const selected = boxes.filter(b => b.checked);
+                if (selected.length !== 1) return;
+                const ids = (selected[0].dataset.mapIds || '')
+                    .split(',').filter(Boolean);
+                mapChecks.forEach(c => { c.checked = ids.includes(c.value); });
+            }
+            function refresh() {
+                const n = boxes.filter(b => b.checked).length;
+                count.textContent = n;
+                if (selectAll) selectAll.checked = n > 0 && n === boxes.length;
+            }
+            function refreshMapPickerState() {
+                if (!mapPicker || !updateMaps) return;
+                const on = updateMaps.checked;
+                mapPicker.style.opacity = on ? '1' : '.5';
+                mapPicker.style.pointerEvents = on ? 'auto' : 'none';
+            }
+            if (updateMaps) updateMaps.addEventListener('change', refreshMapPickerState);
+            if (selectAll) selectAll.addEventListener('change', () => {
+                boxes.forEach(b => { b.checked = selectAll.checked; });
+                refresh();
+            });
+            if (clearAll) clearAll.addEventListener('click', () => {
+                boxes.forEach(b => { b.checked = false; });
+                if (selectAll) selectAll.checked = false;
+                refresh();
+            });
+            boxes.forEach(b => b.addEventListener('change', () => {
+                refresh();
+                syncMapsToSelection();
+            }));
+            document.getElementById('bulk-form').addEventListener('submit', (e) => {
+                if (boxes.filter(b => b.checked).length === 0) {
+                    e.preventDefault();
+                    alert('กรุณาเลือกอย่างน้อย 1 กรุ๊ป');
+                }
+            });
+            refresh();
+            refreshMapPickerState();
+        })();
+    </script>
+    {% else %}
+    <div class="alert alert-light border text-center py-4 mb-4">
+        <i class="fas fa-plane-slash fa-2x text-muted mb-2"></i>
+        <p class="mb-0 text-muted">ไม่มีกรุ๊ปเดินทางในช่วงที่เลือก</p>
+    </div>
+    {% endif %}
+
+    <!-- Search -->
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white py-3">
+            <h6 class="mb-0"><i class="fas fa-search me-2"></i>ค้นหา booking (Ref / Party)</h6>
+        </div>
+        <div class="card-body">
+            <form method="GET" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="q" value="{{ q }}" class="form-control"
+                        placeholder="พิมพ์ booking reference หรือ party name...">
+                    <button class="btn btn-outline-primary"><i class="fas fa-search"></i></button>
+                </div>
+            </form>
+            {% if q %}
+            {% if search_results %}
+            <div class="list-group">
+                {% for b in search_results %}
+                <a href="{{ url_for('trip_updates.manage', booking_id=b.id) }}"
+                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>{{ b.booking_reference }}</strong>
+                        <span class="text-muted ms-2">{{ b.party_name or '-' }}</span>
+                    </span>
+                    <span class="small text-muted">
+                        {{ b.arrival_date or '' }} → {{ b.departure_date or '' }}
+                        <span class="badge bg-secondary ms-2">{{ update_counts.get(b.id, 0) }}</span>
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">ไม่พบผลลัพธ์สำหรับ "{{ q }}"</p>
+            {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

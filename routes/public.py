@@ -20,6 +20,16 @@ def test_route():
     """Simple test route to verify blueprint works"""
     return "Public route works!", 200
 
+
+@public_bp.route('/map-buttons')
+def public_map_buttons():
+    """Active global map buttons shown on every Voucher page (public reference)."""
+    from flask import jsonify
+    from models.map_button import MapButton
+    btns = MapButton.query.filter_by(is_active=True) \
+        .order_by(MapButton.display_order, MapButton.id).all()
+    return jsonify({'buttons': [b.to_dict() for b in btns]})
+
 @public_bp.app_template_filter('safe_date')
 def safe_date_filter(date_value, format='%d/%m/%Y'):
     """Safely format date - handles both string and datetime objects"""
@@ -1608,3 +1618,96 @@ def download_voucher_file(file_id, token):
     except Exception as e:
         logger.error(f"Error downloading voucher file: {e}")
         return "Internal server error", 500
+
+
+# ------------------------------------------------------------------
+# Trip Daily Updates (public, token-gated)
+# ------------------------------------------------------------------
+def _resolve_booking_id(token):
+    """Resolve a share token to a booking id (enhanced + legacy fallback)."""
+    booking_id = BookingEnhanced.verify_secure_token(token)
+    if booking_id:
+        return booking_id
+    try:
+        booking = Booking.verify_share_token(token)
+        if booking:
+            return booking.id
+    except Exception:
+        pass
+    return None
+
+
+@public_bp.route('/booking/<path:token>/map-buttons')
+def booking_map_buttons(token):
+    """Voucher Maps for a specific booking (falls back to global active maps)."""
+    from flask import jsonify
+    from models.map_button import MapButton
+    from models.booking_map_button import BookingMapButton
+
+    booking_id = _resolve_booking_id(token)
+    if not booking_id:
+        abort(403)
+
+    map_ids = [r.map_button_id for r in
+               BookingMapButton.query.filter_by(booking_id=booking_id).all()]
+    if map_ids:
+        btns = MapButton.query.filter(MapButton.id.in_(map_ids)) \
+            .order_by(MapButton.display_order, MapButton.id).all()
+    else:
+        btns = MapButton.query.filter_by(is_active=True) \
+            .order_by(MapButton.display_order, MapButton.id).all()
+    return jsonify({'buttons': [b.to_dict() for b in btns]})
+
+
+@public_bp.route('/booking/<path:token>/updates')
+def booking_updates(token):
+    """Return published trip updates for a booking as JSON."""
+    from flask import jsonify
+    from models.voucher_update import VoucherUpdate
+
+    booking_id = _resolve_booking_id(token)
+    if not booking_id:
+        abort(403)
+
+    updates = VoucherUpdate.query.filter_by(booking_id=booking_id, is_published=True) \
+        .order_by(VoucherUpdate.update_date.desc(),
+                  VoucherUpdate.created_at.desc()).all()
+
+    def img_url(img):
+        return url_for('public.booking_update_image', token=token, image_id=img.id)
+
+    def thumb_url(img):
+        return url_for('public.booking_update_image', token=token, image_id=img.id, thumb=1)
+
+    data = [u.to_dict(image_url_builder=img_url, thumb_url_builder=thumb_url) for u in updates]
+    latest = max((u['created_at_epoch'] for u in data), default=0)
+    return jsonify({'updates': data, 'latest': latest, 'count': len(data)})
+
+
+@public_bp.route('/booking/<path:token>/update-image/<int:image_id>')
+def booking_update_image(token, image_id):
+    """Serve a trip-update image if it belongs to the token's booking."""
+    from models.voucher_update import VoucherUpdate, VoucherUpdateImage
+
+    booking_id = _resolve_booking_id(token)
+    if not booking_id:
+        abort(403)
+
+    img = VoucherUpdateImage.query.get_or_404(image_id)
+    update = VoucherUpdate.query.get(img.update_id)
+    if not update or update.booking_id != booking_id or not update.is_published:
+        abort(404)
+
+    # Thumbnail (small, for the grid) — generated & cached on demand
+    if request.args.get('thumb') == '1':
+        from routes.trip_updates import ensure_thumbnail
+        res = ensure_thumbnail(booking_id, img.image_path)
+        if res:
+            return send_from_directory(res[0], res[1], max_age=604800)
+
+    img_dir = os.path.join(current_app.root_path, 'secure_images',
+                           'trip_updates', str(booking_id))
+    if not os.path.isfile(os.path.join(img_dir, img.image_path)):
+        abort(404)
+    # uuid filenames are immutable -> allow long browser caching for fast gallery nav
+    return send_from_directory(img_dir, img.image_path, max_age=604800)

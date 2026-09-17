@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}จัดการ Trip Updates — {{ booking.booking_reference }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">
+            <i class="fas fa-camera-retro text-primary me-2"></i>Trip Updates
+        </h2>
+        <a href="{{ url_for('trip_updates.index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>กลับ
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'warning' if category == 'warning' else 'danger' }} alert-dismissible fade show"
+        role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <!-- Booking summary -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div>
+                <h5 class="mb-1 fw-bold">{{ booking.booking_reference }}</h5>
+                <span class="text-muted"><i class="fas fa-users me-1"></i>{{ booking.party_name or '-' }}
+                    {% if booking.party_code %}({{ booking.party_code }}){% endif %}</span>
+            </div>
+            <div class="text-end">
+                <div class="small text-muted"><i class="fas fa-calendar me-1"></i>{{ booking.arrival_date }} → {{
+                    booking.departure_date }}</div>
+                {% if day_current and day_total %}
+                <span class="badge bg-info">วันนี้ Day {{ day_current }}/{{ day_total }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Add update form -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header py-3" style="background: linear-gradient(135deg,#11998e,#38ef7d); color:white;">
+            <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>เพิ่มอัปเดตวันนี้</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('trip_updates.create', booking_id=booking.id) }}"
+                enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">วันที่</label>
+                        <input type="date" name="update_date" value="{{ today }}" class="form-control" required>
+                    </div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-semibold">หัวข้อ</label>
+                        <input type="text" name="title" class="form-control" placeholder="เช่น Day 1 – Ocean Kingdom"
+                            required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">รายละเอียด / รายการโชว์ / ข้อมูล</label>
+                        <textarea name="message" rows="3" class="form-control"
+                            placeholder="รายละเอียดของวันนี้..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">รูปภาพ (สูงสุด {{ max_images }} รูป, ≤ 8MB/รูป)</label>
+                        <input type="file" name="images" class="form-control" multiple accept=".jpg,.jpeg,.png,.webp">
+                        <div class="form-text">รองรับ: JPG, PNG, WebP</div>
+                    </div>
+                    <div class="col-12">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-1"></i>เผยแพร่อัปเดต
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Timeline -->
+    <h5 class="mb-3"><i class="fas fa-stream me-2"></i>อัปเดตทั้งหมด ({{ updates|length }})</h5>
+
+    {% if updates %}
+    {% for u in updates %}
+    <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="badge bg-primary mb-1"><i class="fas fa-calendar-day me-1"></i>{{ u.update_date
+                        }}</span>
+                    {% if not u.is_published %}<span class="badge bg-secondary">ซ่อนอยู่</span>{% endif %}
+                    <h5 class="mb-0 mt-1">{{ u.title }}</h5>
+                </div>
+                <div class="btn-group">
+                    <form method="POST" action="{{ url_for('trip_updates.toggle_publish', update_id=u.id) }}">
+                        <button class="btn btn-sm btn-outline-secondary" title="แสดง/ซ่อน">
+                            <i class="fas fa-{{ 'eye-slash' if u.is_published else 'eye' }}"></i>
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ url_for('trip_updates.delete_update', update_id=u.id) }}"
+                        onsubmit="return confirm('ยืนยันการลบอัปเดตนี้?');">
+                        <button class="btn btn-sm btn-outline-danger" title="ลบ">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% if u.message %}<p class="mb-3" style="white-space:pre-line;">{{ u.message }}</p>{% endif %}
+            {% if u.images %}
+            <div class="row g-2">
+                {% for img in u.images %}
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="position-relative">
+                        <img src="{{ url_for('trip_updates.serve_image', image_id=img.id, thumb=1) }}" loading="lazy"
+                            class="img-fluid rounded border" style="aspect-ratio:1;object-fit:cover;width:100%;">
+                        <form method="POST" action="{{ url_for('trip_updates.delete_image', image_id=img.id) }}"
+                            class="position-absolute top-0 end-0 m-1" onsubmit="return confirm('ลบรูปนี้?');">
+                            <button class="btn btn-sm btn-danger py-0 px-1"><i class="fas fa-times"></i></button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-light border text-center py-4">
+        <i class="fas fa-inbox fa-2x text-muted mb-2"></i>
+        <p class="mb-0 text-muted">ยังไม่มีอัปเดต — เพิ่มอัปเดตแรกด้านบน</p>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
