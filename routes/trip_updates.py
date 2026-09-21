@@ -35,7 +35,9 @@ def admin_required(f):
         if not current_user.is_authenticated:
             flash('กรุณาเข้าสู่ระบบ', 'warning')
             return redirect(url_for('auth.login'))
-        if getattr(current_user, 'role', None) not in MANAGE_ROLES:
+        allowed = (getattr(current_user, 'role', None) in MANAGE_ROLES
+                   or current_user.has_sidebar_menu('trip_updates'))
+        if not allowed:
             flash('คุณไม่มีสิทธิ์เข้าถึงหน้านี้', 'danger')
             return redirect(url_for('dashboard.index'))
         return f(*args, **kwargs)

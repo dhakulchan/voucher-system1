@@ -382,7 +382,8 @@
     </div>
 
     <!-- Main Content -->
-    <div class="container pb-5" data-token="{{ token }}" data-booking-id="{{ booking.id }}" id="voucher-root">
+    <div class="container pb-5" data-token="{{ token }}" data-booking-id="{{ booking.id }}"
+        data-booking-status="{{ booking.status }}" id="voucher-root">
 
         <!-- Trip Updates (populated by JS from /public/booking/<token>/updates) -->
         <div id="trip-updates-section" class="booking-card mb-4" style="display:none;">
@@ -1229,33 +1230,36 @@
                 return d.innerHTML;
             }
 
-            fetch('/public/booking/' + encodeURIComponent(token) + '/updates')
-                .then(r => r.ok ? r.json() : null)
-                .then(data => {
-                    if (!data || !data.count) return;
-                    renderUpdates(data.updates);
-                    handleNew(data.updates, data.latest);
-                })
-                .catch(() => { });
-
-            // ---- Global map/guide buttons (open image in the same lightbox) ----
+            // Trip Updates + Park Maps show only for vouchered bookings
             let mapGallery = [];
-            fetch('/public/booking/' + encodeURIComponent(token) + '/map-buttons')
-                .then(r => r.ok ? r.json() : null)
-                .then(data => {
-                    if (!data || !data.buttons || !data.buttons.length) return;
-                    mapGallery = data.buttons.map(function (b) { return { url: b.image_url, caption: b.label }; });
-                    const wrap = document.getElementById('voucher-maps-buttons');
-                    wrap.innerHTML = data.buttons.map(function (b, i) {
-                        return '<button type="button" class="btn btn-outline-primary map-btn" data-idx="' + i + '">' +
-                            '<i class="' + (b.icon || 'fas fa-map-marked-alt') + ' me-2"></i>' + esc(b.label) + '</button>';
-                    }).join('');
-                    document.getElementById('voucher-maps-section').style.display = '';
-                    wrap.querySelectorAll('.map-btn').forEach(function (btn) {
-                        btn.addEventListener('click', function () { openLightbox(mapGallery, parseInt(btn.dataset.idx, 10)); });
-                    });
-                })
-                .catch(() => { });
+            if (root.dataset.bookingStatus === 'vouchered') {
+                fetch('/public/booking/' + encodeURIComponent(token) + '/updates')
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (!data || !data.count) return;
+                        renderUpdates(data.updates);
+                        handleNew(data.updates, data.latest);
+                    })
+                    .catch(() => { });
+
+                // ---- Global map/guide buttons (open image in the same lightbox) ----
+                fetch('/public/booking/' + encodeURIComponent(token) + '/map-buttons')
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (!data || !data.buttons || !data.buttons.length) return;
+                        mapGallery = data.buttons.map(function (b) { return { url: b.image_url, caption: b.label }; });
+                        const wrap = document.getElementById('voucher-maps-buttons');
+                        wrap.innerHTML = data.buttons.map(function (b, i) {
+                            return '<button type="button" class="btn btn-outline-primary map-btn" data-idx="' + i + '">' +
+                                '<i class="' + (b.icon || 'fas fa-map-marked-alt') + ' me-2"></i>' + esc(b.label) + '</button>';
+                        }).join('');
+                        document.getElementById('voucher-maps-section').style.display = '';
+                        wrap.querySelectorAll('.map-btn').forEach(function (btn) {
+                            btn.addEventListener('click', function () { openLightbox(mapGallery, parseInt(btn.dataset.idx, 10)); });
+                        });
+                    })
+                    .catch(() => { });
+            }
 
             function renderUpdates(updates) {
                 const section = document.getElementById('trip-updates-section');
