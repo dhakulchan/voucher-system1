@@ -1624,7 +1624,12 @@ def download_voucher_file(file_id, token):
 # Trip Daily Updates (public, token-gated)
 # ------------------------------------------------------------------
 def _resolve_booking_id(token):
-    """Resolve a share token to a booking id (enhanced + legacy fallback)."""
+    """Resolve a share token to a booking id (enhanced + legacy + manual fallback).
+
+    Mirrors the fallback chain of the main voucher view so that older tokens
+    whose signature no longer matches the current SECRET_KEY still resolve for
+    the token-gated JSON endpoints (Trip Updates / Voucher Maps).
+    """
     booking_id = BookingEnhanced.verify_secure_token(token)
     if booking_id:
         return booking_id
@@ -1634,7 +1639,34 @@ def _resolve_booking_id(token):
             return booking.id
     except Exception:
         pass
-    return None
+
+    # Legacy fallback: extract booking id from the base64 payload and apply the
+    # same version / cancelled checks the main view uses before granting access.
+    try:
+        import base64
+        padded = token + '=' * (-len(token) % 4)
+        decoded = base64.urlsafe_b64decode(padded).decode('utf-8', errors='ignore')
+        if '|' not in decoded:
+            return None
+        parts = decoded.split('|')
+        booking_id = int(parts[0])
+        booking = Booking.query.get(booking_id)
+        if not booking or booking.status == 'cancelled':
+            return None
+        raw_ver = db.session.execute(
+            db.text("SELECT share_token_version FROM bookings WHERE id = :id"),
+            {"id": booking_id}
+        ).fetchone()
+        db_ver = raw_ver[0] if raw_ver and raw_ver[0] else 1
+        if len(parts) == 3 and db_ver > 1:
+            return None
+        if len(parts) == 4:
+            token_ver = int(parts[2]) if parts[2].isdigit() else 1
+            if token_ver < db_ver:
+                return None
+        return booking_id
+    except Exception:
+        return None
 
 
 @public_bp.route('/booking/<path:token>/map-buttons')
