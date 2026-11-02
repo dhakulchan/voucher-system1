@@ -313,6 +313,54 @@
         .text-purple {
             color: #6f42c1 !important;
         }
+
+        /* Travel Agent voucher brand (replaces logo) */
+        .agent-brand-card {
+            display: inline-block;
+            text-align: right;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 12px;
+            padding: 0.85rem 1.1rem;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .agent-brand-card .agent-company-name {
+            color: #fff;
+            font-size: 1.25rem;
+            font-weight: 700;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .agent-brand-card .agent-license {
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0.4rem;
+            letter-spacing: 0.3px;
+        }
+
+        @media (max-width: 767px) {
+            .agent-brand-card {
+                text-align: left;
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+        }
+
+        /* Usage guide adapts to the width of its card (3-across when wide, stacked when narrow) */
+        .usage-guide {
+            container-type: inline-size;
+        }
+
+        @container (min-width: 620px) {
+            .usage-guide .usage-step-col {
+                flex: 0 0 33.3333% !important;
+                max-width: 33.3333% !important;
+            }
+        }
     </style>
 </head>
 
@@ -322,6 +370,10 @@
         data-booking-status="{{ booking.status }}" {% if booking.status=='quoted' and booking.quotes %} {% for quote in
         booking.quotes %} {% if loop.first %} data-quote-number="{{ quote.quote_number }}" {% endif %} {% endfor %} {%
         endif %} style="display: none;"></div>
+
+    {# Travel Agent voucher: hide logo/contact/why-choose, show company name + license #}
+    {% set is_travel_agent_voucher = booking.status in ['vouchered', 'completed'] and booking.customer and
+    booking.customer.customer_type == 'Travel Agent' %}
 
     <!-- Header -->
     <div class="booking-header">
@@ -361,6 +413,18 @@
                     {% endif %}
                 </div>
                 <div class="col-md-4 text-md-end">
+                    {% if is_travel_agent_voucher %}
+                    <!-- Travel Agent: company name + license instead of logo -->
+                    <div class="mb-3 agent-brand-card">
+                        <div class="agent-company-name">
+                            <i class="fas fa-building me-2"></i>{{ booking.customer.company_name or
+                            booking.customer.name }}
+                        </div>
+                        {% if booking.customer.company_license %}
+                        <div class="agent-license">License: {{ booking.customer.company_license }}</div>
+                        {% endif %}
+                    </div>
+                    {% else %}
                     <!-- Logo positioned above status badge -->
                     <div class="mb-3">
                         <span class="brand-logo-card">
@@ -368,6 +432,7 @@
                                 alt="Dhakul Chan Travel Service">
                         </span>
                     </div>
+                    {% endif %}
                     <span class="badge badge-status bg-success fs-6">
                         <i class="fas fa-check-circle me-1"></i>
                         {{ booking.status.title() }}
@@ -405,6 +470,101 @@
                 <div id="voucher-maps-buttons" class="d-flex flex-wrap gap-2"></div>
             </div>
         </div>
+
+        {# Usage guide captured once so it can be placed in the left column for Travel Agent vouchers (balances the
+        layout) #}
+        {% set usage_guide_card %}
+        <div class="booking-card mb-4">
+            <div class="card-header"
+                style="padding: 1rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <h4 class="mb-0" style="font-size: 1.1rem; color: white;">
+                    <i class="fas fa-lightbulb me-2" style="font-size: 1rem;"></i>
+                    แนะนำการใช้งาน
+                </h4>
+            </div>
+            <div class="card-body"
+                style="padding: 1.5rem; background: linear-gradient(to bottom, #f8f9ff 0%, #ffffff 100%);">
+                <div class="usage-guide">
+                    <div class="row g-4">
+                        <!-- Step 1 -->
+                        <div class="col-12 usage-step-col">
+                            <div class="h-100 p-3 rounded-3" style="background: #f8f9ff; border: 1px solid #e6ebff;">
+                                <h5 class="fw-bold mb-3" style="color: #667eea; font-size: 1rem;">
+                                    <span class="badge bg-primary me-2" style="font-size: 0.9rem;">1</span>
+                                    คลิกเปิดลิงก์ที่ไลน์หรืออีเมล์
+                                </h5>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="col-12 usage-step-col">
+                            <div class="h-100 p-3 rounded-3" style="background: #f8f9ff; border: 1px solid #e6ebff;">
+                                <h5 class="fw-bold mb-3" style="color: #667eea; font-size: 1rem;">
+                                    <span class="badge bg-primary me-2" style="font-size: 0.9rem;">2</span>
+                                    ตรวจสอบข้อมูล
+                                </h5>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
+                                    </li>
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
+                                    </li>
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        ดาวน์โหลด: E-Ticket, QR Code, Confirmation, Proposal, Quote, Voucher
+                                    </li>
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        คลิกลิงก์: แนะนำรายการทัวร์ - คู่มือการเดินทางหรือท่องเที่ยว
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="col-12 usage-step-col">
+                            <div class="h-100 p-3 rounded-3" style="background: #f8f9ff; border: 1px solid #e6ebff;">
+                                <h5 class="fw-bold mb-3" style="color: #667eea; font-size: 1rem;">
+                                    <span class="badge bg-primary me-2" style="font-size: 0.9rem;">3</span>
+                                    ดาวน์โหลดเอกสารก่อนวันเดินทาง
+                                </h5>
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <span class="badge bg-danger me-2">🔴 PNG</span>
+                                        <span class="fw-semibold">ใช้บนมือถือ/พิมพ์</span>
+                                    </li>
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <span class="badge bg-secondary me-2" style="background: #9333ea !important;">🟣
+                                            PDF</span>
+                                        <span class="fw-semibold">เก็บในคอม/ส่งอีเมล</span>
+                                    </li>
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <span class="badge bg-dark me-2">❌</span>
+                                        <span class="fw-semibold text-danger">ห้ามแชร์ลิงก์</span>
+                                        <span class="text-muted">(ข้อมูลส่วนบุคคล)</span>
+                                    </li>
+                                    <li class="mb-2" style="font-size: 0.9rem;">
+                                        <span class="badge bg-warning text-dark me-2">⏰</span>
+                                        <span class="fw-semibold">หมดอายุ 120 วัน</span>
+                                        <span class="text-muted">(เปิดลิงก์ไม่ได้โปรดติดต่อทีมงาน)</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endset %}
 
         <div class="row">
             <!-- Left Column: Booking Information -->
@@ -603,6 +763,7 @@
                 {% endif %}
 
                 <!-- Contact Information -->
+                {% if not is_travel_agent_voucher %}
                 <div class="booking-card mb-4">
                     <div class="card-header">
                         <h3 class="mb-0">
@@ -770,6 +931,11 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
+
+                {% if is_travel_agent_voucher %}
+                {{ usage_guide_card }}
+                {% endif %}
             </div>
 
             <!-- Right Column: Actions -->
@@ -790,14 +956,14 @@
                             <!-- Voucher Images -->
                             {% for image in booking.voucher_images_rel %}
                             <div class="list-group-item d-flex align-items-center py-3">
-                                <div class="flex-grow-1">
+                                <div class="flex-grow-1" style="min-width: 0;">
                                     <a href="{{ url_for('public.download_voucher_image', image_id=image.id, token=token) }}"
                                         class="text-decoration-none d-flex align-items-center" target="_blank">
                                         <i class="fas fa-file-image fs-4 text-primary me-3"
-                                            style="cursor: pointer; transition: color 0.2s;"
+                                            style="cursor: pointer; transition: color 0.2s; flex-shrink: 0;"
                                             onmouseover="this.style.color='#0056b3'" onmouseout="this.style.color=''"
                                             title="Click to download voucher image"></i>
-                                        <div>
+                                        <div style="min-width: 0; overflow-wrap: anywhere; word-break: break-word;">
                                             <h6 class="mb-1 text-dark fw-semibold">Voucher Image {{ image.display_order
                                                 }}</h6>
                                             <p class="mb-0 text-muted small">Image file</p>
@@ -810,14 +976,14 @@
                             <!-- Voucher Files -->
                             {% for file in booking.voucher_files %}
                             <div class="list-group-item d-flex align-items-center py-3">
-                                <div class="flex-grow-1">
+                                <div class="flex-grow-1" style="min-width: 0;">
                                     <a href="{{ url_for('public.download_voucher_file', file_id=file.id, token=token) }}"
                                         class="text-decoration-none d-flex align-items-center" target="_blank">
                                         <i class="fas fa-file-download fs-4 text-primary me-3"
-                                            style="cursor: pointer; transition: color 0.2s;"
+                                            style="cursor: pointer; transition: color 0.2s; flex-shrink: 0;"
                                             onmouseover="this.style.color='#0056b3'" onmouseout="this.style.color=''"
                                             title="Click to download {{ file.title if file.title and file.title.strip() else 'Document' }}"></i>
-                                        <div>
+                                        <div style="min-width: 0; overflow-wrap: anywhere; word-break: break-word;">
                                             <h6 class="mb-1 text-dark fw-semibold">{{ file.title if file.title and
                                                 file.title.strip() else 'Document' }}
                                             </h6>
@@ -979,89 +1145,10 @@
                     </div>
                 </div>
 
-                <!-- Usage Guide Section -->
-                <div class="booking-card mb-4">
-                    <div class="card-header"
-                        style="padding: 1rem; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                        <h4 class="mb-0" style="font-size: 1.1rem; color: white;">
-                            <i class="fas fa-lightbulb me-2" style="font-size: 1rem;"></i>
-                            แนะนำการใช้งาน
-                        </h4>
-                    </div>
-                    <div class="card-body"
-                        style="padding: 1.5rem; background: linear-gradient(to bottom, #f8f9ff 0%, #ffffff 100%);">
-                        <div class="usage-guide">
-                            <!-- Step 1 -->
-                            <div class="mb-4">
-                                <h5 class="fw-bold mb-3" style="color: #667eea; font-size: 1rem;">
-                                    <span class="badge bg-primary me-2" style="font-size: 0.9rem;">1</span>
-                                    คลิกเปิดลิงก์ที่ไลน์หรืออีเมล์
-                                </h5>
-                                <ul class="list-unstyled ms-4">
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        เปิดได้ทั้งมือถือ/คอม ไม่ต้องล็อกอิน
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <!-- Step 2 -->
-                            <div class="mb-4">
-                                <h5 class="fw-bold mb-3" style="color: #667eea; font-size: 1rem;">
-                                    <span class="badge bg-primary me-2" style="font-size: 0.9rem;">2</span>
-                                    ตรวจสอบข้อมูล
-                                </h5>
-                                <ul class="list-unstyled ms-4">
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        ข้อมูลลูกค้า / วันเดินทาง / จำนวนคน
-                                    </li>
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        รายชื่อผู้เดินทาง (ตรงพาสปอร์ต)
-                                    </li>
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        ดาวน์โหลด: E-Ticket, QR Code, Confirmation, Proposal, Quote, Voucher
-                                    </li>
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <i class="fas fa-check-circle text-success me-2"></i>
-                                        คลิกลิงก์: แนะนำรายการทัวร์ - คู่มือการเดินทางหรือท่องเที่ยว
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <!-- Step 3 -->
-                            <div class="mb-3">
-                                <h5 class="fw-bold mb-3" style="color: #667eea; font-size: 1rem;">
-                                    <span class="badge bg-primary me-2" style="font-size: 0.9rem;">3</span>
-                                    ดาวน์โหลดเอกสารก่อนวันเดินทาง
-                                </h5>
-                                <ul class="list-unstyled ms-4">
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <span class="badge bg-danger me-2">🔴 PNG</span>
-                                        <span class="fw-semibold">ใช้บนมือถือ/พิมพ์</span>
-                                    </li>
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <span class="badge bg-secondary me-2" style="background: #9333ea !important;">🟣
-                                            PDF</span>
-                                        <span class="fw-semibold">เก็บในคอม/ส่งอีเมล</span>
-                                    </li>
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <span class="badge bg-dark me-2">❌</span>
-                                        <span class="fw-semibold text-danger">ห้ามแชร์ลิงก์</span>
-                                        <span class="text-muted">(ข้อมูลส่วนบุคคล)</span>
-                                    </li>
-                                    <li class="mb-2" style="font-size: 0.9rem;">
-                                        <span class="badge bg-warning text-dark me-2">⏰</span>
-                                        <span class="fw-semibold">หมดอายุ 120 วัน</span>
-                                        <span class="text-muted">(เปิดลิงก์ไม่ได้โปรดติดต่อทีมงาน)</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Usage Guide Section (shown here only when NOT a Travel Agent voucher; otherwise it moves to the left column) -->
+                {% if not is_travel_agent_voucher %}
+                {{ usage_guide_card }}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -1271,10 +1358,13 @@
                             'loading="lazy" style="aspect-ratio:1;object-fit:cover;width:100%;cursor:pointer;" ' +
                             'data-full="' + img.url + '" alt="' + esc(img.caption) + '"></div>';
                     }).join('');
-                    return '<div class="mb-4 pb-3 border-bottom">' +
+                    const hasTitle = u.title && String(u.title).trim();
+                    const header = hasTitle ?
                         '<div class="d-flex align-items-center gap-2 mb-2 flex-wrap">' +
                         '<span class="badge bg-primary"><i class="fas fa-calendar-day me-1"></i>' + esc(u.update_date) + '</span>' +
-                        '<h5 class="mb-0">' + esc(u.title) + '</h5></div>' +
+                        '<h5 class="mb-0">' + esc(u.title) + '</h5></div>' : '';
+                    return '<div class="mb-4 pb-3 border-bottom">' +
+                        header +
                         (u.message ? '<p style="white-space:pre-line;">' + esc(u.message) + '</p>' : '') +
                         (imgs ? '<div class="row g-2">' + imgs + '</div>' : '') +
                         '</div>';
